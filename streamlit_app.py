@@ -38,10 +38,10 @@ capturo = st.text_input(
 estado = st.selectbox(
     "Estado",
     options=[
-        "Abierto",
-        "En proceso",
-        "En espera",
-        "Cerrado"
+        "EDICION",
+        "PLACEHOLDER",
+        "PLACEHOLDER",
+        "PLACEHOLDER"
     ]
 )
 
@@ -53,7 +53,11 @@ st.divider()
 
 empresa = st.selectbox(
     "Empresa",
-    ["LINCOLN FREIGHT COMPANY, LLC"]
+    [
+     "LINCOLN FREIGHT COMPANY, LLC",
+     "PICUS",
+     "SET LOGIS PLUS"
+     ]
 )
 
 tipo_unidad = st.selectbox(
