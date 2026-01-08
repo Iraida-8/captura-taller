@@ -62,7 +62,7 @@ empresa = st.selectbox(
 
 tipo_unidad = st.selectbox(
     "Tipo de Unidad",
-    ["Caja seca", "Termo seco"]
+    ["Caja seca", "Termo frio"]
 )
 
 unidad = st.text_input(
@@ -142,7 +142,7 @@ rows = [
         "Artículo": "Balata de freno",
         "Descripción": "Cambio de balatas eje delantero",
         "Tiempo Est.": "2 hrs",
-        "Precio MXP": 3500,
+        "Precio MXP": 3700,
         "Tipo Actividad": "Reparación",
         "Tipo Mtto": "Correctivo"
     },
