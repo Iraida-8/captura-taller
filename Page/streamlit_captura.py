@@ -142,7 +142,7 @@ rows = [
         "Artículo": "Balata de freno",
         "Descripción": "Cambio de balatas eje delantero",
         "Tiempo Est.": "2 hrs",
-        "Precio MXP": 3700,
+        "Precio MXP": 3600,
         "Tipo Actividad": "Reparación",
         "Tipo Mtto": "Correctivo"
     },
