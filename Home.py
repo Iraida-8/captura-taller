@@ -12,4 +12,4 @@ st.set_page_config(
 # =================================
 # Title
 # =================================
-st.title("Home Page pedorra")
+st.title("Home Page Super pro")
