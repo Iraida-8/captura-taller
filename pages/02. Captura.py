@@ -152,14 +152,6 @@ tipo_unidad_operador = st.selectbox(
     index=0
 )
 
-# ---------------- Operador ----------------
-operador_disabled = tipo_unidad_operador != "Tractores"
-operador = st.text_input(
-    "Operador",
-    placeholder="Nombre del operador",
-    disabled=operador_disabled
-)
-
 # -------- UNIDADES FILTRADAS POR EMPRESA --------
 if empresa and empresa != "Selecciona Empresa":
     catalogos_filtrados = catalogos_df[
@@ -172,8 +164,16 @@ else:
     catalogos_filtrados = pd.DataFrame()
     tractores_filtrados_df = pd.DataFrame()
 
-# ---------------- No. de Unidad | Marca | Modelo ----------------
-c1, c2, c3 = st.columns(3)
+# ---------------- Operador ----------------
+operador_disabled = tipo_unidad_operador != "Tractores"
+operador = st.text_input(
+    "Operador",
+    placeholder="Nombre del operador",
+    disabled=operador_disabled
+)
+
+# ---------------- No. de Unidad | Marca | Modelo | No. de Unidad Externo ----------------
+c1, c2, c3, c4 = st.columns([2,2,2,3])
 
 # Determine options and disabled state
 if tipo_unidad_operador == "Tractores":
@@ -182,7 +182,7 @@ if tipo_unidad_operador == "Tractores":
     )
     no_unidad_disabled = False
 elif tipo_unidad_operador == "Remolques":
-    unidad_options = ["Selecciona Unidad"] + sorted(
+    unidad_options = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
         catalogos_filtrados["CAJA"].dropna().astype(str).str.strip().unique().tolist()
     )
     no_unidad_disabled = False
@@ -205,12 +205,19 @@ if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
     ].iloc[0]
     marca_valor = str(fila["MARCA"]).strip()
     modelo_valor = str(fila["MODELO"]).strip()
-elif tipo_unidad_operador == "Remolques" and no_unidad != "Selecciona Unidad":
-    fila = catalogos_filtrados[
-        catalogos_filtrados["CAJA"].astype(str).str.strip() == no_unidad
-    ].iloc[0]
-    marca_valor = str(fila.get("MARCA", "")).strip()
-    modelo_valor = str(fila.get("MODELO", "")).strip()
+elif tipo_unidad_operador == "Remolques":
+    if no_unidad == "REMOLQUE EXTERNO":
+        marca_valor = "EXTERNO"
+        modelo_valor = "0000"
+    elif no_unidad != "Selecciona Unidad":
+        fila = catalogos_filtrados[
+            catalogos_filtrados["CAJA"].astype(str).str.strip() == no_unidad
+        ].iloc[0]
+        marca_valor = str(fila.get("MARCA", "")).strip()
+        modelo_valor = str(fila.get("MODELO", "")).strip()
+    else:
+        marca_valor = ""
+        modelo_valor = ""
 else:
     marca_valor = ""
     modelo_valor = ""
@@ -219,6 +226,12 @@ with c2:
     marca = st.text_input("Marca", value=marca_valor, disabled=True)
 with c3:
     modelo = st.text_input("Modelo", value=modelo_valor, disabled=True)
+with c4:
+    no_unidad_externo = st.text_input(
+        "No. de Unidad Externo",
+        disabled=no_unidad != "REMOLQUE EXTERNO",
+        placeholder="Escribe información del remolque externo"
+    )
 
 # ---------------- Tipo de Caja ----------------
 if tipo_unidad_operador == "Remolques":
@@ -241,18 +254,15 @@ descripcion_problema = st.text_area("Descripción del problema", height=120)
 # ---------------- Generó Multa ----------------
 genero_multa = st.checkbox("¿Generó multa?")
 
-# ---------------- No. de Inspección ----------------
-numero_inspeccion_disabled = not genero_multa
+# ---------------- No. de Inspección & Reparación que generó multa ----------------
 numero_inspeccion = st.text_input(
     "No. de Inspección",
-    disabled=numero_inspeccion_disabled
+    disabled=not genero_multa
 )
-
-# ---------------- Reparación que generó multa ----------------
 reparacion_multa = st.text_area(
     "Reparación que generó multa",
     height=100,
-    disabled=numero_inspeccion_disabled
+    disabled=not genero_multa
 )
 
 # =================================
