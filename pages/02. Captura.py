@@ -106,9 +106,15 @@ st.subheader("Datos del Reporte")
 st.divider()
 
 fecha_reporte = st.date_input("Fecha de reporte", value=date.today())
-numero_reporte = st.text_input("No. de reporte", placeholder="Ej. REP-2026-001")
+
+numero_reporte = st.text_input(
+    "No. de reporte",
+    placeholder="Folio generado al guardar",
+    disabled=True
+)
+
 capturo = st.text_input("Capturó", placeholder="Nombre del responsable")
-estado = st.selectbox("Estado", ["EDICION"])
+estado = st.selectbox("Estado", ["Edicion", "Proceso", "Terminado"])
 
 # =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
@@ -228,7 +234,7 @@ if empresa != st.session_state.empresa_prev:
             "Seleccionar",
             "Artículo",
             "Descripción",
-            "Tipo",
+            "Tipo quitar--",
             "Precio MXP",
             "Iva",
             "Cantidad",
