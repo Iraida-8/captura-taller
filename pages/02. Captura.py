@@ -114,7 +114,11 @@ numero_reporte = st.text_input(
 )
 
 capturo = st.text_input("Capturó", placeholder="Nombre del responsable")
-estado = st.selectbox("Estado", ["Edicion", "Proceso", "Terminado"])
+
+estado = st.selectbox(
+    "Estado",
+    ["----", "Edicion", "Proceso", "Terminado"]
+)
 
 # =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
@@ -122,99 +126,133 @@ estado = st.selectbox("Estado", ["Edicion", "Proceso", "Terminado"])
 st.subheader("Información del Operador")
 st.divider()
 
+# ---------------- Empresa ----------------
 empresa = st.selectbox(
     "Empresa",
     ["Selecciona Empresa"] + empresas,
     index=0
 )
 
+# ---------------- Tipo de Reporte ----------------
+tipo_reporte = st.selectbox(
+    "Tipo de Reporte",
+    ["Selecciona tipo de reporte",
+     "Orden de Reparacion",
+     "Orden de entrega de Material",
+     "Orden Correctivo",
+     "Orden Preventivo",
+     "Orden Alineacion"],
+    index=0
+)
+
+# ---------------- Tipo de Unidad ----------------
+tipo_unidad_operador = st.selectbox(
+    "Tipo de Unidad",
+    ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
+    index=0
+)
+
+# ---------------- Operador ----------------
+operador_disabled = tipo_unidad_operador != "Tractores"
+operador = st.text_input(
+    "Operador",
+    placeholder="Nombre del operador",
+    disabled=operador_disabled
+)
+
 # -------- UNIDADES FILTRADAS POR EMPRESA --------
 if empresa and empresa != "Selecciona Empresa":
-    unidades_filtradas = (
-        catalogos_df[
-            catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
-        ]["CAJA"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .unique()
-        .tolist()
-    )
-else:
-    unidades_filtradas = []
-
-# -------- TRACTORES FILTRADOS POR EMPRESA --------
-if empresa and empresa != "Selecciona Empresa":
+    catalogos_filtrados = catalogos_df[
+        catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
+    ]
     tractores_filtrados_df = tractores_df[
         tractores_df["EMPRESA"].astype(str).str.strip() == empresa
     ]
-    lista_tractores = (
-        tractores_filtrados_df["TRACTOR"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .unique()
-        .tolist()
-    )
 else:
+    catalogos_filtrados = pd.DataFrame()
     tractores_filtrados_df = pd.DataFrame()
-    lista_tractores = []
 
-# -------- TRACTOR | MARCA | MODELO (MISMA FILA) --------
+# ---------------- No. de Unidad | Marca | Modelo ----------------
 c1, c2, c3 = st.columns(3)
 
+# Determine options and disabled state
+if tipo_unidad_operador == "Tractores":
+    unidad_options = ["Selecciona Unidad"] + sorted(
+        tractores_filtrados_df["TRACTOR"].dropna().astype(str).str.strip().unique().tolist()
+    )
+    no_unidad_disabled = False
+elif tipo_unidad_operador == "Remolques":
+    unidad_options = ["Selecciona Unidad"] + sorted(
+        catalogos_filtrados["CAJA"].dropna().astype(str).str.strip().unique().tolist()
+    )
+    no_unidad_disabled = False
+else:
+    unidad_options = ["Selecciona Unidad"]
+    no_unidad_disabled = True
+
 with c1:
-    tractor = st.selectbox(
-        "Tractor",
-        ["Selecciona Unidad"] + sorted(lista_tractores),
-        index=0
+    no_unidad = st.selectbox(
+        "No. de Unidad",
+        unidad_options,
+        index=0,
+        disabled=no_unidad_disabled
     )
 
-# -------- AUTOFILL MARCA / MODELO --------
-if tractor and tractor != "Selecciona Unidad" and not tractores_filtrados_df.empty:
-    fila_tractor = tractores_filtrados_df[
-        tractores_filtrados_df["TRACTOR"].astype(str).str.strip() == tractor
+# Auto-fill Marca / Modelo
+if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
+    fila = tractores_filtrados_df[
+        tractores_filtrados_df["TRACTOR"].astype(str).str.strip() == no_unidad
     ].iloc[0]
-
-    marca_valor = str(fila_tractor["MARCA"]).strip()
-    modelo_valor = str(fila_tractor["MODELO"]).strip()
+    marca_valor = str(fila["MARCA"]).strip()
+    modelo_valor = str(fila["MODELO"]).strip()
+elif tipo_unidad_operador == "Remolques" and no_unidad != "Selecciona Unidad":
+    fila = catalogos_filtrados[
+        catalogos_filtrados["CAJA"].astype(str).str.strip() == no_unidad
+    ].iloc[0]
+    marca_valor = str(fila.get("MARCA", "")).strip()
+    modelo_valor = str(fila.get("MODELO", "")).strip()
 else:
     marca_valor = ""
     modelo_valor = ""
 
 with c2:
     marca = st.text_input("Marca", value=marca_valor, disabled=True)
-
 with c3:
     modelo = st.text_input("Modelo", value=modelo_valor, disabled=True)
 
-tipo_unidad = st.selectbox(
+# ---------------- Tipo de Caja ----------------
+if tipo_unidad_operador == "Remolques":
+    tipo_caja_options = ["Selecciona Caja", "Caja seca", "Caja fria"]
+    tipo_caja_disabled = False
+else:
+    tipo_caja_options = ["Caja no aplicable"]
+    tipo_caja_disabled = True
+
+tipo_caja = st.selectbox(
     "Tipo de Caja",
-    ["Selecciona Caja", "Caja seca", "Termo frio"],
-    index=0
+    tipo_caja_options,
+    index=0,
+    disabled=tipo_caja_disabled
 )
 
-unidad = st.selectbox(
-    "Numero de Caja",
-    ["Selecciona Unidad"] + sorted(unidades_filtradas),
-    index=0
-)
-
-operador = st.text_input("Operador", placeholder="Nombre del operador")
-tipo_reporte = st.selectbox("Tipo de Reporte", ["Reporte de reparación"])
-
+# ---------------- Descripción ----------------
 descripcion_problema = st.text_area("Descripción del problema", height=120)
 
-col1, col2 = st.columns([2, 1])
-with col1:
-    numero_inspeccion = st.text_input("No. de Inspección")
-with col2:
-    genero_multa = st.checkbox("¿Generó multa?")
+# ---------------- Generó Multa ----------------
+genero_multa = st.checkbox("¿Generó multa?")
 
+# ---------------- No. de Inspección ----------------
+numero_inspeccion_disabled = not genero_multa
+numero_inspeccion = st.text_input(
+    "No. de Inspección",
+    disabled=numero_inspeccion_disabled
+)
+
+# ---------------- Reparación que generó multa ----------------
 reparacion_multa = st.text_area(
     "Reparación que generó multa",
     height=100,
-    disabled=not genero_multa
+    disabled=numero_inspeccion_disabled
 )
 
 # =================================
