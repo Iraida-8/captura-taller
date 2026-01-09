@@ -102,8 +102,8 @@ st.title("🛠️ Captura Pase de Taller")
 # =================================
 # SECCIÓN 1 — DATOS DEL REPORTE
 # =================================
-st.subheader("Datos del Reporte")
 st.divider()
+st.subheader("Datos del Reporte")
 
 fecha_reporte = st.date_input("Fecha de reporte", value=date.today())
 
@@ -123,8 +123,8 @@ estado = st.selectbox(
 # =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
 # =================================
-st.subheader("Información del Operador")
 st.divider()
+st.subheader("Información del Operador")
 
 # ---------------- Empresa ----------------
 empresa = st.selectbox(
@@ -268,8 +268,8 @@ reparacion_multa = st.text_area(
 # =================================
 # SECCIÓN 3 — ARTÍCULOS / ACTIVIDADES
 # =================================
-st.subheader("Artículos / Actividades")
 st.divider()
+st.subheader("Artículos / Actividades")
 
 if "empresa_prev" not in st.session_state:
     st.session_state.empresa_prev = empresa
@@ -302,7 +302,6 @@ edited_df = st.data_editor(
 # =================================
 # TOTAL SELECCIONADO
 # =================================
-st.divider()
 
 total_seleccionado = (
     edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"].sum()
