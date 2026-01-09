@@ -239,3 +239,24 @@ if not edited_df.empty:
     )
 
     st.session_state.articulos_df.update(edited_df)
+
+# =================================
+# TOTAL SELECCIONADO (CHECKMARK)
+# =================================
+st.divider()
+
+if not edited_df.empty:
+    total_seleccionado = (
+        edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"]
+        .sum()
+    )
+else:
+    total_seleccionado = 0.0
+
+col_total_1, col_total_2 = st.columns([3, 1])
+
+with col_total_2:
+    st.metric(
+        label="Total Seleccionado MXN",
+        value=f"$ {total_seleccionado:,.2f}"
+    )
