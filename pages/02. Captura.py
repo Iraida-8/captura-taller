@@ -19,6 +19,12 @@ CATALOGOS_URL = (
     "/export?format=csv&gid=0"
 )
 
+TRACTORES_URL = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1qlIcKouGS2cxsCsCdNh5pMgLfWXj41dXfaeq5cyktZ8"
+    "/export?format=csv&gid=1152583226"
+)
+
 IGLOO_ARTICULOS_URL = (
     "https://docs.google.com/spreadsheets/d/"
     "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
@@ -31,6 +37,7 @@ IGLOO_ARTICULOS_URL = (
 @st.cache_data(ttl=3600)
 def cargar_catalogos():
     df = pd.read_csv(CATALOGOS_URL)
+    df.columns = df.columns.str.strip()
 
     empresas = (
         df["EMPRESA"]
@@ -41,19 +48,13 @@ def cargar_catalogos():
         .tolist()
     )
 
-    unidades = (
-        df["CAJA"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .unique()
-        .tolist()
-    )
+    return df, sorted(empresas)
 
-    return {
-        "empresas": sorted(empresas),
-        "unidades": sorted(unidades)
-    }
+@st.cache_data(ttl=3600)
+def cargar_tractores():
+    df = pd.read_csv(TRACTORES_URL)
+    df.columns = df.columns.str.strip()
+    return df
 
 @st.cache_data(ttl=3600)
 def cargar_articulos_igloo():
@@ -70,7 +71,6 @@ def cargar_articulos_igloo():
 
     precio = df["PU"].apply(limpiar_numero).astype(float)
     iva_raw = df["Tasaiva"].apply(limpiar_numero).astype(float)
-
     iva = iva_raw.apply(lambda x: x / 100 if x >= 1 else x)
 
     df_final = pd.DataFrame({
@@ -86,14 +86,13 @@ def cargar_articulos_igloo():
     })
 
     df_final["Total MXN"] = (
-        df_final["Precio MXP"]
-        * (1 + df_final["Iva"])
-        * df_final["Cantidad"]
+        df_final["Precio MXP"] * (1 + df_final["Iva"]) * df_final["Cantidad"]
     )
 
     return df_final
 
-catalogos = cargar_catalogos()
+catalogos_df, empresas = cargar_catalogos()
+tractores_df = cargar_tractores()
 
 # =================================
 # Title
@@ -117,9 +116,84 @@ estado = st.selectbox("Estado", ["EDICION"])
 st.subheader("Información del Operador")
 st.divider()
 
-empresa = st.selectbox("Empresa", catalogos["empresas"])
-tipo_unidad = st.selectbox("Tipo de Unidad", ["Caja seca", "Termo frio"])
-unidad = st.selectbox("Unidad", catalogos["unidades"])
+empresa = st.selectbox(
+    "Empresa",
+    ["Selecciona Empresa"] + empresas,
+    index=0
+)
+
+# -------- UNIDADES FILTRADAS POR EMPRESA --------
+if empresa and empresa != "Selecciona Empresa":
+    unidades_filtradas = (
+        catalogos_df[
+            catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
+        ]["CAJA"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
+else:
+    unidades_filtradas = []
+
+# -------- TRACTORES FILTRADOS POR EMPRESA --------
+if empresa and empresa != "Selecciona Empresa":
+    tractores_filtrados_df = tractores_df[
+        tractores_df["EMPRESA"].astype(str).str.strip() == empresa
+    ]
+    lista_tractores = (
+        tractores_filtrados_df["TRACTOR"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
+else:
+    tractores_filtrados_df = pd.DataFrame()
+    lista_tractores = []
+
+# -------- TRACTOR | MARCA | MODELO (MISMA FILA) --------
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    tractor = st.selectbox(
+        "Tractor",
+        ["Selecciona Unidad"] + sorted(lista_tractores),
+        index=0
+    )
+
+# -------- AUTOFILL MARCA / MODELO --------
+if tractor and tractor != "Selecciona Unidad" and not tractores_filtrados_df.empty:
+    fila_tractor = tractores_filtrados_df[
+        tractores_filtrados_df["TRACTOR"].astype(str).str.strip() == tractor
+    ].iloc[0]
+
+    marca_valor = str(fila_tractor["MARCA"]).strip()
+    modelo_valor = str(fila_tractor["MODELO"]).strip()
+else:
+    marca_valor = ""
+    modelo_valor = ""
+
+with c2:
+    marca = st.text_input("Marca", value=marca_valor, disabled=True)
+
+with c3:
+    modelo = st.text_input("Modelo", value=modelo_valor, disabled=True)
+
+tipo_unidad = st.selectbox(
+    "Tipo de Caja",
+    ["Selecciona Caja", "Caja seca", "Termo frio"],
+    index=0
+)
+
+unidad = st.selectbox(
+    "Numero de Caja",
+    ["Selecciona Unidad"] + sorted(unidades_filtradas),
+    index=0
+)
+
 operador = st.text_input("Operador", placeholder="Nombre del operador")
 tipo_reporte = st.selectbox("Tipo de Reporte", ["Reporte de reparación"])
 
@@ -143,24 +217,10 @@ reparacion_multa = st.text_area(
 st.subheader("Artículos / Actividades")
 st.divider()
 
-# ---------------------------------
-# Column filters
-# ---------------------------------
-f1, f2, f3, f4, f5, f6, f7, f8 = st.columns([1, 2, 3, 2, 2, 2, 2, 2])
+if "empresa_prev" not in st.session_state:
+    st.session_state.empresa_prev = empresa
 
-with f1: filtro_sel = st.text_input(" ", placeholder="✔")
-with f2: filtro_articulo = st.text_input(" ", placeholder="Artículo")
-with f3: filtro_desc = st.text_input(" ", placeholder="Descripción")
-with f4: filtro_tipo = st.text_input(" ", placeholder="Tipo")
-with f5: filtro_precio = st.text_input(" ", placeholder="Precio")
-with f6: filtro_iva = st.text_input(" ", placeholder="IVA")
-with f7: filtro_cantidad = st.text_input(" ", placeholder="Cantidad")
-with f8: filtro_mtto = st.text_input(" ", placeholder="Mtto")
-
-# ---------------------------------
-# Initialize session state
-# ---------------------------------
-if "articulos_df" not in st.session_state:
+if empresa != st.session_state.empresa_prev:
     if empresa == "IGLOO TRANSPORT":
         st.session_state.articulos_df = cargar_articulos_igloo()
     else:
@@ -175,88 +235,24 @@ if "articulos_df" not in st.session_state:
             "Total MXN",
             "Tipo Mtto"
         ])
+    st.session_state.empresa_prev = empresa
 
-df_base = st.session_state.articulos_df
+df_base = st.session_state.get("articulos_df", pd.DataFrame())
 
-# ---------------------------------
-# Filtering logic
-# ---------------------------------
-def match(value, filtro):
-    return filtro.lower() in str(value).lower()
-
-df_filtrado = df_base[
-    df_base["Artículo"].apply(match, filtro=filtro_articulo)
-    & df_base["Descripción"].apply(match, filtro=filtro_desc)
-    & df_base["Tipo"].apply(match, filtro=filtro_tipo)
-    & df_base["Precio MXP"].apply(match, filtro=filtro_precio)
-    & df_base["Iva"].apply(match, filtro=filtro_iva)
-    & df_base["Cantidad"].apply(match, filtro=filtro_cantidad)
-    & df_base["Tipo Mtto"].apply(match, filtro=filtro_mtto)
-] if not df_base.empty else df_base
-
-# ---------------------------------
-# Table editor
-# ---------------------------------
 edited_df = st.data_editor(
-    df_filtrado,
+    df_base,
     key="editor_articulos",
-    hide_index=True,
-    column_config={
-        "Seleccionar": st.column_config.CheckboxColumn("✔", width="small"),
-        "Artículo": st.column_config.TextColumn("Artículo"),
-        "Descripción": st.column_config.TextColumn("Descripción"),
-        "Tipo": st.column_config.TextColumn("Tipo"),
-        "Precio MXP": st.column_config.NumberColumn("Precio MXP", format="$ %.2f"),
-        "Iva": st.column_config.NumberColumn("IVA", format="%.2f"),
-        "Cantidad": st.column_config.SelectboxColumn(
-            "Cantidad",
-            options=list(range(1, 21)),
-            default=1
-        ),
-        "Total MXN": st.column_config.NumberColumn("Total MXN", format="$ %.2f"),
-        "Tipo Mtto": st.column_config.TextColumn("Tipo Mtto")
-    },
-    disabled=[
-        "Artículo",
-        "Descripción",
-        "Tipo",
-        "Precio MXP",
-        "Iva",
-        "Tipo Mtto",
-        "Total MXN"
-    ]
+    hide_index=True
 )
 
-# ---------------------------------
-# Instant recalculation
-# ---------------------------------
-if not edited_df.empty:
-    edited_df = edited_df.copy()
-    edited_df["Total MXN"] = (
-        edited_df["Precio MXP"]
-        * (1 + edited_df["Iva"])
-        * edited_df["Cantidad"]
-    )
-
-    st.session_state.articulos_df.update(edited_df)
-
 # =================================
-# TOTAL SELECCIONADO (CHECKMARK)
+# TOTAL SELECCIONADO
 # =================================
 st.divider()
 
-if not edited_df.empty:
-    total_seleccionado = (
-        edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"]
-        .sum()
-    )
-else:
-    total_seleccionado = 0.0
+total_seleccionado = (
+    edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"].sum()
+    if not edited_df.empty else 0.0
+)
 
-col_total_1, col_total_2 = st.columns([3, 1])
-
-with col_total_2:
-    st.metric(
-        label="Total Seleccionado MXN",
-        value=f"$ {total_seleccionado:,.2f}"
-    )
+st.metric("Total Seleccionado MXN", f"$ {total_seleccionado:,.2f}")
