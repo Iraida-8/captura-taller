@@ -282,7 +282,6 @@ if empresa != st.session_state.empresa_prev:
             "Seleccionar",
             "Artículo",
             "Descripción",
-            "Tipo quitar--",
             "Precio MXP",
             "Iva",
             "Cantidad",
