@@ -47,7 +47,6 @@ def cargar_catalogos():
         .unique()
         .tolist()
     )
-
     return df, sorted(empresas)
 
 @st.cache_data(ttl=3600)
@@ -61,35 +60,25 @@ def cargar_articulos_igloo():
     df = pd.read_csv(IGLOO_ARTICULOS_URL)
     df.columns = df.columns.str.strip()
 
-    def limpiar_numero(valor):
-        return (
-            str(valor)
-            .replace("$", "")
-            .replace(",", "")
-            .strip()
-        )
+    def limpiar(valor):
+        return str(valor).replace("$", "").replace(",", "").strip()
 
-    precio = df["PU"].apply(limpiar_numero).astype(float)
-    iva_raw = df["Tasaiva"].apply(limpiar_numero).astype(float)
+    precio = df["PrecioParte"].apply(limpiar).astype(float)
+    iva_raw = df["Tasaiva"].apply(limpiar).astype(float)
     iva = iva_raw.apply(lambda x: x / 100 if x >= 1 else x)
 
-    df_final = pd.DataFrame({
+    base = pd.DataFrame({
         "Seleccionar": False,
-        "Artículo": df["TipoCompra"],
+        "Artículo": df["Parte"],
         "Descripción": df["Parte"],
-        "Tipo": df["TipoCompra"],
         "Precio MXP": precio,
         "Iva": iva,
         "Cantidad": 1,
-        "Total MXN": 0.0,
+        "Total MXN": precio * (1 + iva),
         "Tipo Mtto": df["Tipo de reparacion"]
     })
 
-    df_final["Total MXN"] = (
-        df_final["Precio MXP"] * (1 + df_final["Iva"]) * df_final["Cantidad"]
-    )
-
-    return df_final
+    return base
 
 catalogos_df, empresas = cargar_catalogos()
 tractores_df = cargar_tractores()
@@ -107,18 +96,12 @@ st.subheader("Datos del Reporte")
 
 fecha_reporte = st.date_input("Fecha de reporte", value=date.today())
 
-numero_reporte = st.text_input(
-    "No. de reporte",
-    placeholder="Folio generado al guardar",
-    disabled=True
-)
+st.text_input("No. de Folio", disabled=True)
+st.text_input("No. de Reporte", disabled=True)
 
-capturo = st.text_input("Capturó", placeholder="Nombre del responsable")
+capturo = st.text_input("Capturó")
 
-estado = st.selectbox(
-    "Estado",
-    ["----", "Edicion", "Proceso", "Terminado"]
-)
+estado = st.selectbox("Estado", ["----", "Edicion", "Proceso", "Terminado"])
 
 # =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
@@ -126,144 +109,137 @@ estado = st.selectbox(
 st.divider()
 st.subheader("Información del Operador")
 
-# ---------------- Empresa ----------------
-empresa = st.selectbox(
-    "Empresa",
-    ["Selecciona Empresa"] + empresas,
-    index=0
-)
+empresa = st.selectbox("Empresa", ["Selecciona Empresa"] + empresas)
 
-# ---------------- Tipo de Reporte ----------------
 tipo_reporte = st.selectbox(
     "Tipo de Reporte",
-    ["Selecciona tipo de reporte",
-     "Orden de Reparacion",
-     "Orden de entrega de Material",
-     "Orden Correctivo",
-     "Orden Preventivo",
-     "Orden Alineacion"],
-    index=0
+    [
+        "Selecciona tipo de reporte",
+        "Orden de Reparacion",
+        "Orden de entrega de Material",
+        "Orden Correctivo",
+        "Orden Preventivo",
+        "Orden Alineacion"
+    ]
 )
 
-# ---------------- Tipo de Unidad ----------------
 tipo_unidad_operador = st.selectbox(
     "Tipo de Unidad",
-    ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
-    index=0
+    ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
 )
 
-# -------- UNIDADES FILTRADAS POR EMPRESA --------
-if empresa and empresa != "Selecciona Empresa":
-    catalogos_filtrados = catalogos_df[
-        catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
-    ]
-    tractores_filtrados_df = tractores_df[
-        tractores_df["EMPRESA"].astype(str).str.strip() == empresa
-    ]
+if empresa != "Selecciona Empresa":
+    catalogos_filtrados = catalogos_df[catalogos_df["EMPRESA"].astype(str).str.strip() == empresa]
+    tractores_filtrados = tractores_df[tractores_df["EMPRESA"].astype(str).str.strip() == empresa]
 else:
     catalogos_filtrados = pd.DataFrame()
-    tractores_filtrados_df = pd.DataFrame()
+    tractores_filtrados = pd.DataFrame()
 
-# ---------------- Operador ----------------
-operador_disabled = tipo_unidad_operador != "Tractores"
 operador = st.text_input(
     "Operador",
-    placeholder="Nombre del operador",
-    disabled=operador_disabled
+    disabled=tipo_unidad_operador != "Tractores"
 )
 
-# ---------------- No. de Unidad | Marca | Modelo | No. de Unidad Externo ----------------
-c1, c2, c3, c4 = st.columns([2,2,2,3])
+c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
 
-# Determine options and disabled state
 if tipo_unidad_operador == "Tractores":
-    unidad_options = ["Selecciona Unidad"] + sorted(
-        tractores_filtrados_df["TRACTOR"].dropna().astype(str).str.strip().unique().tolist()
-    )
-    no_unidad_disabled = False
+    unidades = ["Selecciona Unidad"] + sorted(tractores_filtrados["TRACTOR"].dropna().astype(str))
 elif tipo_unidad_operador == "Remolques":
-    unidad_options = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
-        catalogos_filtrados["CAJA"].dropna().astype(str).str.strip().unique().tolist()
-    )
-    no_unidad_disabled = False
+    unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(catalogos_filtrados["CAJA"].dropna().astype(str))
 else:
-    unidad_options = ["Selecciona Unidad"]
-    no_unidad_disabled = True
+    unidades = ["Selecciona Unidad"]
 
 with c1:
-    no_unidad = st.selectbox(
-        "No. de Unidad",
-        unidad_options,
-        index=0,
-        disabled=no_unidad_disabled
-    )
+    no_unidad = st.selectbox("No. de Unidad", unidades, disabled=tipo_unidad_operador == "Seleccionar tipo de unidad")
 
-# Auto-fill Marca / Modelo
+marca_valor = ""
+modelo_valor = ""
+
 if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
-    fila = tractores_filtrados_df[
-        tractores_filtrados_df["TRACTOR"].astype(str).str.strip() == no_unidad
-    ].iloc[0]
-    marca_valor = str(fila["MARCA"]).strip()
-    modelo_valor = str(fila["MODELO"]).strip()
+    fila = tractores_filtrados[tractores_filtrados["TRACTOR"].astype(str) == no_unidad].iloc[0]
+    marca_valor = fila["MARCA"]
+    modelo_valor = fila["MODELO"]
+
 elif tipo_unidad_operador == "Remolques":
     if no_unidad == "REMOLQUE EXTERNO":
         marca_valor = "EXTERNO"
         modelo_valor = "0000"
     elif no_unidad != "Selecciona Unidad":
-        fila = catalogos_filtrados[
-            catalogos_filtrados["CAJA"].astype(str).str.strip() == no_unidad
-        ].iloc[0]
-        marca_valor = str(fila.get("MARCA", "")).strip()
-        modelo_valor = str(fila.get("MODELO", "")).strip()
-    else:
-        marca_valor = ""
-        modelo_valor = ""
-else:
-    marca_valor = ""
-    modelo_valor = ""
+        fila = catalogos_filtrados[catalogos_filtrados["CAJA"].astype(str) == no_unidad].iloc[0]
+        marca_valor = fila.get("MARCA", "")
+        modelo_valor = fila.get("MODELO", "")
 
 with c2:
-    marca = st.text_input("Marca", value=marca_valor, disabled=True)
+    st.text_input("Marca", value=marca_valor, disabled=True)
 with c3:
-    modelo = st.text_input("Modelo", value=modelo_valor, disabled=True)
+    st.text_input("Modelo", value=modelo_valor, disabled=True)
 with c4:
-    no_unidad_externo = st.text_input(
+    st.text_input(
         "No. de Unidad Externo",
-        disabled=no_unidad != "REMOLQUE EXTERNO",
-        placeholder="Escribe información del remolque externo"
+        disabled=no_unidad != "REMOLQUE EXTERNO"
     )
-
-# ---------------- Tipo de Caja ----------------
-if tipo_unidad_operador == "Remolques":
-    tipo_caja_options = ["Selecciona Caja", "Caja seca", "Caja fria"]
-    tipo_caja_disabled = False
-else:
-    tipo_caja_options = ["Caja no aplicable"]
-    tipo_caja_disabled = True
 
 tipo_caja = st.selectbox(
     "Tipo de Caja",
-    tipo_caja_options,
-    index=0,
-    disabled=tipo_caja_disabled
+    ["Selecciona Caja", "Caja seca", "Caja fria"] if tipo_unidad_operador == "Remolques" else ["Caja no aplicable"],
+    disabled=tipo_unidad_operador != "Remolques"
 )
 
-# ---------------- Descripción ----------------
-descripcion_problema = st.text_area("Descripción del problema", height=120)
+descripcion_problema = st.text_area("Descripción del problema")
 
-# ---------------- Generó Multa ----------------
 genero_multa = st.checkbox("¿Generó multa?")
 
-# ---------------- No. de Inspección & Reparación que generó multa ----------------
-numero_inspeccion = st.text_input(
-    "No. de Inspección",
-    disabled=not genero_multa
-)
-reparacion_multa = st.text_area(
-    "Reparación que generó multa",
-    height=100,
-    disabled=not genero_multa
-)
+numero_inspeccion = st.text_input("No. de Inspección", disabled=not genero_multa)
+reparacion_multa = st.text_area("Reparación que generó multa", disabled=not genero_multa)
+
+# =================================
+# BOTÓN + MODAL (SOLO AÑADIDO)
+# =================================
+st.divider()
+
+if "mostrar_modal" not in st.session_state:
+    st.session_state.mostrar_modal = False
+
+if st.button("Añadir Servicios o Refacciones"):
+    st.session_state.mostrar_modal = True
+
+if st.session_state.mostrar_modal:
+
+    @st.dialog("Añadir Servicios o Refacciones")
+    def modal():
+        igloo_df = cargar_articulos_igloo()
+
+        tipo_mtto = st.selectbox(
+            "Tipo de Mantenimiento",
+            sorted(igloo_df["Tipo Mtto"].dropna().unique())
+        )
+
+        refaccion = st.selectbox(
+            "Refacción",
+            igloo_df["Artículo"].tolist()
+        )
+
+        fila = igloo_df[igloo_df["Artículo"] == refaccion].iloc[0]
+
+        st.number_input("Precio de Parte MXN", value=float(fila["Precio MXP"]), disabled=True)
+
+        cantidad = st.number_input("Cantidad", min_value=1, value=1)
+
+        if st.button("Agregar"):
+            nueva = fila.copy()
+            nueva["Cantidad"] = cantidad
+            nueva["Total MXN"] = cantidad * fila["Precio MXP"] * (1 + fila["Iva"])
+
+            st.session_state.articulos_df = pd.concat(
+                [st.session_state.get("articulos_df", pd.DataFrame()), nueva.to_frame().T],
+                ignore_index=True
+            )
+            st.session_state.mostrar_modal = False
+
+        if st.button("Cancelar"):
+            st.session_state.mostrar_modal = False
+
+    modal()
 
 # =================================
 # SECCIÓN 3 — ARTÍCULOS / ACTIVIDADES
@@ -271,40 +247,23 @@ reparacion_multa = st.text_area(
 st.divider()
 st.subheader("Artículos / Actividades")
 
-if "empresa_prev" not in st.session_state:
-    st.session_state.empresa_prev = empresa
-
-if empresa != st.session_state.empresa_prev:
-    if empresa == "IGLOO TRANSPORT":
-        st.session_state.articulos_df = cargar_articulos_igloo()
-    else:
-        st.session_state.articulos_df = pd.DataFrame(columns=[
-            "Seleccionar",
-            "Artículo",
-            "Descripción",
-            "Precio MXP",
-            "Iva",
-            "Cantidad",
-            "Total MXN",
-            "Tipo Mtto"
-        ])
-    st.session_state.empresa_prev = empresa
-
-df_base = st.session_state.get("articulos_df", pd.DataFrame())
+if "articulos_df" not in st.session_state:
+    st.session_state.articulos_df = pd.DataFrame(columns=[
+        "Seleccionar",
+        "Artículo",
+        "Descripción",
+        "Precio MXP",
+        "Iva",
+        "Cantidad",
+        "Total MXN",
+        "Tipo Mtto"
+    ])
 
 edited_df = st.data_editor(
-    df_base,
-    key="editor_articulos",
-    hide_index=True
+    st.session_state.articulos_df,
+    hide_index=True,
+    key="editor"
 )
 
-# =================================
-# TOTAL SELECCIONADO
-# =================================
-
-total_seleccionado = (
-    edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"].sum()
-    if not edited_df.empty else 0.0
-)
-
-st.metric("Total Seleccionado MXN", f"$ {total_seleccionado:,.2f}")
+total = edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN."].sum() if not edited_df.empty else 0
+st.metric("Total Seleccionado MXN", f"$ {total:,.2f}")
