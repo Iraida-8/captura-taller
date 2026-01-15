@@ -265,5 +265,5 @@ edited_df = st.data_editor(
     key="editor"
 )
 
-total = edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN."].sum() if not edited_df.empty else 0
+total = edited_df.loc[edited_df["Seleccionar"] == True, "Total MXN"].sum() if not edited_df.empty else 0
 st.metric("Total Seleccionado MXN", f"$ {total:,.2f}")
