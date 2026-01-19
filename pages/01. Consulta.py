@@ -21,6 +21,12 @@ IGLOO_ORDENES_URL = (
     "/export?format=csv&gid=770635060"
 )
 
+IGLOO_PARTES_URL = (
+    "https://docs.google.com/spreadsheets/d/"
+    "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
+    "/export?format=csv&gid=410297659"
+)
+
 # =================================
 # LOADERS
 # =================================
@@ -35,8 +41,23 @@ def cargar_ordenes_igloo():
             errors="coerce",
             dayfirst=True
         )
-
         df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
+
+    return df
+
+
+@st.cache_data(ttl=600)
+def cargar_partes_igloo():
+    df = pd.read_csv(IGLOO_PARTES_URL)
+    df.columns = df.columns.str.strip()
+
+    if "Fecha" in df.columns:
+        df["Fecha"] = pd.to_datetime(
+            df["Fecha"],
+            errors="coerce",
+            dayfirst=True
+        )
+        df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -58,7 +79,6 @@ empresa = st.selectbox(
     index=0
 )
 
-# Stop execution until a company is selected
 if empresa == "Selecciona empresa":
     st.info("Selecciona una empresa para consultar las órdenes.")
     st.stop()
@@ -68,21 +88,35 @@ if empresa == "Selecciona empresa":
 # =================================
 if empresa == "IGLOO TRANSPORT":
     df = cargar_ordenes_igloo()
+    df_partes = cargar_partes_igloo()
 else:
     df = pd.DataFrame()
+    df_partes = pd.DataFrame()
 
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
 # =================================
-# ÚLTIMOS 10 REGISTROS
+# ÚLTIMOS 10 REGISTROS (ÓRDENES)
 # =================================
 st.subheader("Últimos 10 Registros")
 
+columnas_resumen = [
+    "Fecha Aceptado",
+    "Fecha Iniciada",
+    "Unidad",
+    "Tipo Unidad",
+    "Reporte",
+    "Descripcion",
+    "Razon Reparacion"
+]
+
+columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
+
 df_ultimos = (
     df.sort_values("FECHA", ascending=False)
-      .head(10)
+      .head(10)[columnas_disponibles]
 )
 
 st.dataframe(
@@ -90,6 +124,45 @@ st.dataframe(
     width="stretch",
     hide_index=True
 )
+
+# =================================
+# ÚLTIMOS 10 REGISTROS (PARTES / ACTIVIDADES)
+# =================================
+st.subheader("Refacciones Recientes")
+
+columnas_partes = [
+    "Fecha",
+    "Parte",
+    "TipoCompra",
+    "PrecioParte",
+    "Cantidad",
+    "Total Correccion"
+]
+
+if not df_partes.empty:
+    columnas_disponibles_partes = [
+        c for c in columnas_partes if c in df_partes.columns
+    ]
+
+    if "Fecha" in columnas_disponibles_partes:
+        df_partes_ultimos = (
+            df_partes.sort_values("Fecha", ascending=False)
+                     .head(10)[columnas_disponibles_partes]
+                     .copy()
+        )
+
+        # Format Fecha ONLY for this table (YY-MM-DD)
+        df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%y-%m-%d")
+
+        st.dataframe(
+            df_partes_ultimos,
+            width="stretch",
+            hide_index=True
+        )
+    else:
+        st.info("La tabla de partes no contiene el campo Fecha.")
+else:
+    st.info("No hay información de partes disponible para esta empresa.")
 
 # =================================
 # FILTROS
