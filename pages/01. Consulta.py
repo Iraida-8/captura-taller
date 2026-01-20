@@ -132,6 +132,7 @@ st.subheader("Refacciones Recientes")
 
 columnas_partes = [
     "Fecha",
+    "Unidad",
     "Parte",
     "TipoCompra",
     "PrecioParte",
