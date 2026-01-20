@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import date
+from PIL import Image
 
 # =================================
 # Page configuration
@@ -52,12 +53,33 @@ if st.session_state.logged_in:
 # LOGIN VIEW
 # =================================
 else:
+    # ---------------------------------
+    # Load and safely resize logo
+    # ---------------------------------
+    logo_path = "/workspaces/captura-taller/PG Brand.png"
+
+    try:
+        img = Image.open(logo_path)
+
+        # Resize for safe display (prevents PIL bomb warning)
+        max_width = 600
+        if img.width > max_width:
+            ratio = max_width / img.width
+            new_size = (max_width, int(img.height * ratio))
+            img = img.resize(new_size, Image.LANCZOS)
+
+        st.image(img, width="stretch")
+
+    except Exception as e:
+        st.warning("No se pudo cargar el logo.")
+
     st.title("Inicio de Sesión")
     st.divider()
+
     st.info(
-    "Actualmente no existen requisitos de inicio de sesión. "
-    "Puedes navegar libremente por los módulos disponibles en la barra lateral izquierda."
-)
+        "Actualmente no existen requisitos de inicio de sesión. "
+        "Puedes navegar libremente por los módulos disponibles en la barra lateral izquierda."
+    )
 
     with st.form("login_form"):
         usuario = st.text_input(
