@@ -54,6 +54,10 @@ if st.session_state.logged_in:
 else:
     st.title("Inicio de Sesión")
     st.divider()
+    st.info(
+    "Actualmente no existen requisitos de inicio de sesión. "
+    "Puedes navegar libremente por los módulos disponibles en la barra lateral izquierda."
+)
 
     with st.form("login_form"):
         usuario = st.text_input(

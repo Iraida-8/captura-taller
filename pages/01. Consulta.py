@@ -126,9 +126,26 @@ st.dataframe(
 )
 
 # =================================
-# ÚLTIMOS 10 REGISTROS (PARTES / ACTIVIDADES)
+# ÚLTIMOS 10 REGISTROS (PARTES)
 # =================================
 st.subheader("Refacciones Recientes")
+
+unidad_partes_sel = None
+
+if not df_partes.empty and "Unidad" in df_partes.columns:
+    unidades_partes = (
+        df_partes["Unidad"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    unidad_partes_sel = st.selectbox(
+        "Filtrar por Unidad",
+        ["Todas"] + sorted(unidades_partes),
+        index=0
+    )
 
 columnas_partes = [
     "Fecha",
@@ -141,18 +158,29 @@ columnas_partes = [
 ]
 
 if not df_partes.empty:
+    df_partes_filtrado = df_partes.copy()
+
+    if (
+        unidad_partes_sel
+        and unidad_partes_sel != "Todas"
+        and "Unidad" in df_partes_filtrado.columns
+    ):
+        df_partes_filtrado = df_partes_filtrado[
+            df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
+        ]
+
     columnas_disponibles_partes = [
-        c for c in columnas_partes if c in df_partes.columns
+        c for c in columnas_partes if c in df_partes_filtrado.columns
     ]
 
     if "Fecha" in columnas_disponibles_partes:
         df_partes_ultimos = (
-            df_partes.sort_values("Fecha", ascending=False)
-                     .head(10)[columnas_disponibles_partes]
-                     .copy()
+            df_partes_filtrado
+            .sort_values("Fecha", ascending=False)
+            .head(10)[columnas_disponibles_partes]
+            .copy()
         )
 
-        # Format Fecha ONLY for this table (YY-MM-DD)
         df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%y-%m-%d")
 
         st.dataframe(
@@ -182,7 +210,7 @@ with c1:
 with c2:
     fecha_fin = st.date_input(
         "Fecha fin",
-        value=df["FECHA"].max().date()
+        value=date.today()
     )
 
 with c3:
@@ -213,13 +241,19 @@ if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
     ]
 
 # =================================
-# TABLA COMPLETA
+# TABLA COMPLETA (REMOVE COLUMNS)
 # =================================
 st.divider()
 st.subheader("Todas las Órdenes")
 
+columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+columnas_mostrar = [
+    c for c in df_filtrado.columns if c not in columnas_ocultar
+]
+
 st.dataframe(
-    df_filtrado.sort_values("FECHA", ascending=False),
+    df_filtrado[columnas_mostrar]
+        .sort_values("FECHA", ascending=False),
     width="stretch",
     hide_index=True
 )
