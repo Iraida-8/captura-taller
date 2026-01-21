@@ -48,7 +48,6 @@ TRACTORES_URL = (
 def cargar_catalogos():
     df = pd.read_csv(CATALOGOS_URL)
     df.columns = df.columns.str.strip()
-
     empresas = (
         df["EMPRESA"]
         .dropna()
@@ -79,7 +78,6 @@ def generar_folio(empresa: str) -> str:
         "SET FREIGHT INTERNATIONAL": "SFI",
         "SET LOGIS PLUS": "SLP",
     }
-
     prefijo = prefijos.get(empresa, "XX")
     return f"{prefijo}{str(1).zfill(5)}"
 
@@ -88,7 +86,6 @@ def generar_folio(empresa: str) -> str:
 # =================================
 if "folio_generado" not in st.session_state:
     st.session_state.folio_generado = ""
-
 if "mostrar_confirmacion" not in st.session_state:
     st.session_state.mostrar_confirmacion = False
 
@@ -140,7 +137,10 @@ c1, c2, c3 = st.columns(3)
 with c1:
     st.text_input("OSTE", disabled=True)
 with c2:
-    st.text_input("No. de Reporte", disabled=True)
+    st.text_input(
+        "No. de Reporte",
+        disabled=(tipo_proveedor != "Interno")  # Enabled only if Interno
+    )
 with c3:
     st.text_input(
         "No. de Folio",
@@ -149,77 +149,18 @@ with c3:
     )
 
 # =================================
-# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR (Form #1) simplified
-# =================================
-if tipo_proveedor == "Interno":
-
-    st.divider()
-    st.subheader("Información del Operador (Interno)")
-
-    empresa_interno = st.selectbox(
-        "Empresa",
-        ["Selecciona Empresa"] + empresas,
-        key="empresa_interno"
-    )
-
-    if empresa_interno == "Selecciona Empresa":
-        st.info("Selecciona una empresa para continuar con la captura del pase.")
-        st.stop()
-
-    # Tipo de Reporte + Tipo de Unidad (misma fila)
-    tr1, tr2 = st.columns(2)
-    with tr1:
-        # Fixed value for Tipo de Reporte
-        tipo_reporte_interno = st.text_input(
-            "Tipo de Reporte",
-            value="Entrega de Material",
-            disabled=True,
-            key="tipo_reporte_interno"
-        )
-    with tr2:
-        tipo_unidad_interno = st.selectbox(
-            "Tipo de Unidad",
-            ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
-            key="tipo_unidad_interno"
-        )
-
-    # Operador
-    operador_interno = st.text_input("Operador", key="operador_interno")
-
-
-    # =================================
-    # GUARDAR PASE
-    # =================================
-    st.divider()
-    st.markdown("###")
-
-    if st.button("💾 Guardar Pase", type="primary", width="stretch", key="guardar_interno"):
-        st.session_state.folio_generado = generar_folio(empresa_interno)
-        st.session_state.mostrar_confirmacion = True
-        st.rerun()
-
-    if st.session_state.mostrar_confirmacion:
-
-        @st.dialog("Pase guardado")
-        def confirmacion():
-            st.success("Pase guardado con éxito")
-            st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
-
-            if st.button("Aceptar", key="aceptar_interno"):
-                st.session_state.mostrar_confirmacion = False
-                st.rerun()
-
-        confirmacion()
-
-
-# =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR (Form #2)
 # =================================
-if tipo_proveedor == "Externo":
+# Only show if user selects Interno or Externo
+if tipo_proveedor in ["Interno", "Externo"]:
 
     st.divider()
-    st.subheader("Información del Operador")
+    
+    # Dynamic title based on tipo de proveedor
+    titulo_form = "Pase de Taller Interno" if tipo_proveedor == "Interno" else "Pase de Taller Externo"
+    st.subheader(titulo_form)
 
+    # Empresa
     empresa = st.selectbox(
         "Empresa",
         ["Selecciona Empresa"] + empresas
@@ -229,10 +170,7 @@ if tipo_proveedor == "Externo":
         st.info("Selecciona una empresa para continuar con la captura del pase.")
         st.stop()
 
-    # =================================
-    # CONTENIDO POST-EMPRESA
-    # =================================
-    # 🔹 Tipo de Reporte + Tipo de Unidad (misma fila)
+    # Tipo de Reporte + Tipo de Unidad
     tr1, tr2 = st.columns(2)
     with tr1:
         tipo_reporte = st.selectbox(

@@ -7,6 +7,8 @@ import pandas as pd
 st.set_page_config(
     page_title="Servicios y Refacciones",
     layout="wide"
+
+    
 )
 
 # =================================
@@ -17,7 +19,7 @@ IGLOO_ARTICULOS_URL = (
     "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
     "/export?format=csv&gid=410297659"
 )
-
+st.title("📋 Autorizacion (En Construccion)")
 # =================================
 # Load artículos catálogo
 # =================================
