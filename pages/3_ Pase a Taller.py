@@ -103,29 +103,27 @@ st.title("🛠️ Captura Pase de Taller")
 st.divider()
 st.subheader("Datos del Reporte")
 
-fecha_reporte = st.date_input("Fecha de reporte", value=date.today())
-
-tipo_proveedor = st.selectbox(
-    "Tipo de proveedor",
-    ["----", "Interno", "Externo"]
+fecha_reporte = st.date_input(
+    "Fecha de Reporte",
+    value=date.today()
 )
 
-folio_display = (
-    st.session_state.folio_generado
-    if st.session_state.folio_generado
-    else "folio generado al guardar"
-)
+# 🔹 TIPO DE PROVEEDOR + ESTADO (MISMA FILA)
+tp1, tp2 = st.columns(2)
 
-st.text_input("No. de Folio", value=folio_display, disabled=True)
+with tp1:
+    tipo_proveedor = st.selectbox(
+        "Tipo de Proveedor",
+        ["----", "Interno", "Externo"]
+    )
 
-# 🔹 OSTE + NO. DE REPORTE
-o1, o2 = st.columns(2)
-
-with o1:
-    st.text_input("OSTE", disabled=True)
-
-with o2:
-    st.text_input("No. de Reporte", disabled=True)
+with tp2:
+    st.selectbox(
+        "Estado",
+        ["En Curso / Nuevo"],
+        index=0,
+        disabled=True
+    )
 
 st.text_input(
     "Capturó",
@@ -133,12 +131,27 @@ st.text_input(
     disabled=True
 )
 
-st.selectbox(
-    "Estado",
-    ["En Curso/Nuevo"],
-    index=0,
-    disabled=True
+folio_display = (
+    st.session_state.folio_generado
+    if st.session_state.folio_generado
+    else "Folio generado al guardar"
 )
+
+# 🔹 OSTE + NO. DE REPORTE + NO. DE FOLIO (MISMA FILA)
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.text_input("OSTE", disabled=True)
+
+with c2:
+    st.text_input("No. de Reporte", disabled=True)
+
+with c3:
+    st.text_input(
+        "No. de Folio",
+        value=folio_display,
+        disabled=True
+    )
 
 # =================================
 # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
