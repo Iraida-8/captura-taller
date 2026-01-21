@@ -102,6 +102,23 @@ if df.empty:
 # =================================
 st.subheader("Últimos 10 Registros")
 
+unidad_orden_sel = "Todas"
+
+if "Unidad" in df.columns:
+    unidades_orden = (
+        df["Unidad"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    unidad_orden_sel = st.selectbox(
+        "Filtrar por Unidad",
+        ["Todas"] + sorted(unidades_orden),
+        index=0
+    )
+
 columnas_resumen = [
     "Fecha Aceptado",
     "Fecha Iniciada",
@@ -114,9 +131,17 @@ columnas_resumen = [
 
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
+df_ultimos = df.copy()
+
+if unidad_orden_sel != "Todas" and "Unidad" in df_ultimos.columns:
+    df_ultimos = df_ultimos[
+        df_ultimos["Unidad"].astype(str) == unidad_orden_sel
+    ]
+
 df_ultimos = (
-    df.sort_values("FECHA", ascending=False)
-      .head(10)[columnas_disponibles]
+    df_ultimos
+    .sort_values("FECHA", ascending=False)
+    .head(10)[columnas_disponibles]
 )
 
 st.dataframe(
