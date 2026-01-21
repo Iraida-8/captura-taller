@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import random
 
 # =================================
 # Page configuration
@@ -9,6 +10,21 @@ st.set_page_config(
     page_title="Captura Pase de Taller",
     layout="wide"
 )
+
+# =================================
+# Fake logged-in users (TEMP)
+# =================================
+USUARIOS_FAKE = [
+    "Juan Pérez",
+    "María González",
+    "Carlos Ramírez",
+    "Ana López",
+    "Luis Hernández",
+    "Fernanda Torres"
+]
+
+if "usuario_actual" not in st.session_state:
+    st.session_state.usuario_actual = random.choice(USUARIOS_FAKE)
 
 # =================================
 # Google Sheets configuration
@@ -25,14 +41,10 @@ TRACTORES_URL = (
     "/export?format=csv&gid=1152583226"
 )
 
-# =================================
-# Load catalogs
-# =================================
 @st.cache_data(ttl=3600)
 def cargar_catalogos():
     df = pd.read_csv(CATALOGOS_URL)
     df.columns = df.columns.str.strip()
-
     empresas = (
         df["EMPRESA"]
         .dropna()
@@ -63,16 +75,10 @@ def generar_folio(empresa: str) -> str:
         "SET FREIGHT INTERNATIONAL": "SFI",
         "SET LOGIS PLUS": "SLP",
     }
-
-    prefijo = prefijos.get(empresa, "XX")
-
-    # No persistence yet → start at 1
-    consecutivo = 1
-
-    return f"{prefijo}{str(consecutivo).zfill(5)}"
+    return f"{prefijos.get(empresa, 'XX')}{str(1).zfill(5)}"
 
 # =================================
-# Session state
+# State
 # =================================
 if "folio_generado" not in st.session_state:
     st.session_state.folio_generado = ""
@@ -81,134 +87,160 @@ if "mostrar_confirmacion" not in st.session_state:
     st.session_state.mostrar_confirmacion = False
 
 # =================================
-# Title
+# HEADER
 # =================================
 st.title("🛠️ Captura Pase de Taller")
 
 # =================================
-# SECCIÓN 1 — DATOS DEL REPORTE
+# DATOS DEL REPORTE
 # =================================
 st.divider()
 st.subheader("Datos del Reporte")
 
-fecha_reporte = st.date_input("Fecha de reporte", value=date.today())
+st.date_input("Fecha de reporte", value=date.today())
 
-st.text_input("No. de Folio", value=st.session_state.folio_generado, disabled=True)
+tipo_proveedor = st.selectbox(
+    "Tipo de proveedor",
+    ["----", "Interno", "Externo"]
+)
 
-c1, c2 = st.columns([6, 1])
+st.text_input(
+    "No. de Folio",
+    value=st.session_state.folio_generado or "folio generado al guardar",
+    disabled=True
+)
 
+c1, c2 = st.columns(2)
 with c1:
-    st.text_input("No. de Reporte", disabled=not st.session_state.get("reporte_externo", False))
+    st.text_input("OSTE", disabled=True)
 with c2:
-    st.checkbox("Externo?", key="reporte_externo")
+    st.text_input("No. de Reporte", disabled=True)
 
-capturo = st.text_input("Capturó")
+st.text_input(
+    "Capturó",
+    st.session_state.usuario_actual,
+    disabled=True
+)
 
-estado = st.selectbox("Estado", ["----", "Edicion", "Proceso", "Terminado"])
+st.selectbox(
+    "Estado",
+    ["En Curso/Nuevo"],
+    index=0,
+    disabled=True
+)
 
 # =================================
-# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
+# STOP UNTIL PROVEEDOR
 # =================================
-st.divider()
-st.subheader("Información del Operador")
+if tipo_proveedor == "----":
+    st.info("Selecciona el tipo de proveedor para continuar.")
+    st.stop()
 
-empresa = st.selectbox("Empresa", ["Selecciona Empresa"] + empresas)
+# =========================================================
+# ORDEN DE REPARACIÓN INTERNA
+# =========================================================
+if tipo_proveedor == "Interno":
 
-tipo_reporte = st.selectbox(
-    "Tipo de Reporte",
-    [
-        "Selecciona tipo de reporte",
-        "Orden de Reparacion",
-        "Orden de entrega de Material",
-        "Orden Correctivo",
-        "Orden Preventivo",
-        "Orden Alineacion"
-    ]
-)
+    st.divider()
+    st.subheader("Orden de Reparación Interna")
 
-tipo_unidad_operador = st.selectbox(
-    "Tipo de Unidad",
-    ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
-)
-
-if empresa != "Selecciona Empresa":
-    catalogos_filtrados = catalogos_df[catalogos_df["EMPRESA"].astype(str).str.strip() == empresa]
-    tractores_filtrados = tractores_df[tractores_df["EMPRESA"].astype(str).str.strip() == empresa]
-else:
-    catalogos_filtrados = pd.DataFrame()
-    tractores_filtrados = pd.DataFrame()
-
-operador = st.text_input(
-    "Operador",
-    disabled=tipo_unidad_operador != "Tractores"
-)
-
-c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
-
-if tipo_unidad_operador == "Tractores":
-    unidades = ["Selecciona Unidad"] + sorted(tractores_filtrados["TRACTOR"].dropna().astype(str))
-elif tipo_unidad_operador == "Remolques":
-    unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(catalogos_filtrados["CAJA"].dropna().astype(str))
-else:
-    unidades = ["Selecciona Unidad"]
-
-with c1:
-    no_unidad = st.selectbox("No. de Unidad", unidades, disabled=tipo_unidad_operador == "Seleccionar tipo de unidad")
-
-marca_valor = ""
-modelo_valor = ""
-
-if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
-    fila = tractores_filtrados[tractores_filtrados["TRACTOR"].astype(str) == no_unidad].iloc[0]
-    marca_valor = fila["MARCA"]
-    modelo_valor = fila["MODELO"]
-
-elif tipo_unidad_operador == "Remolques":
-    if no_unidad == "REMOLQUE EXTERNO":
-        marca_valor = "EXTERNO"
-        modelo_valor = "0000"
-    elif no_unidad != "Selecciona Unidad":
-        fila = catalogos_filtrados[catalogos_filtrados["CAJA"].astype(str) == no_unidad].iloc[0]
-        marca_valor = fila.get("MARCA", "")
-        modelo_valor = fila.get("MODELO", "")
-
-with c2:
-    st.text_input("Marca", value=marca_valor, disabled=True)
-with c3:
-    st.text_input("Modelo", value=modelo_valor, disabled=True)
-with c4:
-    st.text_input(
-        "No. de Unidad Externo",
-        disabled=no_unidad != "REMOLQUE EXTERNO"
+    empresa_i = st.selectbox(
+        "Empresa",
+        ["Selecciona Empresa"] + empresas,
+        key="empresa_interna"
     )
 
-tipo_caja = st.selectbox(
-    "Tipo de Caja",
-    ["Selecciona Caja", "Caja seca", "Caja fria"] if tipo_unidad_operador == "Remolques" else ["Caja no aplicable"],
-    disabled=tipo_unidad_operador != "Remolques"
-)
+    if empresa_i == "Selecciona Empresa":
+        st.info("Selecciona una empresa para continuar.")
+        st.stop()
 
-descripcion_problema = st.text_area("Descripción del problema")
+    st.text_input(
+        "Tipo de Reporte",
+        value="Entrega de Material",
+        disabled=True,
+        key="tipo_reporte_interno"
+    )
 
-genero_multa = st.checkbox("¿Generó multa?")
+    tipo_unidad_i = st.selectbox(
+        "Tipo de Unidad",
+        ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
+        key="tipo_unidad_interno"
+    )
 
-numero_inspeccion = st.text_input("No. de Inspección", disabled=not genero_multa)
-reparacion_multa = st.text_area("Reparación que generó multa", disabled=not genero_multa)
+    st.text_input("Operador", key="operador_interno")
+
+    st.text_area("Descripción del problema", key="desc_interno")
+
+    aplica_cobro_i = st.radio(
+        "¿Aplica Cobro?",
+        ["No", "Sí"],
+        horizontal=True,
+        key="cobro_interno"
+    )
+
+    st.text_input(
+        "Responsable",
+        disabled=aplica_cobro_i != "Sí",
+        key="responsable_interno"
+    )
+
+# =========================================================
+# ORDEN DE REPARACIÓN EXTERNA
+# =========================================================
+if tipo_proveedor == "Externo":
+
+    st.divider()
+    st.subheader("Orden de Reparación Externa")
+
+    empresa_e = st.selectbox(
+        "Empresa",
+        ["Selecciona Empresa"] + empresas,
+        key="empresa_externa"
+    )
+
+    if empresa_e == "Selecciona Empresa":
+        st.info("Selecciona una empresa para continuar.")
+        st.stop()
+
+    st.selectbox(
+        "Tipo de Reporte",
+        ["-----", "Orden Preventivo", "Orden Correctivo"],
+        index=0,
+        key="tipo_reporte_externo"
+    )
+
+    tipo_unidad_e = st.selectbox(
+        "Tipo de Unidad",
+        ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
+        key="tipo_unidad_externo"
+    )
+
+    st.text_input("Operador", key="operador_externo")
+
+    st.text_area("Descripción del problema", key="desc_externo")
+
+    aplica_cobro_e = st.radio(
+        "¿Aplica Cobro?",
+        ["No", "Sí"],
+        horizontal=True,
+        key="cobro_externo"
+    )
+
+    st.text_input(
+        "Responsable",
+        disabled=aplica_cobro_e != "Sí",
+        key="responsable_externo"
+    )
 
 # =================================
-# GUARDAR PASE
+# GUARDAR
 # =================================
 st.divider()
-st.markdown("###")
 
-if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
-
-    if empresa == "Selecciona Empresa":
-        st.error("Debes seleccionar una empresa antes de guardar el pase.")
-    else:
-        st.session_state.folio_generado = generar_folio(empresa)
-        st.session_state.mostrar_confirmacion = True
-        st.rerun()
+if st.button("💾 Guardar Pase", type="primary", width="stretch"):
+    st.session_state.folio_generado = generar_folio("XX")
+    st.session_state.mostrar_confirmacion = True
+    st.rerun()
 
 if st.session_state.mostrar_confirmacion:
 
@@ -216,7 +248,6 @@ if st.session_state.mostrar_confirmacion:
     def confirmacion():
         st.success("Pase guardado con éxito")
         st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
-
         if st.button("Aceptar"):
             st.session_state.mostrar_confirmacion = False
             st.rerun()
