@@ -108,15 +108,13 @@ fecha_reporte = st.date_input(
     value=date.today()
 )
 
-# 🔹 TIPO DE PROVEEDOR + ESTADO (MISMA FILA)
+# 🔹 Tipo de Proveedor + Estado (misma fila)
 tp1, tp2 = st.columns(2)
-
 with tp1:
     tipo_proveedor = st.selectbox(
         "Tipo de Proveedor",
         ["----", "Interno", "Externo"]
     )
-
 with tp2:
     st.selectbox(
         "Estado",
@@ -137,15 +135,12 @@ folio_display = (
     else "Folio generado al guardar"
 )
 
-# 🔹 OSTE + NO. DE REPORTE + NO. DE FOLIO (MISMA FILA)
+# 🔹 OSTE + No. de Reporte + No. de Folio (misma fila)
 c1, c2, c3 = st.columns(3)
-
 with c1:
     st.text_input("OSTE", disabled=True)
-
 with c2:
     st.text_input("No. de Reporte", disabled=True)
-
 with c3:
     st.text_input(
         "No. de Folio",
@@ -171,24 +166,26 @@ if empresa == "Selecciona Empresa":
 # =================================
 # CONTENIDO POST-EMPRESA
 # =================================
-tipo_reporte = st.selectbox(
-    "Tipo de Reporte",
-    [
-        "Selecciona tipo de reporte",
-        "Orden Preventivo",
-        "Orden Correctivo"
-    ]
-)
-
-tipo_unidad_operador = st.selectbox(
-    "Tipo de Unidad",
-    ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
-)
+# 🔹 Tipo de Reporte + Tipo de Unidad (misma fila)
+tr1, tr2 = st.columns(2)
+with tr1:
+    tipo_reporte = st.selectbox(
+        "Tipo de Reporte",
+        [
+            "Selecciona tipo de reporte",
+            "Orden Preventivo",
+            "Orden Correctivo"
+        ]
+    )
+with tr2:
+    tipo_unidad_operador = st.selectbox(
+        "Tipo de Unidad",
+        ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
+    )
 
 catalogos_filtrados = catalogos_df[
     catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
 ]
-
 tractores_filtrados = tractores_df[
     tractores_df["EMPRESA"].astype(str).str.strip() == empresa
 ]
@@ -251,13 +248,11 @@ with c4:
     )
 
 e1, e2 = st.columns(2)
-
 with e1:
     st.text_input(
         "No. de Unidad Externo",
         disabled=no_unidad != "REMOLQUE EXTERNO"
     )
-
 with e2:
     st.text_input(
         "Nombre Línea Externa",
