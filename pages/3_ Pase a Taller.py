@@ -149,169 +149,235 @@ with c3:
     )
 
 # =================================
-# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
+# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR (Form #1) simplified
 # =================================
-st.divider()
-st.subheader("Información del Operador")
+if tipo_proveedor == "Interno":
 
-empresa = st.selectbox(
-    "Empresa",
-    ["Selecciona Empresa"] + empresas
-)
+    st.divider()
+    st.subheader("Información del Operador (Interno)")
 
-if empresa == "Selecciona Empresa":
-    st.info("Selecciona una empresa para continuar con la captura del pase.")
-    st.stop()
+    empresa_interno = st.selectbox(
+        "Empresa",
+        ["Selecciona Empresa"] + empresas,
+        key="empresa_interno"
+    )
+
+    if empresa_interno == "Selecciona Empresa":
+        st.info("Selecciona una empresa para continuar con la captura del pase.")
+        st.stop()
+
+    # Tipo de Reporte + Tipo de Unidad (misma fila)
+    tr1, tr2 = st.columns(2)
+    with tr1:
+        # Fixed value for Tipo de Reporte
+        tipo_reporte_interno = st.text_input(
+            "Tipo de Reporte",
+            value="Entrega de Material",
+            disabled=True,
+            key="tipo_reporte_interno"
+        )
+    with tr2:
+        tipo_unidad_interno = st.selectbox(
+            "Tipo de Unidad",
+            ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
+            key="tipo_unidad_interno"
+        )
+
+    # Operador
+    operador_interno = st.text_input("Operador", key="operador_interno")
+
+
+    # =================================
+    # GUARDAR PASE
+    # =================================
+    st.divider()
+    st.markdown("###")
+
+    if st.button("💾 Guardar Pase", type="primary", width="stretch", key="guardar_interno"):
+        st.session_state.folio_generado = generar_folio(empresa_interno)
+        st.session_state.mostrar_confirmacion = True
+        st.rerun()
+
+    if st.session_state.mostrar_confirmacion:
+
+        @st.dialog("Pase guardado")
+        def confirmacion():
+            st.success("Pase guardado con éxito")
+            st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
+
+            if st.button("Aceptar", key="aceptar_interno"):
+                st.session_state.mostrar_confirmacion = False
+                st.rerun()
+
+        confirmacion()
+
 
 # =================================
-# CONTENIDO POST-EMPRESA
+# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR (Form #2)
 # =================================
-# 🔹 Tipo de Reporte + Tipo de Unidad (misma fila)
-tr1, tr2 = st.columns(2)
-with tr1:
-    tipo_reporte = st.selectbox(
-        "Tipo de Reporte",
-        [
-            "Selecciona tipo de reporte",
-            "Orden Preventivo",
-            "Orden Correctivo"
-        ]
-    )
-with tr2:
-    tipo_unidad_operador = st.selectbox(
-        "Tipo de Unidad",
-        ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
+if tipo_proveedor == "Externo":
+
+    st.divider()
+    st.subheader("Información del Operador")
+
+    empresa = st.selectbox(
+        "Empresa",
+        ["Selecciona Empresa"] + empresas
     )
 
-catalogos_filtrados = catalogos_df[
-    catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
-]
-tractores_filtrados = tractores_df[
-    tractores_df["EMPRESA"].astype(str).str.strip() == empresa
-]
+    if empresa == "Selecciona Empresa":
+        st.info("Selecciona una empresa para continuar con la captura del pase.")
+        st.stop()
 
-operador = st.text_input("Operador")
+    # =================================
+    # CONTENIDO POST-EMPRESA
+    # =================================
+    # 🔹 Tipo de Reporte + Tipo de Unidad (misma fila)
+    tr1, tr2 = st.columns(2)
+    with tr1:
+        tipo_reporte = st.selectbox(
+            "Tipo de Reporte",
+            [
+                "Selecciona tipo de reporte",
+                "Orden Preventivo",
+                "Orden Correctivo"
+            ]
+        )
+    with tr2:
+        tipo_unidad_operador = st.selectbox(
+            "Tipo de Unidad",
+            ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
+        )
 
-c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
+    catalogos_filtrados = catalogos_df[
+        catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
+    ]
+    tractores_filtrados = tractores_df[
+        tractores_df["EMPRESA"].astype(str).str.strip() == empresa
+    ]
 
-if tipo_unidad_operador == "Tractores":
-    unidades = ["Selecciona Unidad"] + sorted(
-        tractores_filtrados["TRACTOR"].dropna().astype(str)
-    )
-elif tipo_unidad_operador == "Remolques":
-    unidades = (
-        ["Selecciona Unidad", "REMOLQUE EXTERNO"]
-        + sorted(catalogos_filtrados["CAJA"].dropna().astype(str))
-    )
-else:
-    unidades = ["Selecciona Unidad"]
+    operador = st.text_input("Operador")
 
-with c1:
-    no_unidad = st.selectbox(
-        "No. de Unidad",
-        unidades,
-        disabled=tipo_unidad_operador == "Seleccionar tipo de unidad"
-    )
+    c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
 
-marca_valor = ""
-modelo_valor = ""
+    if tipo_unidad_operador == "Tractores":
+        unidades = ["Selecciona Unidad"] + sorted(
+            tractores_filtrados["TRACTOR"].dropna().astype(str)
+        )
+    elif tipo_unidad_operador == "Remolques":
+        unidades = (
+            ["Selecciona Unidad", "REMOLQUE EXTERNO"]
+            + sorted(catalogos_filtrados["CAJA"].dropna().astype(str))
+        )
+    else:
+        unidades = ["Selecciona Unidad"]
 
-if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
-    fila = tractores_filtrados[
-        tractores_filtrados["TRACTOR"].astype(str) == no_unidad
-    ].iloc[0]
-    marca_valor = fila["MARCA"]
-    modelo_valor = fila["MODELO"]
+    with c1:
+        no_unidad = st.selectbox(
+            "No. de Unidad",
+            unidades,
+            disabled=tipo_unidad_operador == "Seleccionar tipo de unidad"
+        )
 
-elif tipo_unidad_operador == "Remolques":
-    if no_unidad == "REMOLQUE EXTERNO":
-        marca_valor = "EXTERNO"
-        modelo_valor = "0000"
-    elif no_unidad != "Selecciona Unidad":
-        fila = catalogos_filtrados[
-            catalogos_filtrados["CAJA"].astype(str) == no_unidad
+    marca_valor = ""
+    modelo_valor = ""
+
+    if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
+        fila = tractores_filtrados[
+            tractores_filtrados["TRACTOR"].astype(str) == no_unidad
         ].iloc[0]
-        marca_valor = fila.get("MARCA", "")
-        modelo_valor = fila.get("MODELO", "")
+        marca_valor = fila["MARCA"]
+        modelo_valor = fila["MODELO"]
 
-with c2:
-    st.text_input("Marca", value=marca_valor, disabled=True)
-with c3:
-    st.text_input("Modelo", value=modelo_valor, disabled=True)
-with c4:
-    tipo_caja = st.selectbox(
-        "Tipo de Caja",
-        ["Selecciona Caja", "Caja seca", "Caja fria"]
-        if tipo_unidad_operador == "Remolques"
-        else ["Caja no aplicable"],
-        disabled=tipo_unidad_operador != "Remolques"
+    elif tipo_unidad_operador == "Remolques":
+        if no_unidad == "REMOLQUE EXTERNO":
+            marca_valor = "EXTERNO"
+            modelo_valor = "0000"
+        elif no_unidad != "Selecciona Unidad":
+            fila = catalogos_filtrados[
+                catalogos_filtrados["CAJA"].astype(str) == no_unidad
+            ].iloc[0]
+            marca_valor = fila.get("MARCA", "")
+            modelo_valor = fila.get("MODELO", "")
+
+    with c2:
+        st.text_input("Marca", value=marca_valor, disabled=True)
+    with c3:
+        st.text_input("Modelo", value=modelo_valor, disabled=True)
+    with c4:
+        tipo_caja = st.selectbox(
+            "Tipo de Caja",
+            ["Selecciona Caja", "Caja seca", "Caja fria"]
+            if tipo_unidad_operador == "Remolques"
+            else ["Caja no aplicable"],
+            disabled=tipo_unidad_operador != "Remolques"
+        )
+
+    e1, e2 = st.columns(2)
+    with e1:
+        st.text_input(
+            "No. de Unidad Externo",
+            disabled=no_unidad != "REMOLQUE EXTERNO"
+        )
+    with e2:
+        st.text_input(
+            "Nombre Línea Externa",
+            disabled=no_unidad != "REMOLQUE EXTERNO"
+        )
+
+    # =================================
+    # COBRO
+    # =================================
+    aplica_cobro = st.radio(
+        "¿Aplica Cobro?",
+        ["No", "Sí"],
+        horizontal=True,
+        index=0
     )
 
-e1, e2 = st.columns(2)
-with e1:
     st.text_input(
-        "No. de Unidad Externo",
-        disabled=no_unidad != "REMOLQUE EXTERNO"
+        "Responsable",
+        disabled=aplica_cobro != "Sí"
     )
-with e2:
+
+    # =================================
+    # DESCRIPCIÓN / MULTA
+    # =================================
+    descripcion_problema = st.text_area("Descripción del problema")
+
+    genero_multa = st.checkbox("¿Generó multa?")
+
     st.text_input(
-        "Nombre Línea Externa",
-        disabled=no_unidad != "REMOLQUE EXTERNO"
+        "No. de Inspección",
+        disabled=not genero_multa
     )
 
-# =================================
-# COBRO
-# =================================
-aplica_cobro = st.radio(
-    "¿Aplica Cobro?",
-    ["No", "Sí"],
-    horizontal=True,
-    index=0
-)
+    st.text_area(
+        "Reparación que generó multa",
+        placeholder="Por favor introducir # de reporte aplicable",
+        disabled=not genero_multa
+    )
 
-st.text_input(
-    "Responsable",
-    disabled=aplica_cobro != "Sí"
-)
+    # =================================
+    # GUARDAR PASE
+    # =================================
+    st.divider()
+    st.markdown("###")
 
-# =================================
-# DESCRIPCIÓN / MULTA
-# =================================
-descripcion_problema = st.text_area("Descripción del problema")
+    if st.button("💾 Guardar Pase", type="primary", width="stretch"):
+        st.session_state.folio_generado = generar_folio(empresa)
+        st.session_state.mostrar_confirmacion = True
+        st.rerun()
 
-genero_multa = st.checkbox("¿Generó multa?")
+    if st.session_state.mostrar_confirmacion:
 
-st.text_input(
-    "No. de Inspección",
-    disabled=not genero_multa
-)
+        @st.dialog("Pase guardado")
+        def confirmacion():
+            st.success("Pase guardado con éxito")
+            st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
 
-st.text_area(
-    "Reparación que generó multa",
-    placeholder="Por favor introducir # de reporte aplicable",
-    disabled=not genero_multa
-)
+            if st.button("Aceptar"):
+                st.session_state.mostrar_confirmacion = False
+                st.rerun()
 
-# =================================
-# GUARDAR PASE
-# =================================
-st.divider()
-st.markdown("###")
-
-if st.button("💾 Guardar Pase", type="primary", width="stretch"):
-    st.session_state.folio_generado = generar_folio(empresa)
-    st.session_state.mostrar_confirmacion = True
-    st.rerun()
-
-if st.session_state.mostrar_confirmacion:
-
-    @st.dialog("Pase guardado")
-    def confirmacion():
-        st.success("Pase guardado con éxito")
-        st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
-
-        if st.button("Aceptar"):
-            st.session_state.mostrar_confirmacion = False
-            st.rerun()
-
-    confirmacion()
+        confirmacion()
