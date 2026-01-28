@@ -2,6 +2,7 @@ import streamlit as st
 from supabase import create_client
 from pathlib import Path
 from PIL import Image
+import os
 
 # =================================
 # Page configuration
@@ -12,16 +13,32 @@ st.set_page_config(
 )
 
 # =================================
-# Supabase client (Streamlit Cloud)
+# Supabase client (SAFE for all modes)
 # =================================
+SUPABASE_URL = None
+SUPABASE_ANON_KEY = None
+
+# Try Streamlit secrets (only valid in `streamlit run`)
 try:
-    supabase = create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_ANON_KEY"]
-    )
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL")
+    SUPABASE_ANON_KEY = st.secrets.get("SUPABASE_ANON_KEY")
 except Exception:
-    st.error("Supabase credentials not found. Check Streamlit Secrets.")
+    pass
+
+# Fallback to environment variables (local / Codespaces)
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    st.error(
+        "Supabase credentials not found.\n\n"
+        "• Run with: streamlit run Home.py\n"
+        "• Or define SUPABASE_URL and SUPABASE_ANON_KEY"
+    )
     st.stop()
+
+supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
 # Session state
@@ -40,6 +57,8 @@ if st.session_state.logged_in and st.session_state.user:
     st.success(f"Bienvenido, {st.session_state.user['email']}")
     st.title("Home Page Super Pro")
     st.divider()
+
+    st.write("Sesión iniciada correctamente.")
 
     if st.button("Cerrar sesión"):
         supabase.auth.sign_out()
@@ -71,8 +90,14 @@ else:
     st.divider()
 
     with st.form("login_form"):
-        email = st.text_input("Correo electrónico")
-        password = st.text_input("Contraseña", type="password")
+        email = st.text_input(
+            "Correo electrónico",
+            placeholder="usuario@empresa.com"
+        )
+        password = st.text_input(
+            "Contraseña",
+            type="password"
+        )
         submit = st.form_submit_button("Ingresar")
 
     if submit:
@@ -92,5 +117,5 @@ else:
             else:
                 st.error("Credenciales inválidas")
 
-        except Exception as e:
+        except Exception:
             st.error("Credenciales inválidas")
