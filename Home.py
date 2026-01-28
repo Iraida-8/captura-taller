@@ -1,22 +1,7 @@
 import streamlit as st
-from PIL import Image
 from supabase import create_client
-from dotenv import load_dotenv
-import os
-
-# =================================
-# Load environment variables
-# =================================
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-
-if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    st.error("Supabase credentials not found. Check .env file.")
-    st.stop()
-
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+from pathlib import Path
+from PIL import Image
 
 # =================================
 # Page configuration
@@ -25,6 +10,18 @@ st.set_page_config(
     page_title="Login",
     layout="centered"
 )
+
+# =================================
+# Supabase client (Streamlit Cloud)
+# =================================
+try:
+    supabase = create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_ANON_KEY"]
+    )
+except Exception:
+    st.error("Supabase credentials not found. Check Streamlit Secrets.")
+    st.stop()
 
 # =================================
 # Session state
@@ -54,16 +51,21 @@ if st.session_state.logged_in and st.session_state.user:
 # LOGIN VIEW
 # =================================
 else:
-    logo_path = "/workspaces/captura-taller/PG Brand.png"
+    # ---------------------------------
+    # Load logo (portable path)
+    # ---------------------------------
+    assets_dir = Path(__file__).parent / "assets"
+    logo_path = assets_dir / "pg_brand.png"
 
-    try:
+    if logo_path.exists():
         img = Image.open(logo_path)
         if img.width > 600:
             ratio = 600 / img.width
-            img = img.resize((600, int(img.height * ratio)), Image.LANCZOS)
+            img = img.resize(
+                (600, int(img.height * ratio)),
+                Image.LANCZOS
+            )
         st.image(img, width="stretch")
-    except Exception:
-        pass
 
     st.title("Inicio de Sesión")
     st.divider()
@@ -91,4 +93,4 @@ else:
                 st.error("Credenciales inválidas")
 
         except Exception as e:
-            st.error("Error al iniciar sesión")
+            st.error("Credenciales inválidas")
