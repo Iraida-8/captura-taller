@@ -1,3 +1,4 @@
+from flask.cli import load_dotenv
 import streamlit as st
 from supabase import create_client
 from pathlib import Path
@@ -15,6 +16,8 @@ st.set_page_config(
 # =================================
 # Supabase client (SAFE for all modes)
 # =================================
+load_dotenv(Path(__file__).parent / ".env")
+
 SUPABASE_URL = None
 SUPABASE_ANON_KEY = None
 
