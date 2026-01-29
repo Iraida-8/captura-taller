@@ -1,0 +1,82 @@
+import streamlit as st
+from auth import require_login
+
+# -------------------------------
+# Security gate
+# -------------------------------
+require_login()
+
+st.set_page_config(
+    page_title="Dashboard",
+    layout="wide"
+)
+
+# Hide sidebar completely (we use buttons)
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+user = st.session_state.user
+access = user.get("access", [])
+
+# -------------------------------
+# Header
+# -------------------------------
+st.title("Dashboard")
+st.write(f"Bienvenido, **{user['name'] or user['email']}**")
+st.write(f"Rol: `{user['role']}`")
+st.divider()
+
+# -------------------------------
+# Navigation buttons
+# -------------------------------
+st.subheader("Módulos")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if "consultar_reparacion" in access:
+        if st.button("🔍 Consultar Reparación", use_container_width=True):
+            st.switch_page("pages/1_ Consultar Reparacion.py")
+
+with col2:
+    if "revision_ordenes" in access:
+        if st.button("🧾 Revisión Órdenes", use_container_width=True):
+            st.switch_page("pages/2_ Revision Ordenes.py")
+
+with col3:
+    if "pase_taller" in access:
+        if st.button("🏭 Pase a Taller", use_container_width=True):
+            st.switch_page("pages/3_ Pase a Taller.py")
+
+col4, col5, col6 = st.columns(3)
+
+with col4:
+    if "autorizacion" in access:
+        if st.button("✅ Autorización", use_container_width=True):
+            st.switch_page("pages/4_ Autorizacion.py")
+
+with col5:
+    if "ifuel" in access:
+        if st.button("⛽ Reporte iFuel", use_container_width=True):
+            st.switch_page("pages/5_ Reporte iFuel.py")
+
+with col6:
+    if "consulta_reportes" in access:
+        if st.button("📊 Consulta Reportes", use_container_width=True):
+            st.switch_page("pages/6_ Consulta Reportes.py")
+
+# -------------------------------
+# Logout
+# -------------------------------
+st.divider()
+
+if st.button("Cerrar sesión"):
+    st.session_state.logged_in = False
+    st.session_state.user = None
+    st.switch_page("Home.py")

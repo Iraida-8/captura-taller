@@ -1,17 +1,48 @@
 import streamlit as st
 import pandas as pd
-from auth import require_login
 
-require_login()
+from auth import require_login, require_access
 
-st.title("Dashboard")
 # =================================
-# Page configuration
+# Page configuration (MUST BE FIRST)
 # =================================
 st.set_page_config(
-    page_title="Autorización y Actualización de Reporte",
+    page_title="Consulta de Reportes",
     layout="wide"
 )
+
+# =================================
+# Hide sidebar completely
+# =================================
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("consulta_reportes")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+# =================================
+# Page title
+# =================================
+st.title("📋 Consulta de Reportes (WIP)")
 
 # =================================
 # Google Sheets configuration
@@ -21,11 +52,6 @@ IGLOO_ARTICULOS_URL = (
     "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
     "/export?format=csv&gid=410297659"
 )
-
-# =================================
-# Title
-# =================================
-st.title("📋 Consulta de Reportes (WIP)")
 
 # =================================
 # Load artículos catálogo
@@ -42,7 +68,7 @@ def cargar_articulos_igloo():
     iva_raw = df["Tasaiva"].apply(limpiar).astype(float)
     iva = iva_raw.apply(lambda x: x / 100 if x >= 1 else x)
 
-    base = pd.DataFrame({
+    return pd.DataFrame({
         "Seleccionar": False,
         "Artículo": df["Parte"],
         "Descripción": df["Parte"],
@@ -52,14 +78,6 @@ def cargar_articulos_igloo():
         "Total MXN": precio * (1 + iva),
         "Tipo Mtto": df["Tipo de reparacion"]
     })
-
-    return base
-
-# =================================
-# SECCIÓN — SERVICIOS Y REFACCIONES
-# =================================
-st.divider()
-st.subheader("🔧 Servicios y Refacciones")
 
 # =================================
 # Session state init
@@ -80,8 +98,10 @@ if "articulos_df" not in st.session_state:
     ])
 
 # =================================
-# Button to open modal
+# SECCIÓN — SERVICIOS Y REFACCIONES
 # =================================
+st.subheader("🔧 Servicios y Refacciones")
+
 if st.button("Añadir Servicios o Refacciones"):
     st.session_state.mostrar_modal = True
 
@@ -129,9 +149,11 @@ if st.session_state.mostrar_modal:
             )
 
             st.session_state.mostrar_modal = False
+            st.rerun()
 
         if st.button("Cancelar"):
             st.session_state.mostrar_modal = False
+            st.rerun()
 
     modal()
 

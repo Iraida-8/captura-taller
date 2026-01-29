@@ -14,7 +14,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-st.sidebar.empty()
+# Hide sidebar visually on login page
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # =================================
 # Supabase setup
@@ -37,96 +45,96 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
 
 # =================================
-# LOGGED IN VIEW
+# LOGIN VIEW ONLY
+# (Do NOT render app content here)
 # =================================
-if st.session_state.logged_in and st.session_state.user:
+# ---------------------------------
+# Logo above login
+# ---------------------------------
+assets_dir = Path(__file__).parent / "assets"
+logo_path = assets_dir / "pg_brand.png"
 
-    st.success("Logged in")
+if logo_path.exists():
+    img = Image.open(logo_path)
+    if img.width > 600:
+        ratio = 600 / img.width
+        img = img.resize(
+            (600, int(img.height * ratio)),
+            Image.LANCZOS
+        )
+    st.image(img, width="stretch")
 
-    st.write("Email:", st.session_state.user["email"])
-    st.write("Nombre:", st.session_state.user["name"])
-    st.write("Login count:", st.session_state.user["login_count"])
+st.title("Inicio de Sesión")
+st.divider()
 
-    if st.button("Cerrar sesión"):
-        supabase.auth.sign_out()
-        st.session_state.logged_in = False
-        st.session_state.user = None
-        st.rerun()
+with st.form("login_form"):
+    email = st.text_input(
+        "Correo electrónico",
+        placeholder="usuario@empresa.com"
+    )
+    password = st.text_input(
+        "Contraseña",
+        type="password"
+    )
+    submit = st.form_submit_button("Ingresar")
 
-# =================================
-# LOGIN VIEW
-# =================================
-else:
-    # ---------------------------------
-    # Load logo ABOVE login
-    # ---------------------------------
-    assets_dir = Path(__file__).parent / "assets"
-    logo_path = assets_dir / "pg_brand.png"
+if submit:
+    try:
+        # =================================
+        # AUTH (Supabase Auth ONLY)
+        # =================================
+        res = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
 
-    if logo_path.exists():
-        img = Image.open(logo_path)
-        if img.width > 600:
-            ratio = 600 / img.width
-            img = img.resize(
-                (600, int(img.height * ratio)),
-                Image.LANCZOS
-            )
-        st.image(img, width="stretch")
+        if not res.user:
+            st.error("Credenciales inválidas")
+            st.stop()
 
-    st.title("Inicio de Sesión")
-    st.divider()
+        user_id = res.user.id
 
-    with st.form("login_form"):
-        email = st.text_input("Correo electrónico")
-        password = st.text_input("Contraseña", type="password")
-        submit = st.form_submit_button("Ingresar")
+        # =================================
+        # Increment login counter (DB-side)
+        # =================================
+        supabase.rpc(
+            "increment_login_count",
+            {"user_id": user_id}
+        ).execute()
 
-    if submit:
-        try:
-            # -------- AUTH --------
-            res = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
+        # =================================
+        # Load profile (role + access)
+        # =================================
+        profile_res = (
+            supabase
+            .table("profiles")
+            .select("full_name, login_count, role, access")
+            .eq("id", user_id)
+            .maybe_single()
+            .execute()
+        )
 
-            if not res.user:
-                st.error("Credenciales inválidas")
-                st.stop()
+        profile_data = (
+            profile_res.data
+            if profile_res and profile_res.data
+            else {}
+        )
 
-            user_id = res.user.id
+        # =================================
+        # Session bootstrap (THIS IS THE GOAL)
+        # =================================
+        st.session_state.logged_in = True
+        st.session_state.user = {
+            "id": user_id,
+            "email": res.user.email,
+            "name": profile_data.get("full_name"),
+            "login_count": profile_data.get("login_count", 0),
+            "role": profile_data.get("role", "user"),
+            "access": profile_data.get("access", [])
+        }
 
-            # -------- INCREMENT LOGIN COUNTER (DB-side) --------
-            supabase.rpc(
-                "increment_login_count",
-                {"user_id": user_id}
-            ).execute()
+        # Hand off control to the rest of the app
+        st.switch_page("pages/dashboard.py")
 
-            # -------- LOAD PROFILE (SAFE, RLS-COMPATIBLE) --------
-            profile_res = (
-                supabase
-                .table("profiles")
-                .select("full_name, login_count")
-                .eq("id", user_id)
-                .maybe_single()
-                .execute()
-            )
-
-            profile_data = (
-                profile_res.data
-                if profile_res and profile_res.data
-                else {}
-            )
-
-            # -------- SESSION --------
-            st.session_state.logged_in = True
-            st.session_state.user = {
-                "id": user_id,
-                "email": res.user.email,
-                "name": profile_data.get("full_name"),
-                "login_count": profile_data.get("login_count", 0)
-            }
-
-            st.rerun()
-
-        except Exception as e:
-            st.error(str(e))
+    except Exception as e:
+        st.error(str(e))

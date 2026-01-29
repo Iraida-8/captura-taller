@@ -1,14 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
-import random
-from auth import require_login
 
-require_login()
+from auth import require_login, require_access
 
-st.title("Dashboard")
 # =================================
-# Page configuration
+# Page configuration (MUST BE FIRST)
 # =================================
 st.set_page_config(
     page_title="Captura Pase de Taller",
@@ -16,19 +13,32 @@ st.set_page_config(
 )
 
 # =================================
-# Fake logged-in users (TEMP)
+# Hide sidebar completely
 # =================================
-USUARIOS_FAKE = [
-    "Juan Pérez",
-    "María González",
-    "Carlos Ramírez",
-    "Ana López",
-    "Luis Hernández",
-    "Fernanda Torres"
-]
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-if "usuario_actual" not in st.session_state:
-    st.session_state.usuario_actual = random.choice(USUARIOS_FAKE)
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("pase_taller")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
 
 # =================================
 # Google Sheets configuration
@@ -62,11 +72,13 @@ def cargar_catalogos():
     )
     return df, sorted(empresas)
 
+
 @st.cache_data(ttl=3600)
 def cargar_tractores():
     df = pd.read_csv(TRACTORES_URL)
     df.columns = df.columns.str.strip()
     return df
+
 
 catalogos_df, empresas = cargar_catalogos()
 tractores_df = cargar_tractores()
@@ -90,11 +102,12 @@ def generar_folio(empresa: str) -> str:
 # =================================
 if "folio_generado" not in st.session_state:
     st.session_state.folio_generado = ""
+
 if "mostrar_confirmacion" not in st.session_state:
     st.session_state.mostrar_confirmacion = False
 
 # =================================
-# Title
+# Page title
 # =================================
 st.title("🛠️ Captura Pase de Taller")
 
@@ -109,7 +122,6 @@ fecha_reporte = st.date_input(
     value=date.today()
 )
 
-# 🔹 Tipo de Proveedor + Estado (misma fila)
 tp1, tp2 = st.columns(2)
 with tp1:
     tipo_proveedor = st.selectbox(
@@ -124,9 +136,10 @@ with tp2:
         disabled=True
     )
 
+# ✅ REAL logged-in user (Supabase profile)
 st.text_input(
     "Capturó",
-    value=st.session_state.usuario_actual,
+    value=st.session_state.user.get("name") or st.session_state.user.get("email"),
     disabled=True
 )
 
@@ -136,14 +149,13 @@ folio_display = (
     else "Folio generado al guardar"
 )
 
-# 🔹 OSTE + No. de Reporte + No. de Folio (misma fila)
 c1, c2, c3 = st.columns(3)
 with c1:
     st.text_input("OSTE", disabled=True)
 with c2:
     st.text_input(
         "No. de Reporte",
-        disabled=(tipo_proveedor != "Interno")  # Enabled only if Interno
+        disabled=(tipo_proveedor != "Interno")
     )
 with c3:
     st.text_input(
@@ -153,18 +165,18 @@ with c3:
     )
 
 # =================================
-# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR (Form #2)
+# SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
 # =================================
-# Only show if user selects Interno or Externo
 if tipo_proveedor in ["Interno", "Externo"]:
 
     st.divider()
-    
-    # Dynamic title based on tipo de proveedor
-    titulo_form = "Pase de Taller Interno" if tipo_proveedor == "Interno" else "Pase de Taller Externo"
+    titulo_form = (
+        "Pase de Taller Interno"
+        if tipo_proveedor == "Interno"
+        else "Pase de Taller Externo"
+    )
     st.subheader(titulo_form)
 
-    # Empresa
     empresa = st.selectbox(
         "Empresa",
         ["Selecciona Empresa"] + empresas
@@ -174,7 +186,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
         st.info("Selecciona una empresa para continuar con la captura del pase.")
         st.stop()
 
-    # Tipo de Reporte + Tipo de Unidad
     tr1, tr2 = st.columns(2)
     with tr1:
         tipo_reporte = st.selectbox(
@@ -267,9 +278,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
             disabled=no_unidad != "REMOLQUE EXTERNO"
         )
 
-    # =================================
-    # COBRO
-    # =================================
     aplica_cobro = st.radio(
         "¿Aplica Cobro?",
         ["No", "Sí"],
@@ -282,9 +290,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
         disabled=aplica_cobro != "Sí"
     )
 
-    # =================================
-    # DESCRIPCIÓN / MULTA
-    # =================================
     descripcion_problema = st.text_area("Descripción del problema")
 
     genero_multa = st.checkbox("¿Generó multa?")
@@ -300,13 +305,10 @@ if tipo_proveedor in ["Interno", "Externo"]:
         disabled=not genero_multa
     )
 
-    # =================================
-    # GUARDAR PASE
-    # =================================
     st.divider()
     st.markdown("###")
 
-    if st.button("💾 Guardar Pase", type="primary", width="stretch"):
+    if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
         st.session_state.folio_generado = generar_folio(empresa)
         st.session_state.mostrar_confirmacion = True
         st.rerun()
@@ -316,7 +318,9 @@ if tipo_proveedor in ["Interno", "Externo"]:
         @st.dialog("Pase guardado")
         def confirmacion():
             st.success("Pase guardado con éxito")
-            st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
+            st.markdown(
+                f"**No. de Folio:** `{st.session_state.folio_generado}`"
+            )
 
             if st.button("Aceptar"):
                 st.session_state.mostrar_confirmacion = False

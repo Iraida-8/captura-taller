@@ -2,21 +2,48 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 
-from auth import require_login
-
-require_login()
-
-st.title("Dashboard")
+from auth import require_login, require_access
 
 # =================================
-# Page configuration
+# Page configuration (MUST BE FIRST)
 # =================================
 st.set_page_config(
-    page_title="Consulta de Orden",
+    page_title="Consulta de Reparación",
     layout="wide"
 )
 
-st.title("📋 Consulta de Orden")
+# =================================
+# Hide sidebar completely
+# =================================
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("consultar_reparacion")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+# =================================
+# Page title
+# =================================
+st.title("📋 Consulta de Reparación")
 
 # =================================
 # DATA SOURCES
@@ -272,7 +299,7 @@ if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
     ]
 
 # =================================
-# TABLA COMPLETA (REMOVE COLUMNS)
+# TABLA COMPLETA
 # =================================
 st.divider()
 st.subheader("Todas las Órdenes")

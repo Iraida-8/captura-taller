@@ -1,19 +1,48 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
-from auth import require_login
 
-require_login()
+from auth import require_login, require_access
 
-st.title("Dashboard")
 # =================================
-# Page configuration
+# Page configuration (MUST BE FIRST)
 # =================================
 st.set_page_config(
     page_title="Autorización y Actualización de Reporte",
     layout="wide"
 )
 
+# =================================
+# Hide sidebar completely
+# =================================
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("autorizacion")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+# =================================
+# Page title
+# =================================
 st.title("📋 Autorización y Actualización de Reporte")
 
 # =================================
@@ -60,14 +89,13 @@ mock_reportes = pd.DataFrame([
 # =================================
 # SECCIÓN — TOP 10 EN CURSO
 # =================================
-st.divider()
 st.subheader("Últimos 10 Pases de Taller (En Curso / Nuevo)")
 
 top10 = mock_reportes[
     mock_reportes["Estado"] == "En Curso / Nuevo"
 ].sort_values("Fecha", ascending=False).head(10)
 
-st.dataframe(top10, hide_index=True)
+st.dataframe(top10, hide_index=True, use_container_width=True)
 
 # =================================
 # SECCIÓN — BUSCAR PASE DE TALLER
@@ -96,7 +124,7 @@ if st.button("Buscar"):
     st.session_state.buscar_trigger = True
 
 # =================================
-# RESULTADOS (SOLO DESPUÉS DE BUSCAR)
+# RESULTADOS
 # =================================
 if st.session_state.buscar_trigger:
 
@@ -111,12 +139,9 @@ if st.session_state.buscar_trigger:
         c1, c2, c3, c4, c5, c6 = st.columns([1, 2, 2, 2, 2, 1])
 
         with c1:
-            if row["Estado"] == "En Curso / Nuevo":
-                if st.button("Editar", key=f"edit_{row['NoFolio']}"):
-                    st.session_state.modal_reporte = row.to_dict()
-            else:
-                if st.button("Ver", key=f"ver_{row['NoFolio']}"):
-                    st.session_state.modal_reporte = row.to_dict()
+            label = "Editar" if row["Estado"] == "En Curso / Nuevo" else "Ver"
+            if st.button(label, key=f"accion_{row['NoFolio']}"):
+                st.session_state.modal_reporte = row.to_dict()
 
         c2.write(row["NoFolio"])
         c3.write(row["Empresa"])
@@ -147,13 +172,12 @@ if st.session_state.modal_reporte:
             disabled=not editable
         )
 
-        # Lock: cannot go back to En Curso / Nuevo
         if reporte["Estado"] != "En Curso / Nuevo" and nuevo_estado == "En Curso / Nuevo":
             st.error("No es posible regresar a En Curso / Nuevo.")
             st.stop()
 
         # =================================
-        # SERVICIOS Y REFACCIONES (ORIGINAL LOGIC)
+        # SERVICIOS Y REFACCIONES
         # =================================
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -202,7 +226,6 @@ if st.session_state.modal_reporte:
                 )
 
                 fila = igloo_df[igloo_df["Artículo"] == refaccion].iloc[0]
-
                 cantidad = st.number_input("Cantidad", min_value=1, value=1)
 
                 if st.button("Agregar"):
@@ -221,7 +244,12 @@ if st.session_state.modal_reporte:
             disabled=not editable
         )
 
-        total = st.session_state.articulos_df["Total MXN"].sum() if not st.session_state.articulos_df.empty else 0
+        total = (
+            st.session_state.articulos_df["Total MXN"].sum()
+            if not st.session_state.articulos_df.empty
+            else 0
+        )
+
         st.metric("Total MXN", f"$ {total:,.2f}")
 
         if st.button("Cerrar"):
