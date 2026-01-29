@@ -1,18 +1,13 @@
-from dotenv import load_dotenv
 import streamlit as st
 from supabase import create_client
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
-import os
 
 # =================================
 # Page configuration
 # =================================
-st.set_page_config(
-    page_title="Login",
-    layout="centered"
-)
-
 st.set_page_config(
     page_title="Login",
     layout="centered",
@@ -22,31 +17,15 @@ st.set_page_config(
 st.sidebar.empty()
 
 # =================================
-# Supabase client (SAFE for all modes)
+# Supabase setup
 # =================================
 load_dotenv(Path(__file__).parent / ".env")
 
-SUPABASE_URL = None
-SUPABASE_ANON_KEY = None
-
-# Try Streamlit secrets (only valid in `streamlit run`)
-try:
-    SUPABASE_URL = st.secrets.get("SUPABASE_URL")
-    SUPABASE_ANON_KEY = st.secrets.get("SUPABASE_ANON_KEY")
-except Exception:
-    pass
-
-# Fallback to environment variables (local / Codespaces)
-if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    st.error(
-        "Supabase credentials not found.\n\n"
-        "• Run with: streamlit run Home.py\n"
-        "• Or define SUPABASE_URL and SUPABASE_ANON_KEY"
-    )
+    st.error("Supabase credentials not found")
     st.stop()
 
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -54,22 +33,19 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # =================================
 # Session state
 # =================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-if "user" not in st.session_state:
-    st.session_state.user = None
+st.session_state.setdefault("logged_in", False)
+st.session_state.setdefault("user", None)
 
 # =================================
 # LOGGED IN VIEW
 # =================================
 if st.session_state.logged_in and st.session_state.user:
 
-    st.success(f"Bienvenido, {st.session_state.user['email']}")
-    st.title("Home Page Super Pro")
-    st.divider()
+    st.success("Logged in")
 
-    st.write("Sesión iniciada correctamente.")
+    st.write("Email:", st.session_state.user["email"])
+    st.write("Nombre:", st.session_state.user["name"])
+    st.write("Login count:", st.session_state.user["login_count"])
 
     if st.button("Cerrar sesión"):
         supabase.auth.sign_out()
@@ -82,7 +58,7 @@ if st.session_state.logged_in and st.session_state.user:
 # =================================
 else:
     # ---------------------------------
-    # Load logo (portable path)
+    # Load logo ABOVE login
     # ---------------------------------
     assets_dir = Path(__file__).parent / "assets"
     logo_path = assets_dir / "pg_brand.png"
@@ -101,32 +77,56 @@ else:
     st.divider()
 
     with st.form("login_form"):
-        email = st.text_input(
-            "Correo electrónico",
-            placeholder="usuario@empresa.com"
-        )
-        password = st.text_input(
-            "Contraseña",
-            type="password"
-        )
+        email = st.text_input("Correo electrónico")
+        password = st.text_input("Contraseña", type="password")
         submit = st.form_submit_button("Ingresar")
 
     if submit:
         try:
+            # -------- AUTH --------
             res = supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
 
-            if res.user:
-                st.session_state.logged_in = True
-                st.session_state.user = {
-                    "id": res.user.id,
-                    "email": res.user.email
-                }
-                st.rerun()
-            else:
+            if not res.user:
                 st.error("Credenciales inválidas")
+                st.stop()
 
-        except Exception:
-            st.error("Credenciales inválidas")
+            user_id = res.user.id
+
+            # -------- INCREMENT LOGIN COUNTER (DB-side) --------
+            supabase.rpc(
+                "increment_login_count",
+                {"user_id": user_id}
+            ).execute()
+
+            # -------- LOAD PROFILE (SAFE, RLS-COMPATIBLE) --------
+            profile_res = (
+                supabase
+                .table("profiles")
+                .select("full_name, login_count")
+                .eq("id", user_id)
+                .maybe_single()
+                .execute()
+            )
+
+            profile_data = (
+                profile_res.data
+                if profile_res and profile_res.data
+                else {}
+            )
+
+            # -------- SESSION --------
+            st.session_state.logged_in = True
+            st.session_state.user = {
+                "id": user_id,
+                "email": res.user.email,
+                "name": profile_data.get("full_name"),
+                "login_count": profile_data.get("login_count", 0)
+            }
+
+            st.rerun()
+
+        except Exception as e:
+            st.error(str(e))
