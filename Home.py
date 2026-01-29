@@ -1,4 +1,4 @@
-from flask.cli import load_dotenv
+from dotenv import load_dotenv
 import streamlit as st
 from supabase import create_client
 from pathlib import Path
