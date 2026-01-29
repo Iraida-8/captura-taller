@@ -4,7 +4,11 @@ import json
 import math
 import numpy as np
 from io import BytesIO
+from auth import require_login
 
+require_login()
+
+st.title("Dashboard")
 st.set_page_config(page_title="Fuel Solutions Parser", layout="wide")
 st.title("Fuel Solutions → 3 Tablas + Comparativo + % Pilot/FlyingJ vs Otras + Export Excel")
 

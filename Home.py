@@ -13,6 +13,14 @@ st.set_page_config(
     layout="centered"
 )
 
+st.set_page_config(
+    page_title="Login",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+st.sidebar.empty()
+
 # =================================
 # Supabase client (SAFE for all modes)
 # =================================

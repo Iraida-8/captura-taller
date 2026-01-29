@@ -2,7 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import random
+from auth import require_login
 
+require_login()
+
+st.title("Dashboard")
 # =================================
 # Page configuration
 # =================================
