@@ -139,8 +139,7 @@ def append_pase_to_sheet(data: dict):
     ]
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
-    return folio
-
+    return folio   # ✅ authoritative folio returned
 
 # =================================
 # Google Sheets configuration
@@ -182,20 +181,6 @@ def cargar_tractores():
 
 catalogos_df, empresas = cargar_catalogos()
 tractores_df = cargar_tractores()
-
-# =================================
-# Folio generator
-# =================================
-def generar_folio(empresa: str) -> str:
-    prefijos = {
-        "IGLOO TRANSPORT": "IG",
-        "LINCOLN FREIGHT": "LF",
-        "PICUS": "PI",
-        "SET FREIGHT INTERNATIONAL": "SFI",
-        "SET LOGIS PLUS": "SLP",
-    }
-    prefijo = prefijos.get(empresa, "XX")
-    return f"{prefijo}{str(1).zfill(5)}"
 
 # =================================
 # Session state
@@ -406,14 +391,14 @@ if tipo_proveedor in ["Interno", "Externo"]:
     st.divider()
     st.markdown("###")
 
+    # =================================
+    # GUARDAR
+    # =================================
     if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
 
-        folio = generar_folio(empresa)
-        st.session_state.folio_generado = folio
-
         payload = {
-            "timestamp": datetime.now().isoformat(),   # Fecha de Captura
-            "fecha_reporte": str(fecha_reporte),       # Fecha de Reporte
+            "timestamp": datetime.now().isoformat(),
+            "fecha_reporte": str(fecha_reporte),
             "tipo_proveedor": tipo_proveedor,
             "estado": "En Curso / Nuevo",
             "capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
@@ -437,8 +422,9 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "reparacion_multa": reparacion_multa,
         }
 
-
-        append_pase_to_sheet(payload)
+        # ✅ USE THE REAL FOLIO RETURNED BY GOOGLE SHEETS
+        folio_real = append_pase_to_sheet(payload)
+        st.session_state.folio_generado = folio_real
 
         st.session_state.mostrar_confirmacion = True
         st.rerun()
