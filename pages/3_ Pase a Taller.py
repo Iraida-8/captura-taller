@@ -78,24 +78,42 @@ def safe_value(v):
 
 def reset_pase_form():
     """
-    Resets this page to its initial state without logging the user out.
+    Resets only Pase de Taller form state.
+    Does NOT touch authentication/session internals.
     """
-    keys_to_preserve = {
-        "user",     # logged-in user info
-        "access",   # access scopes (if present)
-    }
 
-    preserved = {
-        k: st.session_state[k]
-        for k in list(st.session_state.keys())
-        if k in keys_to_preserve
-    }
+    keys_to_reset = [
+        # Page UI state
+        "folio_generado",
+        "mostrar_confirmacion",
 
-    st.session_state.clear()
+        # Widget states (derived from labels)
+        "Fecha de Reporte",
+        "Tipo de Proveedor",
+        "Estado",
+        "OSTE",
+        "No. de Reporte",
+        "Empresa",
+        "Tipo de Reporte",
+        "Tipo de Unidad",
+        "Operador",
+        "No. de Unidad",
+        "Marca",
+        "Modelo",
+        "Tipo de Caja",
+        "No. de Unidad Externo",
+        "Nombre Línea Externa",
+        "Responsable",
+        "Descripción del problema",
+        "¿Aplica Cobro?",
+        "¿Generó multa?",
+        "No. de Inspección",
+        "Reparación que generó multa",
+    ]
 
-    for k, v in preserved.items():
-        st.session_state[k] = v
-
+    for k in keys_to_reset:
+        if k in st.session_state:
+            del st.session_state[k]
 
 # =================================
 # Append Pase de Taller to Sheet
