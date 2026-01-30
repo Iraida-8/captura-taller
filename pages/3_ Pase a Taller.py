@@ -85,58 +85,63 @@ def append_pase_to_sheet(data: dict):
     SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
 
     sheet_map = {
-        "IGLOO TRANSPORT": "IGLOO",
-        "LINCOLN FREIGHT": "LINCOLN",
-        "PICUS": "PICUS",
-        "SET FREIGHT INTERNATIONAL": "SFI",
-        "SET LOGIS PLUS": "SLP",
+        "IGLOO TRANSPORT": ("IGLOO", "IG"),
+        "LINCOLN FREIGHT": ("LINCOLN", "LF"),
+        "PICUS": ("PICUS", "PI"),
+        "SET FREIGHT INTERNATIONAL": ("SFI", "SFI"),
+        "SET LOGIS PLUS": ("SLP", "SLP"),
     }
 
-    empresa = data.get("empresa")
-    sheet_name = sheet_map.get(empresa)
-
-    if not sheet_name:
-        raise RuntimeError(f"No existe hoja configurada para la empresa: {empresa}")
+    empresa = data["empresa"]
+    sheet_name, prefix = sheet_map[empresa]
 
     sheet = client.open_by_key(SPREADSHEET_ID).worksheet(sheet_name)
 
+    # ---- AUTO-INCREMENT FOLIO (COLUMN B) ----
+    existing = sheet.col_values(2)[1:]  # skip header
+    nums = []
+    for f in existing:
+        if f.startswith(prefix):
+            try:
+                nums.append(int(f.replace(prefix, "")))
+            except:
+                pass
+
+    next_num = max(nums) + 1 if nums else 1
+    folio = f"{prefix}{str(next_num).zfill(5)}"
+
+    # ---- COLUMN ORDER MUST MATCH HEADER EXACTLY ----
     row = [
-        safe_value(data.get("timestamp")),
-        safe_value(data.get("folio")),
-        safe_value(data.get("fecha_reporte")),
-        safe_value(data.get("tipo_proveedor")),
-        safe_value(data.get("estado")),
-        safe_value(data.get("capturo")),
-
-        safe_value(data.get("oste")),
-        safe_value(data.get("no_reporte")),
-
-        safe_value(data.get("empresa")),
-        safe_value(data.get("tipo_reporte")),
-        safe_value(data.get("tipo_unidad")),
-        safe_value(data.get("operador")),
-
-        safe_value(data.get("no_unidad")),
-        safe_value(data.get("marca")),
-        safe_value(data.get("modelo")),
-        safe_value(data.get("tipo_caja")),
-
-        safe_value(data.get("no_unidad_externo")),
-        safe_value(data.get("linea_externa")),
-
-        safe_value(data.get("aplica_cobro")),
-        safe_value(data.get("responsable")),
-
-        safe_value(data.get("descripcion")),
-
-        safe_value(data.get("genero_multa")),
-        safe_value(data.get("no_inspeccion")),
-        safe_value(data.get("reparacion_multa")),
-
-        safe_value(data.get("user_id")),
+        data["timestamp"],            # Fecha de Captura
+        folio,                        # No. de Folio
+        data["fecha_reporte"],        # Fecha de Reporte
+        data["tipo_proveedor"],
+        data["estado"],
+        data["capturo"],
+        data["oste"],
+        data["no_reporte"],
+        data["empresa"],
+        data["tipo_reporte"],
+        data["tipo_unidad"],
+        data["operador"],
+        data["no_unidad"],
+        data["marca"],
+        data["modelo"],
+        data["tipo_caja"],
+        data["no_unidad_externo"],
+        data["linea_externa"],
+        data["aplica_cobro"],
+        data["responsable"],
+        data["descripcion"],
+        data["genero_multa"],
+        data["no_inspeccion"],
+        data["reparacion_multa"],
     ]
 
+
     sheet.append_row(row, value_input_option="USER_ENTERED")
+    return folio
+
 
 # =================================
 # Google Sheets configuration
@@ -408,40 +413,31 @@ if tipo_proveedor in ["Interno", "Externo"]:
         st.session_state.folio_generado = folio
 
         payload = {
-            "timestamp": datetime.now().isoformat(),
-            "folio": folio,
-            "fecha_reporte": fecha_reporte,
+            "timestamp": datetime.now().isoformat(),   # Fecha de Captura
+            "fecha_reporte": str(fecha_reporte),       # Fecha de Reporte
             "tipo_proveedor": tipo_proveedor,
-            "estado": estado,
+            "estado": "En Curso / Nuevo",
             "capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
-
             "oste": oste,
             "no_reporte": no_reporte,
-
             "empresa": empresa,
             "tipo_reporte": tipo_reporte,
             "tipo_unidad": tipo_unidad_operador,
             "operador": operador,
-
             "no_unidad": no_unidad,
             "marca": marca_valor,
             "modelo": modelo_valor,
             "tipo_caja": tipo_caja,
-
             "no_unidad_externo": no_unidad_externo,
             "linea_externa": linea_externa,
-
             "aplica_cobro": aplica_cobro,
             "responsable": responsable,
-
             "descripcion": descripcion_problema,
-
             "genero_multa": genero_multa,
             "no_inspeccion": no_inspeccion,
             "reparacion_multa": reparacion_multa,
-
-            "user_id": st.session_state.user["id"],
         }
+
 
         append_pase_to_sheet(payload)
 
