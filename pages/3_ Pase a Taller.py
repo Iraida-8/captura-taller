@@ -49,12 +49,14 @@ st.divider()
 def get_gsheets_credentials():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
+    # Streamlit Cloud
     if "gcp_service_account" in st.secrets:
         return Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
             scopes=scopes
         )
 
+    # Local
     if os.path.exists("google_service_account.json"):
         return Credentials.from_service_account_file(
             "google_service_account.json",
@@ -64,13 +66,11 @@ def get_gsheets_credentials():
     raise RuntimeError("Google Sheets credentials not found")
 
 # =================================
-# 🔧 FIX: SAFE VALUE (ONLY ADDITION)
+# Helpers
 # =================================
 def safe_value(v):
     if v is None:
         return ""
-    if isinstance(v, (date, datetime)):
-        return v.isoformat()
     if isinstance(v, bool):
         return "Sí" if v else "No"
     return str(v)
@@ -107,20 +107,32 @@ def append_pase_to_sheet(data: dict):
         safe_value(data.get("tipo_proveedor")),
         safe_value(data.get("estado")),
         safe_value(data.get("capturo")),
+
+        safe_value(data.get("oste")),
+        safe_value(data.get("no_reporte")),
+
         safe_value(data.get("empresa")),
         safe_value(data.get("tipo_reporte")),
         safe_value(data.get("tipo_unidad")),
         safe_value(data.get("operador")),
+
         safe_value(data.get("no_unidad")),
         safe_value(data.get("marca")),
         safe_value(data.get("modelo")),
         safe_value(data.get("tipo_caja")),
+
+        safe_value(data.get("no_unidad_externo")),
+        safe_value(data.get("linea_externa")),
+
         safe_value(data.get("aplica_cobro")),
         safe_value(data.get("responsable")),
+
         safe_value(data.get("descripcion")),
+
         safe_value(data.get("genero_multa")),
         safe_value(data.get("no_inspeccion")),
         safe_value(data.get("reparacion_multa")),
+
         safe_value(data.get("user_id")),
     ]
 
@@ -141,6 +153,9 @@ TRACTORES_URL = (
     "/export?format=csv&gid=1152583226"
 )
 
+# =================================
+# Load catalogs
+# =================================
 @st.cache_data(ttl=3600)
 def cargar_catalogos():
     df = pd.read_csv(CATALOGOS_URL)
@@ -210,7 +225,7 @@ with tp1:
         ["----", "Interno", "Externo"]
     )
 with tp2:
-    st.selectbox(
+    estado = st.selectbox(
         "Estado",
         ["En Curso / Nuevo"],
         index=0,
@@ -231,9 +246,9 @@ folio_display = (
 
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.text_input("OSTE", disabled=True)
+    oste = st.text_input("OSTE", value="", disabled=True)
 with c2:
-    st.text_input(
+    no_reporte = st.text_input(
         "No. de Reporte",
         disabled=(tipo_proveedor != "Interno")
     )
@@ -347,12 +362,12 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     e1, e2 = st.columns(2)
     with e1:
-        st.text_input(
+        no_unidad_externo = st.text_input(
             "No. de Unidad Externo",
             disabled=no_unidad != "REMOLQUE EXTERNO"
         )
     with e2:
-        st.text_input(
+        linea_externa = st.text_input(
             "Nombre Línea Externa",
             disabled=no_unidad != "REMOLQUE EXTERNO"
         )
@@ -364,7 +379,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
         index=0
     )
 
-    st.text_input(
+    responsable = st.text_input(
         "Responsable",
         disabled=aplica_cobro != "Sí"
     )
@@ -373,12 +388,12 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     genero_multa = st.checkbox("¿Generó multa?")
 
-    st.text_input(
+    no_inspeccion = st.text_input(
         "No. de Inspección",
         disabled=not genero_multa
     )
 
-    st.text_area(
+    reparacion_multa = st.text_area(
         "Reparación que generó multa",
         placeholder="Por favor introducir # de reporte aplicable",
         disabled=not genero_multa
@@ -395,24 +410,36 @@ if tipo_proveedor in ["Interno", "Externo"]:
         payload = {
             "timestamp": datetime.now().isoformat(),
             "folio": folio,
-            "fecha_reporte": str(fecha_reporte),
+            "fecha_reporte": fecha_reporte,
             "tipo_proveedor": tipo_proveedor,
-            "estado": "En Curso / Nuevo",
+            "estado": estado,
             "capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
+
+            "oste": oste,
+            "no_reporte": no_reporte,
+
             "empresa": empresa,
             "tipo_reporte": tipo_reporte,
             "tipo_unidad": tipo_unidad_operador,
             "operador": operador,
+
             "no_unidad": no_unidad,
             "marca": marca_valor,
             "modelo": modelo_valor,
-            "tipo_caja": tipo_caja if "tipo_caja" in locals() else "",
+            "tipo_caja": tipo_caja,
+
+            "no_unidad_externo": no_unidad_externo,
+            "linea_externa": linea_externa,
+
             "aplica_cobro": aplica_cobro,
-            "responsable": "",
+            "responsable": responsable,
+
             "descripcion": descripcion_problema,
+
             "genero_multa": genero_multa,
-            "no_inspeccion": "",
-            "reparacion_multa": "",
+            "no_inspeccion": no_inspeccion,
+            "reparacion_multa": reparacion_multa,
+
             "user_id": st.session_state.user["id"],
         }
 
