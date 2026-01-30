@@ -75,46 +75,6 @@ def safe_value(v):
         return "Sí" if v else "No"
     return str(v)
 
-
-def reset_pase_form():
-    """
-    Resets only Pase de Taller form state.
-    Does NOT touch authentication/session internals.
-    """
-
-    keys_to_reset = [
-        # Page UI state
-        "folio_generado",
-        "mostrar_confirmacion",
-
-        # Widget states (derived from labels)
-        "Fecha de Reporte",
-        "Tipo de Proveedor",
-        "Estado",
-        "OSTE",
-        "No. de Reporte",
-        "Empresa",
-        "Tipo de Reporte",
-        "Tipo de Unidad",
-        "Operador",
-        "No. de Unidad",
-        "Marca",
-        "Modelo",
-        "Tipo de Caja",
-        "No. de Unidad Externo",
-        "Nombre Línea Externa",
-        "Responsable",
-        "Descripción del problema",
-        "¿Aplica Cobro?",
-        "¿Generó multa?",
-        "No. de Inspección",
-        "Reparación que generó multa",
-    ]
-
-    for k in keys_to_reset:
-        if k in st.session_state:
-            del st.session_state[k]
-
 # =================================
 # Append Pase de Taller to Sheet
 # =================================
@@ -479,7 +439,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
             )
 
             if st.button("Aceptar"):
-                reset_pase_form()
-                st.rerun()
+                st.switch_page("pages/dashboard.py")
 
         confirmacion()
