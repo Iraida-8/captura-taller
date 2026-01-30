@@ -65,6 +65,41 @@ def get_gsheets_credentials():
     raise RuntimeError("Google Sheets credentials not found")
 
 # =================================
+# Update Estado in Sheet
+# =================================
+def actualizar_estado_pase(empresa: str, folio: str, nuevo_estado: str):
+    sheet_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    hoja = sheet_map.get(empresa)
+    if not hoja:
+        raise ValueError("Empresa no reconocida")
+
+    creds = get_gsheets_credentials()
+    client = gspread.authorize(creds)
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet(hoja)
+
+    folios = ws.col_values(2)  # No. de Folio (Column B)
+
+    try:
+        row_idx = folios.index(folio) + 1
+    except ValueError:
+        raise ValueError("Folio no encontrado")
+
+    headers = ws.row_values(1)
+    estado_col = headers.index("Estado") + 1
+
+    ws.update_cell(row_idx, estado_col, nuevo_estado)
+
+# =================================
 # Load Pase de Taller data
 # =================================
 @st.cache_data(ttl=300)
@@ -91,7 +126,6 @@ def cargar_pases_taller():
 
     df = pd.concat(dfs, ignore_index=True)
 
-    # Normalize columns used by UI
     df.rename(columns={
         "No. de Folio": "NoFolio",
         "Fecha de Captura": "Fecha",
@@ -251,7 +285,8 @@ if st.session_state.modal_reporte:
             "Estado",
             ["En Curso / Nuevo", "Cerrado", "Cancelado"],
             index=["En Curso / Nuevo", "Cerrado", "Cancelado"].index(reporte["Estado"]),
-            disabled=not editable
+            disabled=not editable,
+            key="nuevo_estado_modal"
         )
 
         if reporte["Estado"] != "En Curso / Nuevo" and nuevo_estado == "En Curso / Nuevo":
@@ -259,23 +294,25 @@ if st.session_state.modal_reporte:
             st.stop()
 
         st.divider()
-        st.subheader("Servicios y Refacciones")
 
-        st.data_editor(
-            st.session_state.articulos_df,
-            hide_index=True,
-            disabled=not editable
-        )
+        c1, c2 = st.columns(2)
 
-        total = (
-            st.session_state.articulos_df["Total MXN"].sum()
-            if not st.session_state.articulos_df.empty
-            else 0
-        )
+        with c1:
+            if st.button("Cancelar"):
+                st.session_state.modal_reporte = None
+                st.rerun()
 
-        st.metric("Total MXN", f"$ {total:,.2f}")
+        with c2:
+            if st.button("Aceptar", type="primary"):
+                if editable and nuevo_estado != reporte["Estado"]:
+                    actualizar_estado_pase(
+                        empresa=reporte["Empresa"],
+                        folio=reporte["NoFolio"],
+                        nuevo_estado=nuevo_estado
+                    )
 
-        if st.button("Cerrar"):
-            st.session_state.modal_reporte = None
+                st.session_state.modal_reporte = None
+                st.cache_data.clear()
+                st.rerun()
 
     modal()
