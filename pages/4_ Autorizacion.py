@@ -65,7 +65,7 @@ def get_gsheets_credentials():
     raise RuntimeError("Google Sheets credentials not found")
 
 # =================================
-# Load Pase de Taller data (REAL)
+# Load Pase de Taller data
 # =================================
 @st.cache_data(ttl=300)
 def cargar_pases_taller():
@@ -82,9 +82,7 @@ def cargar_pases_taller():
             ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
             records = ws.get_all_records()
             if records:
-                df = pd.DataFrame(records)
-                df["Empresa"] = hoja
-                dfs.append(df)
+                dfs.append(pd.DataFrame(records))
         except Exception:
             pass
 
@@ -93,14 +91,13 @@ def cargar_pases_taller():
 
     df = pd.concat(dfs, ignore_index=True)
 
-    # Normalize / rename expected columns
+    # Normalize column names used by UI
     df.rename(columns={
         "No. de Folio": "NoFolio",
         "Fecha de Captura": "Fecha",
         "Tipo de Proveedor": "Proveedor",
     }, inplace=True)
 
-    # Parse dates safely
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
 
     return df
@@ -156,13 +153,22 @@ else:
 st.divider()
 st.subheader("Buscar Pase de Taller")
 
+empresas_disponibles = (
+    sorted(pases_df["Empresa"].dropna().unique())
+    if not pases_df.empty
+    else []
+)
+
 f1, f2, f3, f4 = st.columns(4)
 
 with f1:
     f_folio = st.text_input("No. de Folio")
 
 with f2:
-    f_empresa = st.text_input("Empresa")
+    f_empresa = st.selectbox(
+        "Empresa",
+        [""] + empresas_disponibles
+    )
 
 with f3:
     f_estado = st.selectbox(
@@ -188,10 +194,12 @@ if st.session_state.buscar_trigger:
     resultados = pases_df.copy()
 
     if f_folio:
-        resultados = resultados[resultados["NoFolio"].astype(str).str.contains(f_folio, case=False)]
+        resultados = resultados[
+            resultados["NoFolio"].astype(str).str.contains(f_folio, case=False)
+        ]
 
     if f_empresa:
-        resultados = resultados[resultados["Empresa"].astype(str).str.contains(f_empresa, case=False)]
+        resultados = resultados[resultados["Empresa"] == f_empresa]
 
     if f_estado:
         resultados = resultados[resultados["Estado"] == f_estado]
