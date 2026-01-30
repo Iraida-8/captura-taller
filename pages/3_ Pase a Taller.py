@@ -36,11 +36,6 @@ require_login()
 require_access("pase_taller")
 
 # =================================
-# Reset stale confirmation state
-# =================================
-st.session_state.mostrar_confirmacion = False
-
-# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
