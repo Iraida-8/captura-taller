@@ -75,6 +75,28 @@ def safe_value(v):
         return "Sí" if v else "No"
     return str(v)
 
+
+def reset_pase_form():
+    """
+    Resets this page to its initial state without logging the user out.
+    """
+    keys_to_preserve = {
+        "user",     # logged-in user info
+        "access",   # access scopes (if present)
+    }
+
+    preserved = {
+        k: st.session_state[k]
+        for k in list(st.session_state.keys())
+        if k in keys_to_preserve
+    }
+
+    st.session_state.clear()
+
+    for k, v in preserved.items():
+        st.session_state[k] = v
+
+
 # =================================
 # Append Pase de Taller to Sheet
 # =================================
@@ -439,7 +461,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             )
 
             if st.button("Aceptar"):
-                st.session_state.mostrar_confirmacion = False
+                reset_pase_form()
                 st.rerun()
 
         confirmacion()
