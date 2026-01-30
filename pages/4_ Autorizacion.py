@@ -1,8 +1,12 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
+from datetime import datetime, date
 
 from auth import require_login, require_access
+
+import gspread
+from google.oauth2.service_account import Credentials
+import os
 
 # =================================
 # Page configuration (MUST BE FIRST)
@@ -41,6 +45,69 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
+# Google Sheets credentials
+# =================================
+def get_gsheets_credentials():
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+
+    if "gcp_service_account" in st.secrets:
+        return Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=scopes
+        )
+
+    if os.path.exists("google_service_account.json"):
+        return Credentials.from_service_account_file(
+            "google_service_account.json",
+            scopes=scopes
+        )
+
+    raise RuntimeError("Google Sheets credentials not found")
+
+# =================================
+# Load Pase de Taller data (REAL)
+# =================================
+@st.cache_data(ttl=300)
+def cargar_pases_taller():
+    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    hojas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
+
+    creds = get_gsheets_credentials()
+    client = gspread.authorize(creds)
+
+    dfs = []
+
+    for hoja in hojas:
+        try:
+            ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
+            records = ws.get_all_records()
+            if records:
+                df = pd.DataFrame(records)
+                df["Empresa"] = hoja
+                dfs.append(df)
+        except Exception:
+            pass
+
+    if not dfs:
+        return pd.DataFrame()
+
+    df = pd.concat(dfs, ignore_index=True)
+
+    # Normalize / rename expected columns
+    df.rename(columns={
+        "No. de Folio": "NoFolio",
+        "Fecha de Captura": "Fecha",
+        "Tipo de Proveedor": "Proveedor",
+    }, inplace=True)
+
+    # Parse dates safely
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+
+    return df
+
+pases_df = cargar_pases_taller()
+
+# =================================
 # Page title
 # =================================
 st.title("📋 Autorización y Actualización de Reporte")
@@ -67,38 +134,24 @@ if "articulos_df" not in st.session_state:
     ])
 
 # =================================
-# MOCK DATA (TEMPORARY – DO NOT REMOVE)
-# =================================
-mock_reportes = pd.DataFrame([
-    {
-        "NoFolio": "IG00001",
-        "Empresa": "IGLOO TRANSPORT",
-        "Fecha": date.today(),
-        "Proveedor": "Interno",
-        "Estado": "En Curso / Nuevo"
-    },
-    {
-        "NoFolio": "IG00002",
-        "Empresa": "LINCOLN FREIGHT",
-        "Fecha": date.today(),
-        "Proveedor": "Externo",
-        "Estado": "Cerrado"
-    }
-])
-
-# =================================
-# SECCIÓN — TOP 10 EN CURSO
+# TOP 10 EN CURSO
 # =================================
 st.subheader("Últimos 10 Pases de Taller (En Curso / Nuevo)")
 
-top10 = mock_reportes[
-    mock_reportes["Estado"] == "En Curso / Nuevo"
-].sort_values("Fecha", ascending=False).head(10)
+if pases_df.empty:
+    st.info("No hay pases de taller registrados.")
+else:
+    top10 = (
+        pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
+        .sort_values("Fecha", ascending=False)
+        .head(10)
+        [["NoFolio", "Empresa", "Fecha", "Proveedor", "Estado"]]
+    )
 
-st.dataframe(top10, hide_index=True, use_container_width=True)
+    st.dataframe(top10, hide_index=True, use_container_width=True)
 
 # =================================
-# SECCIÓN — BUSCAR PASE DE TALLER
+# BUSCAR
 # =================================
 st.divider()
 st.subheader("Buscar Pase de Taller")
@@ -128,14 +181,32 @@ if st.button("Buscar"):
 # =================================
 if st.session_state.buscar_trigger:
 
-    if not any([f_folio, f_empresa, f_estado, f_fecha]):
-        st.warning("Ingresa al menos un filtro para buscar.")
+    if pases_df.empty:
+        st.warning("No hay datos para buscar.")
+        st.stop()
+
+    resultados = pases_df.copy()
+
+    if f_folio:
+        resultados = resultados[resultados["NoFolio"].astype(str).str.contains(f_folio, case=False)]
+
+    if f_empresa:
+        resultados = resultados[resultados["Empresa"].astype(str).str.contains(f_empresa, case=False)]
+
+    if f_estado:
+        resultados = resultados[resultados["Estado"] == f_estado]
+
+    if f_fecha:
+        resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
+
+    if resultados.empty:
+        st.warning("No se encontraron resultados.")
         st.stop()
 
     st.divider()
     st.subheader("Resultados de Búsqueda")
 
-    for _, row in mock_reportes.iterrows():
+    for _, row in resultados.iterrows():
         c1, c2, c3, c4, c5, c6 = st.columns([1, 2, 2, 2, 2, 1])
 
         with c1:
@@ -147,10 +218,10 @@ if st.session_state.buscar_trigger:
         c3.write(row["Empresa"])
         c4.write(row["Proveedor"])
         c5.write(row["Estado"])
-        c6.write(row["Fecha"])
+        c6.write(row["Fecha"].date() if pd.notna(row["Fecha"]) else "")
 
 # =================================
-# MODAL — EDITAR / VER REPORTE
+# MODAL
 # =================================
 if st.session_state.modal_reporte:
 
@@ -176,67 +247,8 @@ if st.session_state.modal_reporte:
             st.error("No es posible regresar a En Curso / Nuevo.")
             st.stop()
 
-        # =================================
-        # SERVICIOS Y REFACCIONES
-        # =================================
         st.divider()
         st.subheader("Servicios y Refacciones")
-
-        IGLOO_ARTICULOS_URL = (
-            "https://docs.google.com/spreadsheets/d/"
-            "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
-            "/export?format=csv&gid=410297659"
-        )
-
-        @st.cache_data(ttl=3600)
-        def cargar_articulos_igloo():
-            df = pd.read_csv(IGLOO_ARTICULOS_URL)
-            df.columns = df.columns.str.strip()
-
-            def limpiar(v):
-                return str(v).replace("$", "").replace(",", "").strip()
-
-            precio = df["PrecioParte"].apply(limpiar).astype(float)
-            iva_raw = df["Tasaiva"].apply(limpiar).astype(float)
-            iva = iva_raw.apply(lambda x: x / 100 if x >= 1 else x)
-
-            return pd.DataFrame({
-                "Seleccionar": False,
-                "Artículo": df["Parte"],
-                "Descripción": df["Parte"],
-                "Precio MXP": precio,
-                "Iva": iva,
-                "Cantidad": 1,
-                "Total MXN": precio * (1 + iva),
-                "Tipo Mtto": df["Tipo de reparacion"]
-            })
-
-        if editable:
-            if st.button("Añadir Servicios o Refacciones"):
-                igloo_df = cargar_articulos_igloo()
-
-                tipo_mtto = st.selectbox(
-                    "Tipo de Mantenimiento",
-                    sorted(igloo_df["Tipo Mtto"].dropna().unique())
-                )
-
-                refaccion = st.selectbox(
-                    "Refacción",
-                    igloo_df["Artículo"].tolist()
-                )
-
-                fila = igloo_df[igloo_df["Artículo"] == refaccion].iloc[0]
-                cantidad = st.number_input("Cantidad", min_value=1, value=1)
-
-                if st.button("Agregar"):
-                    nueva = fila.copy()
-                    nueva["Cantidad"] = cantidad
-                    nueva["Total MXN"] = cantidad * fila["Precio MXP"] * (1 + fila["Iva"])
-
-                    st.session_state.articulos_df = pd.concat(
-                        [st.session_state.articulos_df, nueva.to_frame().T],
-                        ignore_index=True
-                    )
 
         st.data_editor(
             st.session_state.articulos_df,
