@@ -151,6 +151,11 @@ def cargar_catalogo_igloo_simple():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
+    df = df.sort_values("Fecha", ascending=False)
+    df = df.drop_duplicates(subset=["Parte"], keep="first")
+
     def limpiar_num(v):
         try:
             return float(str(v).replace("$", "").replace(",", "").strip())
@@ -228,6 +233,7 @@ with f3:
         "Estado",
         [
             "Selecciona estado",
+            "En Curso / Autorizado",
             "En Curso / Nuevo",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
@@ -301,6 +307,7 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
 
         opciones_estado = [
+            "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
             "Cerrado / Cancelado",
@@ -339,6 +346,7 @@ if st.session_state.modal_reporte:
             )
 
         habilita_boton = nuevo_estado in [
+            "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
         ]
