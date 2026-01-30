@@ -91,7 +91,7 @@ def cargar_pases_taller():
 
     df = pd.concat(dfs, ignore_index=True)
 
-    # Normalize column names used by UI
+    # Normalize columns used by UI
     df.rename(columns={
         "No. de Folio": "NoFolio",
         "Fecha de Captura": "Fecha",
@@ -162,18 +162,21 @@ empresas_disponibles = (
 f1, f2, f3, f4 = st.columns(4)
 
 with f1:
-    f_folio = st.text_input("No. de Folio")
+    f_folio = st.text_input(
+        "No. de Folio",
+        placeholder="Escribe número de folio"
+    )
 
 with f2:
     f_empresa = st.selectbox(
         "Empresa",
-        [""] + empresas_disponibles
+        ["Selecciona empresa"] + empresas_disponibles
     )
 
 with f3:
     f_estado = st.selectbox(
         "Estado",
-        ["", "En Curso / Nuevo", "Cerrado", "Cancelado"]
+        ["Selecciona estado", "En Curso / Nuevo", "Cerrado", "Cancelado"]
     )
 
 with f4:
@@ -198,10 +201,10 @@ if st.session_state.buscar_trigger:
             resultados["NoFolio"].astype(str).str.contains(f_folio, case=False)
         ]
 
-    if f_empresa:
+    if f_empresa and f_empresa != "Selecciona empresa":
         resultados = resultados[resultados["Empresa"] == f_empresa]
 
-    if f_estado:
+    if f_estado and f_estado != "Selecciona estado":
         resultados = resultados[resultados["Estado"] == f_estado]
 
     if f_fecha:
