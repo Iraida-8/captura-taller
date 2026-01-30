@@ -148,6 +148,20 @@ st.title("📋 Autorización y Actualización de Reporte")
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
 
+# Table for servicios / refacciones
+st.session_state.setdefault(
+    "servicios_df",
+    pd.DataFrame(columns=[
+        "Seleccionar",
+        "Artículo",
+        "Descripción",
+        "Precio MXP",
+        "IVA",
+        "Cantidad",
+        "Total MXN",
+    ])
+)
+
 # =================================
 # TOP 10 EN CURSO
 # =================================
@@ -287,6 +301,35 @@ if st.session_state.modal_reporte:
             disabled=not habilita_boton,
             use_container_width=True
         )
+
+        # Editable table
+        st.session_state.servicios_df = st.data_editor(
+            st.session_state.servicios_df,
+            num_rows="dynamic",
+            hide_index=True,
+            disabled=not editable,
+            column_config={
+                "Seleccionar": st.column_config.CheckboxColumn(),
+                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
+                "IVA": st.column_config.NumberColumn(format="%.2f"),
+                "Cantidad": st.column_config.NumberColumn(min_value=0, step=1),
+                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
+            },
+        )
+
+        # Calculate total (only selected rows)
+        if not st.session_state.servicios_df.empty:
+            total = (
+                st.session_state.servicios_df[
+                    st.session_state.servicios_df["Seleccionar"] == True
+                ]["Total MXN"]
+                .fillna(0)
+                .sum()
+            )
+        else:
+            total = 0
+
+        st.metric("Total MXN", f"$ {total:,.2f}")
 
         st.divider()
 
