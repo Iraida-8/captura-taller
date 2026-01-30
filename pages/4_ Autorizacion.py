@@ -327,25 +327,57 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Servicios y Refacciones")
 
+        if r["Empresa"] == "IGLOO TRANSPORT":
+            catalogo = cargar_catalogo_igloo_simple()
+            st.selectbox(
+                "Refacción / Servicio",
+                options=catalogo["label"].tolist(),
+                index=None,
+                placeholder="Selecciona una refacción o servicio"
+            )
+        else:
+            st.selectbox(
+                "Refacción / Servicio",
+                options=[],
+                index=None,
+                placeholder="No hay catálogo disponible para esta empresa",
+                disabled=True
+            )
+
+        habilita_boton = nuevo_estado in [
+            "En Curso / Autorizado",
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+        ]
+
+        st.button(
+            "Agregar refacciones o servicios",
+            disabled=not habilita_boton,
+            width="stretch"
+        )
+
         st.session_state.servicios_df = st.data_editor(
             st.session_state.servicios_df,
+            num_rows="dynamic",
             hide_index=True,
             disabled=not editable,
             column_config={
-                "Parte": st.column_config.TextColumn(disabled=True),
-                "TipoCompra": st.column_config.TextColumn(disabled=True),
-                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f", disabled=True),
-                "IVA": st.column_config.NumberColumn(format="%.2f", disabled=True),
-                "Cantidad": st.column_config.SelectboxColumn(options=list(range(1, 51))),
-                "Total MXN": st.column_config.NumberColumn(format="$ %.2f", disabled=True),
+                "Seleccionar": st.column_config.CheckboxColumn(),
+                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
+                "IVA": st.column_config.NumberColumn(format="%.2f"),
+                "Cantidad": st.column_config.NumberColumn(min_value=0, step=1),
+                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
             },
         )
 
         if not st.session_state.servicios_df.empty:
             total = (
-                st.session_state.servicios_df["Precio MXP"]
-                * st.session_state.servicios_df["Cantidad"]
-            ).sum()
+                st.session_state.servicios_df[
+                    st.session_state.servicios_df["Seleccionar"] == True
+                ]["Total MXN"]
+                .fillna(0)
+                .sum()
+            )
         else:
             total = 0
 
