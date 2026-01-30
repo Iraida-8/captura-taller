@@ -161,9 +161,6 @@ st.session_state.setdefault(
     ])
 )
 
-# 🔹 ADDED: control for IGLOO catalog modal
-st.session_state.setdefault("abrir_catalogo_igloo", False)
-
 # =================================
 # TOP 10 EN CURSO
 # =================================
@@ -201,6 +198,7 @@ with f3:
         "Estado",
         [
             "Selecciona estado",
+            "En Curso / Nuevo",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
             "Cerrado / Cancelado",
@@ -298,14 +296,12 @@ if st.session_state.modal_reporte:
             "En Curso / Espera Refacciones",
         ]
 
-        # 🔹 MODIFIED: button now opens catalog (no behavior removed)
-        if st.button(
+        # 🔹 Button intentionally has NO LOGIC
+        st.button(
             "Agregar refacciones o servicios",
             disabled=not habilita_boton,
             width="stretch"
-        ):
-            st.session_state.abrir_catalogo_igloo = True
-            st.rerun()
+        )
 
         st.session_state.servicios_df = st.data_editor(
             st.session_state.servicios_df,
@@ -354,92 +350,3 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
     modal()
-
-# =================================
-# 🔹 ADDED: IGLOO CATALOG LOADER
-# =================================
-@st.cache_data(ttl=600)
-def cargar_catalogo_igloo():
-    URL = (
-        "https://docs.google.com/spreadsheets/d/"
-        "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
-        "/export?format=csv&gid=410297659"
-    )
-
-    df = pd.read_csv(URL)
-    df.columns = df.columns.str.strip()
-
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
-
-    df = (
-        df.sort_values("Fecha", ascending=False)
-        .drop_duplicates(subset=["Parte"], keep="first")
-    )
-
-    def limpiar_num(v):
-        return float(str(v).replace("$", "").replace(",", "").strip())
-
-    df["Precio MXP"] = df["PrecioParte"].apply(limpiar_num)
-    df["IVA"] = df["Tasaiva"].apply(limpiar_num).apply(
-        lambda x: x / 100 if x > 1 else x
-    )
-
-    return df
-
-# =================================
-# 🔹 ADDED: IGLOO CATALOG MODAL
-# =================================
-if st.session_state.abrir_catalogo_igloo:
-
-    catalogo_df = cargar_catalogo_igloo()
-
-    @st.dialog("Catálogo de Refacciones y Servicios (IGLOO)")
-    def modal_catalogo_igloo():
-
-        articulo = st.selectbox(
-            "Artículo",
-            sorted(catalogo_df["Parte"].dropna().unique())
-        )
-
-        fila = catalogo_df[catalogo_df["Parte"] == articulo].iloc[0]
-
-        st.markdown(f"**Descripción:** {fila['Parte']}")
-        st.markdown(f"**Precio MXP:** ${fila['Precio MXP']:,.2f}")
-        st.markdown(f"**IVA:** {fila['IVA']:.2f}")
-
-        c1, c2 = st.columns(2)
-
-        with c1:
-            if st.button("Cancelar"):
-                st.session_state.abrir_catalogo_igloo = False
-                st.rerun()
-
-        with c2:
-            if st.button("Agregar"):
-                if articulo not in st.session_state.servicios_df["Artículo"].values:
-                    cantidad = 1
-                    total = cantidad * fila["Precio MXP"] * (1 + fila["IVA"])
-
-                    nueva = {
-                        "Seleccionar": True,
-                        "Artículo": articulo,
-                        "Descripción": fila["Parte"],
-                        "Precio MXP": fila["Precio MXP"],
-                        "IVA": fila["IVA"],
-                        "Cantidad": cantidad,
-                        "Total MXN": total,
-                    }
-
-                    st.session_state.servicios_df = pd.concat(
-                        [
-                            st.session_state.servicios_df,
-                            pd.DataFrame([nueva])
-                        ],
-                        ignore_index=True
-                    )
-
-                st.session_state.abrir_catalogo_igloo = False
-                st.rerun()
-
-    modal_catalogo_igloo()
