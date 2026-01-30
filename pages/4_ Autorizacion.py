@@ -176,7 +176,7 @@ if not pases_df.empty:
         .head(10)
         [["NoFolio", "Empresa", "Fecha", "Proveedor", "Estado"]]
     )
-    st.dataframe(top10, hide_index=True, use_container_width=True)
+    st.dataframe(top10, hide_index=True, width="stretch")
 else:
     st.info("No hay pases registrados.")
 
@@ -302,9 +302,10 @@ if st.session_state.modal_reporte:
         if st.button(
             "Agregar refacciones o servicios",
             disabled=not habilita_boton,
-            use_container_width=True
+            width="stretch"
         ):
             st.session_state.abrir_catalogo_igloo = True
+            st.rerun()
 
         st.session_state.servicios_df = st.data_editor(
             st.session_state.servicios_df,
