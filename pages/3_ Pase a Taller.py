@@ -112,32 +112,31 @@ def append_pase_to_sheet(data: dict):
 
     # ---- COLUMN ORDER MUST MATCH HEADER EXACTLY ----
     row = [
-        data["timestamp"],            # Fecha de Captura
-        folio,                        # No. de Folio
-        data["fecha_reporte"],        # Fecha de Reporte
-        data["tipo_proveedor"],
-        data["estado"],
-        data["capturo"],
-        data["oste"],
-        data["no_reporte"],
-        data["empresa"],
-        data["tipo_reporte"],
-        data["tipo_unidad"],
-        data["operador"],
-        data["no_unidad"],
-        data["marca"],
-        data["modelo"],
-        data["tipo_caja"],
-        data["no_unidad_externo"],
-        data["linea_externa"],
-        data["aplica_cobro"],
-        data["responsable"],
-        data["descripcion"],
-        data["genero_multa"],
-        data["no_inspeccion"],
-        data["reparacion_multa"],
+        safe_value(data["timestamp"]),
+        safe_value(folio),
+        safe_value(data["fecha_reporte"]),
+        safe_value(data["tipo_proveedor"]),
+        safe_value(data["estado"]),
+        safe_value(data["capturo"]),
+        safe_value(data["oste"]),
+        safe_value(data["no_reporte"]),
+        safe_value(data["empresa"]),
+        safe_value(data["tipo_reporte"]),
+        safe_value(data["tipo_unidad"]),
+        safe_value(data["operador"]),
+        safe_value(data["no_unidad"]),
+        safe_value(data["marca"]),
+        safe_value(data["modelo"]),
+        safe_value(data["tipo_caja"]),
+        safe_value(data["no_unidad_externo"]),
+        safe_value(data["linea_externa"]),
+        safe_value(data["aplica_cobro"]),
+        safe_value(data["responsable"]),
+        safe_value(data["descripcion"]),
+        safe_value(data["genero_multa"]),
+        safe_value(data["no_inspeccion"]),
+        safe_value(data["reparacion_multa"]),
     ]
-
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
     return folio
