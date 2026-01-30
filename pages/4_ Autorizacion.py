@@ -35,9 +35,19 @@ require_login()
 require_access("autorizacion")
 
 # =================================
+# Defensive reset on page entry
+# =================================
+if st.session_state.get("_reset_autorizacion_page", True):
+    st.session_state.modal_reporte = None
+    st.session_state.buscar_trigger = False
+    st.session_state["_reset_autorizacion_page"] = False
+
+# =================================
 # Navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
+    st.session_state.modal_reporte = None
+    st.session_state.buscar_trigger = False
     st.switch_page("pages/dashboard.py")
 
 st.divider()
@@ -133,7 +143,7 @@ pases_df = cargar_pases_taller()
 st.title("📋 Autorización y Actualización de Reporte")
 
 # =================================
-# Session state
+# Session state defaults
 # =================================
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
@@ -262,16 +272,19 @@ if st.session_state.modal_reporte:
         )
 
         # =================================
-        # BOTÓN CONDICIONAL (NUEVO)
+        # SERVICIOS Y REFACCIONES
         # =================================
-        estado_habilita_boton = nuevo_estado in [
+        st.divider()
+        st.subheader("Servicios y Refacciones")
+
+        habilita_boton = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
         ]
 
         st.button(
-            "🧩 Acción adicional",
-            disabled=not estado_habilita_boton,
+            "Agregar refacciones o servicios",
+            disabled=not habilita_boton,
             use_container_width=True
         )
 
