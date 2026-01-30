@@ -138,6 +138,36 @@ def cargar_pases_taller():
 pases_df = cargar_pases_taller()
 
 # =================================
+# IGLOO catalog (READ ONLY)
+# =================================
+@st.cache_data(ttl=600)
+def cargar_catalogo_igloo_simple():
+    URL = (
+        "https://docs.google.com/spreadsheets/d/"
+        "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
+        "/export?format=csv&gid=410297659"
+    )
+
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    def limpiar_num(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return None
+
+    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+
+    df["label"] = df.apply(
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
+        if pd.notna(r["PU"]) else r["Parte"],
+        axis=1
+    )
+
+    return df[["Parte", "PU", "label"]]
+
+# =================================
 # Title
 # =================================
 st.title("📋 Autorización y Actualización de Reporte")
@@ -291,12 +321,28 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Servicios y Refacciones")
 
+        if r["Empresa"] == "IGLOO TRANSPORT":
+            catalogo = cargar_catalogo_igloo_simple()
+            st.selectbox(
+                "Refacción / Servicio",
+                options=catalogo["label"].tolist(),
+                index=None,
+                placeholder="Selecciona una refacción o servicio"
+            )
+        else:
+            st.selectbox(
+                "Refacción / Servicio",
+                options=[],
+                index=None,
+                placeholder="No hay catálogo disponible para esta empresa",
+                disabled=True
+            )
+
         habilita_boton = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
         ]
 
-        # 🔹 Button intentionally has NO LOGIC
         st.button(
             "Agregar refacciones o servicios",
             disabled=not habilita_boton,
