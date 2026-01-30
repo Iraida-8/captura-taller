@@ -49,14 +49,12 @@ st.divider()
 def get_gsheets_credentials():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
-    # Streamlit Cloud
     if "gcp_service_account" in st.secrets:
         return Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
             scopes=scopes
         )
 
-    # Local
     if os.path.exists("google_service_account.json"):
         return Credentials.from_service_account_file(
             "google_service_account.json",
@@ -64,6 +62,18 @@ def get_gsheets_credentials():
         )
 
     raise RuntimeError("Google Sheets credentials not found")
+
+# =================================
+# 🔧 FIX: SAFE VALUE (ONLY ADDITION)
+# =================================
+def safe_value(v):
+    if v is None:
+        return ""
+    if isinstance(v, (date, datetime)):
+        return v.isoformat()
+    if isinstance(v, bool):
+        return "Sí" if v else "No"
+    return str(v)
 
 # =================================
 # Append Pase de Taller to Sheet
@@ -74,7 +84,6 @@ def append_pase_to_sheet(data: dict):
 
     SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
 
-    # Map EMPRESA value → Sheet (TAB) name
     sheet_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
@@ -92,31 +101,30 @@ def append_pase_to_sheet(data: dict):
     sheet = client.open_by_key(SPREADSHEET_ID).worksheet(sheet_name)
 
     row = [
-        data.get("timestamp"),
-        data.get("folio"),
-        data.get("fecha_reporte"),
-        data.get("tipo_proveedor"),
-        data.get("estado"),
-        data.get("capturo"),
-        data.get("empresa"),
-        data.get("tipo_reporte"),
-        data.get("tipo_unidad"),
-        data.get("operador"),
-        data.get("no_unidad"),
-        data.get("marca"),
-        data.get("modelo"),
-        data.get("tipo_caja"),
-        data.get("aplica_cobro"),
-        data.get("responsable"),
-        data.get("descripcion"),
-        data.get("genero_multa"),
-        data.get("no_inspeccion"),
-        data.get("reparacion_multa"),
-        data.get("user_id"),
+        safe_value(data.get("timestamp")),
+        safe_value(data.get("folio")),
+        safe_value(data.get("fecha_reporte")),
+        safe_value(data.get("tipo_proveedor")),
+        safe_value(data.get("estado")),
+        safe_value(data.get("capturo")),
+        safe_value(data.get("empresa")),
+        safe_value(data.get("tipo_reporte")),
+        safe_value(data.get("tipo_unidad")),
+        safe_value(data.get("operador")),
+        safe_value(data.get("no_unidad")),
+        safe_value(data.get("marca")),
+        safe_value(data.get("modelo")),
+        safe_value(data.get("tipo_caja")),
+        safe_value(data.get("aplica_cobro")),
+        safe_value(data.get("responsable")),
+        safe_value(data.get("descripcion")),
+        safe_value(data.get("genero_multa")),
+        safe_value(data.get("no_inspeccion")),
+        safe_value(data.get("reparacion_multa")),
+        safe_value(data.get("user_id")),
     ]
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
-
 
 # =================================
 # Google Sheets configuration
@@ -133,9 +141,6 @@ TRACTORES_URL = (
     "/export?format=csv&gid=1152583226"
 )
 
-# =================================
-# Load catalogs
-# =================================
 @st.cache_data(ttl=3600)
 def cargar_catalogos():
     df = pd.read_csv(CATALOGOS_URL)
