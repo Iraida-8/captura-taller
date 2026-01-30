@@ -261,6 +261,20 @@ if st.session_state.modal_reporte:
             disabled=not editable
         )
 
+        # =================================
+        # BOTÓN CONDICIONAL (NUEVO)
+        # =================================
+        estado_habilita_boton = nuevo_estado in [
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+        ]
+
+        st.button(
+            "🧩 Acción adicional",
+            disabled=not estado_habilita_boton,
+            use_container_width=True
+        )
+
         st.divider()
 
         c1, c2 = st.columns(2)
