@@ -1,5 +1,7 @@
 streamlit
-supabase
-python-dotenv
-pillow
 pandas
+supabase
+gspread
+google-auth
+python-dotenv
+Pillow

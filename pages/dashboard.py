@@ -11,11 +11,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# Hide sidebar completely (we use buttons)
+# -------------------------------
+# Hide sidebar + BIG BUTTON STYLES
+# -------------------------------
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] { display: none; }
+    /* Hide sidebar */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+
+    /* Make buttons BIG */
+    div.stButton > button {
+        height: 90px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 14px;
+        padding: 1.2rem;
+        white-space: normal;
+    }
+
+    /* Slight hover effect */
+    div.stButton > button:hover {
+        transform: scale(1.02);
+        transition: 0.15s ease-in-out;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -41,34 +62,34 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     if "consultar_reparacion" in access:
-        if st.button("🔍 Consultar Reparación", use_container_width=True):
+        if st.button("🔍  Consultar Reparación", use_container_width=True):
             st.switch_page("pages/1_ Consultar Reparacion.py")
 
 with col2:
     if "revision_ordenes" in access:
-        if st.button("🧾 Revisión Órdenes", use_container_width=True):
+        if st.button("🧾  Revisión Órdenes", use_container_width=True):
             st.switch_page("pages/2_ Revision Ordenes.py")
 
 with col3:
     if "pase_taller" in access:
-        if st.button("🏭 Pase a Taller", use_container_width=True):
+        if st.button("🏭  Pase a Taller", use_container_width=True):
             st.switch_page("pages/3_ Pase a Taller.py")
 
 col4, col5, col6 = st.columns(3)
 
 with col4:
     if "autorizacion" in access:
-        if st.button("✅ Autorización", use_container_width=True):
+        if st.button("✅  Autorización", use_container_width=True):
             st.switch_page("pages/4_ Autorizacion.py")
 
 with col5:
     if "ifuel" in access:
-        if st.button("⛽ Reporte iFuel", use_container_width=True):
+        if st.button("⛽  Reporte iFuel", use_container_width=True):
             st.switch_page("pages/5_ Reporte iFuel.py")
 
 with col6:
     if "consulta_reportes" in access:
-        if st.button("📊 Consulta Reportes", use_container_width=True):
+        if st.button("📊  Consulta Reportes", use_container_width=True):
             st.switch_page("pages/6_ Consulta Reportes.py")
 
 # -------------------------------

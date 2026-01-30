@@ -125,6 +125,7 @@ celerybeat.pid
 
 # Environments
 .env
+google_service_account.json
 .venv
 env/
 venv/

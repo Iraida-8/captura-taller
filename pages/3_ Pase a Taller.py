@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
-
+from datetime import date, datetime
 from auth import require_login, require_access
+
+import gspread
+from google.oauth2.service_account import Credentials
+import os
 
 # =================================
 # Page configuration (MUST BE FIRST)
@@ -41,6 +44,65 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
+# Google Sheets credentials (LOCAL + CLOUD)
+# =================================
+def get_gsheets_credentials():
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+
+    # Streamlit Cloud
+    if "gcp_service_account" in st.secrets:
+        return Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=scopes
+        )
+
+    # Local
+    if os.path.exists("google_service_account.json"):
+        return Credentials.from_service_account_file(
+            "google_service_account.json",
+            scopes=scopes
+        )
+
+    raise RuntimeError("Google Sheets credentials not found")
+
+# =================================
+# Append Pase de Taller to Sheet
+# =================================
+def append_pase_to_sheet(data: dict):
+    creds = get_gsheets_credentials()
+    client = gspread.authorize(creds)
+
+    sheet = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).sheet1
+
+    row = [
+        data.get("timestamp"),
+        data.get("folio"),
+        data.get("fecha_reporte"),
+        data.get("tipo_proveedor"),
+        data.get("estado"),
+        data.get("capturo"),
+        data.get("empresa"),
+        data.get("tipo_reporte"),
+        data.get("tipo_unidad"),
+        data.get("operador"),
+        data.get("no_unidad"),
+        data.get("marca"),
+        data.get("modelo"),
+        data.get("tipo_caja"),
+        data.get("aplica_cobro"),
+        data.get("responsable"),
+        data.get("descripcion"),
+        data.get("genero_multa"),
+        data.get("no_inspeccion"),
+        data.get("reparacion_multa"),
+        data.get("user_id"),
+    ]
+
+    sheet.append_row(row, value_input_option="USER_ENTERED")
+
+# =================================
 # Google Sheets configuration
 # =================================
 CATALOGOS_URL = (
@@ -72,13 +134,11 @@ def cargar_catalogos():
     )
     return df, sorted(empresas)
 
-
 @st.cache_data(ttl=3600)
 def cargar_tractores():
     df = pd.read_csv(TRACTORES_URL)
     df.columns = df.columns.str.strip()
     return df
-
 
 catalogos_df, empresas = cargar_catalogos()
 tractores_df = cargar_tractores()
@@ -136,7 +196,6 @@ with tp2:
         disabled=True
     )
 
-# ✅ REAL logged-in user (Supabase profile)
 st.text_input(
     "Capturó",
     value=st.session_state.user.get("name") or st.session_state.user.get("email"),
@@ -170,12 +229,11 @@ with c3:
 if tipo_proveedor in ["Interno", "Externo"]:
 
     st.divider()
-    titulo_form = (
+    st.subheader(
         "Pase de Taller Interno"
         if tipo_proveedor == "Interno"
         else "Pase de Taller Externo"
     )
-    st.subheader(titulo_form)
 
     empresa = st.selectbox(
         "Empresa",
@@ -309,7 +367,36 @@ if tipo_proveedor in ["Interno", "Externo"]:
     st.markdown("###")
 
     if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
-        st.session_state.folio_generado = generar_folio(empresa)
+
+        folio = generar_folio(empresa)
+        st.session_state.folio_generado = folio
+
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "folio": folio,
+            "fecha_reporte": str(fecha_reporte),
+            "tipo_proveedor": tipo_proveedor,
+            "estado": "En Curso / Nuevo",
+            "capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
+            "empresa": empresa,
+            "tipo_reporte": tipo_reporte,
+            "tipo_unidad": tipo_unidad_operador,
+            "operador": operador,
+            "no_unidad": no_unidad,
+            "marca": marca_valor,
+            "modelo": modelo_valor,
+            "tipo_caja": tipo_caja if "tipo_caja" in locals() else "",
+            "aplica_cobro": aplica_cobro,
+            "responsable": "",
+            "descripcion": descripcion_problema,
+            "genero_multa": genero_multa,
+            "no_inspeccion": "",
+            "reparacion_multa": "",
+            "user_id": st.session_state.user["id"],
+        }
+
+        append_pase_to_sheet(payload)
+
         st.session_state.mostrar_confirmacion = True
         st.rerun()
 

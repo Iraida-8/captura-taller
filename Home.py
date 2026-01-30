@@ -14,11 +14,40 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide sidebar visually on login page
+# =================================
+# Hide sidebar + typography tweaks
+# =================================
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] { display: none; }
+    /* Hide sidebar */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+
+    /* Slightly smaller title */
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    /* Bigger input text */
+    input {
+        font-size: 1.05rem !important;
+        padding: 0.65rem !important;
+    }
+
+    /* Bigger labels */
+    label {
+        font-size: 0.95rem !important;
+        font-weight: 500;
+    }
+
+    /* Bigger submit button */
+    div.stButton > button {
+        font-size: 1rem;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -46,11 +75,7 @@ st.session_state.setdefault("user", None)
 
 # =================================
 # LOGIN VIEW ONLY
-# (Do NOT render app content here)
 # =================================
-# ---------------------------------
-# Logo above login
-# ---------------------------------
 assets_dir = Path(__file__).parent / "assets"
 logo_path = assets_dir / "pg_brand.png"
 
@@ -81,7 +106,7 @@ with st.form("login_form"):
 if submit:
     try:
         # =================================
-        # AUTH (Supabase Auth ONLY)
+        # AUTH
         # =================================
         res = supabase.auth.sign_in_with_password({
             "email": email,
@@ -95,7 +120,7 @@ if submit:
         user_id = res.user.id
 
         # =================================
-        # Increment login counter (DB-side)
+        # Increment login counter
         # =================================
         supabase.rpc(
             "increment_login_count",
@@ -103,7 +128,7 @@ if submit:
         ).execute()
 
         # =================================
-        # Load profile (role + access)
+        # Load profile
         # =================================
         profile_res = (
             supabase
@@ -114,14 +139,10 @@ if submit:
             .execute()
         )
 
-        profile_data = (
-            profile_res.data
-            if profile_res and profile_res.data
-            else {}
-        )
+        profile_data = profile_res.data if profile_res and profile_res.data else {}
 
         # =================================
-        # Session bootstrap (THIS IS THE GOAL)
+        # Session bootstrap
         # =================================
         st.session_state.logged_in = True
         st.session_state.user = {
@@ -133,7 +154,6 @@ if submit:
             "access": profile_data.get("access", [])
         }
 
-        # Hand off control to the rest of the app
         st.switch_page("pages/dashboard.py")
 
     except Exception as e:
