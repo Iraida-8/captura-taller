@@ -9,7 +9,7 @@ from google.oauth2.service_account import Credentials
 import os
 
 # =================================
-# Page configuration (MUST BE FIRST)
+# Page configuration
 # =================================
 st.set_page_config(
     page_title="Autorización y Actualización de Reporte",
@@ -17,27 +17,25 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar completely
+# Hide sidebar
 # =================================
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] {
-        display: none;
-    }
+    [data-testid="stSidebar"] { display: none; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # =================================
-# Security gates
+# Security
 # =================================
 require_login()
 require_access("autorizacion")
 
 # =================================
-# Top navigation
+# Navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
@@ -52,22 +50,20 @@ def get_gsheets_credentials():
 
     if "gcp_service_account" in st.secrets:
         return Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"],
-            scopes=scopes
+            st.secrets["gcp_service_account"], scopes=scopes
         )
 
     if os.path.exists("google_service_account.json"):
         return Credentials.from_service_account_file(
-            "google_service_account.json",
-            scopes=scopes
+            "google_service_account.json", scopes=scopes
         )
 
     raise RuntimeError("Google Sheets credentials not found")
 
 # =================================
-# Update Estado in Sheet
+# Update Estado
 # =================================
-def actualizar_estado_pase(empresa: str, folio: str, nuevo_estado: str):
+def actualizar_estado_pase(empresa, folio, nuevo_estado):
     sheet_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
@@ -78,46 +74,40 @@ def actualizar_estado_pase(empresa: str, folio: str, nuevo_estado: str):
 
     hoja = sheet_map.get(empresa)
     if not hoja:
-        raise ValueError("Empresa no reconocida")
+        return
 
-    creds = get_gsheets_credentials()
-    client = gspread.authorize(creds)
-
+    client = gspread.authorize(get_gsheets_credentials())
     ws = client.open_by_key(
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet(hoja)
 
-    folios = ws.col_values(2)  # No. de Folio (Column B)
+    folios = ws.col_values(2)
+    if folio not in folios:
+        return
 
-    try:
-        row_idx = folios.index(folio) + 1
-    except ValueError:
-        raise ValueError("Folio no encontrado")
-
+    row_idx = folios.index(folio) + 1
     headers = ws.row_values(1)
     estado_col = headers.index("Estado") + 1
 
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
-# Load Pase de Taller data
+# Load Pase de Taller
 # =================================
 @st.cache_data(ttl=300)
 def cargar_pases_taller():
     SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     hojas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
 
-    creds = get_gsheets_credentials()
-    client = gspread.authorize(creds)
-
+    client = gspread.authorize(get_gsheets_credentials())
     dfs = []
 
     for hoja in hojas:
         try:
             ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
-            records = ws.get_all_records()
-            if records:
-                dfs.append(pd.DataFrame(records))
+            data = ws.get_all_records()
+            if data:
+                dfs.append(pd.DataFrame(data))
         except Exception:
             pass
 
@@ -133,53 +123,36 @@ def cargar_pases_taller():
     }, inplace=True)
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-
     return df
 
 pases_df = cargar_pases_taller()
 
 # =================================
-# Page title
+# Title
 # =================================
 st.title("📋 Autorización y Actualización de Reporte")
 
 # =================================
-# Session State
+# Session state
 # =================================
-if "buscar_trigger" not in st.session_state:
-    st.session_state.buscar_trigger = False
-
-if "modal_reporte" not in st.session_state:
-    st.session_state.modal_reporte = None
-
-if "articulos_df" not in st.session_state:
-    st.session_state.articulos_df = pd.DataFrame(columns=[
-        "Seleccionar",
-        "Artículo",
-        "Descripción",
-        "Precio MXP",
-        "Iva",
-        "Cantidad",
-        "Total MXN",
-        "Tipo Mtto"
-    ])
+st.session_state.setdefault("buscar_trigger", False)
+st.session_state.setdefault("modal_reporte", None)
 
 # =================================
 # TOP 10 EN CURSO
 # =================================
-st.subheader("Últimos 10 Pases de Taller (En Curso / Nuevo)")
+st.subheader("Últimos 10 Pases de Taller (En Curso)")
 
-if pases_df.empty:
-    st.info("No hay pases de taller registrados.")
-else:
+if not pases_df.empty:
     top10 = (
-        pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
+        pases_df[pases_df["Estado"].str.startswith("En Curso", na=False)]
         .sort_values("Fecha", ascending=False)
         .head(10)
         [["NoFolio", "Empresa", "Fecha", "Proveedor", "Estado"]]
     )
-
     st.dataframe(top10, hide_index=True, use_container_width=True)
+else:
+    st.info("No hay pases registrados.")
 
 # =================================
 # BUSCAR
@@ -187,30 +160,26 @@ else:
 st.divider()
 st.subheader("Buscar Pase de Taller")
 
-empresas_disponibles = (
-    sorted(pases_df["Empresa"].dropna().unique())
-    if not pases_df.empty
-    else []
-)
+empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
 
 f1, f2, f3, f4 = st.columns(4)
 
 with f1:
-    f_folio = st.text_input(
-        "No. de Folio",
-        placeholder="Escribe número de folio"
-    )
+    f_folio = st.text_input("No. de Folio", placeholder="Escribe número de folio")
 
 with f2:
-    f_empresa = st.selectbox(
-        "Empresa",
-        ["Selecciona empresa"] + empresas_disponibles
-    )
+    f_empresa = st.selectbox("Empresa", ["Selecciona empresa"] + empresas)
 
 with f3:
     f_estado = st.selectbox(
         "Estado",
-        ["Selecciona estado", "En Curso / Nuevo", "Cerrado", "Cancelado"]
+        [
+            "Selecciona estado",
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+            "Cerrado / Cancelado",
+            "Cerrado / Completado",
+        ]
     )
 
 with f4:
@@ -224,21 +193,15 @@ if st.button("Buscar"):
 # =================================
 if st.session_state.buscar_trigger:
 
-    if pases_df.empty:
-        st.warning("No hay datos para buscar.")
-        st.stop()
-
     resultados = pases_df.copy()
 
     if f_folio:
-        resultados = resultados[
-            resultados["NoFolio"].astype(str).str.contains(f_folio, case=False)
-        ]
+        resultados = resultados[resultados["NoFolio"].str.contains(f_folio, case=False)]
 
-    if f_empresa and f_empresa != "Selecciona empresa":
+    if f_empresa != "Selecciona empresa":
         resultados = resultados[resultados["Empresa"] == f_empresa]
 
-    if f_estado and f_estado != "Selecciona estado":
+    if f_estado != "Selecciona estado":
         resultados = resultados[resultados["Estado"] == f_estado]
 
     if f_fecha:
@@ -249,13 +212,15 @@ if st.session_state.buscar_trigger:
         st.stop()
 
     st.divider()
-    st.subheader("Resultados de Búsqueda")
+    st.subheader("Resultados")
 
     for _, row in resultados.iterrows():
-        c1, c2, c3, c4, c5, c6 = st.columns([1, 2, 2, 2, 2, 1])
+        c1, c2, c3, c4, c5, c6 = st.columns([1,2,2,2,2,1])
+
+        editable = row["Estado"].startswith("En Curso")
 
         with c1:
-            label = "Editar" if row["Estado"] == "En Curso / Nuevo" else "Ver"
+            label = "Editar" if editable else "Ver"
             if st.button(label, key=f"accion_{row['NoFolio']}"):
                 st.session_state.modal_reporte = row.to_dict()
 
@@ -270,28 +235,31 @@ if st.session_state.buscar_trigger:
 # =================================
 if st.session_state.modal_reporte:
 
-    reporte = st.session_state.modal_reporte
-    editable = reporte["Estado"] == "En Curso / Nuevo"
+    r = st.session_state.modal_reporte
+    editable = r["Estado"].startswith("En Curso")
 
     @st.dialog("Detalle del Pase de Taller")
     def modal():
 
-        st.markdown(f"**No. de Folio:** {reporte['NoFolio']}")
-        st.markdown(f"**Empresa:** {reporte['Empresa']}")
-        st.markdown(f"**Fecha:** {reporte['Fecha']}")
-        st.markdown(f"**Proveedor:** {reporte['Proveedor']}")
+        st.markdown(f"**No. de Folio:** {r['NoFolio']}")
+        st.markdown(f"**Empresa:** {r['Empresa']}")
+        st.markdown(f"**Fecha:** {r['Fecha']}")
+        st.markdown(f"**Proveedor:** {r['Proveedor']}")
+
+        opciones_estado = [
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+            "Cerrado / Cancelado",
+            "Cerrado / Completado",
+        ]
 
         nuevo_estado = st.selectbox(
             "Estado",
-            ["En Curso / Nuevo", "Cerrado", "Cancelado"],
-            index=["En Curso / Nuevo", "Cerrado", "Cancelado"].index(reporte["Estado"]),
-            disabled=not editable,
-            key="nuevo_estado_modal"
+            opciones_estado,
+            index=opciones_estado.index(r["Estado"])
+            if r["Estado"] in opciones_estado else 0,
+            disabled=not editable
         )
-
-        if reporte["Estado"] != "En Curso / Nuevo" and nuevo_estado == "En Curso / Nuevo":
-            st.error("No es posible regresar a En Curso / Nuevo.")
-            st.stop()
 
         st.divider()
 
@@ -303,14 +271,11 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
         with c2:
-            if st.button("Aceptar", type="primary"):
-                if editable and nuevo_estado != reporte["Estado"]:
+            if st.button("Aceptar", type="primary") and editable:
+                if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(
-                        empresa=reporte["Empresa"],
-                        folio=reporte["NoFolio"],
-                        nuevo_estado=nuevo_estado
+                        r["Empresa"], r["NoFolio"], nuevo_estado
                     )
-
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
