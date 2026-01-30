@@ -444,6 +444,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             )
 
             if st.button("Aceptar"):
+                st.session_state.mostrar_confirmacion = False
                 st.switch_page("pages/dashboard.py")
 
         confirmacion()
