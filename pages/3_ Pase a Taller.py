@@ -72,9 +72,24 @@ def append_pase_to_sheet(data: dict):
     creds = get_gsheets_credentials()
     client = gspread.authorize(creds)
 
-    sheet = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).sheet1
+    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+
+    # Map EMPRESA value → Sheet (TAB) name
+    sheet_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    empresa = data.get("empresa")
+    sheet_name = sheet_map.get(empresa)
+
+    if not sheet_name:
+        raise RuntimeError(f"No existe hoja configurada para la empresa: {empresa}")
+
+    sheet = client.open_by_key(SPREADSHEET_ID).worksheet(sheet_name)
 
     row = [
         data.get("timestamp"),
@@ -101,6 +116,7 @@ def append_pase_to_sheet(data: dict):
     ]
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
+
 
 # =================================
 # Google Sheets configuration
