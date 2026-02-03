@@ -58,10 +58,13 @@ st.divider()
 def get_gsheets_credentials():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
-    if "gcp_service_account" in st.secrets:
-        return Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"], scopes=scopes
-        )
+    try:
+        if "gcp_service_account" in st.secrets:
+            return Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"], scopes=scopes
+            )
+    except Exception:
+        pass
 
     if os.path.exists("google_service_account.json"):
         return Credentials.from_service_account_file(
@@ -182,6 +185,7 @@ st.title("📋 Autorización y Actualización de Reporte")
 # =================================
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
+st.session_state.setdefault("refaccion_seleccionada", None)
 
 st.session_state.setdefault(
     "servicios_df",
@@ -321,9 +325,6 @@ if st.session_state.modal_reporte:
             disabled=not editable
         )
 
-        # =================================
-        # SERVICIOS Y REFACCIONES
-        # =================================
         st.divider()
         st.subheader("Servicios y Refacciones")
 
@@ -334,7 +335,7 @@ if st.session_state.modal_reporte:
 
         if r["Empresa"] == "IGLOO TRANSPORT":
             catalogo = cargar_catalogo_igloo_simple()
-            st.selectbox(
+            st.session_state.refaccion_seleccionada = st.selectbox(
                 "Refacción / Servicio",
                 options=catalogo["label"].tolist(),
                 index=None,
@@ -350,11 +351,29 @@ if st.session_state.modal_reporte:
                 disabled=True
             )
 
-        st.button(
+        if st.button(
             "Agregar refacciones o servicios",
-            disabled=not habilita_refacciones,
+            disabled=not habilita_refacciones or not st.session_state.refaccion_seleccionada,
             width="stretch"
-        )
+        ):
+            fila = catalogo[
+                catalogo["label"] == st.session_state.refaccion_seleccionada
+            ].iloc[0]
+
+            if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
+                nueva = {
+                    "Parte": fila["Parte"],
+                    "TipoCompra": "Servicio",
+                    "Precio MXP": fila["PU"],
+                    "IVA": 0.0,
+                    "Cantidad": 1,
+                    "Total MXN": fila["PU"],
+                }
+
+                st.session_state.servicios_df = pd.concat(
+                    [st.session_state.servicios_df, pd.DataFrame([nueva])],
+                    ignore_index=True
+                )
 
         st.session_state.servicios_df = st.data_editor(
             st.session_state.servicios_df,
@@ -364,20 +383,15 @@ if st.session_state.modal_reporte:
             column_config={
                 "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
                 "IVA": st.column_config.NumberColumn(format="%.2f"),
-                "Cantidad": st.column_config.NumberColumn(min_value=0, step=1),
+                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
                 "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
             },
         )
 
-        if not st.session_state.servicios_df.empty:
-            total = st.session_state.servicios_df["Total MXN"].fillna(0).sum()
-        else:
-            total = 0
-
+        total = st.session_state.servicios_df["Total MXN"].fillna(0).sum()
         st.metric("Total MXN", f"$ {total:,.2f}")
 
         st.divider()
-
         c1, c2 = st.columns(2)
 
         with c1:
