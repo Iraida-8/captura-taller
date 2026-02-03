@@ -310,7 +310,7 @@ with f3:
     )
 
 with f4:
-    f_fecha = st.date_input("Fecha")
+    f_fecha = st.date_input("Fecha", value=None)
 
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
