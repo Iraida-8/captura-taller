@@ -108,28 +108,37 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
 # Append Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
-    if servicios_df.empty:
-        return
-
     client = gspread.authorize(get_gsheets_credentials())
-
     ws = client.open_by_key(
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
 
+    existing = ws.get_all_records()
+    df_existing = pd.DataFrame(existing)
+
+    # Remove existing rows for this folio
+    if not df_existing.empty:
+        df_existing = df_existing[df_existing["No. de Folio"] != folio]
+        ws.clear()
+        ws.append_rows(
+            [df_existing.columns.tolist()] + df_existing.values.tolist(),
+            value_input_option="USER_ENTERED"
+        )
+
+    if servicios_df.empty:
+        return
 
     rows = []
-
     for _, r in servicios_df.iterrows():
         rows.append([
             folio,
             usuario,
-            r.get("Parte", ""),
-            r.get("TipoCompra", ""),
-            float(r.get("Precio MXP", 0) or 0),
-            float(r.get("IVA", 0) or 0),
-            int(r.get("Cantidad", 0) or 0),
-            float(r.get("Total MXN", 0) or 0),
+            r["Parte"],
+            r["TipoCompra"],
+            float(r["Precio MXP"]),
+            float(r["IVA"]),
+            int(r["Cantidad"]),
+            float(r["Total MXN"]),
         ])
 
     ws.append_rows(rows, value_input_option="USER_ENTERED")
