@@ -138,34 +138,49 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     data = ws.get_all_records()
     df_db = pd.DataFrame(data) if data else pd.DataFrame()
 
+    # -------------------------------
+    # 🔹 PATCH: normalize headers
+    # -------------------------------
+    if not df_db.empty:
+        df_db.columns = df_db.columns.str.strip()
+
+        # Sheet uses "No. de Folio", code expects "Folio"
+        if "No. de Folio" in df_db.columns:
+            df_db = df_db.rename(columns={"No. de Folio": "Folio"})
+
     servicios_df = servicios_df.copy()
     servicios_df["Parte"] = servicios_df["Parte"].astype(str)
 
-    if not df_db.empty:
+    if not df_db.empty and "Folio" in df_db.columns:
         df_db["Folio"] = df_db["Folio"].astype(str)
         df_folio = df_db[df_db["Folio"] == str(folio)]
     else:
         df_folio = pd.DataFrame()
 
+    # -------------------------------
     # Delete removed items
+    # -------------------------------
     partes_actuales = set(servicios_df["Parte"])
+
     for idx, row in df_folio.iterrows():
-        if row["Parte"] not in partes_actuales:
+        if row.get("Parte") not in partes_actuales:
             ws.delete_rows(idx + 2)
 
+    # -------------------------------
     # Upsert current items
+    # -------------------------------
     for _, r in servicios_df.iterrows():
-        match = df_folio[df_folio["Parte"] == r["Parte"]]
+        match = df_folio[df_folio["Parte"] == r["Parte"]] if not df_folio.empty else pd.DataFrame()
 
         row_data = [
-            folio,
-            usuario,
+            folio,                      # No. de Folio
+            usuario,                    # Modifico
             r["Parte"],
             r["TipoCompra"],
-            float(r["Precio MXP"]),
-            float(r["IVA"]),
-            int(r["Cantidad"]),
-            float(r["Total MXN"]),
+            float(r["Precio MXP"] or 0),
+            float(r["IVA"] or 0),
+            int(r["Cantidad"] or 0),
+            float(r["Total MXN"] or 0),
         ]
 
         if not match.empty:
@@ -173,6 +188,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
             ws.update(f"A{row_idx}:H{row_idx}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
+
 
 # =================================
 # Load Pase de Taller
