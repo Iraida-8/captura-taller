@@ -60,37 +60,39 @@ st.subheader("Módulos")
 
 col1, col2, col3 = st.columns(3)
 
+# 1️⃣ Consultar Reparación
 with col1:
     if "consultar_reparacion" in access:
         if st.button("🔍  Consultar Reparación", use_container_width=True):
             st.switch_page("pages/1_ Consultar Reparacion.py")
 
+# 2️⃣ Pase a Taller
 with col2:
-    if "revision_ordenes" in access:
-        if st.button("🧾  Revisión Órdenes", use_container_width=True):
-            st.switch_page("pages/2_ Revision Ordenes.py")
-
-with col3:
     if "pase_taller" in access:
         if st.button("🏭  Pase a Taller", use_container_width=True):
             st.switch_page("pages/3_ Pase a Taller.py")
 
-col4, col5, col6 = st.columns(3)
-
-with col4:
+# 3️⃣ Autorización
+with col3:
     if "autorizacion" in access:
         if st.button("✅  Autorización", use_container_width=True):
             st.switch_page("pages/4_ Autorizacion.py")
 
-with col5:
+col4, col5, col6 = st.columns(3)
+
+# 4️⃣ Reporte iFuel
+with col4:
     if "ifuel" in access:
         if st.button("⛽  Reporte iFuel", use_container_width=True):
             st.switch_page("pages/5_ Reporte iFuel.py")
 
-with col6:
+# 5️⃣ Consulta Reportes
+with col5:
     if "consulta_reportes" in access:
         if st.button("📊  Consulta Reportes", use_container_width=True):
             st.switch_page("pages/6_ Consulta Reportes.py")
+
+# col6 intentionally left empty to preserve grid alignment
 
 # -------------------------------
 # Logout
