@@ -105,7 +105,29 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
-# Append Servicios / Refacciones
+# Load Servicios for Folio  (NEW)
+# =================================
+def cargar_servicios_folio(folio):
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    data = ws.get_all_records()
+    if not data:
+        return pd.DataFrame(columns=[
+            "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
+        ])
+
+    df = pd.DataFrame(data)
+    df = df[df["Folio"].astype(str) == str(folio)]
+
+    return df[[
+        "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
+    ]]
+
+# =================================
+# UPSERT Servicios / Refacciones  (MODIFIED)
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
     client = gspread.authorize(get_gsheets_credentials())
@@ -113,24 +135,29 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
 
-    existing = ws.get_all_records()
-    df_existing = pd.DataFrame(existing)
+    data = ws.get_all_records()
+    df_db = pd.DataFrame(data) if data else pd.DataFrame()
 
-    # Remove existing rows for this folio
-    if not df_existing.empty:
-        df_existing = df_existing[df_existing["No. de Folio"] != folio]
-        ws.clear()
-        ws.append_rows(
-            [df_existing.columns.tolist()] + df_existing.values.tolist(),
-            value_input_option="USER_ENTERED"
-        )
+    servicios_df = servicios_df.copy()
+    servicios_df["Parte"] = servicios_df["Parte"].astype(str)
 
-    if servicios_df.empty:
-        return
+    if not df_db.empty:
+        df_db["Folio"] = df_db["Folio"].astype(str)
+        df_folio = df_db[df_db["Folio"] == str(folio)]
+    else:
+        df_folio = pd.DataFrame()
 
-    rows = []
+    # Delete removed items
+    partes_actuales = set(servicios_df["Parte"])
+    for idx, row in df_folio.iterrows():
+        if row["Parte"] not in partes_actuales:
+            ws.delete_rows(idx + 2)
+
+    # Upsert current items
     for _, r in servicios_df.iterrows():
-        rows.append([
+        match = df_folio[df_folio["Parte"] == r["Parte"]]
+
+        row_data = [
             folio,
             usuario,
             r["Parte"],
@@ -139,9 +166,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
             float(r["IVA"]),
             int(r["Cantidad"]),
             float(r["Total MXN"]),
-        ])
+        ]
 
-    ws.append_rows(rows, value_input_option="USER_ENTERED")
+        if not match.empty:
+            row_idx = match.index[0] + 2
+            ws.update(f"A{row_idx}:H{row_idx}", [row_data])
+        else:
+            ws.append_row(row_data, value_input_option="USER_ENTERED")
 
 # =================================
 # Load Pase de Taller
@@ -175,6 +206,7 @@ def cargar_pases_taller():
     }, inplace=True)
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["NoFolio"] = df["NoFolio"].astype(str)
     return df
 
 pases_df = cargar_pases_taller()
@@ -192,7 +224,6 @@ def cargar_catalogo_igloo_simple():
 
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
-
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
     df = df.sort_values("Fecha", ascending=False)
@@ -200,7 +231,7 @@ def cargar_catalogo_igloo_simple():
 
     def limpiar_num(v):
         try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
+            return float(str(v).replace("$","").replace(",","").strip())
         except:
             return None
 
@@ -212,7 +243,7 @@ def cargar_catalogo_igloo_simple():
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    return df[["Parte","PU","label"]]
 
 # =================================
 # Title
@@ -225,16 +256,10 @@ st.title("📋 Autorización y Actualización de Reporte")
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
 st.session_state.setdefault("refaccion_seleccionada", None)
-
 st.session_state.setdefault(
     "servicios_df",
     pd.DataFrame(columns=[
-        "Parte",
-        "TipoCompra",
-        "Precio MXP",
-        "IVA",
-        "Cantidad",
-        "Total MXN",
+        "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
     ])
 )
 
@@ -248,7 +273,7 @@ if not pases_df.empty:
         pases_df[pases_df["Estado"].str.startswith("En Curso", na=False)]
         .sort_values("Fecha", ascending=False)
         .head(10)
-        [["NoFolio", "Empresa", "Fecha", "Proveedor", "Estado"]]
+        [["NoFolio","Empresa","Fecha","Proveedor","Estado"]]
     )
     st.dataframe(top10, hide_index=True, width="stretch")
 else:
@@ -265,7 +290,7 @@ empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty e
 f1, f2, f3, f4 = st.columns(4)
 
 with f1:
-    f_folio = st.text_input("No. de Folio", placeholder="Escribe número de folio")
+    f_folio = st.text_input("No. de Folio")
 
 with f2:
     f_empresa = st.selectbox("Empresa", ["Selecciona empresa"] + empresas)
@@ -285,7 +310,7 @@ with f3:
     )
 
 with f4:
-    f_fecha = st.date_input("Fecha", value=None)
+    f_fecha = st.date_input("Fecha")
 
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
@@ -294,11 +319,10 @@ if st.button("Buscar"):
 # RESULTADOS
 # =================================
 if st.session_state.buscar_trigger:
-
     resultados = pases_df.copy()
 
     if f_folio:
-        resultados = resultados[resultados["NoFolio"].str.contains(f_folio, case=False)]
+        resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
 
     if f_empresa != "Selecciona empresa":
         resultados = resultados[resultados["Empresa"] == f_empresa]
@@ -308,10 +332,6 @@ if st.session_state.buscar_trigger:
 
     if f_fecha:
         resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
-
-    if resultados.empty:
-        st.warning("No se encontraron resultados.")
-        st.stop()
 
     st.divider()
     st.subheader("Resultados")
@@ -325,6 +345,7 @@ if st.session_state.buscar_trigger:
             label = "Editar" if editable else "Ver"
             if st.button(label, key=f"accion_{row['NoFolio']}"):
                 st.session_state.modal_reporte = row.to_dict()
+                st.session_state.servicios_df = cargar_servicios_folio(row["NoFolio"])
 
         c2.write(row["NoFolio"])
         c3.write(row["Empresa"])
@@ -338,7 +359,7 @@ if st.session_state.buscar_trigger:
 if st.session_state.modal_reporte:
 
     r = st.session_state.modal_reporte
-    editable = r["Estado"].startswith("En Curso")
+    editable_estado = r["Estado"].startswith("En Curso")
 
     @st.dialog("Detalle del Pase de Taller")
     def modal():
@@ -361,16 +382,13 @@ if st.session_state.modal_reporte:
             opciones_estado,
             index=opciones_estado.index(r["Estado"])
             if r["Estado"] in opciones_estado else 0,
-            disabled=not editable
+            disabled=not editable_estado
         )
+
+        editable_servicios = nuevo_estado.startswith("En Curso")
 
         st.divider()
         st.subheader("Servicios y Refacciones")
-
-        habilita_refacciones = nuevo_estado in [
-            "En Curso / Sin Comenzar",
-            "En Curso / Espera Refacciones",
-        ]
 
         if r["Empresa"] == "IGLOO TRANSPORT":
             catalogo = cargar_catalogo_igloo_simple()
@@ -378,14 +396,12 @@ if st.session_state.modal_reporte:
                 "Refacción / Servicio",
                 options=catalogo["label"].tolist(),
                 index=None,
-                placeholder="Selecciona una refacción o servicio",
-                disabled=not habilita_refacciones
+                disabled=not editable_servicios
             )
 
         if st.button(
             "Agregar refacciones o servicios",
-            disabled=not habilita_refacciones or not st.session_state.refaccion_seleccionada,
-            width="stretch"
+            disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
         ):
             fila = catalogo[catalogo["label"] == st.session_state.refaccion_seleccionada].iloc[0]
 
@@ -408,7 +424,7 @@ if st.session_state.modal_reporte:
             st.session_state.servicios_df,
             num_rows="dynamic",
             hide_index=True,
-            disabled=not editable,
+            disabled=not editable_servicios,
             column_config={
                 "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
                 "IVA": st.column_config.NumberColumn(format="%.2f"),
@@ -440,18 +456,15 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
         with c2:
-            if st.button("Aceptar", type="primary") and editable:
-
+            if st.button("Aceptar", type="primary") and editable_estado:
                 if nuevo_estado != r["Estado"]:
-                    actualizar_estado_pase(
-                        r["Empresa"], r["NoFolio"], nuevo_estado
-                    )
+                    actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
                 guardar_servicios_refacciones(
-                    folio=r["NoFolio"],
-                    usuario=st.session_state.user.get("name")
-                             or st.session_state.user.get("email"),
-                    servicios_df=st.session_state.servicios_df
+                    r["NoFolio"],
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email"),
+                    st.session_state.servicios_df
                 )
 
                 st.session_state.modal_reporte = None
