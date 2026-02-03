@@ -105,7 +105,7 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
-# Load Servicios for Folio  (NEW)
+# Load Servicios for Folio
 # =================================
 def cargar_servicios_folio(folio):
     client = gspread.authorize(get_gsheets_credentials())
@@ -120,14 +120,25 @@ def cargar_servicios_folio(folio):
         ])
 
     df = pd.DataFrame(data)
-    df = df[df["Folio"].astype(str) == str(folio)]
+
+    # 🔹 PATCH: normalize headers
+    df.columns = df.columns.str.strip()
+
+    if "No. de Folio" in df.columns:
+        df = df.rename(columns={"No. de Folio": "Folio"})
+
+    # 🔹 Ensure string comparison
+    df["Folio"] = df["Folio"].astype(str)
+
+    df = df[df["Folio"] == str(folio)]
 
     return df[[
         "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
     ]]
 
+
 # =================================
-# UPSERT Servicios / Refacciones  (MODIFIED)
+# UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
     client = gspread.authorize(get_gsheets_credentials())
@@ -401,7 +412,10 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
-        editable_servicios = nuevo_estado.startswith("En Curso")
+        editable_servicios = nuevo_estado in [
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
