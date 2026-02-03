@@ -105,6 +105,35 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
+# Append Servicios / Refacciones
+# =================================
+def guardar_servicios_refacciones(folio, usuario, servicios_df):
+    if servicios_df.empty:
+        return
+
+    client = gspread.authorize(get_gsheets_credentials())
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet_by_id(1391061476)
+
+    rows = []
+
+    for _, r in servicios_df.iterrows():
+        rows.append([
+            folio,
+            usuario,
+            r.get("Parte", ""),
+            r.get("TipoCompra", ""),
+            float(r.get("Precio MXP", 0) or 0),
+            float(r.get("IVA", 0) or 0),
+            int(r.get("Cantidad", 0) or 0),
+            float(r.get("Total MXN", 0) or 0),
+        ])
+
+    ws.append_rows(rows, value_input_option="USER_ENTERED")
+
+# =================================
 # Load Pase de Taller
 # =================================
 @st.cache_data(ttl=300)
@@ -342,23 +371,13 @@ if st.session_state.modal_reporte:
                 placeholder="Selecciona una refacción o servicio",
                 disabled=not habilita_refacciones
             )
-        else:
-            st.selectbox(
-                "Refacción / Servicio",
-                options=[],
-                index=None,
-                placeholder="No hay catálogo disponible para esta empresa",
-                disabled=True
-            )
 
         if st.button(
             "Agregar refacciones o servicios",
             disabled=not habilita_refacciones or not st.session_state.refaccion_seleccionada,
             width="stretch"
         ):
-            fila = catalogo[
-                catalogo["label"] == st.session_state.refaccion_seleccionada
-            ].iloc[0]
+            fila = catalogo[catalogo["label"] == st.session_state.refaccion_seleccionada].iloc[0]
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
                 nueva = {
@@ -388,18 +407,19 @@ if st.session_state.modal_reporte:
             },
         )
 
-        # 🔹 AUTO-RECALCULATE TOTAL MXN WHEN CANTIDAD CHANGES
         if not edited_df.empty:
             edited_df["Total MXN"] = (
                 edited_df["Precio MXP"].fillna(0)
                 * edited_df["Cantidad"].fillna(0)
+                * (1 + edited_df["IVA"].fillna(0))
             )
 
         st.session_state.servicios_df = edited_df
 
-
-        total = st.session_state.servicios_df["Total MXN"].fillna(0).sum()
-        st.metric("Total MXN", f"$ {total:,.2f}")
+        st.metric(
+            "Total MXN",
+            f"$ {st.session_state.servicios_df['Total MXN'].fillna(0).sum():,.2f}"
+        )
 
         st.divider()
         c1, c2 = st.columns(2)
@@ -411,10 +431,19 @@ if st.session_state.modal_reporte:
 
         with c2:
             if st.button("Aceptar", type="primary") and editable:
+
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(
                         r["Empresa"], r["NoFolio"], nuevo_estado
                     )
+
+                guardar_servicios_refacciones(
+                    folio=r["NoFolio"],
+                    usuario=st.session_state.user.get("name")
+                             or st.session_state.user.get("email"),
+                    servicios_df=st.session_state.servicios_df
+                )
+
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
