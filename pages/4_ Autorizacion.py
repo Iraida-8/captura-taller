@@ -127,15 +127,18 @@ def cargar_servicios_folio(folio):
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
 
+    # 🔴 THIS IS THE MISSING LINE
+    if "Iva" in df.columns:
+        df = df.rename(columns={"Iva": "IVA"})
+
     # 🔹 Ensure string comparison
     df["Folio"] = df["Folio"].astype(str)
 
     df = df[df["Folio"] == str(folio)]
 
-    return df[[
-        "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
-    ]]
-
+    return df[
+        ["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]
+    ]
 
 # =================================
 # UPSERT Servicios / Refacciones
