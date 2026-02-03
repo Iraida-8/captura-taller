@@ -176,9 +176,14 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     # -------------------------------
     partes_actuales = set(servicios_df["Parte"])
 
-    for idx, row in df_folio.iterrows():
-        if row.get("Parte") not in partes_actuales:
-            ws.delete_rows(idx + 2)
+    rows_to_delete = [
+        idx for idx, row in df_folio.iterrows()
+        if row.get("Parte") not in partes_actuales
+    ]
+
+    for idx in sorted(rows_to_delete, reverse=True):
+        ws.delete_rows(idx + 2)
+
 
     # -------------------------------
     # Upsert current items
