@@ -149,51 +149,57 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
 
-    data = ws.get_all_records()
-    df_db = pd.DataFrame(data) if data else pd.DataFrame()
+    # ---------------------------------
+    # Load raw values WITH row numbers
+    # ---------------------------------
+    all_values = ws.get_all_values()
+    if len(all_values) < 2:
+        header = [
+            "No. de Folio","Modifico","Parte","TipoCompra",
+            "Precio MXP","IVA","Cantidad","Total MXN"
+        ]
+        df_db = pd.DataFrame(columns=header + ["__rownum__"])
+    else:
+        header = [h.strip() for h in all_values[0]]
+        rows = all_values[1:]
 
-    # -------------------------------
-    # 🔹 PATCH: normalize headers
-    # -------------------------------
-    if not df_db.empty:
-        df_db.columns = df_db.columns.str.strip()
+        df_db = pd.DataFrame(rows, columns=header)
+        df_db["__rownum__"] = range(2, len(rows) + 2)
 
-        # Sheet uses "No. de Folio", code expects "Folio"
-        if "No. de Folio" in df_db.columns:
-            df_db = df_db.rename(columns={"No. de Folio": "Folio"})
+    # Normalize headers
+    if "No. de Folio" in df_db.columns:
+        df_db = df_db.rename(columns={"No. de Folio": "Folio"})
+    if "Iva" in df_db.columns:
+        df_db = df_db.rename(columns={"Iva": "IVA"})
+
+    df_db["Folio"] = df_db["Folio"].astype(str)
 
     servicios_df = servicios_df.copy()
     servicios_df["Parte"] = servicios_df["Parte"].astype(str)
 
-    if not df_db.empty and "Folio" in df_db.columns:
-        df_db["Folio"] = df_db["Folio"].astype(str)
-        df_folio = df_db[df_db["Folio"] == str(folio)]
-    else:
-        df_folio = pd.DataFrame()
+    df_folio = df_db[df_db["Folio"] == str(folio)]
 
-    # -------------------------------
-    # Delete removed items
-    # -------------------------------
+    # ---------------------------------
+    # DELETE removed rows (REAL rows)
+    # ---------------------------------
     partes_actuales = set(servicios_df["Parte"])
 
-    rows_to_delete = [
-        idx for idx, row in df_folio.iterrows()
-        if row.get("Parte") not in partes_actuales
-    ]
+    rows_to_delete = df_folio[
+        ~df_folio["Parte"].isin(partes_actuales)
+    ]["__rownum__"].tolist()
 
-    for idx in sorted(rows_to_delete, reverse=True):
-        ws.delete_rows(idx + 2)
+    for rownum in sorted(rows_to_delete, reverse=True):
+        ws.delete_rows(rownum)
 
-
-    # -------------------------------
-    # Upsert current items
-    # -------------------------------
+    # ---------------------------------
+    # UPSERT remaining rows
+    # ---------------------------------
     for _, r in servicios_df.iterrows():
-        match = df_folio[df_folio["Parte"] == r["Parte"]] if not df_folio.empty else pd.DataFrame()
+        match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-            folio,                      # No. de Folio
-            usuario,                    # Modifico
+            folio,
+            usuario,
             r["Parte"],
             r["TipoCompra"],
             float(r["Precio MXP"] or 0),
@@ -203,8 +209,8 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
         ]
 
         if not match.empty:
-            row_idx = match.index[0] + 2
-            ws.update(f"A{row_idx}:H{row_idx}", [row_data])
+            rownum = int(match.iloc[0]["__rownum__"])
+            ws.update(f"A{rownum}:H{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
