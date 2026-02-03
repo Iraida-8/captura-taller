@@ -149,21 +149,21 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
 
-    # ---------------------------------
-    # Load raw values WITH row numbers
-    # ---------------------------------
+    # =====================================================
+    # PHASE 1 — LOAD WITH REAL ROW NUMBERS
+    # =====================================================
     all_values = ws.get_all_values()
+
     if len(all_values) < 2:
-        header = [
+        headers = [
             "No. de Folio","Modifico","Parte","TipoCompra",
             "Precio MXP","IVA","Cantidad","Total MXN"
         ]
-        df_db = pd.DataFrame(columns=header + ["__rownum__"])
+        df_db = pd.DataFrame(columns=headers + ["__rownum__"])
     else:
-        header = [h.strip() for h in all_values[0]]
+        headers = [h.strip() for h in all_values[0]]
         rows = all_values[1:]
-
-        df_db = pd.DataFrame(rows, columns=header)
+        df_db = pd.DataFrame(rows, columns=headers)
         df_db["__rownum__"] = range(2, len(rows) + 2)
 
     # Normalize headers
@@ -179,9 +179,9 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
 
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
-    # ---------------------------------
-    # DELETE removed rows (REAL rows)
-    # ---------------------------------
+    # =====================================================
+    # PHASE 2 — DELETE (ONLY THIS)
+    # =====================================================
     partes_actuales = set(servicios_df["Parte"])
 
     rows_to_delete = df_folio[
@@ -191,9 +191,30 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     for rownum in sorted(rows_to_delete, reverse=True):
         ws.delete_rows(rownum)
 
-    # ---------------------------------
-    # UPSERT remaining rows
-    # ---------------------------------
+    # =====================================================
+    # PHASE 3 — RELOAD AFTER DELETE (CRITICAL)
+    # =====================================================
+    all_values = ws.get_all_values()
+
+    if len(all_values) < 2:
+        df_db = pd.DataFrame(columns=["Folio","Parte","__rownum__"])
+    else:
+        headers = [h.strip() for h in all_values[0]]
+        rows = all_values[1:]
+        df_db = pd.DataFrame(rows, columns=headers)
+        df_db["__rownum__"] = range(2, len(rows) + 2)
+
+    if "No. de Folio" in df_db.columns:
+        df_db = df_db.rename(columns={"No. de Folio": "Folio"})
+    if "Iva" in df_db.columns:
+        df_db = df_db.rename(columns={"Iva": "IVA"})
+
+    df_db["Folio"] = df_db["Folio"].astype(str)
+    df_folio = df_db[df_db["Folio"] == str(folio)]
+
+    # =====================================================
+    # PHASE 4 — UPSERT (SAFE NOW)
+    # =====================================================
     for _, r in servicios_df.iterrows():
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
@@ -213,7 +234,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
             ws.update(f"A{rownum}:H{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
-
 
 # =================================
 # Load Pase de Taller
