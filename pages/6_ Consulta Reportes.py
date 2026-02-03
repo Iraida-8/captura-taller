@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 
+from datetime import datetime
+
+fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 from auth import require_login, require_access
 
 # =================================

@@ -8,6 +8,10 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 
+from datetime import datetime
+
+fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 # =================================
 # Page configuration
 # =================================
@@ -144,10 +148,14 @@ def cargar_servicios_folio(folio):
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
+    from datetime import datetime
+
     client = gspread.authorize(get_gsheets_credentials())
     ws = client.open_by_key(
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
+
+    fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # =====================================================
     # PHASE 1 — LOAD WITH REAL ROW NUMBERS
@@ -157,7 +165,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     if len(all_values) < 2:
         headers = [
             "No. de Folio","Modifico","Parte","TipoCompra",
-            "Precio MXP","IVA","Cantidad","Total MXN"
+            "Precio MXP","IVA","Cantidad","Total MXN","Fecha Mod"
         ]
         df_db = pd.DataFrame(columns=headers + ["__rownum__"])
     else:
@@ -166,7 +174,9 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
         df_db = pd.DataFrame(rows, columns=headers)
         df_db["__rownum__"] = range(2, len(rows) + 2)
 
+    # =====================================================
     # Normalize headers
+    # =====================================================
     if "No. de Folio" in df_db.columns:
         df_db = df_db.rename(columns={"No. de Folio": "Folio"})
     if "Iva" in df_db.columns:
@@ -180,7 +190,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
-    # PHASE 2 — DELETE (ONLY THIS)
+    # PHASE 2 — DELETE REMOVED ITEMS
     # =====================================================
     partes_actuales = set(servicios_df["Parte"])
 
@@ -213,25 +223,26 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
-    # PHASE 4 — UPSERT (SAFE NOW)
+    # PHASE 4 — UPSERT (SAFE)
     # =====================================================
     for _, r in servicios_df.iterrows():
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-            folio,
-            usuario,
+            folio,                      # No. de Folio
+            usuario,                    # Modifico
             r["Parte"],
             r["TipoCompra"],
             float(r["Precio MXP"] or 0),
             float(r["IVA"] or 0),
             int(r["Cantidad"] or 0),
             float(r["Total MXN"] or 0),
+            fecha_mod,                  # Fecha Mod
         ]
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
-            ws.update(f"A{rownum}:H{rownum}", [row_data])
+            ws.update(f"A{rownum}:I{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
