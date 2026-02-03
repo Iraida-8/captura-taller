@@ -375,7 +375,7 @@ if st.session_state.modal_reporte:
                     ignore_index=True
                 )
 
-        st.session_state.servicios_df = st.data_editor(
+        edited_df = st.data_editor(
             st.session_state.servicios_df,
             num_rows="dynamic",
             hide_index=True,
@@ -387,6 +387,16 @@ if st.session_state.modal_reporte:
                 "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
             },
         )
+
+        # 🔹 AUTO-RECALCULATE TOTAL MXN WHEN CANTIDAD CHANGES
+        if not edited_df.empty:
+            edited_df["Total MXN"] = (
+                edited_df["Precio MXP"].fillna(0)
+                * edited_df["Cantidad"].fillna(0)
+            )
+
+        st.session_state.servicios_df = edited_df
+
 
         total = st.session_state.servicios_df["Total MXN"].fillna(0).sum()
         st.metric("Total MXN", f"$ {total:,.2f}")
