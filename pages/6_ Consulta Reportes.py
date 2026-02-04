@@ -154,7 +154,11 @@ with r1c2:
     )
 
 with r1c3:
-    no_unidad = st.text_input("No. de Unidad")
+    no_unidad = st.selectbox(
+        "No. de Unidad",
+        ["Todas"] + sorted(df_pases["No. de Unidad"].dropna().astype(str).unique().tolist())
+        if "No. de Unidad" in df_pases.columns else ["Todas"]
+    )
 
 # ---------- ROW 2 ----------
 r2c1, r2c2, r2c3 = st.columns(3)
@@ -197,8 +201,8 @@ if buscar:
     if estado != "Todos":
         df_p = df_p[df_p["Estado"] == estado]
 
-    if no_unidad and "No. de Unidad" in df_p.columns:
-        df_p = df_p[df_p["No. de Unidad"].astype(str).str.contains(no_unidad, na=False)]
+    if no_unidad != "Todas" and "No. de Unidad" in df_p.columns:
+        df_p = df_p[df_p["No. de Unidad"].astype(str) == no_unidad]
 
     if no_reporte and "No. de Reporte" in df_p.columns:
         df_p = df_p[df_p["No. de Reporte"].astype(str).str.contains(no_reporte, na=False)]
@@ -218,75 +222,34 @@ if buscar:
     # =================================
     # TABLE 1 — REPORTE DETALLADO
     # =================================
-    df_detallado = df_p.merge(
-        df_s,
-        on="Folio",
-        how="left"
-    )
+    df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
     st.divider()
-    st.subheader("📄 Reporte Detallado (Servicios por línea)")
+    st.subheader("📄 Reporte Detallado")
 
-    st.dataframe(
-        df_detallado,
-        hide_index=True,
-        width="stretch"
-    )
+    st.dataframe(df_detallado, hide_index=True, width="stretch")
 
     # =================================
     # TABLE 2 — RESUMEN POR ORDEN
     # =================================
     st.divider()
-    st.subheader("📦 Reporte Simplificado ")
+    st.subheader("📦 Resumen por Orden")
 
-    if not df_s.empty:
-        servicios_agg = (
-            df_s
-            .groupby("Folio", as_index=False)
-            .agg({
-                "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
-                "Total MXN": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
-            })
-            .rename(columns={
-                "Parte": "Partes",
-                "Total MXN": "Total MXN Servicios"
-            })
-        )
-    else:
-        servicios_agg = pd.DataFrame(columns=["Folio", "Partes", "Total MXN Servicios"])
-
-    df_resumen = df_p.merge(
-        servicios_agg,
-        on="Folio",
-        how="left"
+    servicios_agg = (
+        df_s
+        .groupby("Folio", as_index=False)
+        .agg({
+            "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
+            "Total MXN": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
+        })
+        .rename(columns={
+            "Parte": "Partes",
+            "Total MXN": "Total MXN Servicios"
+        })
     )
 
-    if "Total MXN Servicios" in df_resumen.columns:
-        df_resumen["Total MXN Servicios"] = df_resumen["Total MXN Servicios"].fillna(0)
+    df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
+    df_resumen["Partes"] = df_resumen["Partes"].fillna("")
+    df_resumen["Total MXN Servicios"] = df_resumen["Total MXN Servicios"].fillna(0)
 
-    if "Partes" in df_resumen.columns:
-        df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-
-    preferred_cols = [
-        "Empresa",
-        "Folio",
-        "Estado",
-        "No. de Unidad",
-        "No. de Reporte",
-        "Tipo de Reporte",
-        "Fecha de Captura",
-        "Fecha de Reporte",
-        "Partes",
-        "Total MXN Servicios",
-    ]
-
-    existing_cols = [c for c in preferred_cols if c in df_resumen.columns]
-    remaining_cols = [c for c in df_resumen.columns if c not in existing_cols]
-
-    df_resumen = df_resumen[existing_cols + remaining_cols]
-
-    st.dataframe(
-        df_resumen,
-        hide_index=True,
-        width="stretch"
-    )
+    st.dataframe(df_resumen, hide_index=True, width="stretch")
