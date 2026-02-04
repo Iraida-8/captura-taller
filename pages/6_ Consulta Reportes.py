@@ -80,8 +80,7 @@ def cargar_pases():
             ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
             data = ws.get_all_records()
             if data:
-                df = pd.DataFrame(data)
-                dfs.append(df)
+                dfs.append(pd.DataFrame(data))
         except Exception:
             pass
 
@@ -89,22 +88,18 @@ def cargar_pases():
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
-
     df.columns = df.columns.str.strip()
 
-    # Normalize key fields
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
 
     df["Folio"] = df["Folio"].astype(str)
 
-    # Dates
     for col in ["Fecha de Captura", "Fecha de Reporte"]:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
-
 
 # =================================
 # Load SERVICES
@@ -133,59 +128,61 @@ def cargar_servicios():
 
     return df
 
-
 df_pases = cargar_pases()
 df_services = cargar_servicios()
 
 # =================================
-# FILTERS
+# FILTERS (FORMATTED — 3 PER ROW)
 # =================================
 st.subheader("Filtros")
 
-c1, c2, c3, c4 = st.columns(4)
+# ---------- ROW 1 ----------
+r1c1, r1c2, r1c3 = st.columns(3)
 
-with c1:
+with r1c1:
     empresa = st.selectbox(
         "Empresa",
         ["Todas"] + sorted(df_pases["Empresa"].dropna().unique().tolist())
         if not df_pases.empty else ["Todas"]
     )
 
-with c2:
+with r1c2:
     estado = st.selectbox(
         "Estado",
         ["Todos"] + sorted(df_pases["Estado"].dropna().unique().tolist())
         if not df_pases.empty else ["Todos"]
     )
 
-with c3:
+with r1c3:
     no_unidad = st.text_input("No. de Unidad")
 
-with c4:
+# ---------- ROW 2 ----------
+r2c1, r2c2, r2c3 = st.columns(3)
+
+with r2c1:
     no_reporte = st.text_input("No. de Reporte")
 
-c5, c6, c7 = st.columns(3)
-
-with c5:
+with r2c2:
     tipo_reporte = st.selectbox(
         "Tipo de Reporte",
         ["Todos"] + sorted(df_pases["Tipo de Reporte"].dropna().unique().tolist())
         if "Tipo de Reporte" in df_pases.columns else ["Todos"]
     )
 
-with c6:
+with r2c3:
     fecha_captura = st.date_input("Fecha de Captura", value=None)
 
-with c7:
+# ---------- ROW 3 ----------
+r3c1, r3c2, r3c3 = st.columns(3)
+
+with r3c1:
     fecha_reporte = st.date_input("Fecha de Reporte", value=None)
 
-c8, c9 = st.columns(2)
-
-with c8:
+with r3c2:
     fecha_mod = st.date_input("Fecha Mod (Servicios)", value=None)
 
-with c9:
-    buscar = st.button("Aplicar filtros", type="primary")
+with r3c3:
+    buscar = st.button("🔍 Aplicar filtros", type="primary")
 
 # =================================
 # APPLY FILTERS
@@ -219,22 +216,19 @@ if buscar:
         df_s = df_s[df_s["Fecha Mod"].dt.date == fecha_mod]
 
     # =================================
-    # COMBINE (1 → MANY)
+    # COMBINE (1 → MANY, LEFT JOIN)
     # =================================
-    if df_p.empty or df_s.empty:
-        st.warning("No hay datos para los filtros seleccionados.")
-    else:
-        df_final = df_p.merge(
-            df_s,
-            on="Folio",
-            how="left"
-        )
+    df_final = df_p.merge(
+        df_s,
+        on="Folio",
+        how="left"
+    )
 
-        st.divider()
-        st.subheader("Reporte Consolidado")
+    st.divider()
+    st.subheader("Reporte Consolidado")
 
-        st.dataframe(
-            df_final,
-            hide_index=True,
-            width="stretch"
-        )
+    st.dataframe(
+        df_final,
+        hide_index=True,
+        width="stretch"
+    )
