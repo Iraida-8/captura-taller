@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 
 from auth import require_login, require_access
 import gspread
@@ -100,6 +100,11 @@ def cargar_pases_unificados():
     df["Folio"] = df["Folio"].astype(str)
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
 
+    if "Fecha de Reporte" in df.columns:
+        df["Fecha de Reporte"] = pd.to_datetime(
+            df["Fecha de Reporte"], errors="coerce"
+        )
+
     return df
 
 
@@ -126,6 +131,9 @@ def cargar_services():
 
     df["Folio"] = df["Folio"].astype(str)
 
+    if "Fecha Mod" in df.columns:
+        df["Fecha Mod"] = pd.to_datetime(df["Fecha Mod"], errors="coerce")
+
     return df
 
 
@@ -133,82 +141,112 @@ pases_df = cargar_pases_unificados()
 services_df = cargar_services()
 
 # =================================
-# Filters
+# FILTERS (BUTTON BASED)
 # =================================
 st.subheader("Filtros")
 
-c1, c2 = st.columns(2)
+c1, c2, c3 = st.columns(3)
 
 with c1:
     empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
-    empresa_sel = st.selectbox(
-        "Empresa",
-        ["Todas"] + empresas
-    )
+    empresa_sel = st.selectbox("Empresa", ["Todas"] + empresas)
 
 with c2:
+    estados = sorted(pases_df["Estado"].dropna().unique()) if "Estado" in pases_df else []
+    estado_sel = st.selectbox("Estado", ["Todos"] + estados)
+
+with c3:
     folio_sel = st.text_input("No. de Folio")
 
-# =================================
-# Apply filters to Pases
-# =================================
-df_pases = pases_df.copy()
+c4, c5, c6 = st.columns(3)
 
-if empresa_sel != "Todas":
-    df_pases = df_pases[df_pases["Empresa"] == empresa_sel]
+with c4:
+    fecha_captura = st.date_input("Fecha de Captura", value=None)
 
-if folio_sel:
-    df_pases = df_pases[df_pases["Folio"].str.contains(folio_sel, na=False)]
+with c5:
+    fecha_reporte = st.date_input("Fecha de Reporte", value=None)
 
-# =================================
-# Display Pases
-# =================================
-st.divider()
-st.subheader("Pases de Taller")
+with c6:
+    fecha_mod = st.date_input("Fecha Mod (Servicios)", value=None)
 
-if df_pases.empty:
-    st.warning("No se encontraron pases con los filtros seleccionados.")
-    st.stop()
-
-st.dataframe(
-    df_pases[
-        ["Folio", "Empresa", "Fecha", "Proveedor", "Estado"]
-    ],
-    hide_index=True,
-    width="stretch"
-)
+aplicar = st.button("🔎 Aplicar filtros")
 
 # =================================
-# Filter SERVICES by Folio
+# APPLY FILTERS
 # =================================
-folios = df_pases["Folio"].unique()
+if aplicar:
+    df_pases = pases_df.copy()
 
-df_services = services_df[
-    services_df["Folio"].isin(folios)
-].copy()
+    if empresa_sel != "Todas":
+        df_pases = df_pases[df_pases["Empresa"] == empresa_sel]
 
-# =================================
-# Display SERVICES
-# =================================
-st.divider()
-st.subheader("Servicios y Refacciones")
+    if estado_sel != "Todos":
+        df_pases = df_pases[df_pases["Estado"] == estado_sel]
 
-if df_services.empty:
-    st.info("No hay servicios asociados a los pases seleccionados.")
-else:
+    if folio_sel:
+        df_pases = df_pases[df_pases["Folio"].str.contains(folio_sel, na=False)]
+
+    if fecha_captura:
+        df_pases = df_pases[
+            df_pases["Fecha"].dt.date == fecha_captura
+        ]
+
+    if fecha_reporte and "Fecha de Reporte" in df_pases.columns:
+        df_pases = df_pases[
+            df_pases["Fecha de Reporte"].dt.date == fecha_reporte
+        ]
+
+    # =================================
+    # DISPLAY PASES
+    # =================================
+    st.divider()
+    st.subheader("Pases de Taller")
+
+    if df_pases.empty:
+        st.warning("No se encontraron pases con los filtros seleccionados.")
+        st.stop()
+
     st.dataframe(
-        df_services[
-            [
-                "Folio",
-                "Parte",
-                "TipoCompra",
-                "Precio MXP",
-                "IVA",
-                "Cantidad",
-                "Total MXN",
-                "Fecha Mod"
-            ]
+        df_pases[
+            ["Folio", "Empresa", "Fecha", "Proveedor", "Estado"]
         ],
         hide_index=True,
         width="stretch"
     )
+
+    # =================================
+    # SERVICES FILTER
+    # =================================
+    folios = df_pases["Folio"].unique()
+    df_services = services_df[services_df["Folio"].isin(folios)].copy()
+
+    if fecha_mod and "Fecha Mod" in df_services.columns:
+        df_services = df_services[
+            df_services["Fecha Mod"].dt.date == fecha_mod
+        ]
+
+    # =================================
+    # DISPLAY SERVICES
+    # =================================
+    st.divider()
+    st.subheader("Servicios y Refacciones")
+
+    if df_services.empty:
+        st.info("No hay servicios asociados a los filtros seleccionados.")
+    else:
+        st.dataframe(
+            df_services[
+                [
+                    "Folio",
+                    "Parte",
+                    "TipoCompra",
+                    "Precio MXP",
+                    "IVA",
+                    "Cantidad",
+                    "Total MXN",
+                    "Fecha Mod"
+                ]
+            ],
+            hide_index=True,
+            width="stretch"
+        )
