@@ -237,7 +237,7 @@ if buscar:
     # TABLE 2 — RESUMEN POR ORDEN
     # =================================
     st.divider()
-    st.subheader("📦 Resumen por Orden")
+    st.subheader("📦 Reporte Simplificado ")
 
     if not df_s.empty:
         servicios_agg = (
