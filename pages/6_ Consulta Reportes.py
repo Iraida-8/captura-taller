@@ -224,8 +224,8 @@ if buscar:
     if df_p.empty or df_s.empty:
         st.warning("No hay datos para los filtros seleccionados.")
     else:
-        df_final = df_s.merge(
-            df_p,
+        df_final = df_p.merge(
+            df_s,
             on="Folio",
             how="left"
         )
