@@ -132,7 +132,7 @@ df_pases = cargar_pases()
 df_services = cargar_servicios()
 
 # =================================
-# FILTERS (FORMATTED — 3 PER ROW)
+# FILTERS (3 PER ROW)
 # =================================
 st.subheader("Filtros")
 
@@ -216,19 +216,77 @@ if buscar:
         df_s = df_s[df_s["Fecha Mod"].dt.date == fecha_mod]
 
     # =================================
-    # COMBINE (1 → MANY, LEFT JOIN)
+    # TABLE 1 — REPORTE DETALLADO
     # =================================
-    df_final = df_p.merge(
+    df_detallado = df_p.merge(
         df_s,
         on="Folio",
         how="left"
     )
 
     st.divider()
-    st.subheader("Reporte Detallado")
+    st.subheader("📄 Reporte Detallado (Servicios por línea)")
 
     st.dataframe(
-        df_final,
+        df_detallado,
+        hide_index=True,
+        width="stretch"
+    )
+
+    # =================================
+    # TABLE 2 — RESUMEN POR ORDEN
+    # =================================
+    st.divider()
+    st.subheader("📦 Resumen por Orden")
+
+    if not df_s.empty:
+        servicios_agg = (
+            df_s
+            .groupby("Folio", as_index=False)
+            .agg({
+                "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
+                "Total MXN": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
+            })
+            .rename(columns={
+                "Parte": "Partes",
+                "Total MXN": "Total MXN Servicios"
+            })
+        )
+    else:
+        servicios_agg = pd.DataFrame(columns=["Folio", "Partes", "Total MXN Servicios"])
+
+    df_resumen = df_p.merge(
+        servicios_agg,
+        on="Folio",
+        how="left"
+    )
+
+    if "Total MXN Servicios" in df_resumen.columns:
+        df_resumen["Total MXN Servicios"] = df_resumen["Total MXN Servicios"].fillna(0)
+
+    if "Partes" in df_resumen.columns:
+        df_resumen["Partes"] = df_resumen["Partes"].fillna("")
+
+    preferred_cols = [
+        "Empresa",
+        "Folio",
+        "Estado",
+        "No. de Unidad",
+        "No. de Reporte",
+        "Tipo de Reporte",
+        "Fecha de Captura",
+        "Fecha de Reporte",
+        "Partes",
+        "Total MXN Servicios",
+    ]
+
+    existing_cols = [c for c in preferred_cols if c in df_resumen.columns]
+    remaining_cols = [c for c in df_resumen.columns if c not in existing_cols]
+
+    df_resumen = df_resumen[existing_cols + remaining_cols]
+
+    st.dataframe(
+        df_resumen,
         hide_index=True,
         width="stretch"
     )
