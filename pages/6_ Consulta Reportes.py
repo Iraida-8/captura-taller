@@ -225,7 +225,7 @@ if buscar:
     )
 
     st.divider()
-    st.subheader("Reporte Consolidado")
+    st.subheader("Reporte Detallado")
 
     st.dataframe(
         df_final,
