@@ -46,66 +46,27 @@ st.title("📋 Consulta de Reparación")
 # =================================
 EMPRESA_CONFIG = {
     "IGLOO TRANSPORT": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1OGYOp0ZqK7PQ93F4wdHJKEnB4oZbl5pU"
-            "/export?format=csv&gid=770635060"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
-            "/export?format=csv&gid=410297659"
-        )
+        "ordenes": "https://docs.google.com/spreadsheets/d/1OGYOp0ZqK7PQ93F4wdHJKEnB4oZbl5pU/export?format=csv&gid=770635060",
+        "partes": "https://docs.google.com/spreadsheets/d/18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7/export?format=csv&gid=410297659",
     },
     "LINCOLN FREIGHT": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ"
-            "/export?format=csv&gid=332111886"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp"
-            "/export?format=csv&gid=41991257"
-        )
+        "ordenes": "https://docs.google.com/spreadsheets/d/1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ/export?format=csv&gid=332111886",
+        "partes": "https://docs.google.com/spreadsheets/d/1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp/export?format=csv&gid=41991257",
     },
     "PICUS": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1DSFFir8vQGzkIZdPGZKakMFygUUjA6vg"
-            "/export?format=csv&gid=1157416037"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN"
-            "/export?format=csv&gid=354598948"
-        )
+        "ordenes": "https://docs.google.com/spreadsheets/d/1DSFFir8vQGzkIZdPGZKakMFygUUjA6vg/export?format=csv&gid=1157416037",
+        "partes": "https://docs.google.com/spreadsheets/d/1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN/export?format=csv&gid=354598948",
     },
     "SET FREIGHT INTERNATIONAL": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "166RzQ6DxBiZ1c7xjMQzyPJk2uLJI_piO"
-            "/export?format=csv&gid=1292870764"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS"
-            "/export?format=csv&gid=849445619"
-        )
+        "ordenes": "https://docs.google.com/spreadsheets/d/166RzQ6DxBiZ1c7xjMQzyPJk2uLJI_piO/export?format=csv&gid=1292870764",
+        "partes": "https://docs.google.com/spreadsheets/d/1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS/export?format=csv&gid=849445619",
     },
     "SET LOGIS PLUS": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "11q580KXBn-kX5t-eHAbV0kp-kTqIQBR6"
-            "/export?format=csv&gid=663362391"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61"
-            "/export?format=csv&gid=1837946138"
-        )
-    }
+        "ordenes": "https://docs.google.com/spreadsheets/d/11q580KXBn-kX5t-eHAbV0kp-kTqIQBR6/export?format=csv&gid=663362391",
+        "partes": "https://docs.google.com/spreadsheets/d/1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61/export?format=csv&gid=1837946138",
+    },
 }
+
 
 
 # =================================
