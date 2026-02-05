@@ -5,7 +5,7 @@ from datetime import date
 from auth import require_login, require_access
 
 # =================================
-# Page configuration (MUST BE FIRST)
+# Page configuration
 # =================================
 st.set_page_config(
     page_title="Consulta de Reparación",
@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar completely
+# Hide sidebar
 # =================================
 st.markdown(
     """
@@ -27,45 +27,96 @@ st.markdown(
 )
 
 # =================================
-# Security gates
+# Security
 # =================================
 require_login()
 require_access("consultar_reparacion")
 
 # =================================
-# Top navigation
+# Navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.divider()
-
-# =================================
-# Page title
-# =================================
 st.title("📋 Consulta de Reparación")
 
 # =================================
-# DATA SOURCES
+# EMPRESA DATA CONFIG
 # =================================
-IGLOO_ORDENES_URL = (
-    "https://docs.google.com/spreadsheets/d/"
-    "1OGYOp0ZqK7PQ93F4wdHJKEnB4oZbl5pU"
-    "/export?format=csv&gid=770635060"
-)
+EMPRESA_CONFIG = {
+    "IGLOO TRANSPORT": {
+        "ordenes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1OGYOp0ZqK7PQ93F4wdHJKEnB4oZbl5pU"
+            "/export?format=csv&gid=770635060"
+        ),
+        "partes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
+            "/export?format=csv&gid=410297659"
+        )
+    },
+    "LINCOLN FREIGHT": {
+        "ordenes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ"
+            "/export?format=csv&gid=332111886"
+        ),
+        "partes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp"
+            "/export?format=csv&gid=41991257"
+        )
+    },
+    "PICUS": {
+        "ordenes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1DSFFir8vQGzkIZdPGZKakMFygUUjA6vg"
+            "/export?format=csv&gid=1157416037"
+        ),
+        "partes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN"
+            "/export?format=csv&gid=354598948"
+        )
+    },
+    "SET FREIGHT INTERNATIONAL": {
+        "ordenes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "166RzQ6DxBiZ1c7xjMQzyPJk2uLJI_piO"
+            "/export?format=csv&gid=1292870764"
+        ),
+        "partes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS"
+            "/export?format=csv&gid=849445619"
+        )
+    },
+    "SET LOGIS PLUS": {
+        "ordenes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "11q580KXBn-kX5t-eHAbV0kp-kTqIQBR6"
+            "/export?format=csv&gid=663362391"
+        ),
+        "partes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61"
+            "/export?format=csv&gid=1837946138"
+        )
+    }
+}
 
-IGLOO_PARTES_URL = (
-    "https://docs.google.com/spreadsheets/d/"
-    "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
-    "/export?format=csv&gid=410297659"
-)
 
 # =================================
 # LOADERS
 # =================================
 @st.cache_data(ttl=600)
-def cargar_ordenes_igloo():
-    df = pd.read_csv(IGLOO_ORDENES_URL)
+def cargar_ordenes(url):
+    if not url or "<PUT_" in url:
+        return pd.DataFrame()
+
+    df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
     if "FECHA" in df.columns:
@@ -80,8 +131,11 @@ def cargar_ordenes_igloo():
 
 
 @st.cache_data(ttl=600)
-def cargar_partes_igloo():
-    df = pd.read_csv(IGLOO_PARTES_URL)
+def cargar_partes(url):
+    if not url or "<PUT_" in url:
+        return pd.DataFrame()
+
+    df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
     if "Fecha" in df.columns:
@@ -101,14 +155,7 @@ st.subheader("Selección de Empresa")
 
 empresa = st.selectbox(
     "Empresa",
-    [
-        "Selecciona empresa",
-        "IGLOO TRANSPORT",
-        "LINCOLN FREIGHT",
-        "PICUS",
-        "SET FREIGHT INTERNATIONAL",
-        "SET LOGIS PLUS"
-    ],
+    ["Selecciona empresa"] + list(EMPRESA_CONFIG.keys()),
     index=0
 )
 
@@ -116,15 +163,10 @@ if empresa == "Selecciona empresa":
     st.info("Selecciona una empresa para consultar las órdenes.")
     st.stop()
 
-# =================================
-# LOAD DATA (ONLY IGLOO FOR NOW)
-# =================================
-if empresa == "IGLOO TRANSPORT":
-    df = cargar_ordenes_igloo()
-    df_partes = cargar_partes_igloo()
-else:
-    df = pd.DataFrame()
-    df_partes = pd.DataFrame()
+config = EMPRESA_CONFIG[empresa]
+
+df = cargar_ordenes(config["ordenes"])
+df_partes = cargar_partes(config["partes"])
 
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
@@ -138,17 +180,9 @@ st.subheader("Últimos 10 Registros")
 unidad_orden_sel = "Todas"
 
 if "Unidad" in df.columns:
-    unidades_orden = (
-        df["Unidad"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
     unidad_orden_sel = st.selectbox(
         "Filtrar por Unidad",
-        ["Todas"] + sorted(unidades_orden),
+        ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique()),
         index=0
     )
 
@@ -166,10 +200,8 @@ columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 df_ultimos = df.copy()
 
-if unidad_orden_sel != "Todas" and "Unidad" in df_ultimos.columns:
-    df_ultimos = df_ultimos[
-        df_ultimos["Unidad"].astype(str) == unidad_orden_sel
-    ]
+if unidad_orden_sel != "Todas":
+    df_ultimos = df_ultimos[df_ultimos["Unidad"].astype(str) == unidad_orden_sel]
 
 df_ultimos = (
     df_ultimos
@@ -177,77 +209,51 @@ df_ultimos = (
     .head(10)[columnas_disponibles]
 )
 
-st.dataframe(
-    df_ultimos,
-    width="stretch",
-    hide_index=True
-)
+st.dataframe(df_ultimos, hide_index=True, width="stretch")
 
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
 # =================================
 st.subheader("Refacciones Recientes")
 
-unidad_partes_sel = None
-
 if not df_partes.empty and "Unidad" in df_partes.columns:
-    unidades_partes = (
-        df_partes["Unidad"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
     unidad_partes_sel = st.selectbox(
         "Filtrar por Unidad",
-        ["Todas"] + sorted(unidades_partes),
+        ["Todas"] + sorted(df_partes["Unidad"].dropna().astype(str).unique()),
         index=0
     )
 
-columnas_partes = [
-    "Fecha",
-    "Unidad",
-    "Parte",
-    "TipoCompra",
-    "PrecioParte",
-    "Cantidad",
-    "Total Correccion"
-]
-
-if not df_partes.empty:
     df_partes_filtrado = df_partes.copy()
 
-    if (
-        unidad_partes_sel
-        and unidad_partes_sel != "Todas"
-        and "Unidad" in df_partes_filtrado.columns
-    ):
+    if unidad_partes_sel != "Todas":
         df_partes_filtrado = df_partes_filtrado[
             df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
         ]
+
+    columnas_partes = [
+        "Fecha",
+        "Unidad",
+        "Parte",
+        "TipoCompra",
+        "PrecioParte",
+        "Cantidad",
+        "Total Correccion"
+    ]
 
     columnas_disponibles_partes = [
         c for c in columnas_partes if c in df_partes_filtrado.columns
     ]
 
-    if "Fecha" in columnas_disponibles_partes:
-        df_partes_ultimos = (
-            df_partes_filtrado
-            .sort_values("Fecha", ascending=False)
-            .head(10)[columnas_disponibles_partes]
-            .copy()
-        )
+    df_partes_ultimos = (
+        df_partes_filtrado
+        .sort_values("Fecha", ascending=False)
+        .head(10)[columnas_disponibles_partes]
+    )
 
-        df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%y-%m-%d")
+    if "Fecha" in df_partes_ultimos.columns:
+        df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%Y-%m-%d")
 
-        st.dataframe(
-            df_partes_ultimos,
-            width="stretch",
-            hide_index=True
-        )
-    else:
-        st.info("La tabla de partes no contiene el campo Fecha.")
+    st.dataframe(df_partes_ultimos, hide_index=True, width="stretch")
 else:
     st.info("No hay información de partes disponible para esta empresa.")
 
@@ -272,15 +278,10 @@ with c2:
     )
 
 with c3:
-    unidad_options = ["Todas"]
-    if "Unidad" in df.columns:
-        unidad_options += sorted(
-            df["Unidad"].dropna().astype(str).unique().tolist()
-        )
-
     unidad_sel = st.selectbox(
         "Unidad",
-        unidad_options
+        ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique())
+        if "Unidad" in df.columns else ["Todas"]
     )
 
 # =================================
@@ -293,10 +294,8 @@ df_filtrado = df_filtrado[
     (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
 ]
 
-if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
-    df_filtrado = df_filtrado[
-        df_filtrado["Unidad"].astype(str) == unidad_sel
-    ]
+if unidad_sel != "Todas":
+    df_filtrado = df_filtrado[df_filtrado["Unidad"].astype(str) == unidad_sel]
 
 # =================================
 # TABLA COMPLETA
@@ -305,15 +304,13 @@ st.divider()
 st.subheader("Todas las Órdenes")
 
 columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
-columnas_mostrar = [
-    c for c in df_filtrado.columns if c not in columnas_ocultar
-]
+columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
 
 st.dataframe(
     df_filtrado[columnas_mostrar]
         .sort_values("FECHA", ascending=False),
-    width="stretch",
-    hide_index=True
+    hide_index=True,
+    width="stretch"
 )
 
 # =================================
