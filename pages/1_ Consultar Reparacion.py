@@ -32,6 +32,10 @@ st.markdown(
 require_login()
 require_access("consultar_reparacion")
 
+if st.button("🧹 Limpiar cache"):
+    st.cache_data.clear()
+    st.rerun()
+    
 # =================================
 # Navigation
 # =================================
