@@ -42,7 +42,7 @@ st.divider()
 st.title("📋 Consulta de Reparación")
 
 # =================================
-# EMPRESA DATA CONFIG (FIXED)
+# EMPRESA DATA CONFIG (Test)
 # =================================
 EMPRESA_CONFIG = {
     "IGLOO TRANSPORT": {
