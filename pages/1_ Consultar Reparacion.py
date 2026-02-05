@@ -50,8 +50,8 @@ EMPRESA_CONFIG = {
         "partes": "https://docs.google.com/spreadsheets/d/18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7/export?format=csv&gid=410297659",
     },
     "LINCOLN FREIGHT": {
-        "ordenes": "https://docs.google.com/spreadsheets/d/1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ/export?format=csv&gid=332111886",
-        "partes": "https://docs.google.com/spreadsheets/d/1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp/export?format=csv&gid=41991257",
+        "ordenes": "https://docs.google.com/spreadsheets/d/1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ/edit?gid=332111886#gid=332111886/export?format=csv",
+        "partes": "https://docs.google.com/spreadsheets/d/1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp/edit?gid=41991257#gid=41991257/export?format=csv",
     },
     "PICUS": {
         "ordenes": "https://docs.google.com/spreadsheets/d/1DSFFir8vQGzkIZdPGZKakMFygUUjA6vg/export?format=csv&gid=1157416037",
