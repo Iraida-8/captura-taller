@@ -332,12 +332,32 @@ if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
 st.divider()
 st.subheader("Todas las Órdenes")
 
+# Columns that must NEVER appear
 columnas_ocultar = ["DIFERENCIA", "COMENTARIOS", "FECHA"]
-columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
+
+columnas_mostrar = [
+    c for c in df_filtrado.columns
+    if c not in columnas_ocultar
+]
+
+# Preferred sort order (first valid wins)
+sort_cols = [
+    "Fecha Registro",
+    "Fecha Aceptado",
+    "Fecha Iniciada",
+    "Fecha Liberada",
+    "Fecha Terminada",
+]
+
+sort_col = next((c for c in sort_cols if c in df_filtrado.columns), None)
+
+df_display = df_filtrado[columnas_mostrar]
+
+if sort_col:
+    df_display = df_display.sort_values(sort_col, ascending=False)
 
 st.dataframe(
-    df_filtrado[columnas_mostrar]
-        .sort_values("FECHA", ascending=False),
+    df_display,
     hide_index=True,
     width="stretch"
 )
