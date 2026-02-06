@@ -294,13 +294,37 @@ with c3:
 # =================================
 df_filtrado = df.copy()
 
-df_filtrado = df_filtrado[
-    (df_filtrado["FECHA"] >= pd.to_datetime(fecha_inicio)) &
-    (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
+# Dates that ARE allowed to drive filters
+date_cols = [
+    "Fecha Registro",
+    "Fecha Aceptado",
+    "Fecha Iniciada",
+    "Fecha Liberada",
+    "Fecha Terminada",
 ]
+for col in date_cols:
+    if col in df_filtrado.columns:
+        df_filtrado[col] = pd.to_datetime(
+            df_filtrado[col],
+            errors="coerce",
+            dayfirst=True
+        )
 
-if unidad_sel != "Todas":
-    df_filtrado = df_filtrado[df_filtrado["Unidad"].astype(str) == unidad_sel]
+if fecha_inicio and fecha_fin:
+    mask = False
+    for col in date_cols:
+        if col in df_filtrado.columns:
+            mask = mask | (
+                (df_filtrado[col] >= pd.to_datetime(fecha_inicio)) &
+                (df_filtrado[col] <= pd.to_datetime(fecha_fin))
+            )
+    df_filtrado = df_filtrado[mask]
+
+if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
+    df_filtrado = df_filtrado[
+        df_filtrado["Unidad"].astype(str) == unidad_sel
+    ]
+
 
 # =================================
 # TABLA COMPLETA
