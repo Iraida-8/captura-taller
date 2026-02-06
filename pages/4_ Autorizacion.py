@@ -345,6 +345,33 @@ def cargar_catalogo_lincoln():
 
     return df[["Parte", "PU", "label"]]
 
+@st.cache_data(ttl=600)
+def cargar_catalogo_picus():
+    URL = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN"
+        "/export?format=csv&gid=354598948"
+    )
+
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    def limpiar_num(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return None
+
+    # ⛔ Change ONLY if PICUS uses a different column name
+    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+
+    df["label"] = df.apply(
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
+        if pd.notna(r["PU"]) else r["Parte"],
+        axis=1
+    )
+
+    return df[["Parte", "PU", "label"]]
 
 # =================================
 # Title
