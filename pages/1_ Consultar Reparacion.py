@@ -125,13 +125,13 @@ def cargar_ordenes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    if "FECHA" in df.columns:
-        df["FECHA"] = pd.to_datetime(
-            df["FECHA"],
+    if "FECHA H" in df.columns:
+        df["FECHA H"] = pd.to_datetime(
+            df["FECHA H"],
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
+        df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
