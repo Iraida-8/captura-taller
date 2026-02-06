@@ -211,7 +211,7 @@ if unidad_orden_sel != "Todas":
 
 df_ultimos = (
     df_ultimos
-    .sort_values("FECHA", ascending=False)
+    .sort_values("FECHA H", ascending=False)
     .head(10)[columnas_disponibles]
 )
 
