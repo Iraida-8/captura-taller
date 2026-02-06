@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 import os
 
 # =================================
-# Page configuration (MUST BE FIRST)
+# Page configuration
 # =================================
 st.set_page_config(
     page_title="Captura Pase de Taller",
@@ -140,7 +140,7 @@ def append_pase_to_sheet(data: dict):
     ]
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
-    return folio   # ✅ authoritative folio returned
+    return folio   # authoritative folio returned
 
 # =================================
 # Google Sheets configuration
