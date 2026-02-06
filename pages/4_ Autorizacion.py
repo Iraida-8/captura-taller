@@ -109,6 +109,40 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
+# Update OSTE
+# =================================
+def actualizar_oste_pase(empresa, folio, oste):
+    sheet_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    hoja = sheet_map.get(empresa)
+    if not hoja:
+        return
+
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet(hoja)
+
+    folios = ws.col_values(2)
+    if folio not in folios:
+        return
+
+    row_idx = folios.index(folio) + 1
+    headers = ws.row_values(1)
+
+    if "Oste" not in headers:
+        return
+
+    oste_col = headers.index("Oste") + 1
+    ws.update_cell(row_idx, oste_col, oste)
+
+# =================================
 # Load Servicios for Folio
 # =================================
 def cargar_servicios_folio(folio):
@@ -591,6 +625,31 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Empresa:** {r['Empresa']}")
         st.markdown(f"**Fecha:** {r['Fecha']}")
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
+
+        st.divider()
+        st.subheader("Información del Proveedor")
+
+        proveedor = (r.get("Proveedor") or "").lower()
+
+        # =========================
+        # PROVEEDOR INTERNO
+        # =========================
+        if "interno" in proveedor:
+            st.text_input(
+                "No. de Reporte",
+                value=r.get("No. de Reporte", ""),
+                disabled=True
+            )
+
+        # =========================
+        # PROVEEDOR EXTERNO
+        # =========================
+        else:
+            oste_val = st.text_input(
+                "OSTE",
+                value=r.get("Oste", "") or "",
+                disabled=not editable_estado
+            )
 
         opciones_estado = [
             "En Curso / Autorizado",
