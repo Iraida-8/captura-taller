@@ -208,7 +208,6 @@ df_ultimos = df.copy()
 if unidad_orden_sel != "Todas":
     df_ultimos = df_ultimos[df_ultimos["Unidad"].astype(str) == unidad_orden_sel]
 
-# 🔴 ONLY CHANGE IS HERE — Fecha Registro instead of FECHA
 df_ultimos = (
     df_ultimos
     .sort_values("Fecha Registro", ascending=False)
@@ -309,7 +308,7 @@ if unidad_sel != "Todas":
 st.divider()
 st.subheader("Todas las Órdenes")
 
-columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+columnas_ocultar = ["DIFERENCIA", "COMENTARIOS", "FECHA"]
 columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
 
 st.dataframe(
