@@ -226,6 +226,31 @@ def cargar_servicios_folio(folio):
     ]
 
 # =================================
+# Ensure SERVICES row exists for folio
+# =================================
+def asegurar_fila_services(folio, usuario):
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    folios = ws.col_values(1)  # No. de Folio
+
+    if folio in folios:
+        return  # already exists
+
+    ws.append_row(
+        [
+            folio,          # No. de Folio
+            usuario,        # Modifico
+            "", "", "", "", "", "",  # Parte → Total MXN
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "", "", "", "", "", ""   # Fecha Estado columns already exist
+        ],
+        value_input_option="USER_ENTERED"
+    )
+
+# =================================
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
@@ -808,6 +833,8 @@ if st.session_state.modal_reporte:
                         or st.session_state.user.get("email")
                     )
 
+                    asegurar_fila_services(r["NoFolio"], usuario)
+
                     actualizar_estado_pase(
                         r["Empresa"],
                         r["NoFolio"],
@@ -830,14 +857,12 @@ if st.session_state.modal_reporte:
                             oste_val
                         )
 
-                if editable_servicios:
-                    guardar_servicios_refacciones(
-                        r["NoFolio"],
-                        st.session_state.user.get("name")
-                        or st.session_state.user.get("email"),
-                        st.session_state.servicios_df
-                    )
-
+                guardar_servicios_refacciones(
+                    r["NoFolio"],
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email"),
+                    st.session_state.servicios_df
+                )
 
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
