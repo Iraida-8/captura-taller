@@ -782,7 +782,14 @@ if st.session_state.modal_reporte:
                 editable_estado or nuevo_estado == "Cerrado / Facturado"
             ):
 
-                # ---- Estado change + log ----
+                usuario = (
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email")
+                )
+
+                # =========================
+                # 1️⃣ REGISTRAR CAMBIO DE ESTADO (NUEVA FILA SIEMPRE)
+                # =========================
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(
                         r["Empresa"],
@@ -792,23 +799,27 @@ if st.session_state.modal_reporte:
 
                     registrar_cambio_estado(
                         r["NoFolio"],
-                        st.session_state.user.get("name")
-                        or st.session_state.user.get("email"),
+                        usuario,
                         nuevo_estado
                     )
 
-                # ---- Guardar OSTE (solo externo + facturado) ----
-                if "interno" not in proveedor and nuevo_estado == "Cerrado / Facturado":
-                    actualizar_oste_pase(
-                        r["Empresa"],
-                        r["NoFolio"],
-                        oste_val
-                    )
+                # =========================
+                # 2️⃣ GUARDAR OSTE (solo externo + facturado)
+                # =========================
+                if "interno" not in (r.get("Proveedor") or "").lower():
+                    if nuevo_estado == "Cerrado / Facturado":
+                        actualizar_oste_pase(
+                            r["Empresa"],
+                            r["NoFolio"],
+                            oste_val
+                        )
 
+                # =========================
+                # 3️⃣ GUARDAR SERVICIOS (esto SÍ sobrescribe Fecha Mod)
+                # =========================
                 guardar_servicios_refacciones(
                     r["NoFolio"],
-                    st.session_state.user.get("name")
-                    or st.session_state.user.get("email"),
+                    usuario,
                     st.session_state.servicios_df
                 )
 
