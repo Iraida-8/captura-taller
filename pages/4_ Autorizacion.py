@@ -224,7 +224,8 @@ def cargar_servicios_folio(folio):
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
-    from datetime import datetime
+    if servicios_df is None or servicios_df.empty:
+        return
 
     client = gspread.authorize(get_gsheets_credentials())
     ws = client.open_by_key(
