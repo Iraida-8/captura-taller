@@ -271,37 +271,48 @@ st.subheader("Filtros")
 
 c1, c2, c3 = st.columns(3)
 
+# --- Fecha inicio ---
 with c1:
+    fecha_min = df["FECHA"].min() if "FECHA" in df.columns else None
     fecha_inicio = st.date_input(
         "Fecha inicio",
-        value=df["FECHA"].min().date()
+        value=fecha_min.date() if pd.notna(fecha_min) else date.today()
     )
 
+# --- Fecha fin ---
 with c2:
     fecha_fin = st.date_input(
         "Fecha fin",
         value=date.today()
     )
 
+# --- Unidad ---
 with c3:
-    unidad_sel = st.selectbox(
-        "Unidad",
-        ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique())
-        if "Unidad" in df.columns else ["Todas"]
-    )
+    if "Unidad" in df.columns:
+        unidad_sel = st.selectbox(
+            "Unidad",
+            ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique())
+        )
+    else:
+        unidad_sel = "Todas"
+
 
 # =================================
 # APPLY FILTERS
 # =================================
 df_filtrado = df.copy()
 
-df_filtrado = df_filtrado[
-    (df_filtrado["FECHA"] >= pd.to_datetime(fecha_inicio)) &
-    (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
-]
+if "FECHA" in df_filtrado.columns:
+    df_filtrado = df_filtrado[
+        (df_filtrado["FECHA"] >= pd.to_datetime(fecha_inicio)) &
+        (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
+    ]
 
-if unidad_sel != "Todas":
-    df_filtrado = df_filtrado[df_filtrado["Unidad"].astype(str) == unidad_sel]
+if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
+    df_filtrado = df_filtrado[
+        df_filtrado["Unidad"].astype(str) == unidad_sel
+    ]
+
 
 # =================================
 # TABLA COMPLETA
