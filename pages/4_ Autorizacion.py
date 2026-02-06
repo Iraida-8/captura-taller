@@ -649,6 +649,9 @@ if st.session_state.modal_reporte:
     @st.dialog("Detalle del Pase de Taller")
     def modal():
 
+        # =========================
+        # HEADER INFO
+        # =========================
         st.markdown(f"**No. de Folio:** {r['NoFolio']}")
         st.markdown(f"**Empresa:** {r['Empresa']}")
         st.markdown(f"**Fecha:** {r['Fecha']}")
@@ -671,6 +674,7 @@ if st.session_state.modal_reporte:
                 value=r.get("No. de Reporte", ""),
                 disabled=True
             )
+            oste_val = None
 
         # =========================
         # PROVEEDOR EXTERNO
@@ -682,6 +686,9 @@ if st.session_state.modal_reporte:
                 disabled=not oste_editable
             )
 
+        # =========================
+        # ESTADO
+        # =========================
         opciones_estado = [
             "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
@@ -707,6 +714,9 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Servicios y Refacciones")
 
+        # =========================
+        # CATÁLOGO
+        # =========================
         catalogo = cargar_catalogo_por_empresa(r["Empresa"])
 
         if catalogo is not None and not catalogo.empty:
@@ -719,9 +729,15 @@ if st.session_state.modal_reporte:
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
+        # =========================
+        # AGREGAR SERVICIO
+        # =========================
         if st.button(
             "Agregar refacciones o servicios",
-            disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
+            disabled=(
+                not editable_servicios
+                or not st.session_state.refaccion_seleccionada
+            )
         ):
             fila = catalogo[
                 catalogo["label"] == st.session_state.refaccion_seleccionada
@@ -742,6 +758,9 @@ if st.session_state.modal_reporte:
                     ignore_index=True
                 )
 
+        # =========================
+        # EDITOR
+        # =========================
         edited_df = st.data_editor(
             st.session_state.servicios_df,
             num_rows="dynamic",
@@ -769,6 +788,9 @@ if st.session_state.modal_reporte:
             f"$ {st.session_state.servicios_df['Total MXN'].fillna(0).sum():,.2f}"
         )
 
+        # =========================
+        # ACTIONS
+        # =========================
         st.divider()
         c1, c2 = st.columns(2)
 
@@ -788,7 +810,7 @@ if st.session_state.modal_reporte:
                 )
 
                 # =========================
-                # 1️⃣ REGISTRAR CAMBIO DE ESTADO (NUEVA FILA SIEMPRE)
+                # 1️⃣ REGISTRAR CAMBIO DE ESTADO (APPEND)
                 # =========================
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(
@@ -806,16 +828,18 @@ if st.session_state.modal_reporte:
                 # =========================
                 # 2️⃣ GUARDAR OSTE (solo externo + facturado)
                 # =========================
-                if "interno" not in (r.get("Proveedor") or "").lower():
-                    if nuevo_estado == "Cerrado / Facturado":
-                        actualizar_oste_pase(
-                            r["Empresa"],
-                            r["NoFolio"],
-                            oste_val
-                        )
+                if (
+                    oste_val is not None
+                    and nuevo_estado == "Cerrado / Facturado"
+                ):
+                    actualizar_oste_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        oste_val
+                    )
 
                 # =========================
-                # 3️⃣ GUARDAR SERVICIOS (esto SÍ sobrescribe Fecha Mod)
+                # 3️⃣ GUARDAR SERVICIOS
                 # =========================
                 guardar_servicios_refacciones(
                     r["NoFolio"],
