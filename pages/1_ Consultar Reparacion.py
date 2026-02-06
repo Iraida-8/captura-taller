@@ -252,7 +252,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_ultimos = (
         df_partes_filtrado
-        .sort_values("Fecha", ascending=False)
+        .sort_values("FECHA H", ascending=False)
         .head(10)[columnas_disponibles_partes]
     )
 
