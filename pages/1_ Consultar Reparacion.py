@@ -113,18 +113,38 @@ EMPRESA_CONFIG = {
     }
 }
 
-
 # =================================
 # LOADERS
 # =================================
 @st.cache_data(ttl=600)
 def cargar_ordenes(url):
-    if not url or "<PUT_" in url:
+    if not url:
         return pd.DataFrame()
 
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
+    # ÓRDENES use FECHA
+    if "FECHA" in df.columns:
+        df["FECHA"] = pd.to_datetime(
+            df["FECHA"],
+            errors="coerce",
+            dayfirst=True
+        )
+        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
+
+    return df
+
+
+@st.cache_data(ttl=600)
+def cargar_partes(url):
+    if not url:
+        return pd.DataFrame()
+
+    df = pd.read_csv(url)
+    df.columns = df.columns.str.strip()
+
+    # PARTES use FECHA H
     if "FECHA H" in df.columns:
         df["FECHA H"] = pd.to_datetime(
             df["FECHA H"],
@@ -132,25 +152,6 @@ def cargar_ordenes(url):
             dayfirst=True
         )
         df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
-
-    return df
-
-
-@st.cache_data(ttl=600)
-def cargar_partes(url):
-    if not url or "<PUT_" in url:
-        return pd.DataFrame()
-
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-
-    if "Fecha" in df.columns:
-        df["Fecha"] = pd.to_datetime(
-            df["Fecha"],
-            errors="coerce",
-            dayfirst=True
-        )
-        df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -231,12 +232,17 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_filtrado = df_partes.copy()
 
-    # Detect which total column exists (empresa-specific)
+    if unidad_partes_sel != "Todas":
+        df_partes_filtrado = df_partes_filtrado[
+            df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
+        ]
+
+    # Empresa-specific total column
     total_col = None
     display_total_col = None
 
     if empresa == "IGLOO TRANSPORT":
-        total_col = "TotalCorrecion"      # sheet column
+        total_col = "TotalCorrecion"
         display_total_col = "Total Correccion"
     elif empresa == "LINCOLN FREIGHT":
         total_col = "Total USD"
@@ -254,7 +260,6 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     if total_col and total_col in df_partes_filtrado.columns:
         columnas_partes.append(total_col)
 
-
     columnas_disponibles_partes = [
         c for c in columnas_partes if c in df_partes_filtrado.columns
     ]
@@ -265,14 +270,16 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         .head(10)[columnas_disponibles_partes]
     )
 
-    # Rename total column for display (empresa-specific)
+    # Display-only rename (IGLOO)
     if total_col and display_total_col and total_col != display_total_col:
         df_partes_ultimos = df_partes_ultimos.rename(
             columns={total_col: display_total_col}
         )
 
-    if "Fecha" in df_partes_ultimos.columns:
-        df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%Y-%m-%d")
+    if "FECHA H" in df_partes_ultimos.columns:
+        df_partes_ultimos["FECHA H"] = (
+            df_partes_ultimos["FECHA H"].dt.strftime("%Y-%m-%d")
+        )
 
     st.dataframe(df_partes_ultimos, hide_index=True, width="stretch")
 else:
@@ -286,7 +293,6 @@ st.subheader("Filtros")
 
 c1, c2, c3 = st.columns(3)
 
-# --- Fecha inicio ---
 with c1:
     fecha_inicio = st.date_input(
         "Fecha inicio",
@@ -294,14 +300,12 @@ with c1:
         min_value=date(2025, 1, 1)
     )
 
-# --- Fecha fin ---
 with c2:
     fecha_fin = st.date_input(
         "Fecha fin",
         value=date.today()
     )
 
-# --- Unidad ---
 with c3:
     if "Unidad" in df.columns:
         unidad_sel = st.selectbox(
@@ -310,7 +314,6 @@ with c3:
         )
     else:
         unidad_sel = "Todas"
-
 
 # =================================
 # APPLY FILTERS
