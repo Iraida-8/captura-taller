@@ -632,6 +632,8 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Información del Proveedor")
 
+        oste_editable = r["Estado"] == "Cerrado / Facturado"
+
         proveedor = (r.get("Proveedor") or "").lower()
 
         # =========================
@@ -651,13 +653,14 @@ if st.session_state.modal_reporte:
             oste_val = st.text_input(
                 "OSTE",
                 value=r.get("Oste", "") or "",
-                disabled=not editable_estado
+                disabled=not oste_editable
             )
 
         opciones_estado = [
             "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
+            "Cerrado / Facturado",
             "Cerrado / Cancelado",
             "Cerrado / Completado",
         ]
@@ -754,10 +757,10 @@ if st.session_state.modal_reporte:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
                 # =========================
-                # Guardar OSTE (solo externo)
+                # Guardar OSTE (solo externo y solo Facturado)
                 # =========================
                 if "interno" not in (r.get("Proveedor") or "").lower():
-                    if r["Estado"].startswith("En Curso"):
+                    if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
                             r["Empresa"],
                             r["NoFolio"],
