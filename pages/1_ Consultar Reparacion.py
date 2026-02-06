@@ -273,10 +273,10 @@ c1, c2, c3 = st.columns(3)
 
 # --- Fecha inicio ---
 with c1:
-    fecha_min = df["FECHA"].min() if "FECHA" in df.columns else None
     fecha_inicio = st.date_input(
         "Fecha inicio",
-        value=fecha_min.date() if isinstance(fecha_min, pd.Timestamp) else date.today()
+        value=date(2025, 1, 1),
+        min_value=date(2025, 1, 1)
     )
 
 # --- Fecha fin ---
