@@ -13,7 +13,7 @@ from datetime import datetime
 fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =================================
-# Page configuration - YES
+# Page configuration
 # =================================
 st.set_page_config(
     page_title="Autorización y Actualización de Reporte",
@@ -141,6 +141,48 @@ def actualizar_oste_pase(empresa, folio, oste):
 
     oste_col = headers.index("Oste") + 1
     ws.update_cell(row_idx, oste_col, oste)
+
+    # =================================
+# Log estado sin refacciones
+# =================================
+def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
+    from datetime import datetime
+
+    estado_fecha_map = {
+        "En Curso / Autorizado": "Fecha Autorizado",
+        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
+        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
+        "Cerrado / Facturado": "Fecha Facturado",
+        "Cerrado / Completado": "Fecha Completado",
+        "Cerrado / Cancelado": "Fecha Cancelado",
+    }
+
+    fecha_col = estado_fecha_map.get(nuevo_estado)
+    if not fecha_col:
+        return
+
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    fecha_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    headers = [h.strip() for h in ws.row_values(1)]
+
+    # Build empty row aligned to headers
+    row = [""] * len(headers)
+
+    def set_if_exists(col_name, value):
+        if col_name in headers:
+            row[headers.index(col_name)] = value
+
+    set_if_exists("No. de Folio", folio)
+    set_if_exists("Modifico", usuario)
+    set_if_exists("Fecha Mod", fecha_now)
+    set_if_exists(fecha_col, fecha_now)
+
+    ws.append_row(row, value_input_option="USER_ENTERED")
 
 # =================================
 # Load Servicios for Folio
@@ -767,6 +809,23 @@ if st.session_state.modal_reporte:
                             r["NoFolio"],
                             oste_val
                         )
+
+
+                usuario = (
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email")
+                )
+
+                # 🔹 NUEVO: registrar estados sin refacciones
+                if (
+                    st.session_state.servicios_df.empty
+                    and nuevo_estado in ["En Curso / Autorizado", "Cerrado / Cancelado"]
+                ):
+                    registrar_cambio_estado_sin_servicios(
+                        r["NoFolio"],
+                        usuario,
+                        nuevo_estado
+                    )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
