@@ -536,6 +536,7 @@ with f4:
 
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
+    st.session_state.modal_reporte = None
 
 # =================================
 # RESULTADOS
