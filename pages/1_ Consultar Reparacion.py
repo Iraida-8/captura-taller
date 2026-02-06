@@ -113,12 +113,13 @@ EMPRESA_CONFIG = {
     }
 }
 
+
 # =================================
 # LOADERS
 # =================================
 @st.cache_data(ttl=600)
 def cargar_ordenes(url):
-    if not url:
+    if not url or "<PUT_" in url:
         return pd.DataFrame()
 
     df = pd.read_csv(url)
@@ -137,7 +138,7 @@ def cargar_ordenes(url):
 
 @st.cache_data(ttl=600)
 def cargar_partes(url):
-    if not url:
+    if not url or "<PUT_" in url:
         return pd.DataFrame()
 
     df = pd.read_csv(url)
@@ -210,7 +211,7 @@ if unidad_orden_sel != "Todas":
 
 df_ultimos = (
     df_ultimos
-    .sort_values("Fecha Registro", ascending=False)
+    .sort_values("FECHA", ascending=False)
     .head(10)[columnas_disponibles]
 )
 
@@ -294,37 +295,13 @@ with c3:
 # =================================
 df_filtrado = df.copy()
 
-# Dates that ARE allowed to drive filters
-date_cols = [
-    "Fecha Registro",
-    "Fecha Aceptado",
-    "Fecha Iniciada",
-    "Fecha Liberada",
-    "Fecha Terminada",
+df_filtrado = df_filtrado[
+    (df_filtrado["FECHA"] >= pd.to_datetime(fecha_inicio)) &
+    (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
 ]
-for col in date_cols:
-    if col in df_filtrado.columns:
-        df_filtrado[col] = pd.to_datetime(
-            df_filtrado[col],
-            errors="coerce",
-            dayfirst=True
-        )
 
-if fecha_inicio and fecha_fin:
-    mask = False
-    for col in date_cols:
-        if col in df_filtrado.columns:
-            mask = mask | (
-                (df_filtrado[col] >= pd.to_datetime(fecha_inicio)) &
-                (df_filtrado[col] <= pd.to_datetime(fecha_fin))
-            )
-    df_filtrado = df_filtrado[mask]
-
-if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
-    df_filtrado = df_filtrado[
-        df_filtrado["Unidad"].astype(str) == unidad_sel
-    ]
-
+if unidad_sel != "Todas":
+    df_filtrado = df_filtrado[df_filtrado["Unidad"].astype(str) == unidad_sel]
 
 # =================================
 # TABLA COMPLETA
@@ -332,32 +309,12 @@ if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
 st.divider()
 st.subheader("Todas las Órdenes")
 
-# Columns that must NEVER appear
-columnas_ocultar = ["DIFERENCIA", "COMENTARIOS", "FECHA"]
-
-columnas_mostrar = [
-    c for c in df_filtrado.columns
-    if c not in columnas_ocultar
-]
-
-# Preferred sort order (first valid wins)
-sort_cols = [
-    "Fecha Registro",
-    "Fecha Aceptado",
-    "Fecha Iniciada",
-    "Fecha Liberada",
-    "Fecha Terminada",
-]
-
-sort_col = next((c for c in sort_cols if c in df_filtrado.columns), None)
-
-df_display = df_filtrado[columnas_mostrar]
-
-if sort_col:
-    df_display = df_display.sort_values(sort_col, ascending=False)
+columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
 
 st.dataframe(
-    df_display,
+    df_filtrado[columnas_mostrar]
+        .sort_values("FECHA", ascending=False),
     hide_index=True,
     width="stretch"
 )
