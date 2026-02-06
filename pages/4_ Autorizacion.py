@@ -317,6 +317,35 @@ def cargar_catalogo_igloo_simple():
 
     return df[["Parte","PU","label"]]
 
+@st.cache_data(ttl=600)
+def cargar_catalogo_lincoln():
+    URL = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp"
+        "/export?format=csv&gid=41991257"
+    )
+
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    def limpiar_num(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return None
+
+    # ⛔ Adjust this column name ONLY if Lincoln uses a different one
+    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+
+    df["label"] = df.apply(
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
+        if pd.notna(r["PU"]) else r["Parte"],
+        axis=1
+    )
+
+    return df[["Parte", "PU", "label"]]
+
+
 # =================================
 # Title
 # =================================
