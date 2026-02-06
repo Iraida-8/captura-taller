@@ -241,11 +241,12 @@ def asegurar_fila_services(folio, usuario):
 
     ws.append_row(
         [
-            folio,          # No. de Folio
-            usuario,        # Modifico
-            "", "", "", "", "", "",  # Parte → Total MXN
+            folio,                 # No. de Folio
+            usuario,               # Modifico
+            "__ESTADO__",           # Parte  ← IMPORTANT
+            "", "", "", "", "",
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "", "", "", "", "", ""   # Fecha Estado columns already exist
+            "", "", "", "", "", ""
         ],
         value_input_option="USER_ENTERED"
     )
@@ -302,6 +303,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
 
     rows_to_delete = df_folio[
         ~df_folio["Parte"].isin(partes_actuales)
+        (df_folio["Parte"] != "__ESTADO__")
     ]["__rownum__"].tolist()
 
     for rownum in sorted(rows_to_delete, reverse=True):
