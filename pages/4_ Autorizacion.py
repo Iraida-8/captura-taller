@@ -539,14 +539,18 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Servicios y Refacciones")
 
-        if r["Empresa"] == "IGLOO TRANSPORT":
-            catalogo = cargar_catalogo_igloo_simple()
+        catalogo = cargar_catalogo_por_empresa(r["Empresa"])
+
+        if catalogo is not None and not catalogo.empty:
             st.session_state.refaccion_seleccionada = st.selectbox(
                 "Refacción / Servicio",
                 options=catalogo["label"].tolist(),
                 index=None,
                 disabled=not editable_servicios
             )
+        else:
+            st.info("Catálogo no disponible para esta empresa.")
+
 
         if st.button(
             "Agregar refacciones o servicios",
