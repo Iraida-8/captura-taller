@@ -231,20 +231,30 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_filtrado = df_partes.copy()
 
+    total_col = None
+    if "TotalCorrecion" in df_partes_filtrado.columns:
+        total_col = "TotalCorrecion"
+    elif "Total USD" in df_partes_filtrado.columns:
+        total_col = "Total USD"
+
+
     if unidad_partes_sel != "Todas":
         df_partes_filtrado = df_partes_filtrado[
             df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
         ]
 
     columnas_partes = [
-        "Fecha",
+        "FECHA H",
         "Unidad",
         "Parte",
         "TipoCompra",
         "PrecioParte",
         "Cantidad",
-        "Total Correccion"
     ]
+
+if total_col:
+    columnas_partes.append(total_col)
+
 
     columnas_disponibles_partes = [
         c for c in columnas_partes if c in df_partes_filtrado.columns
