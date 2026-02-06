@@ -109,6 +109,53 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
+# Estado → Fecha column mapping
+# =================================
+def columna_fecha_por_estado(estado):
+    return {
+        "En Curso / Autorizado": "Fecha Autorizado",
+        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
+        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
+        "Cerrado / Facturado": "Fecha Facturado",
+        "Cerrado / Completado": "Fecha Completado",
+        "Cerrado / Cancelado": "Fecha Cancelado",
+    }.get(estado)
+
+# =================================
+# Write Fecha Estado (ONLY ONCE)
+# =================================
+def registrar_fecha_estado_si_vacia(folio, estado):
+    col_name = columna_fecha_por_estado(estado)
+    if not col_name:
+        return
+
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    headers = ws.row_values(1)
+    if col_name not in headers:
+        return
+
+    folios = ws.col_values(1)  # No. de Folio
+    if folio not in folios:
+        return
+
+    row_idx = folios.index(folio) + 1
+    col_idx = headers.index(col_name) + 1
+
+    # ❗ DO NOT overwrite if already set
+    if ws.cell(row_idx, col_idx).value:
+        return
+
+    ws.update_cell(
+        row_idx,
+        col_idx,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+# =================================
 # Update OSTE
 # =================================
 def actualizar_oste_pase(empresa, folio, oste):
@@ -756,6 +803,7 @@ if st.session_state.modal_reporte:
 
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
+                    registrar_fecha_estado_si_vacia(r["NoFolio"], nuevo_estado)
 
                 # =========================
                 # Guardar OSTE (solo externo y solo Facturado)
