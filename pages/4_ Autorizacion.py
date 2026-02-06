@@ -109,53 +109,6 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
-# Estado → Fecha column mapping
-# =================================
-def columna_fecha_por_estado(estado):
-    return {
-        "En Curso / Autorizado": "Fecha Autorizado",
-        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
-        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
-        "Cerrado / Facturado": "Fecha Facturado",
-        "Cerrado / Completado": "Fecha Completado",
-        "Cerrado / Cancelado": "Fecha Cancelado",
-    }.get(estado)
-
-# =================================
-# Write Fecha Estado (ONLY ONCE)
-# =================================
-def registrar_fecha_estado_si_vacia(folio, estado):
-    col_name = columna_fecha_por_estado(estado)
-    if not col_name:
-        return
-
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("SERVICES")
-
-    headers = ws.row_values(1)
-    if col_name not in headers:
-        return
-
-    folios = ws.col_values(1)  # No. de Folio
-    if folio not in folios:
-        return
-
-    row_idx = folios.index(folio) + 1
-    col_idx = headers.index(col_name) + 1
-
-    # ❗ DO NOT overwrite if already set
-    if ws.cell(row_idx, col_idx).value:
-        return
-
-    ws.update_cell(
-        row_idx,
-        col_idx,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
-
-# =================================
 # Update OSTE
 # =================================
 def actualizar_oste_pase(empresa, folio, oste):
@@ -226,38 +179,9 @@ def cargar_servicios_folio(folio):
     ]
 
 # =================================
-# Ensure SERVICES row exists for folio
-# =================================
-def asegurar_fila_services(folio, usuario):
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("SERVICES")
-
-    folios = ws.col_values(1)  # No. de Folio
-
-    if folio in folios:
-        return  # already exists
-
-    ws.append_row(
-        [
-            folio,          # No. de Folio
-            usuario,        # Modifico
-            "", "", "", "", "", "",  # Parte → Total MXN
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "", "", "", "", "", ""   # Fecha Estado columns already exist
-        ],
-        value_input_option="USER_ENTERED"
-    )
-
-# =================================
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
-    # 🛑 SAFETY LOCK: if there are no services, do nothing
-    if servicios_df is None or servicios_df.empty:
-        return
-
     from datetime import datetime
 
     client = gspread.authorize(get_gsheets_credentials())
@@ -266,7 +190,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     ).worksheet("SERVICES")
 
     fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 
     # =====================================================
     # PHASE 1 — LOAD WITH REAL ROW NUMBERS
@@ -692,6 +615,7 @@ if st.session_state.buscar_trigger:
 # MODAL
 # =================================
 if st.session_state.modal_reporte:
+
     r = st.session_state.modal_reporte
     editable_estado = r["Estado"].startswith("En Curso")
 
@@ -705,16 +629,12 @@ if st.session_state.modal_reporte:
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
 
-        # =========================
-        # ✅ AUTHORIZATION BANNER (ADDED)
-        # =========================
-        if r["Estado"] == "En Curso / Autorizado":
-            st.success("✅ Pase autorizado")
 
         st.divider()
         st.subheader("Información del Proveedor")
 
         oste_editable = r["Estado"] == "Cerrado / Facturado"
+
         proveedor = (r.get("Proveedor") or "").lower()
 
         # =========================
@@ -726,6 +646,7 @@ if st.session_state.modal_reporte:
                 value=r.get("No. de Reporte", ""),
                 disabled=True
             )
+
         # =========================
         # PROVEEDOR EXTERNO
         # =========================
@@ -753,16 +674,10 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
-        # ⭐ SPECIAL CASE FLAG
-        es_autorizacion_inicial = (
-            r["Estado"] == "En Curso / Nuevo"
-            and nuevo_estado == "En Curso / Autorizado"
-        )
-
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
-        ]
+]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -778,6 +693,7 @@ if st.session_state.modal_reporte:
             )
         else:
             st.info("Catálogo no disponible para esta empresa.")
+
 
         if st.button(
             "Agregar refacciones o servicios",
@@ -813,7 +729,7 @@ if st.session_state.modal_reporte:
             },
         )
 
-        if edited_df is not None and not edited_df.empty:
+        if not edited_df.empty:
             edited_df["Total MXN"] = (
                 edited_df["Precio MXP"].fillna(0)
                 * edited_df["Cantidad"].fillna(0)
@@ -839,33 +755,7 @@ if st.session_state.modal_reporte:
             if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
                 if nuevo_estado != r["Estado"]:
-
-                    usuario = (
-                        st.session_state.user.get("name")
-                        or st.session_state.user.get("email")
-                    )
-
-                    actualizar_estado_pase(
-                        r["Empresa"],
-                        r["NoFolio"],
-                        nuevo_estado
-                    )
-
-                    registrar_fecha_estado_si_vacia(
-                        r["NoFolio"],
-                        nuevo_estado
-                    )
-
-                    if es_autorizacion_inicial:
-                        asegurar_fila_services(r["NoFolio"], usuario)
-                    else:
-                        asegurar_fila_services(r["NoFolio"], usuario)
-
-                        guardar_servicios_refacciones(
-                            r["NoFolio"],
-                            usuario,
-                            st.session_state.servicios_df
-                        )
+                    actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
                 # =========================
                 # Guardar OSTE (solo externo y solo Facturado)
@@ -878,7 +768,16 @@ if st.session_state.modal_reporte:
                             oste_val
                         )
 
+                guardar_servicios_refacciones(
+                    r["NoFolio"],
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email"),
+                    st.session_state.servicios_df
+                )
+
+                st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
 
     modal()
+    st.session_state.modal_reporte = None
