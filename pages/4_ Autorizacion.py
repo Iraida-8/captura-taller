@@ -561,6 +561,7 @@ with f3:
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
             "Cerrado / Cancelado",
+            "Cerrado / Cancelado",
             "Cerrado / Completado",
         ]
     )
@@ -751,7 +752,7 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
         with c2:
-            if st.button("Aceptar", type="primary") and editable_estado:
+            if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
