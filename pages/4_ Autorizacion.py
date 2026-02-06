@@ -746,8 +746,19 @@ if st.session_state.modal_reporte:
 
         with c2:
             if st.button("Aceptar", type="primary") and editable_estado:
+
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
+
+                # =========================
+                # Guardar OSTE (solo externo)
+                # =========================
+                if "interno" not in (r.get("Proveedor") or "").lower():
+                    actualizar_oste_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        oste_val
+                    )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
