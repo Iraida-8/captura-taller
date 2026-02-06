@@ -13,7 +13,7 @@ from datetime import datetime
 fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =================================
-# Page configuration
+# Page configuration - YES
 # =================================
 st.set_page_config(
     page_title="Autorización y Actualización de Reporte",
