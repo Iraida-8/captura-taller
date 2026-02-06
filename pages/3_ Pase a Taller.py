@@ -127,6 +127,7 @@ def append_pase_to_sheet(data: dict):
         safe_value(data["no_unidad"]),
         safe_value(data["marca"]),
         safe_value(data["modelo"]),
+        safe_value(data["sucursal"]),
         safe_value(data["tipo_caja"]),
         safe_value(data["no_unidad_externo"]),
         safe_value(data["linea_externa"]),
