@@ -226,6 +226,31 @@ def cargar_servicios_folio(folio):
     ]
 
 # =================================
+# Ensure SERVICES row exists for folio
+# =================================
+def asegurar_fila_services(folio, usuario):
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    folios = ws.col_values(1)  # No. de Folio
+
+    if folio in folios:
+        return  # already exists
+
+    ws.append_row(
+        [
+            folio,          # No. de Folio
+            usuario,        # Modifico
+            "", "", "", "", "", "",  # Parte → Total MXN
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "", "", "", "", "", ""   # Fecha Estado columns already exist
+        ],
+        value_input_option="USER_ENTERED"
+    )
+
+# =================================
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
@@ -802,8 +827,24 @@ if st.session_state.modal_reporte:
             if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
                 if nuevo_estado != r["Estado"]:
-                    actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
-                    registrar_fecha_estado_si_vacia(r["NoFolio"], nuevo_estado)
+
+                    usuario = (
+                        st.session_state.user.get("name")
+                        or st.session_state.user.get("email")
+                    )
+
+                    asegurar_fila_services(r["NoFolio"], usuario)
+
+                    actualizar_estado_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        nuevo_estado
+                    )
+
+                    registrar_fecha_estado_si_vacia(
+                        r["NoFolio"],
+                        nuevo_estado
+                    )
 
                 # =========================
                 # Guardar OSTE (solo externo y solo Facturado)
