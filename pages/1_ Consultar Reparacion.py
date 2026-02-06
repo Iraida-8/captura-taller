@@ -113,13 +113,12 @@ EMPRESA_CONFIG = {
     }
 }
 
-
 # =================================
 # LOADERS
 # =================================
 @st.cache_data(ttl=600)
 def cargar_ordenes(url):
-    if not url or "<PUT_" in url:
+    if not url:
         return pd.DataFrame()
 
     df = pd.read_csv(url)
@@ -138,7 +137,7 @@ def cargar_ordenes(url):
 
 @st.cache_data(ttl=600)
 def cargar_partes(url):
-    if not url or "<PUT_" in url:
+    if not url:
         return pd.DataFrame()
 
     df = pd.read_csv(url)
@@ -209,9 +208,10 @@ df_ultimos = df.copy()
 if unidad_orden_sel != "Todas":
     df_ultimos = df_ultimos[df_ultimos["Unidad"].astype(str) == unidad_orden_sel]
 
+# 🔴 ONLY CHANGE IS HERE — Fecha Registro instead of FECHA
 df_ultimos = (
     df_ultimos
-    .sort_values("FECHA", ascending=False)
+    .sort_values("Fecha Registro", ascending=False)
     .head(10)[columnas_disponibles]
 )
 
