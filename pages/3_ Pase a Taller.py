@@ -294,7 +294,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     operador = st.text_input("Operador")
 
-    c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
+    c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 2, 3])
 
     if tipo_unidad_operador == "Tractores":
         unidades = ["Selecciona Unidad"] + sorted(
@@ -317,6 +317,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     marca_valor = ""
     modelo_valor = ""
+    sucursal_valor = ""
 
     if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
         fila = tractores_filtrados[
@@ -324,23 +325,31 @@ if tipo_proveedor in ["Interno", "Externo"]:
         ].iloc[0]
         marca_valor = fila["MARCA"]
         modelo_valor = fila["MODELO"]
+        sucursal_valor = fila.get("SUCURSAL", "")
 
     elif tipo_unidad_operador == "Remolques":
         if no_unidad == "REMOLQUE EXTERNO":
             marca_valor = "EXTERNO"
             modelo_valor = "0000"
+            sucursal_valor = "EXTERNO"
         elif no_unidad != "Selecciona Unidad":
             fila = catalogos_filtrados[
                 catalogos_filtrados["CAJA"].astype(str) == no_unidad
             ].iloc[0]
             marca_valor = fila.get("MARCA", "")
             modelo_valor = fila.get("MODELO", "")
+            sucursal_valor = fila.get("SUCURSAL", "")
 
     with c2:
         st.text_input("Marca", value=marca_valor, disabled=True)
+
     with c3:
         st.text_input("Modelo", value=modelo_valor, disabled=True)
+
     with c4:
+        st.text_input("Sucursal", value=sucursal_valor, disabled=True)
+
+    with c5:
         tipo_caja = st.selectbox(
             "Tipo de Caja",
             ["Selecciona Caja", "Caja seca", "Caja fria"]
@@ -348,6 +357,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             else ["Caja no aplicable"],
             disabled=tipo_unidad_operador != "Remolques"
         )
+
 
     e1, e2 = st.columns(2)
     with e1:
@@ -411,6 +421,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "no_unidad": no_unidad,
             "marca": marca_valor,
             "modelo": modelo_valor,
+            "sucursal": sucursal_valor,
             "tipo_caja": tipo_caja,
             "no_unidad_externo": no_unidad_externo,
             "linea_externa": linea_externa,
@@ -422,7 +433,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "reparacion_multa": reparacion_multa,
         }
 
-        # ✅ USE THE REAL FOLIO RETURNED BY GOOGLE SHEETS
+        # USE THE REAL FOLIO RETURNED BY GOOGLE SHEETS
         folio_real = append_pase_to_sheet(payload)
         st.session_state.folio_generado = folio_real
 
