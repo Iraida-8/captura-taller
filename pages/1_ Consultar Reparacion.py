@@ -276,7 +276,7 @@ with c1:
     fecha_min = df["FECHA"].min() if "FECHA" in df.columns else None
     fecha_inicio = st.date_input(
         "Fecha inicio",
-        value=fecha_min.date() if pd.notna(fecha_min) else date.today()
+        value=fecha_min.date() if isinstance(fecha_min, pd.Timestamp) else date.today()
     )
 
 # --- Fecha fin ---
