@@ -702,3 +702,4 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
     modal()
+    st.session_state.modal_reporte = None
