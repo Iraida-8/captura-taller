@@ -773,10 +773,16 @@ if st.session_state.modal_reporte:
         )
 
         if not edited_df.empty:
+            for col in ["Precio MXP", "Cantidad", "IVA"]:
+                edited_df[col] = (
+                    pd.to_numeric(edited_df[col], errors="coerce")
+                    .fillna(0)
+                )
+
             edited_df["Total MXN"] = (
-                edited_df["Precio MXP"].fillna(0)
-                * edited_df["Cantidad"].fillna(0)
-                * (1 + edited_df["IVA"].fillna(0))
+                edited_df["Precio MXP"]
+                * edited_df["Cantidad"]
+                * (1 + edited_df["IVA"])
             )
 
         st.session_state.servicios_df = edited_df
