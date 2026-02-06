@@ -231,17 +231,16 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_filtrado = df_partes.copy()
 
+    # Detect which total column exists (empresa-specific)
     total_col = None
-    if "TotalCorrecion" in df_partes_filtrado.columns:
-        total_col = "TotalCorrecion"
-    elif "Total USD" in df_partes_filtrado.columns:
+    display_total_col = None
+
+    if empresa == "IGLOO TRANSPORT":
+        total_col = "TotalCorrecion"      # sheet column
+        display_total_col = "Total Correccion"
+    elif empresa == "LINCOLN FREIGHT":
         total_col = "Total USD"
-
-
-    if unidad_partes_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
-        ]
+        display_total_col = "Total USD"
 
     columnas_partes = [
         "FECHA H",
@@ -252,8 +251,8 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         "Cantidad",
     ]
 
-if total_col:
-    columnas_partes.append(total_col)
+    if total_col and total_col in df_partes_filtrado.columns:
+        columnas_partes.append(total_col)
 
 
     columnas_disponibles_partes = [
@@ -265,6 +264,12 @@ if total_col:
         .sort_values("FECHA H", ascending=False)
         .head(10)[columnas_disponibles_partes]
     )
+
+    # Rename total column for display (empresa-specific)
+    if total_col and display_total_col and total_col != display_total_col:
+        df_partes_ultimos = df_partes_ultimos.rename(
+            columns={total_col: display_total_col}
+        )
 
     if "Fecha" in df_partes_ultimos.columns:
         df_partes_ultimos["Fecha"] = df_partes_ultimos["Fecha"].dt.strftime("%Y-%m-%d")
