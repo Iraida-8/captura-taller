@@ -242,7 +242,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     display_total_col = None
 
     if empresa == "IGLOO TRANSPORT":
-        total_col = "TotalCorrecion"
+        total_col = "Total Correcion"
         display_total_col = "Total Correccion"
     elif empresa == "LINCOLN FREIGHT":
         total_col = "Total USD"
