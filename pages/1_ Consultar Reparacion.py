@@ -303,8 +303,14 @@ with c3:
 df_filtrado = df.copy()
 
 if "FECHA" in df_filtrado.columns:
+    df_filtrado["FECHA"] = pd.to_datetime(
+        df_filtrado["FECHA"],
+        errors="coerce",
+        dayfirst=True
+    )
+
     df_filtrado = df_filtrado[
-        (df_filtrado["FECHA"] >= pd.to_datetime(fecha_inicio)) &
+        (df_filtrado["FECHA"] >= pd.Timestamp("2025-01-01")) &
         (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
     ]
 
@@ -312,7 +318,6 @@ if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
     df_filtrado = df_filtrado[
         df_filtrado["Unidad"].astype(str) == unidad_sel
     ]
-
 
 # =================================
 # TABLA COMPLETA
