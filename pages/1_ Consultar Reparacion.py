@@ -270,12 +270,6 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         .head(10)[columnas_disponibles_partes]
     )
 
-    # Display-only rename (IGLOO)
-    if total_col and display_total_col and total_col != display_total_col:
-        df_partes_ultimos = df_partes_ultimos.rename(
-            columns={total_col: display_total_col}
-        )
-
     if "FECHA H" in df_partes_ultimos.columns:
         df_partes_ultimos["FECHA H"] = (
             df_partes_ultimos["FECHA H"].dt.strftime("%Y-%m-%d")
