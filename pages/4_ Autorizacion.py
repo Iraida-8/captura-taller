@@ -625,6 +625,9 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Empresa:** {r['Empresa']}")
         st.markdown(f"**Fecha:** {r['Fecha']}")
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
+        st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
+        st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
+
 
         st.divider()
         st.subheader("Información del Proveedor")
@@ -754,11 +757,12 @@ if st.session_state.modal_reporte:
                 # Guardar OSTE (solo externo)
                 # =========================
                 if "interno" not in (r.get("Proveedor") or "").lower():
-                    actualizar_oste_pase(
-                        r["Empresa"],
-                        r["NoFolio"],
-                        oste_val
-                    )
+                    if r["Estado"].startswith("En Curso"):
+                        actualizar_oste_pase(
+                            r["Empresa"],
+                            r["NoFolio"],
+                            oste_val
+                        )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
