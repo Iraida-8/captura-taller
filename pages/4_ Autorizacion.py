@@ -561,8 +561,8 @@ with f3:
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
             "Cerrado / Cancelado",
-            "Cerrado / Cancelado",
             "Cerrado / Completado",
+            "Cerrado / Facturado",
         ]
     )
 
