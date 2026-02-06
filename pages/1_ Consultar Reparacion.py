@@ -241,12 +241,16 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     total_col = None
     display_total_col = None
 
-    if empresa == "IGLOO TRANSPORT":
+    if empresa in ["IGLOO TRANSPORT", "PICUS"]:
         total_col = "Total Correccion"
         display_total_col = "Total Correccion"
     elif empresa == "LINCOLN FREIGHT":
         total_col = "Total USD"
         display_total_col = "Total USD"
+    else:
+        total_col = None
+        display_total_col = None
+
 
     columnas_partes = [
         "FECHA H",
