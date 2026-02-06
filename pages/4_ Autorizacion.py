@@ -142,6 +142,33 @@ def actualizar_oste_pase(empresa, folio, oste):
     oste_col = headers.index("Oste") + 1
     ws.update_cell(row_idx, oste_col, oste)
 
+
+# =================================
+# Log Estado change in SERVICES
+# =================================
+def registrar_cambio_estado(folio, usuario, nuevo_estado):
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("SERVICES")
+
+    fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    row_data = [
+        folio,              # No. de Folio
+        usuario,            # Modifico
+        "ESTADO",            # Parte (marker)
+        nuevo_estado,       # TipoCompra = Estado
+        "",                 # Precio MXP
+        "",                 # Iva
+        "",                 # Cantidad
+        "",                 # Total MXN
+        fecha_mod,          # Fecha Mod
+    ]
+
+    ws.append_row(row_data, value_input_option="USER_ENTERED")
+
+
 # =================================
 # Load Servicios for Folio
 # =================================
@@ -629,12 +656,10 @@ if st.session_state.modal_reporte:
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
 
-
         st.divider()
         st.subheader("Información del Proveedor")
 
         oste_editable = r["Estado"] == "Cerrado / Facturado"
-
         proveedor = (r.get("Proveedor") or "").lower()
 
         # =========================
@@ -677,7 +702,7 @@ if st.session_state.modal_reporte:
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
-]
+        ]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -694,12 +719,13 @@ if st.session_state.modal_reporte:
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
-
         if st.button(
             "Agregar refacciones o servicios",
             disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
         ):
-            fila = catalogo[catalogo["label"] == st.session_state.refaccion_seleccionada].iloc[0]
+            fila = catalogo[
+                catalogo["label"] == st.session_state.refaccion_seleccionada
+            ].iloc[0]
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
                 nueva = {
@@ -752,15 +778,33 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
         with c2:
-            if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
+            if st.button(
+                "Aceptar",
+                type="primary",
+                and (editable_estado or nuevo_estado == "Cerrado / Facturado")
+            ):
 
+                # =========================
+                # Estado change + LOG
+                # =========================
                 if nuevo_estado != r["Estado"]:
-                    actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
+                    actualizar_estado_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        nuevo_estado
+                    )
+
+                    registrar_cambio_estado(
+                        r["NoFolio"],
+                        st.session_state.user.get("name")
+                        or st.session_state.user.get("email"),
+                        nuevo_estado
+                    )
 
                 # =========================
                 # Guardar OSTE (solo externo y solo Facturado)
                 # =========================
-                if "interno" not in (r.get("Proveedor") or "").lower():
+                if "interno" not in proveedor:
                     if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
                             r["Empresa"],
