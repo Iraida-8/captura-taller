@@ -254,6 +254,10 @@ def asegurar_fila_services(folio, usuario):
 # UPSERT Servicios / Refacciones
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df):
+    # 🛑 SAFETY LOCK: if there are no services, do nothing
+    if servicios_df is None or servicios_df.empty:
+        return
+
     from datetime import datetime
 
     client = gspread.authorize(get_gsheets_credentials())
@@ -262,6 +266,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     ).worksheet("SERVICES")
 
     fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
     # =====================================================
     # PHASE 1 — LOAD WITH REAL ROW NUMBERS
@@ -687,7 +692,6 @@ if st.session_state.buscar_trigger:
 # MODAL
 # =================================
 if st.session_state.modal_reporte:
-
     r = st.session_state.modal_reporte
     editable_estado = r["Estado"].startswith("En Curso")
 
@@ -701,12 +705,16 @@ if st.session_state.modal_reporte:
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
 
+        # =========================
+        # ✅ AUTHORIZATION BANNER (ADDED)
+        # =========================
+        if r["Estado"] == "En Curso / Autorizado":
+            st.success("✅ Pase autorizado")
 
         st.divider()
         st.subheader("Información del Proveedor")
 
         oste_editable = r["Estado"] == "Cerrado / Facturado"
-
         proveedor = (r.get("Proveedor") or "").lower()
 
         # =========================
@@ -718,7 +726,6 @@ if st.session_state.modal_reporte:
                 value=r.get("No. de Reporte", ""),
                 disabled=True
             )
-
         # =========================
         # PROVEEDOR EXTERNO
         # =========================
@@ -746,10 +753,16 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
+        # ⭐ SPECIAL CASE FLAG
+        es_autorizacion_inicial = (
+            r["Estado"] == "En Curso / Nuevo"
+            and nuevo_estado == "En Curso / Autorizado"
+        )
+
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
-]
+        ]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -765,7 +778,6 @@ if st.session_state.modal_reporte:
             )
         else:
             st.info("Catálogo no disponible para esta empresa.")
-
 
         if st.button(
             "Agregar refacciones o servicios",
@@ -801,7 +813,7 @@ if st.session_state.modal_reporte:
             },
         )
 
-        if not edited_df.empty:
+        if edited_df is not None and not edited_df.empty:
             edited_df["Total MXN"] = (
                 edited_df["Precio MXP"].fillna(0)
                 * edited_df["Cantidad"].fillna(0)
@@ -833,8 +845,6 @@ if st.session_state.modal_reporte:
                         or st.session_state.user.get("email")
                     )
 
-                    asegurar_fila_services(r["NoFolio"], usuario)
-
                     actualizar_estado_pase(
                         r["Empresa"],
                         r["NoFolio"],
@@ -845,6 +855,17 @@ if st.session_state.modal_reporte:
                         r["NoFolio"],
                         nuevo_estado
                     )
+
+                    if es_autorizacion_inicial:
+                        asegurar_fila_services(r["NoFolio"], usuario)
+                    else:
+                        asegurar_fila_services(r["NoFolio"], usuario)
+
+                        guardar_servicios_refacciones(
+                            r["NoFolio"],
+                            usuario,
+                            st.session_state.servicios_df
+                        )
 
                 # =========================
                 # Guardar OSTE (solo externo y solo Facturado)
@@ -857,16 +878,7 @@ if st.session_state.modal_reporte:
                             oste_val
                         )
 
-                guardar_servicios_refacciones(
-                    r["NoFolio"],
-                    st.session_state.user.get("name")
-                    or st.session_state.user.get("email"),
-                    st.session_state.servicios_df
-                )
-
-                st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
 
     modal()
-    st.session_state.modal_reporte = None
