@@ -244,7 +244,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     if empresa in ["IGLOO TRANSPORT", "PICUS", "SET LOGIS PLUS"]:
         total_col = "Total Correccion"
         display_total_col = "Total Correccion"
-    elif empresa == "LINCOLN FREIGHT":
+    elif empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL"]:
         total_col = "Total USD"
         display_total_col = "Total USD"
     else:
