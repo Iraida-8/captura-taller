@@ -659,8 +659,8 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Información del Proveedor")
 
-        oste_editable = r["Estado"] == "Cerrado / Facturado"
         proveedor = (r.get("Proveedor") or "").lower()
+        oste_editable = r["Estado"] == "Cerrado / Facturado"
 
         # =========================
         # PROVEEDOR INTERNO
@@ -778,15 +778,11 @@ if st.session_state.modal_reporte:
                 st.rerun()
 
         with c2:
-            if st.button(
-                "Aceptar",
-                type="primary",
-                and (editable_estado or nuevo_estado == "Cerrado / Facturado")
+            if st.button("Aceptar", type="primary") and (
+                editable_estado or nuevo_estado == "Cerrado / Facturado"
             ):
 
-                # =========================
-                # Estado change + LOG
-                # =========================
+                # ---- Estado change + log ----
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(
                         r["Empresa"],
@@ -801,16 +797,13 @@ if st.session_state.modal_reporte:
                         nuevo_estado
                     )
 
-                # =========================
-                # Guardar OSTE (solo externo y solo Facturado)
-                # =========================
-                if "interno" not in proveedor:
-                    if nuevo_estado == "Cerrado / Facturado":
-                        actualizar_oste_pase(
-                            r["Empresa"],
-                            r["NoFolio"],
-                            oste_val
-                        )
+                # ---- Guardar OSTE (solo externo + facturado) ----
+                if "interno" not in proveedor and nuevo_estado == "Cerrado / Facturado":
+                    actualizar_oste_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        oste_val
+                    )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
