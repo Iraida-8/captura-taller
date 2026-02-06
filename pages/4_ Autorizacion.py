@@ -272,7 +272,9 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     partes_actuales = set(servicios_df["Parte"])
 
     rows_to_delete = df_folio[
-        ~df_folio["Parte"].isin(partes_actuales)
+            df_folio["Parte"].notna()
+            & (df_folio["Parte"] != "")
+            & ~df_folio["Parte"].isin(partes_actuales)
     ]["__rownum__"].tolist()
 
     for rownum in sorted(rows_to_delete, reverse=True):
@@ -672,12 +674,10 @@ if st.session_state.modal_reporte:
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
 
-
         st.divider()
         st.subheader("Información del Proveedor")
 
         oste_editable = r["Estado"] == "Cerrado / Facturado"
-
         proveedor = (r.get("Proveedor") or "").lower()
 
         # =========================
@@ -689,10 +689,6 @@ if st.session_state.modal_reporte:
                 value=r.get("No. de Reporte", ""),
                 disabled=True
             )
-
-        # =========================
-        # PROVEEDOR EXTERNO
-        # =========================
         else:
             oste_val = st.text_input(
                 "OSTE",
@@ -720,7 +716,7 @@ if st.session_state.modal_reporte:
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
-]
+        ]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -736,7 +732,6 @@ if st.session_state.modal_reporte:
             )
         else:
             st.info("Catálogo no disponible para esta empresa.")
-
 
         if st.button(
             "Agregar refacciones o servicios",
@@ -803,6 +798,28 @@ if st.session_state.modal_reporte:
         with c2:
             if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
+                # =========================
+                # 🔒 FIX 2 — Enforce Autorizado-first workflow
+                # =========================
+                estado_actual = r["Estado"]
+
+                requiere_autorizado = [
+                    "En Curso / Sin Comenzar",
+                    "En Curso / Espera Refacciones",
+                    "Cerrado / Completado",
+                    "Cerrado / Facturado",
+                ]
+
+                if (
+                    nuevo_estado in requiere_autorizado
+                    and estado_actual != "En Curso / Autorizado"
+                ):
+                    st.error(
+                        "El pase debe pasar primero por 'En Curso / Autorizado' "
+                        "antes de moverse a este estado."
+                    )
+                    st.stop()
+
                 if nuevo_estado != r["Estado"]:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
@@ -817,13 +834,12 @@ if st.session_state.modal_reporte:
                             oste_val
                         )
 
-
                 usuario = (
                     st.session_state.user.get("name")
                     or st.session_state.user.get("email")
                 )
 
-                # 🔹 NUEVO: registrar estados sin refacciones
+                # 🔹 Registrar estado sin refacciones
                 if (
                     st.session_state.servicios_df.empty
                     and nuevo_estado in ["En Curso / Autorizado", "Cerrado / Cancelado"]
@@ -836,8 +852,7 @@ if st.session_state.modal_reporte:
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
-                    st.session_state.user.get("name")
-                    or st.session_state.user.get("email"),
+                    usuario,
                     st.session_state.servicios_df
                 )
 
