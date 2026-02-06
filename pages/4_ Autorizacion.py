@@ -374,6 +374,77 @@ def cargar_catalogo_picus():
 
     return df[["Parte", "PU", "label"]]
 
+@st.cache_data(ttl=600)
+def cargar_catalogo_sfi():
+    URL = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS"
+        "/export?format=csv&gid=849445619"
+    )
+
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    def limpiar_num(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return None
+
+    # Defensive price-column detection (same pattern we discussed)
+    precio_col = next(
+        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
+        None
+    )
+
+    if precio_col:
+        df["PU"] = df[precio_col].apply(limpiar_num)
+    else:
+        df["PU"] = None
+
+    df["label"] = df.apply(
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
+        if pd.notna(r["PU"]) else r["Parte"],
+        axis=1
+    )
+
+    return df[["Parte", "PU", "label"]]
+
+@st.cache_data(ttl=600)
+def cargar_catalogo_slp():
+    URL = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61"
+        "/export?format=csv&gid=1837946138"
+    )
+
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    def limpiar_num(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return None
+
+    # Defensive price-column detection
+    precio_col = next(
+        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
+        None
+    )
+
+    if precio_col:
+        df["PU"] = df[precio_col].apply(limpiar_num)
+    else:
+        df["PU"] = None
+
+    df["label"] = df.apply(
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
+        if pd.notna(r["PU"]) else r["Parte"],
+        axis=1
+    )
+
+    return df[["Parte", "PU", "label"]]
 
 # =================================
 # Catalog dispatcher by Empresa
@@ -388,8 +459,13 @@ def cargar_catalogo_por_empresa(empresa):
     if empresa == "PICUS":
         return cargar_catalogo_picus()
 
-    return None
+    if empresa == "SET FREIGHT INTERNATIONAL":
+        return cargar_catalogo_sfi()
 
+    if empresa == "SET LOGIS PLUS":
+        return cargar_catalogo_slp()
+
+    return None
 
 # =================================
 # Title
