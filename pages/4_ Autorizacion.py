@@ -284,8 +284,9 @@ def cargar_pases_taller():
 pases_df = cargar_pases_taller()
 
 # =================================
-# IGLOO catalog (READ ONLY)
+# Catalogs (READ ONLY)
 # =================================
+
 @st.cache_data(ttl=600)
 def cargar_catalogo_igloo_simple():
     URL = (
@@ -303,7 +304,7 @@ def cargar_catalogo_igloo_simple():
 
     def limpiar_num(v):
         try:
-            return float(str(v).replace("$","").replace(",","").strip())
+            return float(str(v).replace("$", "").replace(",", "").strip())
         except:
             return None
 
@@ -315,7 +316,8 @@ def cargar_catalogo_igloo_simple():
         axis=1
     )
 
-    return df[["Parte","PU","label"]]
+    return df[["Parte", "PU", "label"]]
+
 
 @st.cache_data(ttl=600)
 def cargar_catalogo_lincoln():
@@ -334,7 +336,6 @@ def cargar_catalogo_lincoln():
         except:
             return None
 
-    # ⛔ Adjust this column name ONLY if Lincoln uses a different one
     df["PU"] = df["PrecioParte"].apply(limpiar_num)
 
     df["label"] = df.apply(
@@ -344,6 +345,7 @@ def cargar_catalogo_lincoln():
     )
 
     return df[["Parte", "PU", "label"]]
+
 
 @st.cache_data(ttl=600)
 def cargar_catalogo_picus():
@@ -362,7 +364,6 @@ def cargar_catalogo_picus():
         except:
             return None
 
-    # ⛔ Change ONLY if PICUS uses a different column name
     df["PU"] = df["PrecioParte"].apply(limpiar_num)
 
     df["label"] = df.apply(
@@ -372,6 +373,23 @@ def cargar_catalogo_picus():
     )
 
     return df[["Parte", "PU", "label"]]
+
+
+# =================================
+# Catalog dispatcher by Empresa
+# =================================
+def cargar_catalogo_por_empresa(empresa):
+    if empresa == "IGLOO TRANSPORT":
+        return cargar_catalogo_igloo_simple()
+
+    if empresa == "LINCOLN FREIGHT":
+        return cargar_catalogo_lincoln()
+
+    if empresa == "PICUS":
+        return cargar_catalogo_picus()
+
+    return None
+
 
 # =================================
 # Title
