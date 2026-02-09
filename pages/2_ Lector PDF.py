@@ -11,10 +11,7 @@ import streamlit as st
 # =================================
 # Page configuration
 # =================================
-st.set_page_config(
-    page_title="Lector PDF",
-    layout="wide"
-)
+st.set_page_config(page_title="Lector Facturas PDF → Excel", layout="wide")
 
 # =================================
 # Hide sidebar
@@ -36,11 +33,18 @@ st.markdown(
 require_login()
 require_access("lector_pdf")
 
+# =================================
+# Navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+st.title("📋 Consulta de Reparación")
+
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="Lector Facturas PDF → Excel", layout="wide")
-
 COLS = [
     "EMPRESA", "#FACTURA", "UUID", "FECHA FACTURA",
     "FECHA Y HR SERVICIO", "#UNIDAD",
