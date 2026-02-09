@@ -2,11 +2,39 @@
 import re
 import io
 from typing import List, Dict, Any, Tuple
+from auth import require_login, require_access
 
 import pandas as pd
 import pdfplumber
 import streamlit as st
 
+# =================================
+# Page configuration
+# =================================
+st.set_page_config(
+    page_title="Lector PDF",
+    layout="wide"
+)
+
+# =================================
+# Hide sidebar
+# =================================
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("lector_pdf")
 
 # =========================
 # CONFIG

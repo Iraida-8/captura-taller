@@ -86,13 +86,17 @@ with col4:
         if st.button("⛽  Reporte iFuel", use_container_width=True):
             st.switch_page("pages/5_ Reporte iFuel.py")
 
-# 5️⃣ Consulta Reportes
+# 5️⃣ Lector PDF
 with col5:
+    if "lector_pdf" in access:
+        if st.button("📄  Lector PDF", use_container_width=True):
+            st.switch_page("pages/2_ Lector PDF.py")
+
+# 6️⃣ Consulta Reportes
+with col6:
     if "consulta_reportes" in access:
         if st.button("📊  Consulta Reportes", use_container_width=True):
             st.switch_page("pages/6_ Consulta Reportes.py")
-
-# col6 intentionally left empty to preserve grid alignment
 
 # -------------------------------
 # Logout
