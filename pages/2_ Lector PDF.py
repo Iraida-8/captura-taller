@@ -50,7 +50,6 @@ COLS = [
     "ACTIVIDAD", "CANTIDAD", "SUBTOTAL", "IVA", "TOTAL"
 ]
 
-
 # =========================
 # HELPERS
 # =========================
@@ -82,7 +81,6 @@ def clean_k9_service_dt(raw: str) -> str:
     raw = raw.replace("AM", "am").replace("PM", "pm")
     return raw
 
-
 def autodetect_format(full_text: str) -> str:
     t = full_text.upper()
 
@@ -104,7 +102,6 @@ def autodetect_format(full_text: str) -> str:
     if "WNC" in t or "FOLIO FISCAL (UUID" in t:
         return "WASH"
     return "K9"
-
 
 def build_df(rows: List[Dict[str, Any]], iva_rate: float) -> pd.DataFrame:
     out = []
@@ -128,7 +125,6 @@ def build_df(rows: List[Dict[str, Any]], iva_rate: float) -> pd.DataFrame:
         })
 
     return pd.DataFrame(out, columns=COLS)
-
 
 # =========================
 # PARSERS
@@ -252,7 +248,6 @@ def parse_k9(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
 
     return header, items
 
-
 def parse_royan(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     pages = extract_pages_text(pdf_bytes)
     full = "\n".join(pages)
@@ -330,7 +325,6 @@ def parse_royan(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]
 
     return header, items
 
-
 def parse_wash(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     pages = extract_pages_text(pdf_bytes)
     full = "\n".join(pages)
@@ -379,7 +373,6 @@ def parse_wash(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
             })
 
     return header, items
-
 
 # =========================
 # STREAMLIT UI

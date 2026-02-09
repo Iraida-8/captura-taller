@@ -11,7 +11,7 @@ from auth import require_login, require_access
 # Page configuration (MUST BE FIRST)
 # =================================
 st.set_page_config(
-    page_title="Fuel Solutions Parser",
+    page_title="Fuel Solutions → Análisis y Comparativos",
     layout="wide"
 )
 
@@ -44,10 +44,8 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
-# Page title
+# Page Instructions
 # =================================
-st.title("Fuel Solutions → Análisis y Comparativos")
-
 uploaded = st.file_uploader(
     "Sube tu archivo Excel",
     type=["xlsx"]
@@ -64,7 +62,6 @@ def safe_json_loads(x):
     except Exception:
         return None
 
-
 def haversine_miles(lat1, lon1, lat2, lon2):
     r = 3958.7613  # Radio Tierra en millas
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -72,7 +69,6 @@ def haversine_miles(lat1, lon1, lat2, lon2):
     dl = math.radians(lon2 - lon1)
     a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dl / 2) ** 2
     return 2 * r * math.asin(math.sqrt(a))
-
 
 def is_pilot_group(text: str) -> bool:
     if text is None or pd.isna(text):
