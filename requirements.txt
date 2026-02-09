@@ -5,3 +5,4 @@ gspread
 google-auth
 python-dotenv
 Pillow
+pdfplumber
