@@ -4,7 +4,6 @@ import json
 import math
 import numpy as np
 from io import BytesIO
-
 from auth import require_login, require_access
 
 # =================================
