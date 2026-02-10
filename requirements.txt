@@ -6,3 +6,6 @@ google-auth
 python-dotenv
 Pillow
 pdfplumber
+unicodedata
+re
+io
