@@ -1,13 +1,10 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-
 from auth import require_login, require_access
-
 import gspread
 from google.oauth2.service_account import Credentials
 import os
-
 from datetime import datetime
 
 fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
