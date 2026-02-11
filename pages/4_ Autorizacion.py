@@ -792,6 +792,9 @@ if st.session_state.buscar_trigger:
 
         editable = row["Estado"].startswith("En Curso")
 
+        # ======================================================
+        # BUTTON COLUMN
+        # ======================================================
         with c1:
             label = "Editar" if editable else "Ver"
             if st.button(label, key=f"accion_{row['NoFolio']}"):
@@ -799,18 +802,29 @@ if st.session_state.buscar_trigger:
 
                 df = cargar_servicios_folio(row["NoFolio"])
 
-                # 🔥 Lincoln → convert system columns to USD view
-                if row["Empresa"] == "LINCOLN FREIGHT" and not df.empty:
-                    df["PrecioParte"] = df.get("Precio MXP", 0)
-                    df["Cantidad"] = df.get("Cantidad", 0)
-                    df["Total USD"] = df.get("Total MXN", 0)
+                # ==========================================
+                # LINCOLN → ALWAYS FORCE USD STRUCTURE
+                # ==========================================
+                if row["Empresa"] == "LINCOLN FREIGHT":
 
-                    keep = ["Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"]
-                    df = df[[c for c in keep if c in df.columns]]
+                    if df.empty:
+                        df = pd.DataFrame(columns=[
+                            "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
+                        ])
+                    else:
+                        df["PrecioParte"] = df.get("Precio MXP", 0)
+                        df["Cantidad"] = df.get("Cantidad", 0)
+                        df["Total USD"] = df.get("Total MXN", 0)
+
+                        df = df[[
+                            "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
+                        ]]
 
                 st.session_state.servicios_df = df
 
-
+        # ======================================================
+        # INFO COLUMNS (UNCHANGED)
+        # ======================================================
         c2.write(row["NoFolio"])
         c3.write(row["Empresa"])
         c4.write(row["Proveedor"])
@@ -845,7 +859,7 @@ if st.session_state.modal_reporte:
 
         proveedor = (r.get("Proveedor") or "").lower()
 
-        # 🔥 NEW → currency detector
+        #currency detector
         es_lincoln = r["Empresa"] == "LINCOLN FREIGHT"
 
         if "interno" in proveedor:
@@ -868,7 +882,7 @@ if st.session_state.modal_reporte:
             st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
 
         # ==========================================
-        # 🎯 SMART STATE VISIBILITY
+        # SMART STATE VISIBILITY
         # ==========================================
         estado_actual = r["Estado"]
 
@@ -930,7 +944,7 @@ if st.session_state.modal_reporte:
             st.info("Catálogo no disponible para esta empresa.")
 
         # =====================================================
-        # ➕ ADD ITEM
+        # ADD ITEM
         # =====================================================
         if st.button(
             "Agregar refacciones o servicios",
@@ -970,7 +984,7 @@ if st.session_state.modal_reporte:
                 )
 
         # =====================================================
-        # 🧮 EDITOR
+        # EDITOR
         # =====================================================
         if es_lincoln:
             column_config = {
@@ -995,7 +1009,7 @@ if st.session_state.modal_reporte:
         )
 
         # =====================================================
-        # 🔄 RECALC TOTALS
+        # RECALC TOTALS
         # =====================================================
         if not edited_df.empty:
 
@@ -1017,7 +1031,7 @@ if st.session_state.modal_reporte:
         st.session_state.servicios_df = edited_df
 
         # =====================================================
-        # 💰 METRIC
+        # METRIC
         # =====================================================
         if es_lincoln:
             st.metric(
