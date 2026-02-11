@@ -388,7 +388,17 @@ def cargar_catalogo_igloo_simple():
         except:
             return None
 
-    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+    precio_col = next(
+        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
+        None
+    )
+
+    if not precio_col:
+        st.error("El catálogo IGLOO no contiene una columna de precio válida.")
+        return pd.DataFrame(columns=["Parte", "PU", "label"])
+
+    df["PU"] = df[precio_col].apply(limpiar_num)
+
 
     df["label"] = df.apply(
         lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
