@@ -260,6 +260,14 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
     servicios_df = servicios_df.copy()
     servicios_df["Parte"] = servicios_df["Parte"].astype(str)
 
+    # =====================================================
+    # 🔥 LINCOLN NORMALIZATION (USD → system columns)
+    # =====================================================
+    if "PrecioParte" in servicios_df.columns:
+        servicios_df["Precio MXP"] = servicios_df["PrecioParte"]
+        servicios_df["IVA"] = 0
+        servicios_df["Total MXN"] = servicios_df.get("Total USD", 0)
+
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
@@ -513,15 +521,30 @@ def cargar_catalogo_lincoln():
         except:
             return None
 
-    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+    # ================================
+    # PRICE → PrecioParte (USD)
+    # ================================
+    if "PrecioParte" in df.columns:
+        df["PrecioParte"] = df["PrecioParte"].apply(limpiar_num)
+    else:
+        df["PrecioParte"] = None
 
+    # ================================
+    # TipoCompra default
+    # ================================
+    if "TipoCompra" not in df.columns:
+        df["TipoCompra"] = "Servicio"
+
+    # ================================
+    # Label (USD)
+    # ================================
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
-        if pd.notna(r["PU"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - USD ${r['PrecioParte']:,.2f}"
+        if pd.notna(r["PrecioParte"]) else r["Parte"],
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    return df[["Parte", "TipoCompra", "PrecioParte", "label"]]
 
 # PICUS LOADER
 @st.cache_data(ttl=600)
@@ -809,6 +832,9 @@ if st.session_state.modal_reporte:
 
         proveedor = (r.get("Proveedor") or "").lower()
 
+        # 🔥 NEW → currency detector
+        es_lincoln = r["Empresa"] == "LINCOLN FREIGHT"
+
         if "interno" in proveedor:
             st.text_input(
                 "No. de Reporte",
@@ -890,6 +916,9 @@ if st.session_state.modal_reporte:
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
+        # =====================================================
+        # ➕ ADD ITEM
+        # =====================================================
         if st.button(
             "Agregar refacciones o servicios",
             disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
@@ -898,54 +927,95 @@ if st.session_state.modal_reporte:
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
 
-                precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
-                iva = pd.to_numeric(fila.get("IvaParte", 0), errors="coerce") or 0
+                if es_lincoln:
+                    precio = pd.to_numeric(fila.get("PrecioParte", 0), errors="coerce") or 0
 
-                nueva = {
-                    "Parte": fila.get("Parte", ""),
-                    "TipoCompra": fila.get("TipoCompra", "Servicio"),
-                    "Precio MXP": precio,
-                    "IVA": iva,
-                    "Cantidad": 1,
-                    "Total MXN": (precio + iva),
-                }
+                    nueva = {
+                        "Parte": fila.get("Parte", ""),
+                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
+                        "PrecioParte": precio,
+                        "Cantidad": 1,
+                        "Total USD": precio,
+                    }
+
+                else:
+                    precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
+                    iva = pd.to_numeric(fila.get("IvaParte", 0), errors="coerce") or 0
+
+                    nueva = {
+                        "Parte": fila.get("Parte", ""),
+                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
+                        "Precio MXP": precio,
+                        "IVA": iva,
+                        "Cantidad": 1,
+                        "Total MXN": (precio + iva),
+                    }
 
                 st.session_state.servicios_df = pd.concat(
                     [st.session_state.servicios_df, pd.DataFrame([nueva])],
                     ignore_index=True
                 )
 
+        # =====================================================
+        # 🧮 EDITOR
+        # =====================================================
+        if es_lincoln:
+            column_config = {
+                "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
+                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
+                "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
+            }
+        else:
+            column_config = {
+                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
+                "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
+                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
+            }
+
         edited_df = st.data_editor(
             st.session_state.servicios_df,
             num_rows="dynamic",
             hide_index=True,
             disabled=not editable_servicios,
-            column_config={
-                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
-                "IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
-            },
+            column_config=column_config,
         )
 
+        # =====================================================
+        # 🔄 RECALC TOTALS
+        # =====================================================
         if not edited_df.empty:
-            for col in ["Precio MXP", "Cantidad", "IVA"]:
-                edited_df[col] = (
-                    pd.to_numeric(edited_df[col], errors="coerce")
-                    .fillna(0)
-                )
 
-            edited_df["Total MXN"] = (
-                (edited_df["Precio MXP"] + edited_df["IVA"])
-                * edited_df["Cantidad"]
-            )
+            if es_lincoln:
+                for col in ["PrecioParte", "Cantidad"]:
+                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
+
+                edited_df["Total USD"] = edited_df["PrecioParte"] * edited_df["Cantidad"]
+
+            else:
+                for col in ["Precio MXP", "Cantidad", "IVA"]:
+                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
+
+                edited_df["Total MXN"] = (
+                    (edited_df["Precio MXP"] + edited_df["IVA"])
+                    * edited_df["Cantidad"]
+                )
 
         st.session_state.servicios_df = edited_df
 
-        st.metric(
-            "Total MXN",
-            f"$ {st.session_state.servicios_df['Total MXN'].fillna(0).sum():,.2f}"
-        )
+        # =====================================================
+        # 💰 METRIC
+        # =====================================================
+        if es_lincoln:
+            st.metric(
+                "Total USD",
+                f"$ {edited_df.get('Total USD', pd.Series()).fillna(0).sum():,.2f}"
+            )
+        else:
+            st.metric(
+                "Total MXN",
+                f"$ {edited_df.get('Total MXN', pd.Series()).fillna(0).sum():,.2f}"
+            )
 
         st.divider()
         c1, c2 = st.columns(2)
@@ -957,25 +1027,17 @@ if st.session_state.modal_reporte:
 
         with c2:
 
-            # =====================================================
-            # 🎯 SHOW ACCEPT ONLY IF ACTION IS POSSIBLE
-            # =====================================================
             mostrar_aceptar = (
                 editable_estado
                 or ("interno" not in proveedor and oste_editable)
             )
 
-            # label depending on what can be edited
-            if editable_estado:
-                label_btn = "Guardar cambios"
-            else:
-                label_btn = "Guardar"
+            label_btn = "Guardar cambios" if editable_estado else "Guardar"
 
             if mostrar_aceptar and st.button(label_btn, type="primary"):
 
                 estado_actual = r["Estado"]
 
-                # READ ONLY MODE
                 if (
                     not editable_servicios
                     and not oste_editable
@@ -987,40 +1049,6 @@ if st.session_state.modal_reporte:
                 if nuevo_estado == "En Curso / En Proceso" and st.session_state.servicios_df.empty:
                     st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
                     st.stop()
-
-                work_states = [
-                    "En Curso / Sin Comenzar",
-                    "En Curso / Espera Refacciones",
-                ]
-
-                advanced_states = work_states + [
-                    "En Curso / En Proceso",
-                    "Cerrado / Completado",
-                    "Cerrado / Facturado",
-                ]
-
-                initial_states = [
-                    "En Curso / Nuevo",
-                    "En Curso / Autorizado",
-                ]
-
-                if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
-                    st.error("Debe autorizar el pase antes de continuar.")
-                    st.stop()
-
-                if estado_actual == "En Curso / En Proceso":
-                    if nuevo_estado not in [
-                        "Cerrado / Completado",
-                        "Cerrado / Facturado",
-                        "Cerrado / Cancelado",
-                    ]:
-                        st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
-                        st.stop()
-
-                if nuevo_estado != "Cerrado / Cancelado":
-                    if estado_actual in advanced_states and nuevo_estado in initial_states:
-                        st.error("No se puede regresar el pase a un estado previo.")
-                        st.stop()
 
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
@@ -1037,16 +1065,6 @@ if st.session_state.modal_reporte:
                     st.session_state.user.get("name")
                     or st.session_state.user.get("email")
                 )
-
-                if (
-                    st.session_state.servicios_df.empty
-                    and nuevo_estado in ["En Curso / Autorizado", "Cerrado / Cancelado"]
-                ):
-                    registrar_cambio_estado_sin_servicios(
-                        r["NoFolio"],
-                        usuario,
-                        nuevo_estado
-                    )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
