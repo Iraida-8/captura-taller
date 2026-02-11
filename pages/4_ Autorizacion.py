@@ -388,7 +388,7 @@ def cargar_catalogo_igloo_simple():
     df = df.drop_duplicates(subset=["Parte"], keep="first")
 
     # =================================
-    # PRICE DETECTION
+    # NUMBER CLEANER (money)
     # =================================
     def limpiar_num(v):
         try:
@@ -396,6 +396,9 @@ def cargar_catalogo_igloo_simple():
         except:
             return None
 
+    # =================================
+    # PRICE DETECTION
+    # =================================
     normalized_cols = {c: str(c).strip().lower() for c in df.columns}
 
     precio_col = next(
@@ -412,6 +415,20 @@ def cargar_catalogo_igloo_simple():
     df["PU"] = df[precio_col].apply(limpiar_num)
 
     # =================================
+    # NORMALIZE IVA (money, not percent)
+    # =================================
+    if "IvaParte" in df.columns:
+        df["IvaParte"] = df["IvaParte"].apply(limpiar_num).fillna(0)
+    else:
+        df["IvaParte"] = 0
+
+    # =================================
+    # ENSURE TipoCompra
+    # =================================
+    if "TipoCompra" not in df.columns:
+        df["TipoCompra"] = "Servicio"
+
+    # =================================
     # BUILD LABEL
     # =================================
     df["label"] = df.apply(
@@ -419,15 +436,6 @@ def cargar_catalogo_igloo_simple():
         if pd.notna(r["PU"]) else r["Parte"],
         axis=1
     )
-
-    # =================================
-    # ENSURE OPTIONAL COLUMNS EXIST
-    # =================================
-    if "IvaParte" not in df.columns:
-        df["IvaParte"] = 0
-
-    if "TipoCompra" not in df.columns:
-        df["TipoCompra"] = "Servicio"
 
     # =================================
     # RETURN
