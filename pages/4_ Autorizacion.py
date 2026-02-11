@@ -787,7 +787,7 @@ if st.session_state.modal_reporte:
                     "Precio MXP": precio,
                     "IVA": iva,
                     "Cantidad": 1,
-                    "Total MXN": precio * (1 + iva),
+                    "Total MXN": (precio + iva) * 1,
                 }
 
                 st.session_state.servicios_df = pd.concat(
@@ -816,9 +816,8 @@ if st.session_state.modal_reporte:
                 )
 
             edited_df["Total MXN"] = (
-                edited_df["Precio MXP"]
+                (edited_df["Precio MXP"] + edited_df["IVA"])
                 * edited_df["Cantidad"]
-                * (1 + edited_df["IVA"])
             )
 
         st.session_state.servicios_df = edited_df
