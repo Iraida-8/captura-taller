@@ -1065,6 +1065,23 @@ if st.session_state.modal_reporte:
                     st.session_state.user.get("name")
                     or st.session_state.user.get("email")
                 )
+                # =====================================================
+                # CREATE MILESTONE ROW IF NO REAL SERVICES
+                # =====================================================
+                df_serv = st.session_state.servicios_df
+
+                sin_partes = (
+                    df_serv.empty
+                    or "Parte" not in df_serv.columns
+                    or df_serv["Parte"].astype(str).str.strip().eq("").all()
+                )
+
+                if sin_partes:
+                    registrar_cambio_estado_sin_servicios(
+                        r["NoFolio"],
+                        usuario,
+                        nuevo_estado
+                    )
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
