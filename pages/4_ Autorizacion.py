@@ -796,8 +796,12 @@ if st.session_state.modal_reporte:
                 disabled=not oste_editable
             )
 
-        if not oste_editable:
+        if (
+            r["Estado"] == "Cerrado / Facturado"
+            and str(r.get("Oste", "")).strip()
+        ):
             st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
+
 
         # ==========================================
         # 🎯 SMART STATE VISIBILITY
