@@ -660,7 +660,7 @@ st.session_state.setdefault(
 # =================================
 # TOP 10 EN CURSO
 # =================================
-st.subheader("Últimos 10 Pases de Taller (En Curso)")
+st.subheader("Últimos 10 Pases de Taller (Nuevos)")
 
 if not pases_df.empty:
     top10 = (
@@ -799,21 +799,45 @@ if st.session_state.modal_reporte:
         if not oste_editable:
             st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
 
-        opciones_estado = [
-            "En Curso / Autorizado",
-            "En Curso / Sin Comenzar",
-            "En Curso / Espera Refacciones",
-            "En Curso / En Proceso",
-            "Cerrado / Facturado",
-            "Cerrado / Cancelado",
-            "Cerrado / Completado",
-        ]
+        # ==========================================
+        # 🎯 SMART STATE VISIBILITY
+        # ==========================================
+        estado_actual = r["Estado"]
+
+        transiciones = {
+            "En Curso / Nuevo": [
+                "En Curso / Autorizado",
+                "Cerrado / Cancelado",
+            ],
+            "En Curso / Autorizado": [
+                "En Curso / Sin Comenzar",
+                "En Curso / Espera Refacciones",
+                "Cerrado / Cancelado",
+            ],
+            "En Curso / Sin Comenzar": [
+                "En Curso / Espera Refacciones",
+                "En Curso / En Proceso",
+                "Cerrado / Cancelado",
+            ],
+            "En Curso / Espera Refacciones": [
+                "En Curso / Sin Comenzar",
+                "En Curso / En Proceso",
+                "Cerrado / Cancelado",
+            ],
+            "En Curso / En Proceso": [
+                "Cerrado / Completado",
+                "Cerrado / Facturado",
+                "Cerrado / Cancelado",
+            ],
+        }
+
+        opciones_estado = [estado_actual] + transiciones.get(estado_actual, [])
+        opciones_estado = list(dict.fromkeys(opciones_estado))
 
         nuevo_estado = st.selectbox(
             "Estado",
             opciones_estado,
-            index=opciones_estado.index(r["Estado"])
-            if r["Estado"] in opciones_estado else 0,
+            index=0,
             disabled=not editable_estado
         )
 
@@ -919,14 +943,11 @@ if st.session_state.modal_reporte:
                     st.session_state.modal_reporte = None
                     st.rerun()
 
-                # =====================================================
-                # 🚨 REQUIRE SERVICES BEFORE EN PROCESO
-                # =====================================================
+                # REQUIRE SERVICES BEFORE EN PROCESO
                 if nuevo_estado == "En Curso / En Proceso" and st.session_state.servicios_df.empty:
                     st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
                     st.stop()
 
-                # 🚦 WORKFLOW ENGINE
                 work_states = [
                     "En Curso / Sin Comenzar",
                     "En Curso / Espera Refacciones",
@@ -943,12 +964,10 @@ if st.session_state.modal_reporte:
                     "En Curso / Autorizado",
                 ]
 
-                # Require autorizado before work
                 if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
                     st.error("Debe autorizar el pase antes de continuar.")
                     st.stop()
 
-                # En proceso → only closing
                 if estado_actual == "En Curso / En Proceso":
                     if nuevo_estado not in [
                         "Cerrado / Completado",
@@ -958,17 +977,14 @@ if st.session_state.modal_reporte:
                         st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
                         st.stop()
 
-                # Block backwards
                 if nuevo_estado != "Cerrado / Cancelado":
                     if estado_actual in advanced_states and nuevo_estado in initial_states:
                         st.error("No se puede regresar el pase a un estado previo.")
                         st.stop()
 
-                # Apply change
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
-                # OSTE
                 if "interno" not in (r.get("Proveedor") or "").lower():
                     if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
