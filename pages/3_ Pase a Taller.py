@@ -75,6 +75,63 @@ def safe_value(v):
     return str(v)
 
 # =================================
+# Check duplicate unit in last 24h
+# =================================
+def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
+    creds = get_gsheets_credentials()
+    client = gspread.authorize(creds)
+
+    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+
+    sheet_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    hoja = sheet_map.get(empresa)
+    if not hoja:
+        return None
+
+    ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
+    data = ws.get_all_records()
+
+    if not data:
+        return None
+
+    df = pd.DataFrame(data)
+    df.columns = df.columns.str.strip()
+
+    if "Fecha de Captura" not in df.columns:
+        return None
+
+    df["Fecha de Captura"] = pd.to_datetime(df["Fecha de Captura"], errors="coerce")
+
+    limite = datetime.now() - pd.Timedelta(hours=24)
+
+    # 🔥 external trailer logic
+    if no_unidad == "REMOLQUE EXTERNO":
+        if "No. de Unidad Externo" not in df.columns:
+            return None
+        filtro = df["No. de Unidad Externo"].astype(str) == str(no_unidad_externo)
+    else:
+        if "No. de Unidad" not in df.columns:
+            return None
+        filtro = df["No. de Unidad"].astype(str) == str(no_unidad)
+
+    recientes = df[
+        filtro &
+        (df["Fecha de Captura"] >= limite)
+    ]
+
+    if recientes.empty:
+        return None
+
+    return recientes.sort_values("Fecha de Captura", ascending=False).iloc[0]["No. de Folio"]
+
+# =================================
 # Append Pase de Taller to Sheet
 # =================================
 def append_pase_to_sheet(data: dict):
@@ -190,6 +247,15 @@ if "folio_generado" not in st.session_state:
 
 if "mostrar_confirmacion" not in st.session_state:
     st.session_state.mostrar_confirmacion = False
+
+if "folio_duplicado" not in st.session_state:
+    st.session_state.folio_duplicado = None
+
+if "confirmar_guardado" not in st.session_state:
+    st.session_state.confirmar_guardado = False
+
+if "forzar_guardado" not in st.session_state:
+    st.session_state.forzar_guardado = False
 
 # =================================
 # Page title
@@ -406,6 +472,34 @@ if tipo_proveedor in ["Interno", "Externo"]:
     # =================================
     if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
 
+        # make sure flags exist
+        st.session_state.setdefault("forzar_guardado", False)
+        st.session_state.setdefault("confirmar_guardado", False)
+        st.session_state.setdefault("folio_duplicado", "")
+
+        # ==========================================
+        # DUPLICATE CHECK — LAST 24 HOURS
+        # ==========================================
+        unidad_a_buscar = (
+            no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
+        )
+
+        folio_existente = buscar_unidad_reciente(
+            empresa,
+            no_unidad,
+            no_unidad_externo
+        )
+
+
+        # If duplicate AND not forcing → ask confirmation
+        if folio_existente and not st.session_state.forzar_guardado:
+            st.session_state.folio_duplicado = folio_existente
+            st.session_state.confirmar_guardado = True
+            st.stop()
+
+        # ==========================================
+        # NORMAL SAVE
+        # ==========================================
         payload = {
             "timestamp": datetime.now().isoformat(),
             "fecha_reporte": str(fecha_reporte),
@@ -433,13 +527,50 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "reparacion_multa": reparacion_multa,
         }
 
-        # USE THE REAL FOLIO RETURNED BY GOOGLE SHEETS
         folio_real = append_pase_to_sheet(payload)
-        st.session_state.folio_generado = folio_real
 
+        # 🔥 important → clear force flag after using it
+        st.session_state.forzar_guardado = False
+
+        st.session_state.folio_generado = folio_real
         st.session_state.mostrar_confirmacion = True
         st.rerun()
 
+    # =================================
+    # DUPLICATE CONFIRMATION DIALOG
+    # =================================
+    if st.session_state.get("confirmar_guardado", False):
+
+        @st.dialog("Registro duplicado detectado")
+        def confirmar():
+
+            st.warning(
+                f"Ya existe un pase para esta unidad en las últimas 24 horas.\n\n"
+                f"**Folio existente:** {st.session_state.folio_duplicado}"
+            )
+
+            c1, c2 = st.columns(2)
+
+            # YES → CREATE NEW
+            with c1:
+                if st.button("Sí, crear nuevo"):
+                    st.session_state.forzar_guardado = True
+                    st.session_state.confirmar_guardado = False
+                    st.rerun()
+
+            # NO → USE OLD
+            with c2:
+                if st.button("No, usar existente"):
+                    st.session_state.folio_generado = st.session_state.folio_duplicado
+                    st.session_state.confirmar_guardado = False
+                    st.session_state.mostrar_confirmacion = True
+                    st.rerun()
+
+        confirmar()
+
+    # =================================
+    # SUCCESS DIALOG
+    # =================================
     if st.session_state.mostrar_confirmacion:
 
         @st.dialog("Pase guardado")
