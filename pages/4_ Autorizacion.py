@@ -372,11 +372,15 @@ def cargar_catalogo_igloo_simple():
     )
 
     df = pd.read_csv(URL)
-    df.columns = df.columns.str.strip()
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df = df[df["Fecha"] >= pd.Timestamp("2025-01-01")]
-    df = df.sort_values("Fecha", ascending=False)
+    if "FECHA H" not in df.columns:
+        st.error("El catálogo IGLOO no contiene la columna requerida: FECHA H")
+        return pd.DataFrame(columns=["Parte", "PU", "label"])
+
+    df["FECHA H"] = pd.to_datetime(df["FECHA H"], errors="coerce")
+    df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
+    df = df.sort_values("FECHA H", ascending=False)
     df = df.drop_duplicates(subset=["Parte"], keep="first")
+
 
     def limpiar_num(v):
         try:
