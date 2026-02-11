@@ -764,13 +764,17 @@ if st.session_state.modal_reporte:
             fila = catalogo[catalogo["label"] == st.session_state.refaccion_seleccionada].iloc[0]
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
+
+                precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
+                iva = pd.to_numeric(fila.get("IvaParte", 0), errors="coerce") or 0
+
                 nueva = {
-                    "Parte": fila["Parte"],
-                    "TipoCompra": "Servicio",
-                    "Precio MXP": fila["PU"],
-                    "IVA": 0.0,
+                    "Parte": fila.get("Parte", ""),
+                    "TipoCompra": fila.get("TipoCompra", "Servicio"),
+                    "Precio MXP": precio,
+                    "IVA": iva,
                     "Cantidad": 1,
-                    "Total MXN": fila["PU"],
+                    "Total MXN": precio * (1 + iva),
                 }
 
                 st.session_state.servicios_df = pd.concat(
