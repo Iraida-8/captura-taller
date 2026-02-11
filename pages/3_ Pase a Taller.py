@@ -495,7 +495,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
         if folio_existente and not st.session_state.forzar_guardado:
             st.session_state.folio_duplicado = folio_existente
             st.session_state.confirmar_guardado = True
-            st.stop()
+            st.rerun()
 
         # ==========================================
         # NORMAL SAVE
