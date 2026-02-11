@@ -363,6 +363,7 @@ pases_df = cargar_pases_taller()
 # Catalogs (READ ONLY)
 # =================================
 
+# IGLOO LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_igloo_simple():
     URL = (
@@ -371,55 +372,67 @@ def cargar_catalogo_igloo_simple():
         "/export?format=csv&gid=410297659"
     )
 
-    #Date check normalization with defensive column detection
     df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+
+    # =================================
+    # FECHA H (REQUIRED)
+    # =================================
     if "FECHA H" not in df.columns:
         st.error("El catálogo IGLOO no contiene la columna requerida: FECHA H")
-        return pd.DataFrame(columns=["Parte", "PU", "label"])
+        return pd.DataFrame(columns=["Parte", "PU", "IvaParte", "TipoCompra", "label"])
 
     df["FECHA H"] = pd.to_datetime(df["FECHA H"], errors="coerce")
     df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
     df = df.sort_values("FECHA H", ascending=False)
     df = df.drop_duplicates(subset=["Parte"], keep="first")
 
-
+    # =================================
+    # PRICE DETECTION
+    # =================================
     def limpiar_num(v):
         try:
             return float(str(v).replace("$", "").replace(",", "").strip())
         except:
             return None
 
-    # Price Check with normalization (defensive against header variations)
     normalized_cols = {c: str(c).strip().lower() for c in df.columns}
 
     precio_col = next(
         (orig for orig, norm in normalized_cols.items()
-        if norm in ["precioparte", "precio", "pu", "costo"]),
+         if norm in ["precioparte", "precio", "pu", "costo"]),
         None
     )
 
     if not precio_col:
         st.error(f"Columnas encontradas: {list(df.columns)}")
         st.error("El catálogo IGLOO no contiene una columna de precio válida.")
-        return pd.DataFrame(columns=["Parte", "PU", "label"])
+        return pd.DataFrame(columns=["Parte", "PU", "IvaParte", "TipoCompra", "label"])
 
     df["PU"] = df[precio_col].apply(limpiar_num)
 
-
-    if not precio_col:
-        st.error("El catálogo IGLOO no contiene una columna de precio válida.")
-        return pd.DataFrame(columns=["Parte", "PU", "label"])
-
-    df["PU"] = df[precio_col].apply(limpiar_num)
-
-
+    # =================================
+    # BUILD LABEL
+    # =================================
     df["label"] = df.apply(
         lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
         if pd.notna(r["PU"]) else r["Parte"],
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    # =================================
+    # ENSURE OPTIONAL COLUMNS EXIST
+    # =================================
+    if "IvaParte" not in df.columns:
+        df["IvaParte"] = 0
+
+    if "TipoCompra" not in df.columns:
+        df["TipoCompra"] = "Servicio"
+
+    # =================================
+    # RETURN
+    # =================================
+    return df[["Parte", "PU", "IvaParte", "TipoCompra", "label"]]
 
 
 @st.cache_data(ttl=600)
