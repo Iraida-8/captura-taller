@@ -366,7 +366,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
 
         # inherit previous state dates
         for col in date_columns:
-            row_data.append(fechas_existentes.get(col, ""))
+            valor_existente = fechas_existentes.get(col, "")
+
+            # If already exists → NEVER delete history
+            if str(valor_existente).strip() != "":
+                row_data.append(valor_existente)
+            else:
+                row_data.append("")
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
