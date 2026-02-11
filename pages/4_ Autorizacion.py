@@ -400,6 +400,8 @@ def cargar_pases_taller():
         "Tipo de Proveedor": "Proveedor",
     }, inplace=True)
 
+    st.write("COLUMNAS DESPUÉS DEL RENAME:", df.columns.tolist())
+
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["NoFolio"] = df["NoFolio"].astype(str)
     return df
