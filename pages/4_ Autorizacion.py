@@ -796,7 +796,20 @@ if st.session_state.buscar_trigger:
             label = "Editar" if editable else "Ver"
             if st.button(label, key=f"accion_{row['NoFolio']}"):
                 st.session_state.modal_reporte = row.to_dict()
-                st.session_state.servicios_df = cargar_servicios_folio(row["NoFolio"])
+
+                df = cargar_servicios_folio(row["NoFolio"])
+
+                # 🔥 Lincoln → convert system columns to USD view
+                if row["Empresa"] == "LINCOLN FREIGHT" and not df.empty:
+                    df["PrecioParte"] = df.get("Precio MXP", 0)
+                    df["Cantidad"] = df.get("Cantidad", 0)
+                    df["Total USD"] = df.get("Total MXN", 0)
+
+                    keep = ["Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"]
+                    df = df[[c for c in keep if c in df.columns]]
+
+                st.session_state.servicios_df = df
+
 
         c2.write(row["NoFolio"])
         c3.write(row["Empresa"])
