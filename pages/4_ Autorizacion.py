@@ -275,9 +275,9 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     # =====================================================
     partes_actuales = set(servicios_df["Parte"])
 
+    # ONLY delete rows that represent REAL parts
     rows_to_delete = df_folio[
-        df_folio["Parte"].notna()
-        & (df_folio["Parte"] != "")
+        df_folio["Parte"].astype(str).str.strip().ne("")  # must have part
         & ~df_folio["Parte"].isin(partes_actuales)
     ]["__rownum__"].tolist()
 
