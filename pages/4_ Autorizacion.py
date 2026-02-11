@@ -404,6 +404,7 @@ def cargar_pases_taller():
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["NoFolio"] = df["NoFolio"].astype(str)
+    st.write("TOTAL FILAS:", len(df))
     return df
 
 pases_df = cargar_pases_taller()
