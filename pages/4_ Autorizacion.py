@@ -224,7 +224,7 @@ def cargar_servicios_folio(folio):
 # =================================
 # UPSERT Servicios / Refacciones
 # =================================
-def guardar_servicios_refacciones(folio, usuario, servicios_df):
+def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=None):
     if servicios_df is None or servicios_df.empty:
         return
 
@@ -240,20 +240,10 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     # =====================================================
     all_values = ws.get_all_values()
 
-    if len(all_values) < 2:
-        headers = [
-            "No. de Folio","Modifico","Parte","TipoCompra",
-            "Precio MXP","IVA","Cantidad","Total MXN","Fecha Mod",
-            "Fecha Autorizado","Fecha Sin Comenzar",
-            "Fecha Espera Refacciones","Fecha Facturado",
-            "Fecha Completado","Fecha Cancelado"
-        ]
-        df_db = pd.DataFrame(columns=headers + ["__rownum__"])
-    else:
-        headers = [h.strip() for h in all_values[0]]
-        rows = all_values[1:]
-        df_db = pd.DataFrame(rows, columns=headers)
-        df_db["__rownum__"] = range(2, len(rows) + 2)
+    headers = [h.strip() for h in all_values[0]]
+    rows = all_values[1:]
+    df_db = pd.DataFrame(rows, columns=headers)
+    df_db["__rownum__"] = range(2, len(rows) + 2)
 
     # =====================================================
     # Normalize headers
@@ -271,13 +261,12 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
-    # PHASE 2 — DELETE REMOVED ITEMS
+    # PHASE 2 — DELETE REMOVED ITEMS (REAL PARTS ONLY)
     # =====================================================
     partes_actuales = set(servicios_df["Parte"])
 
-    # ONLY delete rows that represent REAL parts
     rows_to_delete = df_folio[
-        df_folio["Parte"].astype(str).str.strip().ne("")  # must have part
+        df_folio["Parte"].astype(str).str.strip().ne("")
         & ~df_folio["Parte"].isin(partes_actuales)
     ]["__rownum__"].tolist()
 
@@ -302,12 +291,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
-    # CAPTURE DATES FROM DUMMY ROWS
+    # CAPTURE EXISTING DATES (FROM ANY ROW)
     # =====================================================
     date_columns = [
         "Fecha Autorizado",
         "Fecha Sin Comenzar",
         "Fecha Espera Refacciones",
+        "Fecha En Proceso",
         "Fecha Facturado",
         "Fecha Completado",
         "Fecha Cancelado",
@@ -315,39 +305,30 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
 
     fechas_existentes = {}
 
-    if "Parte" in df_folio.columns:
-        dummy_rows = df_folio[
-            df_folio["Parte"].isna() |
-            (df_folio["Parte"].astype(str).str.strip() == "")
-        ]
-
-        for col in date_columns:
-            if col in df_folio.columns:
-                val = dummy_rows[col].dropna()
-                if not val.empty:
-                    fechas_existentes[col] = val.iloc[0]
-
-        # delete dummy rows
-        for rownum in sorted(dummy_rows["__rownum__"].tolist(), reverse=True):
-            ws.delete_rows(int(rownum))
-
-        # reload AGAIN after deleting dummy
-        all_values = ws.get_all_values()
-        headers = [h.strip() for h in all_values[0]]
-        rows = all_values[1:]
-        df_db = pd.DataFrame(rows, columns=headers)
-        df_db["__rownum__"] = range(2, len(rows) + 2)
-
-        if "No. de Folio" in df_db.columns:
-            df_db = df_db.rename(columns={"No. de Folio": "Folio"})
-        if "Iva" in df_db.columns:
-            df_db = df_db.rename(columns={"Iva": "IVA"})
-
-        df_db["Folio"] = df_db["Folio"].astype(str)
-        df_folio = df_db[df_db["Folio"] == str(folio)]
+    for col in date_columns:
+        if col in df_folio.columns:
+            vals = df_folio[col].dropna()
+            vals = vals[vals.astype(str).str.strip() != ""]
+            if not vals.empty:
+                fechas_existentes[col] = vals.iloc[0]
 
     # =====================================================
-    # PHASE 4 — UPSERT (WITH DATE INHERITANCE)
+    # MAP NEW STATUS → DATE COLUMN
+    # =====================================================
+    estado_fecha_map = {
+        "En Curso / Autorizado": "Fecha Autorizado",
+        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
+        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
+        "En Curso / En Proceso": "Fecha En Proceso",
+        "Cerrado / Facturado": "Fecha Facturado",
+        "Cerrado / Completado": "Fecha Completado",
+        "Cerrado / Cancelado": "Fecha Cancelado",
+    }
+
+    col_nueva_fecha = estado_fecha_map.get(nuevo_estado)
+
+    # =====================================================
+    # PHASE 4 — UPSERT WITH TRUE HISTORY PROTECTION
     # =====================================================
     for _, r in servicios_df.iterrows():
         match = df_folio[df_folio["Parte"] == r["Parte"]]
@@ -364,21 +345,26 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
             fecha_mod,
         ]
 
-        # inherit previous state dates
         for col in date_columns:
-            valor_existente = fechas_existentes.get(col, "")
+            existente = fechas_existentes.get(col, "")
 
-            # If already exists → NEVER delete history
-            if str(valor_existente).strip() != "":
-                row_data.append(valor_existente)
+            # keep old history
+            if str(existente).strip() != "":
+                row_data.append(existente)
+
+            # write new milestone
+            elif col == col_nueva_fecha:
+                row_data.append(fecha_mod)
+
             else:
                 row_data.append("")
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
-            ws.update(f"A{rownum}:O{rownum}", [row_data])
+            ws.update(f"A{rownum}:P{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
+
 
 # =================================
 # Load Pase de Taller
@@ -904,9 +890,7 @@ if st.session_state.modal_reporte:
 
                 estado_actual = r["Estado"]
 
-                # ==========================================
                 # 🚦 WORKFLOW ENGINE
-                # ==========================================
                 work_states = [
                     "En Curso / Sin Comenzar",
                     "En Curso / Espera Refacciones",
@@ -923,12 +907,10 @@ if st.session_state.modal_reporte:
                     "En Curso / Autorizado",
                 ]
 
-                # Require autorizado before work
                 if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
                     st.error("Debe autorizar el pase antes de continuar.")
                     st.stop()
 
-                # En proceso → only closing
                 if estado_actual == "En Curso / En Proceso":
                     if nuevo_estado not in [
                         "Cerrado / Completado",
@@ -938,19 +920,15 @@ if st.session_state.modal_reporte:
                         st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
                         st.stop()
 
-                # Block backwards
                 if nuevo_estado != "Cerrado / Cancelado":
                     if estado_actual in advanced_states and nuevo_estado in initial_states:
                         st.error("No se puede regresar el pase a un estado previo.")
                         st.stop()
 
-                # Apply change
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
-                # ==========================================
                 # OSTE
-                # ==========================================
                 if "interno" not in (r.get("Proveedor") or "").lower():
                     if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
@@ -974,10 +952,12 @@ if st.session_state.modal_reporte:
                         nuevo_estado
                     )
 
+                # 🔴 CRITICAL FIX → PASS STATUS
                 guardar_servicios_refacciones(
                     r["NoFolio"],
                     usuario,
-                    st.session_state.servicios_df
+                    st.session_state.servicios_df,
+                    nuevo_estado
                 )
 
                 st.session_state.modal_reporte = None
