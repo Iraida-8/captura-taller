@@ -392,6 +392,7 @@ def cargar_pases_taller():
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
+    st.write("COLUMNAS ORIGINALES:", df.columns.tolist())
 
     df.rename(columns={
         "No. de Folio": "NoFolio",
