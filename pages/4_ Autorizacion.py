@@ -373,6 +373,8 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 # =================================
 @st.cache_data(ttl=300)
 def cargar_pases_taller():
+    import time
+
     SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     hojas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
 
@@ -380,16 +382,19 @@ def cargar_pases_taller():
     dfs = []
 
     for hoja in hojas:
-        try:
-            ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
-            data = ws.get_all_records()
-            if data:
-                dfs.append(pd.DataFrame(data))
-        except Exception:
-            pass
+
+        for intento in range(3):  # retry up to 3 times
+            try:
+                ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
+                data = ws.get_all_records()
+                if data:
+                    dfs.append(pd.DataFrame(data))
+                break
+            except Exception:
+                time.sleep(2)  # wait and retry
 
     if not dfs:
-        st.error("NO DATA WAS LOADED FROM ANY SHEET")
+        st.warning("Google Sheets is temporarily busy. Please wait a moment and refresh.")
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
@@ -801,7 +806,6 @@ if st.session_state.modal_reporte:
             and str(r.get("Oste", "")).strip()
         ):
             st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
-
 
         # ==========================================
         # 🎯 SMART STATE VISIBILITY
