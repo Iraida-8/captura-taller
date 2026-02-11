@@ -716,7 +716,7 @@ if not pases_df.empty:
         pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
         .sort_values("Fecha", ascending=False)
         .head(10)
-        [["NoFolio","Empresa","Fecha","Proveedor","Estado"]]
+        [["NoFolio","Empresa","Capturo","Fecha","Proveedor","Estado"]]
     )
 
     if top10.empty:
