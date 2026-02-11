@@ -371,6 +371,7 @@ def cargar_catalogo_igloo_simple():
         "/export?format=csv&gid=410297659"
     )
 
+    #Date check normalization with defensive column detection
     df = pd.read_csv(URL)
     if "FECHA H" not in df.columns:
         st.error("El catálogo IGLOO no contiene la columna requerida: FECHA H")
@@ -388,10 +389,22 @@ def cargar_catalogo_igloo_simple():
         except:
             return None
 
+    # Price Check with normalization (defensive against header variations)
+    normalized_cols = {c: str(c).strip().lower() for c in df.columns}
+
     precio_col = next(
-        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
+        (orig for orig, norm in normalized_cols.items()
+        if norm in ["precioparte", "precio", "pu", "costo"]),
         None
     )
+
+    if not precio_col:
+        st.error(f"Columnas encontradas: {list(df.columns)}")
+        st.error("El catálogo IGLOO no contiene una columna de precio válida.")
+        return pd.DataFrame(columns=["Parte", "PU", "label"])
+
+    df["PU"] = df[precio_col].apply(limpiar_num)
+
 
     if not precio_col:
         st.error("El catálogo IGLOO no contiene una columna de precio válida.")
