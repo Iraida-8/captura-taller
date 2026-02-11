@@ -936,7 +936,13 @@ if st.session_state.modal_reporte:
                 or ("interno" not in proveedor and oste_editable)
             )
 
-            if mostrar_aceptar and st.button("Aceptar", type="primary"):
+            # label depending on what can be edited
+            if editable_estado:
+                label_btn = "Guardar cambios"
+            else:
+                label_btn = "Guardar"
+
+            if mostrar_aceptar and st.button(label_btn, type="primary"):
 
                 estado_actual = r["Estado"]
 
