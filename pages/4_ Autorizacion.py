@@ -204,7 +204,6 @@ def cargar_servicios_folio(folio):
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
 
-    # 🔴 THIS IS THE MISSING LINE
     if "Iva" in df.columns:
         df = df.rename(columns={"Iva": "IVA"})
 
@@ -213,9 +212,14 @@ def cargar_servicios_folio(folio):
 
     df = df[df["Folio"] == str(folio)]
 
+    # ✅ NEW — REMOVE STATUS LOG ROWS
+    if "Parte" in df.columns:
+        df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
+
     return df[
         ["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]
     ]
+
 
 # =================================
 # UPSERT Servicios / Refacciones
