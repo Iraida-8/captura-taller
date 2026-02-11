@@ -150,6 +150,7 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
         "En Curso / Autorizado": "Fecha Autorizado",
         "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
         "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
+        "En Curso / En Proceso": "Fecha En Proceso",
         "Cerrado / Facturado": "Fecha Facturado",
         "Cerrado / Completado": "Fecha Completado",
         "Cerrado / Cancelado": "Fecha Cancelado",
@@ -702,6 +703,7 @@ with f3:
             "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
+            "En Curso / En Proceso",
             "Cerrado / Cancelado",
             "Cerrado / Completado",
             "Cerrado / Facturado",
@@ -808,6 +810,7 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
+        # only these allow editing parts
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
@@ -898,6 +901,13 @@ if st.session_state.modal_reporte:
 
                 estado_actual = r["Estado"]
 
+                # =====================================================
+                # 🚨 REQUIRE SERVICES BEFORE EN PROCESO
+                # =====================================================
+                if nuevo_estado == "En Curso / En Proceso" and st.session_state.servicios_df.empty:
+                    st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
+                    st.stop()
+
                 # 🚦 WORKFLOW ENGINE
                 work_states = [
                     "En Curso / Sin Comenzar",
@@ -915,10 +925,12 @@ if st.session_state.modal_reporte:
                     "En Curso / Autorizado",
                 ]
 
+                # Require autorizado before work
                 if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
                     st.error("Debe autorizar el pase antes de continuar.")
                     st.stop()
 
+                # En proceso → only closing
                 if estado_actual == "En Curso / En Proceso":
                     if nuevo_estado not in [
                         "Cerrado / Completado",
@@ -928,11 +940,13 @@ if st.session_state.modal_reporte:
                         st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
                         st.stop()
 
+                # Block backwards
                 if nuevo_estado != "Cerrado / Cancelado":
                     if estado_actual in advanced_states and nuevo_estado in initial_states:
                         st.error("No se puede regresar el pase a un estado previo.")
                         st.stop()
 
+                # Apply change
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
@@ -960,7 +974,6 @@ if st.session_state.modal_reporte:
                         nuevo_estado
                     )
 
-                # 🔴 CRITICAL FIX → PASS STATUS
                 guardar_servicios_refacciones(
                     r["NoFolio"],
                     usuario,
