@@ -388,6 +388,7 @@ def cargar_pases_taller():
             pass
 
     if not dfs:
+        st.error("NO DATA WAS LOADED FROM ANY SHEET")
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
