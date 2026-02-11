@@ -392,7 +392,6 @@ def cargar_pases_taller():
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
-    st.write("COLUMNAS ORIGINALES:", df.columns.tolist())
 
     df.rename(columns={
         "No. de Folio": "NoFolio",
@@ -404,7 +403,7 @@ def cargar_pases_taller():
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["NoFolio"] = df["NoFolio"].astype(str)
-    st.write("TOTAL FILAS:", len(df))
+
     return df
 
 pases_df = cargar_pases_taller()
@@ -666,12 +665,17 @@ st.subheader("Últimos 10 Pases de Taller (En Curso)")
 
 if not pases_df.empty:
     top10 = (
-        pases_df[pases_df["Estado"].str.startswith("En Curso", na=False)]
+        pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
         .sort_values("Fecha", ascending=False)
         .head(10)
         [["NoFolio","Empresa","Fecha","Proveedor","Estado"]]
     )
-    st.dataframe(top10, hide_index=True, width="stretch")
+
+    if top10.empty:
+        st.info("No hay pases en estado Nuevo.")
+    else:
+        st.dataframe(top10, hide_index=True, width="stretch")
+
 else:
     st.info("No hay pases registrados.")
 
