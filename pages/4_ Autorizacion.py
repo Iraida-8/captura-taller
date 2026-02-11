@@ -841,7 +841,6 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
-        # only these allow editing parts
         editable_servicios = nuevo_estado in [
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
@@ -933,6 +932,13 @@ if st.session_state.modal_reporte:
                 estado_actual = r["Estado"]
 
                 # ==========================================
+                # ✅ INTERNAL + CLOSED → JUST EXIT
+                # ==========================================
+                if "interno" in proveedor and estado_actual.startswith("Cerrado"):
+                    st.session_state.modal_reporte = None
+                    st.rerun()
+
+                # ==========================================
                 # READ ONLY MODE → JUST CLOSE
                 # ==========================================
                 if (
@@ -948,44 +954,10 @@ if st.session_state.modal_reporte:
                     st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
                     st.stop()
 
-                work_states = [
-                    "En Curso / Sin Comenzar",
-                    "En Curso / Espera Refacciones",
-                ]
-
-                advanced_states = work_states + [
-                    "En Curso / En Proceso",
-                    "Cerrado / Completado",
-                    "Cerrado / Facturado",
-                ]
-
-                initial_states = [
-                    "En Curso / Nuevo",
-                    "En Curso / Autorizado",
-                ]
-
-                if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
-                    st.error("Debe autorizar el pase antes de continuar.")
-                    st.stop()
-
-                if estado_actual == "En Curso / En Proceso":
-                    if nuevo_estado not in [
-                        "Cerrado / Completado",
-                        "Cerrado / Facturado",
-                        "Cerrado / Cancelado",
-                    ]:
-                        st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
-                        st.stop()
-
-                if nuevo_estado != "Cerrado / Cancelado":
-                    if estado_actual in advanced_states and nuevo_estado in initial_states:
-                        st.error("No se puede regresar el pase a un estado previo.")
-                        st.stop()
-
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
-                if "interno" not in (r.get("Proveedor") or "").lower():
+                if "interno" not in proveedor:
                     if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
                             r["Empresa"],
