@@ -776,7 +776,11 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Información del Proveedor")
 
-        oste_editable = r["Estado"] == "Cerrado / Facturado"
+        oste_editable = (
+            r["Estado"] == "Cerrado / Facturado"
+            and not str(r.get("Oste", "")).strip()
+        )
+
         proveedor = (r.get("Proveedor") or "").lower()
 
         if "interno" in proveedor:
@@ -791,6 +795,9 @@ if st.session_state.modal_reporte:
                 value=r.get("Oste", "") or "",
                 disabled=not oste_editable
             )
+
+        if not oste_editable:
+            st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
 
         opciones_estado = [
             "En Curso / Autorizado",
@@ -900,6 +907,17 @@ if st.session_state.modal_reporte:
             if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
                 estado_actual = r["Estado"]
+
+                # ==========================================
+                # READ ONLY MODE → JUST CLOSE
+                # ==========================================
+                if (
+                    not editable_servicios
+                    and not oste_editable
+                    and nuevo_estado == estado_actual
+                ):
+                    st.session_state.modal_reporte = None
+                    st.rerun()
 
                 # =====================================================
                 # 🚨 REQUIRE SERVICES BEFORE EN PROCESO
