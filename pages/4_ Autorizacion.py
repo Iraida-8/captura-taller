@@ -140,7 +140,7 @@ def actualizar_oste_pase(empresa, folio, oste):
     oste_col = headers.index("Oste") + 1
     ws.update_cell(row_idx, oste_col, oste)
 
-    # =================================
+# =================================
 # Log estado sin refacciones
 # =================================
 def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
@@ -495,7 +495,7 @@ def cargar_catalogo_igloo_simple():
     # =================================
     return df[["Parte", "PU", "IvaParte", "TipoCompra", "label"]]
 
-
+# LINCOLN LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_lincoln():
     URL = (
@@ -523,7 +523,7 @@ def cargar_catalogo_lincoln():
 
     return df[["Parte", "PU", "label"]]
 
-
+# PICUS LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_picus():
     URL = (
@@ -541,7 +541,26 @@ def cargar_catalogo_picus():
         except:
             return None
 
-    df["PU"] = df["PrecioParte"].apply(limpiar_num)
+    normalized_cols = {c: str(c).strip().lower() for c in df.columns}
+
+    precio_col = next(
+        (orig for orig, norm in normalized_cols.items()
+         if norm in ["precioparte", "precio", "pu", "costo"]),
+        None
+    )
+
+    if precio_col:
+        df["PU"] = df[precio_col].apply(limpiar_num)
+    else:
+        df["PU"] = None
+
+    if "IvaParte" in df.columns:
+        df["IvaParte"] = df["IvaParte"].apply(limpiar_num).fillna(0)
+    else:
+        df["IvaParte"] = 0
+
+    if "TipoCompra" not in df.columns:
+        df["TipoCompra"] = "Servicio"
 
     df["label"] = df.apply(
         lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
@@ -549,8 +568,9 @@ def cargar_catalogo_picus():
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    return df[["Parte", "PU", "IvaParte", "TipoCompra", "label"]]
 
+# SET FREIGHT LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_sfi():
     URL = (
@@ -587,6 +607,7 @@ def cargar_catalogo_sfi():
 
     return df[["Parte", "PU", "label"]]
 
+# SET LOGIS LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_slp():
     URL = (
