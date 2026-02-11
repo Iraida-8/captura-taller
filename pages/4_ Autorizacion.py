@@ -64,8 +64,9 @@ def get_gsheets_credentials():
             return Credentials.from_service_account_info(
                 st.secrets["gcp_service_account"], scopes=scopes
             )
-    except Exception:
-        pass
+    except Exception as e:
+        st.error(f"Error loading Google Sheets credentials: {e}")
+
 
     if os.path.exists("google_service_account.json"):
         return Credentials.from_service_account_file(
