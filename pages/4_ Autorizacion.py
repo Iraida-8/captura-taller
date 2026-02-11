@@ -243,7 +243,10 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     if len(all_values) < 2:
         headers = [
             "No. de Folio","Modifico","Parte","TipoCompra",
-            "Precio MXP","IVA","Cantidad","Total MXN","Fecha Mod"
+            "Precio MXP","IVA","Cantidad","Total MXN","Fecha Mod",
+            "Fecha Autorizado","Fecha Sin Comenzar",
+            "Fecha Espera Refacciones","Fecha Facturado",
+            "Fecha Completado","Fecha Cancelado"
         ]
         df_db = pd.DataFrame(columns=headers + ["__rownum__"])
     else:
@@ -273,26 +276,22 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     partes_actuales = set(servicios_df["Parte"])
 
     rows_to_delete = df_folio[
-            df_folio["Parte"].notna()
-            & (df_folio["Parte"] != "")
-            & ~df_folio["Parte"].isin(partes_actuales)
+        df_folio["Parte"].notna()
+        & (df_folio["Parte"] != "")
+        & ~df_folio["Parte"].isin(partes_actuales)
     ]["__rownum__"].tolist()
 
     for rownum in sorted(rows_to_delete, reverse=True):
-        ws.delete_rows(rownum)
+        ws.delete_rows(int(rownum))
 
     # =====================================================
-    # PHASE 3 — RELOAD AFTER DELETE (CRITICAL)
+    # PHASE 3 — RELOAD AFTER DELETE
     # =====================================================
     all_values = ws.get_all_values()
-
-    if len(all_values) < 2:
-        df_db = pd.DataFrame(columns=["Folio","Parte","__rownum__"])
-    else:
-        headers = [h.strip() for h in all_values[0]]
-        rows = all_values[1:]
-        df_db = pd.DataFrame(rows, columns=headers)
-        df_db["__rownum__"] = range(2, len(rows) + 2)
+    headers = [h.strip() for h in all_values[0]]
+    rows = all_values[1:]
+    df_db = pd.DataFrame(rows, columns=headers)
+    df_db["__rownum__"] = range(2, len(rows) + 2)
 
     if "No. de Folio" in df_db.columns:
         df_db = df_db.rename(columns={"No. de Folio": "Folio"})
@@ -303,26 +302,75 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df):
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
     # =====================================================
-    # PHASE 4 — UPSERT (SAFE)
+    # CAPTURE DATES FROM DUMMY ROWS
+    # =====================================================
+    date_columns = [
+        "Fecha Autorizado",
+        "Fecha Sin Comenzar",
+        "Fecha Espera Refacciones",
+        "Fecha Facturado",
+        "Fecha Completado",
+        "Fecha Cancelado",
+    ]
+
+    fechas_existentes = {}
+
+    if "Parte" in df_folio.columns:
+        dummy_rows = df_folio[
+            df_folio["Parte"].isna() |
+            (df_folio["Parte"].astype(str).str.strip() == "")
+        ]
+
+        for col in date_columns:
+            if col in df_folio.columns:
+                val = dummy_rows[col].dropna()
+                if not val.empty:
+                    fechas_existentes[col] = val.iloc[0]
+
+        # delete dummy rows
+        for rownum in sorted(dummy_rows["__rownum__"].tolist(), reverse=True):
+            ws.delete_rows(int(rownum))
+
+        # reload AGAIN after deleting dummy
+        all_values = ws.get_all_values()
+        headers = [h.strip() for h in all_values[0]]
+        rows = all_values[1:]
+        df_db = pd.DataFrame(rows, columns=headers)
+        df_db["__rownum__"] = range(2, len(rows) + 2)
+
+        if "No. de Folio" in df_db.columns:
+            df_db = df_db.rename(columns={"No. de Folio": "Folio"})
+        if "Iva" in df_db.columns:
+            df_db = df_db.rename(columns={"Iva": "IVA"})
+
+        df_db["Folio"] = df_db["Folio"].astype(str)
+        df_folio = df_db[df_db["Folio"] == str(folio)]
+
+    # =====================================================
+    # PHASE 4 — UPSERT (WITH DATE INHERITANCE)
     # =====================================================
     for _, r in servicios_df.iterrows():
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-            folio,                      # No. de Folio
-            usuario,                    # Modifico
+            folio,
+            usuario,
             r["Parte"],
             r["TipoCompra"],
             float(r["Precio MXP"] or 0),
             float(r["IVA"] or 0),
             int(r["Cantidad"] or 0),
             float(r["Total MXN"] or 0),
-            fecha_mod,                  # Fecha Mod
+            fecha_mod,
         ]
+
+        # inherit previous state dates
+        for col in date_columns:
+            row_data.append(fechas_existentes.get(col, ""))
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
-            ws.update(f"A{rownum}:I{rownum}", [row_data])
+            ws.update(f"A{rownum}:O{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
@@ -729,9 +777,6 @@ if st.session_state.modal_reporte:
         oste_editable = r["Estado"] == "Cerrado / Facturado"
         proveedor = (r.get("Proveedor") or "").lower()
 
-        # =========================
-        # PROVEEDOR INTERNO
-        # =========================
         if "interno" in proveedor:
             st.text_input(
                 "No. de Reporte",
@@ -749,6 +794,7 @@ if st.session_state.modal_reporte:
             "En Curso / Autorizado",
             "En Curso / Sin Comenzar",
             "En Curso / Espera Refacciones",
+            "En Curso / En Proceso",
             "Cerrado / Facturado",
             "Cerrado / Cancelado",
             "Cerrado / Completado",
@@ -799,7 +845,7 @@ if st.session_state.modal_reporte:
                     "Precio MXP": precio,
                     "IVA": iva,
                     "Cantidad": 1,
-                    "Total MXN": (precio + iva) * 1,
+                    "Total MXN": (precio + iva),
                 }
 
                 st.session_state.servicios_df = pd.concat(
@@ -814,7 +860,7 @@ if st.session_state.modal_reporte:
             disabled=not editable_servicios,
             column_config={
                 "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
-                "IVA": st.column_config.NumberColumn(format="%.2f"),
+                "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                 "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
                 "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
             },
@@ -850,34 +896,55 @@ if st.session_state.modal_reporte:
         with c2:
             if st.button("Aceptar", type="primary") and (editable_estado or nuevo_estado == "Cerrado / Facturado"):
 
-                # =========================
-                # 🔒 FIX 2 — Enforce Autorizado-first workflow
-                # =========================
                 estado_actual = r["Estado"]
 
-                requiere_autorizado = [
+                # ==========================================
+                # 🚦 WORKFLOW ENGINE
+                # ==========================================
+                work_states = [
                     "En Curso / Sin Comenzar",
                     "En Curso / Espera Refacciones",
+                ]
+
+                advanced_states = work_states + [
+                    "En Curso / En Proceso",
                     "Cerrado / Completado",
                     "Cerrado / Facturado",
                 ]
 
-                if (
-                    nuevo_estado in requiere_autorizado
-                    and estado_actual != "En Curso / Autorizado"
-                ):
-                    st.error(
-                        "El pase debe pasar primero por 'En Curso / Autorizado' "
-                        "antes de moverse a este estado."
-                    )
+                initial_states = [
+                    "En Curso / Nuevo",
+                    "En Curso / Autorizado",
+                ]
+
+                # Require autorizado before work
+                if nuevo_estado in work_states and estado_actual == "En Curso / Nuevo":
+                    st.error("Debe autorizar el pase antes de continuar.")
                     st.stop()
 
-                if nuevo_estado != r["Estado"]:
+                # En proceso → only closing
+                if estado_actual == "En Curso / En Proceso":
+                    if nuevo_estado not in [
+                        "Cerrado / Completado",
+                        "Cerrado / Facturado",
+                        "Cerrado / Cancelado",
+                    ]:
+                        st.error("Desde 'En Proceso' solo se puede cerrar el pase.")
+                        st.stop()
+
+                # Block backwards
+                if nuevo_estado != "Cerrado / Cancelado":
+                    if estado_actual in advanced_states and nuevo_estado in initial_states:
+                        st.error("No se puede regresar el pase a un estado previo.")
+                        st.stop()
+
+                # Apply change
+                if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
-                # =========================
-                # Guardar OSTE (solo externo y solo Facturado)
-                # =========================
+                # ==========================================
+                # OSTE
+                # ==========================================
                 if "interno" not in (r.get("Proveedor") or "").lower():
                     if nuevo_estado == "Cerrado / Facturado":
                         actualizar_oste_pase(
@@ -891,7 +958,6 @@ if st.session_state.modal_reporte:
                     or st.session_state.user.get("email")
                 )
 
-                # 🔹 Registrar estado sin refacciones
                 if (
                     st.session_state.servicios_df.empty
                     and nuevo_estado in ["En Curso / Autorizado", "Cerrado / Cancelado"]
