@@ -430,6 +430,51 @@ if st.session_state.get("modal_reporte"):
     @st.dialog("Detalle del Pase de Taller")
     def modal_ver():
 
+        # =================================
+        # STATUS CAPSULE
+        # =================================
+        estado = r.get("Estado", "")
+
+        color_map = {
+            "En Curso / Nuevo": "#856404",
+            "En Curso / Autorizado": "#0c5460",
+            "En Curso / Sin Comenzar": "#383d41",
+            "En Curso / Espera Refacciones": "#5a189a",
+            "En Curso / En Proceso": "#4f46e5",
+            "Cerrado / Completado": "#155724",
+            "Cerrado / Facturado": "#155724",
+            "Cerrado / Cancelado": "#721c24",
+        }
+
+        bg_map = {
+            "En Curso / Nuevo": "#fff3cd",
+            "En Curso / Autorizado": "#d1ecf1",
+            "En Curso / Sin Comenzar": "#e2e3e5",
+            "En Curso / Espera Refacciones": "#e2d9f3",
+            "En Curso / En Proceso": "#e0e7ff",
+            "Cerrado / Completado": "#d4edda",
+            "Cerrado / Facturado": "#d4edda",
+            "Cerrado / Cancelado": "#f8d7da",
+        }
+
+        st.markdown(
+            f"""
+            <div style="
+                display:inline-block;
+                padding:6px 12px;
+                border-radius:999px;
+                font-weight:700;
+                background:{bg_map.get(estado, '#eee')};
+                color:{color_map.get(estado, '#111')};
+                margin-bottom:10px;
+            ">
+                {estado}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+      
+
         st.markdown(f"**No. de Folio:** {folio}")
         st.markdown(f"**Empresa:** {r.get('Empresa','')}")
         st.markdown(f"**Proveedor:** {r.get('Tipo de Proveedor','')}")
