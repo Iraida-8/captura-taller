@@ -899,54 +899,57 @@ if not pases_df.empty:
             for col, (_, r) in zip(cols, rowset.iterrows()):
                 with col:
 
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background:#fff7d6;
-                            padding:14px;
-                            border-radius:14px;
-                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            color:#111;
-                            min-height:150px;
-                        ">
-                            <div style="font-weight:900; font-size:1rem;">
-                                {r['NoFolio']}
-                            </div>
-
-                            <div style="font-size:0.8rem; margin-top:4px;">
-                                {r.get('Tipo de Unidad','')}
-                            </div>
-
-                            <div style="font-size:0.8rem;">
-                                {r['Fecha'].date() if pd.notna(r['Fecha']) else ''}
-                            </div>
-
-                            <hr style="margin:6px 0">
-
-                            <div style="font-size:0.8rem;">
-                                {r['Empresa']}
-                            </div>
-
-                            <div style="font-size:0.8rem;">
-                                {r.get('No. de Unidad','')}
-                            </div>
-
-                            <div style="
-                                margin-top:6px;
-                                font-size:0.75rem;
-                                font-weight:700;
-                                color:#856404;
-                            ">
-                                En Curso / Nuevo
-                            </div>
+                    # ==========================
+                    # VISUAL POST-IT
+                    # ==========================
+                    html = f"""
+                    <div style="
+                        background:#fff7d6;
+                        padding:14px;
+                        border-radius:14px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:160px;
+                        margin-bottom:8px;
+                    ">
+                        <div style="font-weight:900;">
+                            {r['NoFolio']}
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
 
-                    # =====================================
-                    # EDIT BUTTON (SAME AS RESULTADOS)
-                    # =====================================
+                        <div style="font-size:0.8rem;">
+                            {r.get('Tipo de Unidad','')}
+                        </div>
+
+                        <div style="font-size:0.8rem;">
+                            {r['Fecha'].date() if pd.notna(r['Fecha']) else ''}
+                        </div>
+
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.8rem;">
+                            {r['Empresa']}
+                        </div>
+
+                        <div style="font-size:0.8rem;">
+                            {r.get('No. de Unidad','')}
+                        </div>
+
+                        <div style="
+                            margin-top:6px;
+                            font-size:0.75rem;
+                            font-weight:700;
+                            color:#856404;
+                        ">
+                            En Curso / Nuevo
+                        </div>
+                    </div>
+                    """
+
+                    st.markdown(html, unsafe_allow_html=True)
+
+                    # ==========================
+                    # BUTTON UNDER THE CARD
+                    # ==========================
                     if st.button("Editar", key=f"top10_{r['NoFolio']}"):
 
                         st.session_state.modal_reporte = r.to_dict()
