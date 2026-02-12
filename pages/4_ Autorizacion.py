@@ -223,7 +223,6 @@ def cargar_servicios_folio(folio):
         ["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]
     ]
 
-
 # =================================
 # UPSERT Servicios / Refacciones
 # =================================
@@ -375,7 +374,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             ws.update(f"A{rownum}:P{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
-
 
 # =================================
 # Load Pase de Taller
@@ -824,9 +822,24 @@ with left:
 with right:
     st.markdown("### Última actividad")
 
-    if st.session_state.get("last_action"):
-        ultima = st.session_state.last_action
+    acciones = st.session_state.get("last_action", [])
 
+    if acciones:
+        # show only latest 3
+        acciones = acciones[:3]
+
+        rows_html = ""
+        for a in acciones:
+            rows_html += f"""
+            <div style="
+                margin-bottom:8px;
+                padding-bottom:8px;
+                border-bottom:1px solid #eee;
+            ">
+                {a}
+            </div>
+            """
+            
         st.markdown(
             f"""
             <div style="
@@ -837,7 +850,7 @@ with right:
                 color:#111;
                 font-weight:600;
             ">
-                {ultima}
+                {rows_html}
             </div>
             """,
             unsafe_allow_html=True
