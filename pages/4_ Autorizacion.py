@@ -766,6 +766,9 @@ st.divider()
 
 left, right = st.columns([2, 1])
 
+# =============================
+# LEFT → COMPANY DISTRIBUTION
+# =============================
 with left:
     st.markdown("### Órdenes por Empresa")
 
@@ -779,8 +782,12 @@ with left:
 
         total_empresas = conteo_empresas["Cantidad"].sum()
 
-        for _, r in conteo_empresas.iterrows():
-            pct = (r["Cantidad"] / total_empresas) * 100 if total_empresas else 0
+        for _, row_emp in conteo_empresas.iterrows():
+
+            empresa = row_emp["Empresa"]
+            cantidad = row_emp["Cantidad"]
+
+            pct = (cantidad / total_empresas) * 100 if total_empresas else 0
 
             st.markdown(
                 f"""
@@ -793,8 +800,8 @@ with left:
                     color:#111;
                 ">
                     <div style="display:flex; justify-content:space-between; font-weight:600;">
-                        <span>{r["Empresa"]}</span>
-                        <span>{r["Cantidad"]}</span>
+                        <span>{empresa}</span>
+                        <span>{cantidad}</span>
                     </div>
 
                     <div style="
@@ -817,30 +824,33 @@ with left:
     else:
         st.info("No hay datos.")
 
-    # =============================
-    # RIGHT → LAST ACTIVITY
-    # =============================
-    with right:
-        st.markdown("### Última actividad")
+# =============================
+# RIGHT → LAST ACTIVITY
+# =============================
+with right:
+    st.markdown("### Última actividad")
 
-        if st.session_state.get("last_action"):
-            st.markdown(
-                f"""
-                <div style="
-                    background:#ffffff;
-                    padding:18px;
-                    border-radius:14px;
-                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
-                    color:#111;
-                    font-weight:600;
-                ">
-                    {st.session_state.last_action}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            st.info("Sin actividad reciente.")
+    if st.session_state.get("last_action"):
+        ultima = st.session_state.last_action
+
+        st.markdown(
+            f"""
+            <div style="
+                background:#ffffff;
+                padding:18px;
+                border-radius:14px;
+                box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                color:#111;
+                font-weight:600;
+            ">
+                {ultima}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.info("Sin actividad reciente.")
+
 
 
 # =================================
