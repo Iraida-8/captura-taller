@@ -18,29 +18,68 @@ st.markdown(
     """
     <style>
     /* Hide sidebar */
-    [data-testid="stSidebar"] {
-        display: none;
+    [data-testid="stSidebar"] { display: none; }
+
+    /* App background */
+    .stApp {
+        background-color: #0e1117;
     }
 
-    /* Make buttons BIG */
+    /* Give page breathing room */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* =========================
+       HEADER STYLE
+       ========================= */
+    h1 {
+        font-size: 1.9rem;
+        margin-bottom: 0.2rem;
+    }
+
+    /* =========================
+       BIG MODULE BUTTONS
+       ========================= */
     div.stButton > button {
-        height: 90px;
-        font-size: 1.1rem;
+        height: 95px;
+        font-size: 1.05rem;
         font-weight: 600;
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 1.2rem;
         white-space: normal;
+
+        background-color: #161b22;
+        border: 1px solid #2d333b;
     }
 
-    /* Slight hover effect */
+    /* Hover */
     div.stButton > button:hover {
-        transform: scale(1.02);
+        transform: translateY(-2px);
         transition: 0.15s ease-in-out;
+        border-color: #58a6ff;
+    }
+
+    /* =========================
+       LOGOUT BUTTON
+       ========================= */
+    button[kind="secondary"] {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 12px;
+    }
+
+    /* Subheaders */
+    h2, h3 {
+        margin-top: 0.5rem;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 user = st.session_state.user
 access = user.get("access", [])
@@ -48,9 +87,9 @@ access = user.get("access", [])
 # -------------------------------
 # Header
 # -------------------------------
-st.title("Dashboard")
-st.write(f"Bienvenido, **{user['name'] or user['email']}**")
-st.write(f"Rol: `{user['role']}`")
+st.title("📊 Dashboard")
+st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
+
 st.divider()
 
 # -------------------------------
@@ -103,7 +142,7 @@ with col6:
 # -------------------------------
 st.divider()
 
-if st.button("Cerrar sesión"):
+if st.button("Cerrar sesión", type="secondary"):
     st.session_state.logged_in = False
     st.session_state.user = None
     st.switch_page("Home.py")
