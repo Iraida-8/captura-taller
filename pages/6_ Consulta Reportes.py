@@ -42,6 +42,8 @@ if st.session_state.get("_reset_consulta_page", True):
 
 #Modal state initialization
 st.session_state.setdefault("modal_reporte", None)
+st.session_state.setdefault("kpi_estado_filter", None)
+
 
 # =================================
 # Navigation
@@ -206,6 +208,11 @@ def postit(col, titulo, valor, pct, color):
         )
 
 postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
+if st.button("Ver", key="kpi_pendientes", use_container_width=True):
+    st.session_state.kpi_estado_filter = ["En Curso / Nuevo"]
+    st.session_state.buscar = True
+    st.rerun()
+
 postit(k2, "Diagnósticos Activos", diagnosticos, porcentaje(diagnosticos), "#D1ECF1")
 postit(k3, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
 postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDDA")
