@@ -1,4 +1,6 @@
 import streamlit as st
+from datetime import datetime
+import time
 from auth import require_login
 
 # -------------------------------
@@ -89,6 +91,16 @@ access = user.get("access", [])
 # -------------------------------
 st.title("📊 Dashboard")
 st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
+
+# live date / time
+clock_placeholder = st.empty()
+
+clock_placeholder.caption(
+    datetime.now().strftime("%A, %d %B %Y • %H:%M:%S")
+)
+
+time.sleep(1)
+st.rerun()
 
 st.divider()
 
