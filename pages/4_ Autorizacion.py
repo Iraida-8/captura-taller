@@ -17,6 +17,7 @@ st.set_page_config(
     layout="wide"
 )
 
+st.session_state.setdefault("last_action", None)
 # =================================
 # Hide sidebar
 # =================================
@@ -759,6 +760,90 @@ postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDD
 postit(k5, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
 
 # =================================
+# COMPANY DISTRIBUTION and LOG
+# =================================
+st.divider()
+
+left, right = st.columns([2, 1])
+
+with left:
+    st.markdown("### Órdenes por Empresa")
+
+    if not pases_df.empty:
+        conteo_empresas = (
+            pases_df["Empresa"]
+            .value_counts()
+            .reset_index()
+        )
+        conteo_empresas.columns = ["Empresa", "Cantidad"]
+
+        total_empresas = conteo_empresas["Cantidad"].sum()
+
+        for _, r in conteo_empresas.iterrows():
+            pct = (r["Cantidad"] / total_empresas) * 100 if total_empresas else 0
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#ffffff;
+                    padding:10px 14px;
+                    border-radius:12px;
+                    margin-bottom:8px;
+                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                    color:#111;
+                ">
+                    <div style="display:flex; justify-content:space-between; font-weight:600;">
+                        <span>{r["Empresa"]}</span>
+                        <span>{r["Cantidad"]}</span>
+                    </div>
+
+                    <div style="
+                        height:8px;
+                        background:#eee;
+                        border-radius:10px;
+                        margin-top:6px;
+                    ">
+                        <div style="
+                            width:{pct}%;
+                            height:8px;
+                            background:#4f46e5;
+                            border-radius:10px;
+                        "></div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.info("No hay datos.")
+
+    # =============================
+    # RIGHT → LAST ACTIVITY
+    # =============================
+    with right:
+        st.markdown("### Última actividad")
+
+        if st.session_state.get("last_action"):
+            st.markdown(
+                f"""
+                <div style="
+                    background:#ffffff;
+                    padding:18px;
+                    border-radius:14px;
+                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                    color:#111;
+                    font-weight:600;
+                ">
+                    {st.session_state.last_action}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.info("Sin actividad reciente.")
+
+
+# =================================
 # Session state defaults
 # =================================
 st.session_state.setdefault("buscar_trigger", False)
@@ -1182,7 +1267,9 @@ if st.session_state.modal_reporte:
                     st.session_state.servicios_df,
                     nuevo_estado
                 )
-
+                #Log activity
+                st.session_state.last_action = f"Folio {r['NoFolio']} → {nuevo_estado}"
+                
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
