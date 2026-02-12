@@ -31,19 +31,24 @@ st.markdown(
     /* Main width + centering */
     .block-container {
         max-width: 420px;
-        padding-top: 2rem;
+        padding-top: 3.2rem;   
         padding-bottom: 3rem;
     }
 
-    /* Logo outside the card */
+    /* =========================
+       LOGO
+       ========================= */
     img {
         display: block;
         margin-left: auto;
         margin-right: auto;
         margin-bottom: 2rem;
+        transform: scale(1.18);   
     }
 
-    /* ===== AUTH CARD ===== */
+    /* =========================
+       AUTH CARD
+       ========================= */
     form[data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -76,12 +81,17 @@ st.markdown(
         font-weight: 500;
     }
 
-    /* Button */
+    /* =========================
+       CENTERED BUTTON
+       ========================= */
     div.stButton > button,
     button[kind="primary"] {
-        width: 100%;
-        font-size: 1rem;
-        padding: 0.75rem;
+        width: auto;             
+        min-width: 180px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0.75rem 2rem;
         border-radius: 12px;
         font-weight: 600;
     }
@@ -89,6 +99,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 # =================================
 # Supabase setup
