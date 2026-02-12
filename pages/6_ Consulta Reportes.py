@@ -199,6 +199,98 @@ postit(k3, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
 postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDDA")
 postit(k5, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
 
+# =================================
+# LAST 5 CHANGES (POST ITS)
+# =================================
+st.divider()
+st.subheader("🕘 Últimos 5 cambios")
+
+import streamlit.components.v1 as components
+
+def safe(x):
+    if pd.isna(x) or x is None:
+        return ""
+    return str(x)
+
+if not df_services.empty and "Fecha Mod" in df_services.columns:
+
+    ultimos = (
+        df_services
+        .sort_values("Fecha Mod", ascending=False)
+        .drop_duplicates("Folio")
+        .head(5)
+    )
+
+    if ultimos.empty:
+        st.info("No hay actividad reciente.")
+    else:
+        cols = st.columns(5)
+
+        for i, (_, srow) in enumerate(ultimos.iterrows()):
+            col = cols[i]
+
+            folio = safe(srow["Folio"])
+
+            # find info in pases
+            match = df_pases[df_pases["Folio"] == folio]
+
+            if match.empty:
+                continue
+
+            r = match.iloc[0]
+
+            with col:
+                tipo_unidad = safe(r.get("Tipo de Unidad"))
+                fecha = r.get("Fecha de Captura")
+                fecha = fecha.date() if pd.notna(fecha) else ""
+                empresa = safe(r.get("Empresa"))
+                unidad = safe(r.get("No. de Unidad"))
+                estado = safe(r.get("Estado"))
+
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#e8f0ff;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:170px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{folio}</div>
+                        <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                        <div style="font-size:0.8rem;">{fecha}</div>
+
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.8rem;">{empresa}</div>
+                        <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="
+                            margin-top:6px;
+                            font-size:0.75rem;
+                            font-weight:700;
+                            color:#1e40af;
+                        ">
+                            {estado}
+                        </div>
+                    </div>
+                </div>
+                """
+
+                components.html(html, height=200)
+
+                # =====================================
+                # VIEW BUTTON
+                # =====================================
+                if st.button("👁 Ver", key=f"view_last_{folio}", use_container_width=True):
+                    st.session_state.modal_reporte = r.to_dict()
+
+else:
+    st.info("No hay actividad reciente.")
+
+
 st.divider()
 
 # =================================
