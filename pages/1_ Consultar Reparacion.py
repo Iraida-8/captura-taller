@@ -134,7 +134,6 @@ def cargar_ordenes(url):
 
     return df
 
-
 @st.cache_data(ttl=600)
 def cargar_partes(url):
     if not url:

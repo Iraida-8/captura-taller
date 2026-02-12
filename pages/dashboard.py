@@ -80,8 +80,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-
+# -------------------------------
 user = st.session_state.user
 access = user.get("access", [])
 
