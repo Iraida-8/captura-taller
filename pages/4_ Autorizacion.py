@@ -875,9 +875,14 @@ st.session_state.setdefault(
 )
 
 # =================================
-# TOP 10 EN CURSO (POST-ITS)
+# TOP 10 EN CURSO → POST ITS
 # =================================
 st.subheader("Últimos 10 Pases de Taller (Nuevos)")
+
+def safe(x):
+    if pd.isna(x) or x is None:
+        return ""
+    return str(x)
 
 if not pases_df.empty:
 
@@ -891,48 +896,42 @@ if not pases_df.empty:
         st.info("No hay pases en estado Nuevo.")
 
     else:
-        rows = [top10.iloc[i:i+5] for i in range(0, len(top10), 5)]
+        cols = st.columns(5)
 
-        for rowset in rows:
-            cols = st.columns(5)
+        for i, (_, r) in enumerate(top10.iterrows()):
+            col = cols[i % 5]
 
-            for col, (_, r) in zip(cols, rowset.iterrows()):
-                with col:
+            with col:
 
-                    # ==========================
-                    # VISUAL POST-IT
-                    # ==========================
-                    html = f"""
+                folio = safe(r.get("NoFolio"))
+                tipo_unidad = safe(r.get("Tipo de Unidad"))
+                fecha = r.get("Fecha")
+                fecha = fecha.date() if pd.notna(fecha) else ""
+                empresa = safe(r.get("Empresa"))
+                unidad = safe(r.get("No. de Unidad"))
+
+                st.markdown(
+                    f"""
                     <div style="
                         background:#fff7d6;
                         padding:14px;
                         border-radius:14px;
                         box-shadow:0 4px 10px rgba(0,0,0,0.08);
                         color:#111;
-                        min-height:160px;
+                        min-height:170px;
                         margin-bottom:8px;
                     ">
-                        <div style="font-weight:900;">
-                            {r['NoFolio']}
-                        </div>
+                        <div style="font-weight:900;">{folio}</div>
 
-                        <div style="font-size:0.8rem;">
-                            {r.get('Tipo de Unidad','')}
-                        </div>
+                        <div style="font-size:0.8rem;">{tipo_unidad}</div>
 
-                        <div style="font-size:0.8rem;">
-                            {r['Fecha'].date() if pd.notna(r['Fecha']) else ''}
-                        </div>
+                        <div style="font-size:0.8rem;">{fecha}</div>
 
                         <hr style="margin:6px 0">
 
-                        <div style="font-size:0.8rem;">
-                            {r['Empresa']}
-                        </div>
+                        <div style="font-size:0.8rem;">{empresa}</div>
 
-                        <div style="font-size:0.8rem;">
-                            {r.get('No. de Unidad','')}
-                        </div>
+                        <div style="font-size:0.8rem;">{unidad}</div>
 
                         <div style="
                             margin-top:6px;
@@ -943,38 +942,44 @@ if not pases_df.empty:
                             En Curso / Nuevo
                         </div>
                     </div>
-                    """
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    st.markdown(html, unsafe_allow_html=True)
+                # ==========================================
+                # EDIT BUTTON (same logic as resultados)
+                # ==========================================
+                editable = True
 
-                    # ==========================
-                    # BUTTON UNDER THE CARD
-                    # ==========================
-                    if st.button("Editar", key=f"top10_{r['NoFolio']}"):
+                label = "Editar" if editable else "Ver"
 
-                        st.session_state.modal_reporte = r.to_dict()
+                if st.button(label, key=f"top10_{folio}"):
 
-                        df = cargar_servicios_folio(r["NoFolio"])
+                    st.session_state.modal_reporte = r.to_dict()
 
-                        if r["Empresa"] == "LINCOLN FREIGHT":
-                            if df.empty:
-                                df = pd.DataFrame(columns=[
-                                    "Parte","TipoCompra","PrecioParte","Cantidad","Total USD"
-                                ])
-                            else:
-                                df["PrecioParte"] = df.get("Precio MXP", 0)
-                                df["Cantidad"] = df.get("Cantidad", 0)
-                                df["Total USD"] = df.get("Total MXN", 0)
+                    df = cargar_servicios_folio(r["NoFolio"])
 
-                                df = df[[
-                                    "Parte","TipoCompra","PrecioParte","Cantidad","Total USD"
-                                ]]
+                    # Lincoln → USD mode
+                    if r["Empresa"] == "LINCOLN FREIGHT":
 
-                        st.session_state.servicios_df = df
-                        st.rerun()
+                        if df.empty:
+                            df = pd.DataFrame(columns=[
+                                "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
+                            ])
+                        else:
+                            df["PrecioParte"] = df.get("Precio MXP", 0)
+                            df["Cantidad"] = df.get("Cantidad", 0)
+                            df["Total USD"] = df.get("Total MXN", 0)
+
+                            df = df[[
+                                "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
+                            ]]
+
+                    st.session_state.servicios_df = df
 
 else:
     st.info("No hay pases registrados.")
+
 
 # =================================
 # BUSCAR
