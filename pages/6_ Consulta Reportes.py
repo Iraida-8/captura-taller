@@ -293,7 +293,6 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
 else:
     st.info("No hay actividad reciente.")
 
-
 st.divider()
 
 # =================================
@@ -473,7 +472,6 @@ if st.session_state.get("modal_reporte"):
             """,
             unsafe_allow_html=True
         )
-      
 
         st.markdown(f"**No. de Folio:** {folio}")
         st.markdown(f"**Empresa:** {r.get('Empresa','')}")
@@ -543,4 +541,3 @@ if st.session_state.get("modal_reporte"):
             st.rerun()
 
     modal_ver()
-    st.session_state.modal_reporte = None
