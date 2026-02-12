@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime
-import time
 from auth import require_login
 
 # -------------------------------
@@ -96,11 +95,8 @@ st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
 clock_placeholder = st.empty()
 
 clock_placeholder.caption(
-    datetime.now().strftime("%A, %d %B %Y • %H:%M:%S")
+    datetime.now().strftime("%A, %d %B %Y")
 )
-
-time.sleep(1)
-st.rerun()
 
 st.divider()
 
