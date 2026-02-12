@@ -395,8 +395,6 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
 
 buscar = st.button("🔍 Aplicar filtros", type="primary")
 
-st.divider()
-
 # =================================
 # APPLY FILTERS
 # =================================
