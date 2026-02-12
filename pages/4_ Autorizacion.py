@@ -940,6 +940,14 @@ if not pases_df.empty:
                         ">
                             En Curso / Nuevo
                         </div>
+
+                        <div style="
+                            font-size:0.75rem;
+                            margin-top:4px;
+                            opacity:0.8;
+                        ">
+                            Capturó: {capturo}
+                        </div>
                     </div>
                 </div>
                 """
