@@ -42,7 +42,7 @@ st.markdown(
         display: block;
         margin-left: auto;
         margin-right: auto;
-        margin-bottom: 2rem;
+        margin-bottom: 4rem;
         transform: scale(1.18);   
     }
 
