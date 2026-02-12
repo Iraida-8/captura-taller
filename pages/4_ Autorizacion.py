@@ -912,36 +912,43 @@ if not pases_df.empty:
                 unidad = safe(r.get("No. de Unidad"))
 
                 html = f"""
-                <div style="
-                    background:#fff7d6;
-                    padding:14px;
-                    border-radius:14px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:170px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{folio}</div>
-                    <div style="font-size:0.8rem;">{tipo_unidad}</div>
-                    <div style="font-size:0.8rem;">{fecha}</div>
-                    <hr style="margin:6px 0">
-                    <div style="font-size:0.8rem;">{empresa}</div>
-                    <div style="font-size:0.8rem;">{unidad}</div>
+                <div style="padding:6px;">
                     <div style="
-                        margin-top:6px;
-                        font-size:0.75rem;
-                        font-weight:700;
-                        color:#856404;
+                        background:#fff7d6;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:160px;
+                        font-family:sans-serif;
                     ">
-                        En Curso / Nuevo
+                        <div style="font-weight:900;">{folio}</div>
+                        <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                        <div style="font-size:0.8rem;">{fecha}</div>
+
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.8rem;">{empresa}</div>
+                        <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="
+                            margin-top:6px;
+                            font-size:0.75rem;
+                            font-weight:700;
+                            color:#856404;
+                        ">
+                            En Curso / Nuevo
+                        </div>
                     </div>
                 </div>
                 """
 
                 components.html(html, height=190)
 
-                # EDIT BUTTON (outside the html block, works perfectly)
-                if st.button("Editar", key=f"top10_{folio}"):
+                # =====================================
+                # FAKE "INSIDE" BUTTON
+                # =====================================
+                if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
 
                     st.session_state.modal_reporte = r.to_dict()
 
