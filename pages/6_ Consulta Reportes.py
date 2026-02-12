@@ -375,18 +375,24 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     with d8:
         fecha_cancel = st.date_input("Fecha Cancelado", value=None)
 
-
-st.divider()
 buscar = st.button("🔍 Aplicar filtros", type="primary")
 
-
+st.divider()
 
 # =================================
 # APPLY FILTERS
 # =================================
 if buscar:
+
     df_p = df_pases.copy()
     df_s = df_services.copy()
+
+    # ======================================================
+    # BASIC INFO (PASES)
+    # ======================================================
+
+    if folio:
+        df_p = df_p[df_p["Folio"].astype(str).str.contains(folio, na=False)]
 
     if empresa != "Todas":
         df_p = df_p[df_p["Empresa"] == empresa]
@@ -400,21 +406,40 @@ if buscar:
     if no_reporte and "No. de Reporte" in df_p.columns:
         df_p = df_p[df_p["No. de Reporte"].astype(str).str.contains(no_reporte, na=False)]
 
-    if tipo_reporte != "Todos" and "Tipo de Reporte" in df_p.columns:
-        df_p = df_p[df_p["Tipo de Reporte"] == tipo_reporte]
+    if oste and "Oste" in df_p.columns:
+        df_p = df_p[df_p["Oste"].astype(str).str.contains(oste, na=False)]
 
-    if fecha_captura and "Fecha de Captura" in df_p.columns:
-        df_p = df_p[df_p["Fecha de Captura"].dt.date == fecha_captura]
+    # ======================================================
+    # DATE FILTERS (SERVICES)
+    # ======================================================
 
-    if fecha_reporte and "Fecha de Reporte" in df_p.columns:
-        df_p = df_p[df_p["Fecha de Reporte"].dt.date == fecha_reporte]
+    def filtrar_fecha(df, columna, valor):
+        if valor and columna in df.columns:
+            df = df[df[columna].dt.date == valor]
+        return df
 
-    if fecha_mod and "Fecha Mod" in df_s.columns:
-        df_s = df_s[df_s["Fecha Mod"].dt.date == fecha_mod]
+    df_s = filtrar_fecha(df_s, "Fecha Mod", fecha_mod)
+    df_s = filtrar_fecha(df_s, "Fecha Autorizado", fecha_aut)
+    df_s = filtrar_fecha(df_s, "Fecha Sin Comenzar", fecha_sin)
+    df_s = filtrar_fecha(df_s, "Fecha Espera Refacciones", fecha_espera)
+    df_s = filtrar_fecha(df_s, "Fecha En Proceso", fecha_proceso)
+    df_s = filtrar_fecha(df_s, "Fecha Facturado", fecha_fact)
+    df_s = filtrar_fecha(df_s, "Fecha Completado", fecha_comp)
+    df_s = filtrar_fecha(df_s, "Fecha Cancelado", fecha_cancel)
 
-    # =================================
+    # ======================================================
+    # MATCH SERVICES → PASES
+    # ======================================================
+    if (
+        fecha_mod or fecha_aut or fecha_sin or fecha_espera
+        or fecha_proceso or fecha_fact or fecha_comp or fecha_cancel
+    ):
+        folios_validos = df_s["Folio"].unique()
+        df_p = df_p[df_p["Folio"].isin(folios_validos)]
+
+    # ======================================================
     # TABLE 1 — REPORTE DETALLADO
-    # =================================
+    # ======================================================
     df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
     st.divider()
@@ -422,9 +447,9 @@ if buscar:
 
     st.dataframe(df_detallado, hide_index=True, width="stretch")
 
-    # =================================
+    # ======================================================
     # TABLE 2 — RESUMEN POR ORDEN
-    # =================================
+    # ======================================================
     st.divider()
     st.subheader("📦 Resumen por Orden")
 
