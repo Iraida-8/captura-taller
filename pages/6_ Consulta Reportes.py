@@ -32,6 +32,9 @@ st.markdown(
 require_login()
 require_access("consulta_reportes")
 
+#Modal state initialization
+st.session_state.setdefault("modal_reporte", None)
+
 # =================================
 # Navigation
 # =================================
@@ -415,3 +418,84 @@ if buscar:
     df_resumen["Total MXN Servicios"] = df_resumen["Total MXN Servicios"].fillna(0)
 
     st.dataframe(df_resumen, hide_index=True, width="stretch")
+
+# =================================
+# VIEW MODAL (READ ONLY)
+# =================================
+if st.session_state.get("modal_reporte"):
+
+    r = st.session_state.modal_reporte
+    folio = str(r.get("Folio"))
+
+    @st.dialog("Detalle del Pase de Taller")
+    def modal_ver():
+
+        st.markdown(f"**No. de Folio:** {folio}")
+        st.markdown(f"**Empresa:** {r.get('Empresa','')}")
+        st.markdown(f"**Proveedor:** {r.get('Tipo de Proveedor','')}")
+        st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad','')}")
+        st.markdown(f"**Sucursal:** {r.get('Sucursal','')}")
+
+        # ===============================
+        # LAST MOD DATE (FROM SERVICES)
+        # ===============================
+        df_folio = df_services[df_services["Folio"] == folio]
+
+        if not df_folio.empty and "Fecha Mod" in df_folio.columns:
+            fecha_mod = df_folio["Fecha Mod"].max()
+            st.markdown(f"**Fecha Mod:** {fecha_mod}")
+        else:
+            st.markdown("**Fecha Mod:** -")
+
+        st.divider()
+
+        proveedor = (r.get("Tipo de Proveedor") or "").lower()
+
+        st.subheader("Información del proveedor")
+
+        if "interno" in proveedor:
+            st.markdown(f"**No. de Reporte:** {r.get('No. de Reporte','')}")
+        else:
+            st.markdown(f"**OSTE:** {r.get('Oste','')}")
+
+        st.divider()
+        st.subheader("Servicios y Refacciones")
+
+        if df_folio.empty:
+            st.info("Sin servicios registrados.")
+        else:
+            es_lincoln = r.get("Empresa") == "LINCOLN FREIGHT"
+
+            if es_lincoln:
+                df_show = df_folio.copy()
+                df_show["PrecioParte"] = df_show.get("Precio MXP", 0)
+                df_show["Cantidad"] = df_show.get("Cantidad", 0)
+                df_show["Total USD"] = df_show.get("Total MXN", 0)
+
+                st.dataframe(
+                    df_show[["Parte","TipoCompra","PrecioParte","Cantidad","Total USD"]],
+                    hide_index=True,
+                    width="stretch"
+                )
+
+                total = pd.to_numeric(df_show["Total USD"], errors="coerce").fillna(0).sum()
+                st.metric("Total USD", f"$ {total:,.2f}")
+
+            else:
+                st.dataframe(
+                    df_folio[["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]],
+                    hide_index=True,
+                    width="stretch"
+                )
+
+                total = pd.to_numeric(df_folio["Total MXN"], errors="coerce").fillna(0).sum()
+                st.metric("Total MXN", f"$ {total:,.2f}")
+
+        st.divider()
+
+        if st.button("Cerrar"):
+            st.session_state.modal_reporte = None
+            st.rerun()
+
+    modal_ver()
+    st.session_state.modal_reporte = None
