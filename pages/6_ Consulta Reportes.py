@@ -32,6 +32,14 @@ st.markdown(
 require_login()
 require_access("consulta_reportes")
 
+# =================================
+# Defensive reset on page entry
+# =================================
+if st.session_state.get("_reset_consulta_page", True):
+    st.session_state.modal_reporte = None
+    st.session_state["_reset_consulta_page"] = False
+
+
 #Modal state initialization
 st.session_state.setdefault("modal_reporte", None)
 
@@ -39,6 +47,7 @@ st.session_state.setdefault("modal_reporte", None)
 # Navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
+    st.session_state["_reset_consulta_page"] = True
     st.switch_page("pages/dashboard.py")
 
 st.divider()
@@ -383,7 +392,7 @@ st.divider()
 # APPLY FILTERS
 # =================================
 if buscar:
-
+    st.session_state.modal_reporte = None
     df_p = df_pases.copy()
     df_s = df_services.copy()
 
