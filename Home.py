@@ -9,44 +9,81 @@ from PIL import Image
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Login",
+    page_title="Portal Taller",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
 # =================================
-# Hide sidebar + typography tweaks
+# CSS Styling
 # =================================
 st.markdown(
     """
     <style>
     /* Hide sidebar */
-    [data-testid="stSidebar"] {
-        display: none;
+    [data-testid="stSidebar"] { display: none; }
+
+    /* Page background */
+    .stApp {
+        background-color: #0e1117;
     }
 
-    /* Slightly smaller title */
+    /* Main width + centering */
+    .block-container {
+        max-width: 420px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* Logo outside the card */
+    img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 2rem;
+    }
+
+    /* ===== AUTH CARD ===== */
+    form[data-testid="stForm"] {
+        background-color: #161b22;
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    /* Title */
     h1 {
+        text-align: center;
         font-size: 1.6rem;
+        margin-bottom: 0.3rem;
     }
 
-    /* Bigger input text */
+    /* Divider */
+    hr {
+        margin: 1rem 0 1.4rem 0;
+    }
+
+    /* Inputs */
     input {
-        font-size: 1.05rem !important;
-        padding: 0.65rem !important;
+        font-size: 1rem !important;
+        padding: 0.7rem !important;
+        border-radius: 10px !important;
     }
 
-    /* Bigger labels */
+    /* Labels */
     label {
-        font-size: 0.95rem !important;
+        font-size: 0.9rem !important;
         font-weight: 500;
     }
 
-    /* Bigger submit button */
-    div.stButton > button {
+    /* Button */
+    div.stButton > button,
+    button[kind="primary"] {
+        width: 100%;
         font-size: 1rem;
-        padding: 0.6rem 1rem;
-        border-radius: 10px;
+        padding: 0.75rem;
+        border-radius: 12px;
+        font-weight: 600;
     }
     </style>
     """,
@@ -95,7 +132,7 @@ st.divider()
 with st.form("login_form"):
     email = st.text_input(
         "Correo electrónico",
-        placeholder="usuario@empresa.com"
+        placeholder="usuario@palosgarza.com"
     )
     password = st.text_input(
         "Contraseña",
