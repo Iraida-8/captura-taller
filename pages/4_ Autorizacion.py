@@ -742,9 +742,10 @@ def postit(col, titulo, valor, pct, color):
                 border-radius:14px;
                 text-align:center;
                 box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                color:#111;
             ">
-                <div style="font-size:0.9rem; font-weight:600;">{titulo}</div>
-                <div style="font-size:2rem; font-weight:800; margin-top:6px;">{valor}</div>
+                <div style="font-size:0.9rem; font-weight:700;">{titulo}</div>
+                <div style="font-size:2rem; font-weight:900; margin-top:6px;">{valor}</div>
                 <div style="font-size:0.8rem; opacity:0.8;">{pct}% del total</div>
             </div>
             """,
