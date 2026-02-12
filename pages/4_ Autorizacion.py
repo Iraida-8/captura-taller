@@ -824,9 +824,12 @@ with right:
 
     acciones = st.session_state.get("last_action", [])
 
+    # if someone saved a single string → convert to list
+    if isinstance(acciones, str):
+        acciones = [acciones]
+
     if acciones:
-        # show only latest 3
-        acciones = acciones[:3]
+        acciones = acciones[:3]  # max 3
 
         rows_html = ""
         for a in acciones:
@@ -839,7 +842,7 @@ with right:
                 {a}
             </div>
             """
-            
+
         st.markdown(
             f"""
             <div style="
