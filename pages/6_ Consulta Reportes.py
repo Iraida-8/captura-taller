@@ -347,10 +347,41 @@ with r3c1:
     fecha_reporte = st.date_input("Fecha de Reporte", value=None)
 
 with r3c2:
-    fecha_mod = st.date_input("Fecha Mod (Servicios)", value=None)
+    fecha_mod = st.date_input("Fecha Mod", value=None)
 
 with r3c3:
-    buscar = st.button("🔍 Aplicar filtros", type="primary")
+    fecha_aut = st.date_input("Fecha Autorizado", value=None)
+
+
+# ---------- ROW 4 ----------
+r4c1, r4c2, r4c3 = st.columns(3)
+
+with r4c1:
+    fecha_sin = st.date_input("Fecha Sin Comenzar", value=None)
+
+with r4c2:
+    fecha_espera = st.date_input("Fecha Espera Refacciones", value=None)
+
+with r4c3:
+    fecha_proceso = st.date_input("Fecha En Proceso", value=None)
+
+
+# ---------- ROW 5 ----------
+r5c1, r5c2, r5c3 = st.columns(3)
+
+with r5c1:
+    fecha_fact = st.date_input("Fecha Facturado", value=None)
+
+with r5c2:
+    fecha_comp = st.date_input("Fecha Completado", value=None)
+
+with r5c3:
+    fecha_cancel = st.date_input("Fecha Cancelado", value=None)
+
+
+st.divider()
+buscar = st.button("🔍 Aplicar filtros", type="primary")
+
 
 # =================================
 # APPLY FILTERS
