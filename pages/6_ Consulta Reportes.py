@@ -296,91 +296,89 @@ else:
 st.divider()
 
 # =================================
-# FILTERS (3 PER ROW)
+# FILTERS
 # =================================
 st.subheader("Filtros")
 
-# ---------- ROW 1 ----------
+# =========================================================
+# SECTION 1 → MAIN DATA
+# =========================================================
 r1c1, r1c2, r1c3 = st.columns(3)
 
 with r1c1:
+    folio = st.text_input("No. de Folio")
+
+with r1c2:
+    no_reporte = st.text_input("No. de Reporte")
+
+with r1c3:
+    oste = st.text_input("OSTE")
+
+
+r2c1, r2c2, r2c3 = st.columns(3)
+
+with r2c1:
     empresa = st.selectbox(
         "Empresa",
         ["Todas"] + sorted(df_pases["Empresa"].dropna().unique().tolist())
         if not df_pases.empty else ["Todas"]
     )
 
-with r1c2:
-    estado = st.selectbox(
-        "Estado",
-        ["Todos"] + sorted(df_pases["Estado"].dropna().unique().tolist())
-        if not df_pases.empty else ["Todos"]
-    )
-
-with r1c3:
+with r2c2:
     no_unidad = st.selectbox(
         "No. de Unidad",
         ["Todas"] + sorted(df_pases["No. de Unidad"].dropna().astype(str).unique().tolist())
         if "No. de Unidad" in df_pases.columns else ["Todas"]
     )
 
-# ---------- ROW 2 ----------
-r2c1, r2c2, r2c3 = st.columns(3)
-
-with r2c1:
-    no_reporte = st.text_input("No. de Reporte")
-
-with r2c2:
-    tipo_reporte = st.selectbox(
-        "Tipo de Reporte",
-        ["Todos"] + sorted(df_pases["Tipo de Reporte"].dropna().unique().tolist())
-        if "Tipo de Reporte" in df_pases.columns else ["Todos"]
+with r2c3:
+    estado = st.selectbox(
+        "Estado",
+        ["Todos"] + sorted(df_pases["Estado"].dropna().unique().tolist())
+        if not df_pases.empty else ["Todos"]
     )
 
-with r2c3:
-    fecha_captura = st.date_input("Fecha de Captura", value=None)
+# =========================================================
+# SECTION 2 → DATE FILTERS (COLLAPSIBLE)
+# =========================================================
+with st.expander("📅 Filtrar por fechas", expanded=False):
 
-# ---------- ROW 3 ----------
-r3c1, r3c2, r3c3 = st.columns(3)
+    d1, d2, d3 = st.columns(3)
 
-with r3c1:
-    fecha_reporte = st.date_input("Fecha de Reporte", value=None)
+    with d1:
+        fecha_mod = st.date_input("Fecha Mod", value=None)
 
-with r3c2:
-    fecha_mod = st.date_input("Fecha Mod", value=None)
+    with d2:
+        fecha_aut = st.date_input("Fecha Autorizado", value=None)
 
-with r3c3:
-    fecha_aut = st.date_input("Fecha Autorizado", value=None)
-
-
-# ---------- ROW 4 ----------
-r4c1, r4c2, r4c3 = st.columns(3)
-
-with r4c1:
-    fecha_sin = st.date_input("Fecha Sin Comenzar", value=None)
-
-with r4c2:
-    fecha_espera = st.date_input("Fecha Espera Refacciones", value=None)
-
-with r4c3:
-    fecha_proceso = st.date_input("Fecha En Proceso", value=None)
+    with d3:
+        fecha_sin = st.date_input("Fecha Sin Comenzar", value=None)
 
 
-# ---------- ROW 5 ----------
-r5c1, r5c2, r5c3 = st.columns(3)
+    d4, d5, d6 = st.columns(3)
 
-with r5c1:
-    fecha_fact = st.date_input("Fecha Facturado", value=None)
+    with d4:
+        fecha_espera = st.date_input("Fecha Espera Refacciones", value=None)
 
-with r5c2:
-    fecha_comp = st.date_input("Fecha Completado", value=None)
+    with d5:
+        fecha_proceso = st.date_input("Fecha En Proceso", value=None)
 
-with r5c3:
-    fecha_cancel = st.date_input("Fecha Cancelado", value=None)
+    with d6:
+        fecha_fact = st.date_input("Fecha Facturado", value=None)
+
+
+    d7, d8 = st.columns(2)
+
+    with d7:
+        fecha_comp = st.date_input("Fecha Completado", value=None)
+
+    with d8:
+        fecha_cancel = st.date_input("Fecha Cancelado", value=None)
 
 
 st.divider()
 buscar = st.button("🔍 Aplicar filtros", type="primary")
+
 
 
 # =================================
