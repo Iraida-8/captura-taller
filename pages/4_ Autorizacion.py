@@ -694,6 +694,70 @@ def cargar_catalogo_por_empresa(empresa):
 st.title("📋 Autorización y Actualización de Reporte")
 
 # =================================
+# KPI STRIP
+# =================================
+st.markdown("### Resumen general")
+
+total_ordenes = len(pases_df)
+
+def porcentaje(n):
+    if total_ordenes == 0:
+        return 0
+    return round((n / total_ordenes) * 100, 1)
+
+pendientes = len(pases_df[pases_df["Estado"] == "En Curso / Nuevo"])
+
+diagnosticos = len(
+    pases_df[pases_df["Estado"] == "En Curso / Autorizado"]
+)
+
+en_proceso = len(
+    pases_df[pases_df["Estado"].isin([
+        "En Curso / Sin Comenzar",
+        "En Curso / Espera Refacciones",
+        "En Curso / En Proceso",
+    ])]
+)
+
+completadas = len(
+    pases_df[pases_df["Estado"].isin([
+        "Cerrado / Completado",
+        "Cerrado / Facturado",
+    ])]
+)
+
+canceladas = len(
+    pases_df[pases_df["Estado"] == "Cerrado / Cancelado"]
+)
+
+k1, k2, k3, k4, k5 = st.columns(5)
+
+def postit(col, titulo, valor, pct, color):
+    with col:
+        st.markdown(
+            f"""
+            <div style="
+                background:{color};
+                padding:18px;
+                border-radius:14px;
+                text-align:center;
+                box-shadow:0 4px 10px rgba(0,0,0,0.08);
+            ">
+                <div style="font-size:0.9rem; font-weight:600;">{titulo}</div>
+                <div style="font-size:2rem; font-weight:800; margin-top:6px;">{valor}</div>
+                <div style="font-size:0.8rem; opacity:0.8;">{pct}% del total</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
+postit(k2, "Diagnósticos Activos", diagnosticos, porcentaje(diagnosticos), "#D1ECF1")
+postit(k3, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
+postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDDA")
+postit(k5, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
+
+# =================================
 # Session state defaults
 # =================================
 st.session_state.setdefault("buscar_trigger", False)
