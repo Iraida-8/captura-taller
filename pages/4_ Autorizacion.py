@@ -767,7 +767,7 @@ st.divider()
 left, right = st.columns([2, 1])
 
 # =============================
-# LEFT → COMPANY DISTRIBUTION
+# LEFT → COMPANY SUMMARY
 # =============================
 with left:
     st.markdown("### Órdenes por Empresa")
@@ -780,47 +780,41 @@ with left:
         )
         conteo_empresas.columns = ["Empresa", "Cantidad"]
 
-        total_empresas = conteo_empresas["Cantidad"].sum()
+        total = conteo_empresas["Cantidad"].sum()
 
+        rows_html = ""
         for _, row_emp in conteo_empresas.iterrows():
-
             empresa = row_emp["Empresa"]
             cantidad = row_emp["Cantidad"]
+            pct = (cantidad / total) * 100 if total else 0
 
-            pct = (cantidad / total_empresas) * 100 if total_empresas else 0
+            rows_html += f"""
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                margin-bottom:6px;
+                font-weight:600;
+            ">
+                <span>{empresa}</span>
+                <span>{cantidad} &nbsp; ({pct:.1f}%)</span>
+            </div>
+            """
 
-            st.markdown(
-                f"""
-                <div style="
-                    background:#ffffff;
-                    padding:10px 14px;
-                    border-radius:12px;
-                    margin-bottom:8px;
-                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
-                    color:#111;
-                ">
-                    <div style="display:flex; justify-content:space-between; font-weight:600;">
-                        <span>{empresa}</span>
-                        <span>{cantidad}</span>
-                    </div>
+        st.markdown(
+            f"""
+            <div style="
+                background:#ffffff;
+                padding:18px;
+                border-radius:14px;
+                box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                color:#111;
+            ">
+                {rows_html}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                    <div style="
-                        height:8px;
-                        background:#eee;
-                        border-radius:10px;
-                        margin-top:6px;
-                    ">
-                        <div style="
-                            width:{pct}%;
-                            height:8px;
-                            background:#4f46e5;
-                            border-radius:10px;
-                        "></div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
     else:
         st.info("No hay datos.")
 
@@ -850,8 +844,6 @@ with right:
         )
     else:
         st.info("Sin actividad reciente.")
-
-
 
 # =================================
 # Session state defaults
