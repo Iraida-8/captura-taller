@@ -910,6 +910,7 @@ if not pases_df.empty:
                 fecha = fecha.date() if pd.notna(fecha) else ""
                 empresa = safe(r.get("Empresa"))
                 unidad = safe(r.get("No. de Unidad"))
+                capturo = safe(r.get("Capturo"))
 
                 html = f"""
                 <div style="padding:6px;">
