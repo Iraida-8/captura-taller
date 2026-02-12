@@ -31,7 +31,7 @@ st.markdown(
     /* Main width + centering */
     .block-container {
         max-width: 420px;
-        padding-top: 3.2rem;   
+        padding-top: 4.2rem;   
         padding-bottom: 3rem;
     }
 
@@ -42,7 +42,7 @@ st.markdown(
         display: block;
         margin-left: auto;
         margin-right: auto;
-        margin-bottom: 4rem;
+        margin-bottom: 2rem;
         transform: scale(1.18);   
     }
 
@@ -137,8 +137,8 @@ if logo_path.exists():
         )
     st.image(img, width="stretch")
 
-st.title("Inicio de Sesión")
 st.divider()
+st.title("Inicio de Sesión")
 
 with st.form("login_form"):
     email = st.text_input(
