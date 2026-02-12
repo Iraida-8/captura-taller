@@ -23,15 +23,15 @@ st.markdown(
     /* Hide sidebar */
     [data-testid="stSidebar"] { display: none; }
 
-    /* Page background */
+    /* Dark page background */
     .stApp {
         background-color: #0e1117;
     }
 
-    /* Main width + centering */
+    /* Center content & push logo down */
     .block-container {
         max-width: 420px;
-        padding-top: 4.2rem;   
+        padding-top: 4.4rem;
         padding-bottom: 3rem;
     }
 
@@ -43,17 +43,18 @@ st.markdown(
         margin-left: auto;
         margin-right: auto;
         margin-bottom: 2rem;
-        transform: scale(1.18);   
+        transform: scale(1.18);
     }
 
     /* =========================
-       AUTH CARD
+       WHITE AUTH CARD
        ========================= */
     form[data-testid="stForm"] {
-        background-color: #161b22;
+        background-color: white;
         padding: 2rem;
         border-radius: 16px;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        color: black;
     }
 
     /* Title */
@@ -61,6 +62,7 @@ st.markdown(
         text-align: center;
         font-size: 1.6rem;
         margin-bottom: 0.3rem;
+        color: black;
     }
 
     /* Divider */
@@ -68,17 +70,21 @@ st.markdown(
         margin: 1rem 0 1.4rem 0;
     }
 
+    /* Labels */
+    label {
+        font-size: 0.9rem !important;
+        font-weight: 600;
+        color: black !important;
+    }
+
     /* Inputs */
     input {
         font-size: 1rem !important;
         padding: 0.7rem !important;
         border-radius: 10px !important;
-    }
-
-    /* Labels */
-    label {
-        font-size: 0.9rem !important;
-        font-weight: 500;
+        background-color: white !important;
+        color: black !important;
+        border: 1px solid #d0d7de !important;
     }
 
     /* =========================
@@ -86,7 +92,7 @@ st.markdown(
        ========================= */
     div.stButton > button,
     button[kind="primary"] {
-        width: auto;             
+        width: auto;
         min-width: 180px;
         display: block;
         margin-left: auto;
@@ -99,7 +105,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 # =================================
 # Supabase setup
