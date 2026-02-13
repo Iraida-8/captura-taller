@@ -515,6 +515,7 @@ with c3:
 # APPLY FILTERS
 # =================================
 df_filtrado = df.copy()
+df_ostes_filtrado = df_ostes.copy()
 
 if "FECHA" in df_filtrado.columns:
     df_filtrado["FECHA"] = pd.to_datetime(
@@ -528,10 +529,29 @@ if "FECHA" in df_filtrado.columns:
         (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
     ]
 
+if "FECHA" in df_ostes_filtrado.columns:
+    df_ostes_filtrado["FECHA"] = pd.to_datetime(
+        df_ostes_filtrado["FECHA"],
+        errors="coerce",
+        dayfirst=True
+    )
+
+    df_ostes_filtrado = df_ostes_filtrado[
+        (df_ostes_filtrado["FECHA"] >= pd.Timestamp("2025-01-01")) &
+        (df_ostes_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
+    ]
+
+
 if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
     df_filtrado = df_filtrado[
         df_filtrado["Unidad"].astype(str) == unidad_sel
     ]
+
+if unidad_sel != "Todas" and "Unidad" in df_ostes_filtrado.columns:
+    df_ostes_filtrado = df_ostes_filtrado[
+        df_ostes_filtrado["Unidad"].astype(str) == unidad_sel
+    ]
+
 
 # =================================
 # TABLA COMPLETA
