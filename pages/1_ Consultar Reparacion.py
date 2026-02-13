@@ -157,14 +157,14 @@ def cargar_partes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    # PARTES use FECHA H
-    if "FECHA H" in df.columns:
-        df["FECHA H"] = pd.to_datetime(
-            df["FECHA H"],
+    if "Fecha Analisis" in df.columns:
+        df["Fecha Analisis"] = pd.to_datetime(
+            df["Fecha Analisis"],
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
+        df = df[df["Fecha Analisis"] >= pd.Timestamp("2025-01-01")]
+
 
     return df
 
@@ -358,14 +358,14 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_ultimos = (
         df_partes_filtrado
-        .sort_values("FECHA H", ascending=False)
+        .sort_values("Fecha Analisis", ascending=False)
         .head(10)[columnas_disponibles_partes]
     )
 
-    if "FECHA H" in df_partes_ultimos.columns:
-        df_partes_ultimos["FECHA H"] = (
-            df_partes_ultimos["FECHA H"].dt.strftime("%Y-%m-%d")
-        )
+    if "Fecha Analisis" in df_partes_ultimos.columns:
+        df_partes_ultimos["Fecha Analisis"] = (
+        df_partes_ultimos["Fecha Analisis"].dt.strftime("%Y-%m-%d")
+    )
 
     st.dataframe(df_partes_ultimos, hide_index=True, width="stretch")
 else:
