@@ -196,7 +196,7 @@ def cargar_servicios_folio(folio):
     data = ws.get_all_records()
     if not data:
         return pd.DataFrame(columns=[
-            "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
+            "Parte","Tipo de Parte","PU","IVA","Cantidad","Total"
         ])
 
     df = pd.DataFrame(data)
@@ -753,7 +753,7 @@ st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
     pd.DataFrame(columns=[
-        "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
+        "Parte","Tipo de Parte","PU","IVA","Cantidad","Total"
     ])
 )
 
@@ -926,24 +926,6 @@ if st.session_state.buscar_trigger:
                 st.session_state.modal_reporte = row.to_dict()
 
                 df = cargar_servicios_folio(row["NoFolio"])
-
-                # ==========================================
-                # LINCOLN → ALWAYS FORCE USD STRUCTURE
-                # ==========================================
-                if row["Empresa"] == "LINCOLN FREIGHT":
-
-                    if df.empty:
-                        df = pd.DataFrame(columns=[
-                            "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
-                        ])
-                    else:
-                        df["PrecioParte"] = df.get("Precio MXP", 0)
-                        df["Cantidad"] = df.get("Cantidad", 0)
-                        df["Total USD"] = df.get("Total MXN", 0)
-
-                        df = df[[
-                            "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
-                        ]]
 
                 st.session_state.servicios_df = df
 
