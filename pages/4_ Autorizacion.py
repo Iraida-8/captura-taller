@@ -479,7 +479,7 @@ def cargar_catalogo_lincoln():
     if "Tipo de Parte" not in df.columns:
         df["Tipo de Parte"] = "Servicio"
 
-    df["PU"] = pd.to_numeric(df.get("PU USD ", 0), errors="coerce").fillna(0)
+    df["PU"] = pd.to_numeric(df.get("PU USD", 0), errors="coerce").fillna(0)
     df["IVA"] = 0
 
     df["label"] = df.apply(
