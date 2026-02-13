@@ -449,6 +449,15 @@ def cargar_catalogo_igloo_simple():
 
     df["PU"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
 
+    df["IVA"] = (
+        df["IVA"]
+        .astype(str)
+        .str.replace("$", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .str.replace("%", "", regex=False)
+        .str.strip()
+    )
+
     df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
 
     df["label"] = df.apply(
