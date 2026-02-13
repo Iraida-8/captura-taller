@@ -45,7 +45,7 @@ st.divider()
 st.title("📋 Consulta de Reparación")
 
 # =================================
-# EMPRESA DATA CONFIG (Test)
+# EMPRESA DATA CONFIG
 # =================================
 EMPRESA_CONFIG = {
     "IGLOO TRANSPORT": {
@@ -58,6 +58,11 @@ EMPRESA_CONFIG = {
             "https://docs.google.com/spreadsheets/d/"
             "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
             "/export?format=csv&gid=410297659"
+        ),
+        "ostes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1RZ1YcLQxXI0U81Vle6cXmRp0yMxuRVg4"
+            "/export?format=csv&gid=1578839108"
         )
     },
 
@@ -71,6 +76,11 @@ EMPRESA_CONFIG = {
             "https://docs.google.com/spreadsheets/d/"
             "1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp"
             "/export?format=csv&gid=41991257"
+        ),
+        "ostes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1lZO4SVKHXfW1-IzhYXvAmJ8WC7zgg8VD"
+            "/export?format=csv&gid=1179811252"
         )
     },
 
@@ -84,6 +94,11 @@ EMPRESA_CONFIG = {
             "https://docs.google.com/spreadsheets/d/"
             "1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN"
             "/export?format=csv&gid=354598948"
+        ),
+        "ostes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1vedjfjpQAHA4l1iby_mZRdVayH0H4cjg"
+            "/export?format=csv&gid=1926750281"
         )
     },
 
@@ -97,6 +112,11 @@ EMPRESA_CONFIG = {
             "https://docs.google.com/spreadsheets/d/"
             "1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS"
             "/export?format=csv&gid=849445619"
+        ),
+        "ostes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1lshd4YaUyuZiYctys3RplStzcYpABNRj"
+            "/export?format=csv&gid=1882046877"
         )
     },
 
@@ -110,6 +130,11 @@ EMPRESA_CONFIG = {
             "https://docs.google.com/spreadsheets/d/"
             "1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61"
             "/export?format=csv&gid=1837946138"
+        ),
+        "ostes": (
+            "https://docs.google.com/spreadsheets/d/"
+            "1kcemsViXwHBaCXK58SGBxjfYs-zakhki"
+            "/export?format=csv&gid=1472656211"
         )
     }
 }
@@ -187,24 +212,33 @@ config = EMPRESA_CONFIG[empresa]
 
 df = cargar_ordenes(config["ordenes"])
 df_partes = cargar_partes(config["partes"])
+df_ostes = cargar_ordenes(config["ostes"])
 
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
 # =================================
-# ÚLTIMOS 10 REGISTROS (ÓRDENES)
+# ÚLTIMOS 10 REGISTROS
 # =================================
-st.subheader("Últimos 10 Registros")
+st.subheader("Últimos registros")
 
 unidad_orden_sel = "Todas"
 
+# collect unidades from both sources
+unidades = set()
+
 if "Unidad" in df.columns:
-    unidad_orden_sel = st.selectbox(
-        "Filtrar por Unidad",
-        ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique()),
-        index=0
-    )
+    unidades.update(df["Unidad"].dropna().astype(str).unique())
+
+if not df_ostes.empty and "Unidad" in df_ostes.columns:
+    unidades.update(df_ostes["Unidad"].dropna().astype(str).unique())
+
+unidad_orden_sel = st.selectbox(
+    "Filtrar por Unidad",
+    ["Todas"] + sorted(unidades),
+    index=0
+)
 
 columnas_resumen = [
     "Fecha Aceptado",
@@ -218,94 +252,33 @@ columnas_resumen = [
 
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
-df_ultimos = df.copy()
+# =====================================================
+# BUILD INTERNAL / EXTERNAL DATASETS
+# =====================================================
 
+df_interna = df.copy()
+df_externa = df_ostes.copy()
+
+# ==========================================
+# FILTER BY UNIDAD
+# ==========================================
 if unidad_orden_sel != "Todas":
-    df_ultimos = df_ultimos[df_ultimos["Unidad"].astype(str) == unidad_orden_sel]
+    if "Unidad" in df_interna.columns:
+        df_interna = df_interna[df_interna["Unidad"].astype(str) == unidad_orden_sel]
 
-df_ultimos = (
-    df_ultimos
-    .sort_values("FECHA", ascending=False)
-    .head(10)[columnas_disponibles]
-)
+    if "Unidad" in df_externa.columns:
+        df_externa = df_externa[df_externa["Unidad"].astype(str) == unidad_orden_sel]
 
-import streamlit.components.v1 as components
 
-def safe(x):
-    if pd.isna(x) or x is None:
-        return ""
-    return str(x)
+# ==========================================
+# SORT & TAKE LAST 10
+# ==========================================
+if "FECHA" in df_interna.columns:
+    df_interna = df_interna.sort_values("FECHA", ascending=False).head(10)
 
-if df_ultimos.empty:
-    st.info("No hay registros.")
-else:
-    cols = st.columns(5)
+if "Fecha Analisis" in df_externa.columns:
+    df_externa = df_externa.sort_values("Fecha Analisis", ascending=False).head(10)
 
-    for i, (_, row) in enumerate(df_ultimos.iterrows()):
-        col = cols[i % 5]
-
-        with col:
-            reporte = safe(row.get("Reporte"))
-            unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
-            razon = safe(row.get("Razon Reparacion"))
-            desc = safe(row.get("Descripcion"))
-            f_acep = safe(row.get("Fecha Aceptado"))
-            f_ini = safe(row.get("Fecha Iniciada"))
-
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffffff;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:190px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{reporte}</div>
-
-                    <div style="font-size:0.8rem; margin-top:4px;">
-                        {unidad} &nbsp; | &nbsp; {tipo}
-                    </div>
-
-                    <hr style="margin:6px 0">
-
-                    <div style="
-                        font-size:0.8rem;
-                        overflow:hidden;
-                        display:-webkit-box;
-                        -webkit-line-clamp:2;
-                        -webkit-box-orient:vertical;
-                    ">
-                        <b>Razón:</b> {razon}
-                    </div>
-
-                    <div style="
-                        font-size:0.8rem;
-                        overflow:hidden;
-                        display:-webkit-box;
-                        -webkit-line-clamp:3;
-                        -webkit-box-orient:vertical;
-                    ">
-                        <b>Descripción:</b> {desc}
-                    </div>
-
-                    <hr style="margin:6px 0">
-
-                    <div style="font-size:0.75rem;">
-                        {f_acep} &nbsp; | &nbsp; {f_ini}
-                    </div>
-                </div>
-            </div>
-            """
-
-            components.html(html, height=260)
-
-            if st.button("👁 Ver", key=f"ver_{i}", use_container_width=True):
-                full_row = df[df["Reporte"] == row["Reporte"]].iloc[0]
-                st.session_state.modal_orden = full_row.to_dict()
 
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
