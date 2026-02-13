@@ -233,112 +233,61 @@ else:
         with col:
             reporte = safe(row.get("Reporte"))
             unidad = safe(row.get("Unidad"))
-            tipo_unidad = safe(row.get("Tipo Unidad"))   # ← fixed name
+            tipo = safe(row.get("Tipo Unidad"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
-
-            fa = row.get("Fecha Aceptado")
-            fecha_aceptado = fa.date() if pd.notna(fa) else ""
-
-            fi = row.get("Fecha Iniciada")
-            fecha_iniciada = fi.date() if pd.notna(fi) else ""
+            f_acep = safe(row.get("Fecha Aceptado"))
+            f_ini = safe(row.get("Fecha Iniciada"))
 
             html = f"""
-            <div style="padding:8px;">
+            <div style="padding:6px;">
                 <div style="
-                    background:linear-gradient(180deg,#ffffff 0%,#f7f9fc 100%);
-                    padding:16px;
-                    border-radius:18px;
-                    box-shadow:0 6px 16px rgba(0,0,0,0.08);
+                    background:#ffffff;
+                    padding:14px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
                     color:#111;
-                    min-height:230px;
-                    display:flex;
-                    flex-direction:column;
-                    justify-content:space-between;
+                    min-height:190px;
                     font-family:sans-serif;
-                    border:1px solid #e6e9ef;
                 ">
-                    <!-- TOP -->
-                    <div>
-                        <div style="
-                            font-weight:900;
-                            font-size:1rem;
-                            letter-spacing:0.3px;
-                            margin-bottom:6px;
-                        ">
-                            {reporte}
-                        </div>
+                    <div style="font-weight:900;">{reporte}</div>
 
-                        <div style="
-                            font-size:0.8rem;
-                            color:#6b7280;
-                            margin-bottom:10px;
-                        ">
-                            {unidad} · {tipo_unidad}
-                        </div>
+                    <div style="font-size:0.8rem; margin-top:4px;">
+                        {unidad} &nbsp; | &nbsp; {tipo}
                     </div>
 
-                    <!-- MIDDLE -->
-                    <div style="flex-grow:1;">
-                        <div style="
-                            font-size:0.8rem;
-                            font-weight:600;
-                            margin-bottom:4px;
-                            color:#374151;
-                        ">
-                            Razón
-                        </div>
-                        <div style="
-                            font-size:0.8rem;
-                            margin-bottom:8px;
-                            overflow:hidden;
-                            display:-webkit-box;
-                            -webkit-line-clamp:2;
-                            -webkit-box-orient:vertical;
-                            color:#111;
-                        ">
-                            {razon}
-                        </div>
+                    <hr style="margin:6px 0">
 
-                        <div style="
-                            font-size:0.8rem;
-                            font-weight:600;
-                            margin-bottom:4px;
-                            color:#374151;
-                        ">
-                            Descripción
-                        </div>
-                        <div style="
-                            font-size:0.8rem;
-                            overflow:hidden;
-                            display:-webkit-box;
-                            -webkit-line-clamp:3;
-                            -webkit-box-orient:vertical;
-                            color:#111;
-                        ">
-                            {desc}
-                        </div>
-                    </div>
-
-                    <!-- BOTTOM -->
                     <div style="
-                        margin-top:10px;
-                        padding-top:8px;
-                        border-top:1px solid #e5e7eb;
-                        font-size:0.75rem;
-                        color:#6b7280;
-                        display:flex;
-                        justify-content:space-between;
+                        font-size:0.8rem;
+                        overflow:hidden;
+                        display:-webkit-box;
+                        -webkit-line-clamp:2;
+                        -webkit-box-orient:vertical;
                     ">
-                        <span>Aceptado: {fecha_aceptado}</span>
-                        <span>Iniciado: {fecha_iniciada}</span>
+                        <b>Razón:</b> {razon}
+                    </div>
+
+                    <div style="
+                        font-size:0.8rem;
+                        overflow:hidden;
+                        display:-webkit-box;
+                        -webkit-line-clamp:3;
+                        -webkit-box-orient:vertical;
+                    ">
+                        <b>Descripción:</b> {desc}
+                    </div>
+
+                    <hr style="margin:6px 0">
+
+                    <div style="font-size:0.75rem;">
+                        {f_acep} &nbsp; | &nbsp; {f_ini}
                     </div>
                 </div>
             </div>
             """
 
             components.html(html, height=260)
-
 
 
 # =================================
