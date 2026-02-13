@@ -435,32 +435,24 @@ def cargar_catalogo_igloo_simple():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    # ================================
-    # REQUIRED COLUMNS
-    # ================================
-    required = ["Parte", "Tipo de Parte", "PU", "IVA"]
+    required = ["Parte", "Tipo De Parte", "PU", "IVA"]
     missing = [c for c in required if c not in df.columns]
 
     if missing:
         st.error(f"IGLOO → faltan columnas: {missing}")
         return pd.DataFrame()
 
-    # ================================
-    # DIRECT MAP → SYSTEM FORMAT
-    # ================================
-    df["Precio MXP"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
-    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
-    df["TipoCompra"] = df["Tipo de Parte"].fillna("Servicio")
+    df = df.rename(columns={"Tipo De Parte": "Tipo de Parte"})
 
-    # ================================
-    # LABEL
-    # ================================
+    df["PU"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
+
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['Precio MXP']:,.2f}",
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "TipoCompra", "Precio MXP", "IVA", "label"]]
+    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
 
 # LINCOLN LOADER
 @st.cache_data(ttl=600)
@@ -474,36 +466,18 @@ def cargar_catalogo_lincoln():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    def limpiar_num(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return None
+    if "Tipo de Parte" not in df.columns:
+        df["Tipo de Parte"] = "Servicio"
 
-    # ================================
-    # PRICE → PrecioParte (USD)
-    # ================================
-    if "PrecioParte" in df.columns:
-        df["PrecioParte"] = df["PrecioParte"].apply(limpiar_num)
-    else:
-        df["PrecioParte"] = None
+    df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
 
-    # ================================
-    # TipoCompra default
-    # ================================
-    if "TipoCompra" not in df.columns:
-        df["TipoCompra"] = "Servicio"
-
-    # ================================
-    # Label (USD)
-    # ================================
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - USD ${r['PrecioParte']:,.2f}"
-        if pd.notna(r["PrecioParte"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "TipoCompra", "PrecioParte", "label"]]
+    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
 
 # PICUS LOADER
 @st.cache_data(ttl=600)
@@ -517,40 +491,18 @@ def cargar_catalogo_picus():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    def limpiar_num(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return None
+    if "Tipo de Parte" not in df.columns:
+        df["Tipo de Parte"] = "Servicio"
 
-    normalized_cols = {c: str(c).strip().lower() for c in df.columns}
-
-    precio_col = next(
-        (orig for orig, norm in normalized_cols.items()
-         if norm in ["precioparte", "precio", "pu", "costo"]),
-        None
-    )
-
-    if precio_col:
-        df["PU"] = df[precio_col].apply(limpiar_num)
-    else:
-        df["PU"] = None
-
-    if "IvaParte" in df.columns:
-        df["IvaParte"] = df["IvaParte"].apply(limpiar_num).fillna(0)
-    else:
-        df["IvaParte"] = 0
-
-    if "TipoCompra" not in df.columns:
-        df["TipoCompra"] = "Servicio"
+    df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
 
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
-        if pd.notna(r["PU"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "PU", "IvaParte", "TipoCompra", "label"]]
+    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
 
 # SET FREIGHT LOADER
 @st.cache_data(ttl=600)
@@ -564,30 +516,18 @@ def cargar_catalogo_sfi():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    def limpiar_num(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return None
+    if "Tipo de Parte" not in df.columns:
+        df["Tipo de Parte"] = "Servicio"
 
-    # Defensive price-column detection (same pattern we discussed)
-    precio_col = next(
-        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
-        None
-    )
-
-    if precio_col:
-        df["PU"] = df[precio_col].apply(limpiar_num)
-    else:
-        df["PU"] = None
+    df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
 
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
-        if pd.notna(r["PU"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
 
 # SET LOGIS LOADER
 @st.cache_data(ttl=600)
@@ -601,30 +541,18 @@ def cargar_catalogo_slp():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    def limpiar_num(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return None
+    if "Tipo de Parte" not in df.columns:
+        df["Tipo de Parte"] = "Servicio"
 
-    # Defensive price-column detection
-    precio_col = next(
-        (c for c in df.columns if c.lower() in ["precioparte", "precio", "pu", "costo"]),
-        None
-    )
-
-    if precio_col:
-        df["PU"] = df[precio_col].apply(limpiar_num)
-    else:
-        df["PU"] = None
+    df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
 
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
-        if pd.notna(r["PU"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "PU", "label"]]
+    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
 
 # =================================
 # Catalog dispatcher by Empresa
