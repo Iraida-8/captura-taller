@@ -435,72 +435,32 @@ def cargar_catalogo_igloo_simple():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    # =================================
-    # FECHA H (REQUIRED)
-    # =================================
-    if "FECHA H" not in df.columns:
-        st.error("El catálogo IGLOO no contiene la columna requerida: FECHA H")
-        return pd.DataFrame(columns=["Parte", "PU", "IvaParte", "TipoCompra", "label"])
+    # ================================
+    # REQUIRED COLUMNS
+    # ================================
+    required = ["Parte", "Tipo de Parte", "PU", "IVA"]
+    missing = [c for c in required if c not in df.columns]
 
-    df["FECHA H"] = pd.to_datetime(df["FECHA H"], errors="coerce")
-    df = df[df["FECHA H"] >= pd.Timestamp("2025-01-01")]
-    df = df.sort_values("FECHA H", ascending=False)
-    df = df.drop_duplicates(subset=["Parte"], keep="first")
+    if missing:
+        st.error(f"IGLOO → faltan columnas: {missing}")
+        return pd.DataFrame()
 
-    # =================================
-    # NUMBER CLEANER (money)
-    # =================================
-    def limpiar_num(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return None
+    # ================================
+    # DIRECT MAP → SYSTEM FORMAT
+    # ================================
+    df["Precio MXP"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
+    df["TipoCompra"] = df["Tipo de Parte"].fillna("Servicio")
 
-    # =================================
-    # PRICE DETECTION
-    # =================================
-    normalized_cols = {c: str(c).strip().lower() for c in df.columns}
-
-    precio_col = next(
-        (orig for orig, norm in normalized_cols.items()
-         if norm in ["precioparte", "precio", "pu", "costo"]),
-        None
-    )
-
-    if not precio_col:
-        st.error(f"Columnas encontradas: {list(df.columns)}")
-        st.error("El catálogo IGLOO no contiene una columna de precio válida.")
-        return pd.DataFrame(columns=["Parte", "PU", "IvaParte", "TipoCompra", "label"])
-
-    df["PU"] = df[precio_col].apply(limpiar_num)
-
-    # =================================
-    # NORMALIZE IVA (money, not percent)
-    # =================================
-    if "IvaParte" in df.columns:
-        df["IvaParte"] = df["IvaParte"].apply(limpiar_num).fillna(0)
-    else:
-        df["IvaParte"] = 0
-
-    # =================================
-    # ENSURE TipoCompra
-    # =================================
-    if "TipoCompra" not in df.columns:
-        df["TipoCompra"] = "Servicio"
-
-    # =================================
-    # BUILD LABEL
-    # =================================
+    # ================================
+    # LABEL
+    # ================================
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}"
-        if pd.notna(r["PU"]) else r["Parte"],
+        lambda r: f"{r['Parte']} - ${r['Precio MXP']:,.2f}",
         axis=1
     )
 
-    # =================================
-    # RETURN
-    # =================================
-    return df[["Parte", "PU", "IvaParte", "TipoCompra", "label"]]
+    return df[["Parte", "TipoCompra", "Precio MXP", "IVA", "label"]]
 
 # LINCOLN LOADER
 @st.cache_data(ttl=600)
