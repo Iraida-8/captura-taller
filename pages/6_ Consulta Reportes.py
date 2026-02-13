@@ -544,33 +544,118 @@ st.dataframe(
 )
 
 # ======================================================
-# TABLE 2 — RESUMEN POR ORDEN
+# TABLE 2 — RESUMEN POR ORDEN (1 LINE PER FOLIO)
 # ======================================================
 st.divider()
 st.subheader("📦 Resumen por Orden")
 
-servicios_agg = (
-    df_s
-    .groupby("Folio", as_index=False)
-    .agg({
-        "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
-        "Total": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
-    })
-    .rename(columns={
-        "Parte": "Partes",
-        "Total": "Total Servicios"
-    })
-)
+df_s = df_s.copy()
 
-df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
-df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-df_resumen["Total Servicios"] = df_resumen["Total Servicios"].fillna(0)
+# remove log rows
+if "Parte" in df_s.columns:
+    df_s = df_s[
+        df_s["Parte"].notna() &
+        (df_s["Parte"].astype(str).str.strip() != "")
+    ]
 
-st.dataframe(
-    df_resumen,
-    hide_index=True,
-    width="stretch"
-)
+if df_s.empty:
+    st.info("Sin servicios.")
+else:
+
+    # ===============================
+    # AGGREGATE SERVICES
+    # ===============================
+    servicios_agg = (
+        df_s
+        .groupby("Folio", as_index=False)
+        .agg({
+            # concatenate parts
+            "Parte": lambda x: ", ".join(
+                sorted(set(str(v) for v in x if pd.notna(v)))
+            ),
+
+            # sum totals
+            "Total": lambda x: pd.to_numeric(
+                x, errors="coerce"
+            ).fillna(0).sum(),
+
+            # latest dates
+            "Fecha Mod": "max",
+            "Fecha Autorizado": "max",
+            "Fecha Sin Comenzar": "max",
+            "Fecha Espera Refacciones": "max",
+            "Fecha En Proceso": "max",
+            "Fecha Facturado": "max",
+            "Fecha Completado": "max",
+            "Fecha Cancelado": "max",
+        })
+        .rename(columns={
+            "Parte": "Partes",
+            "Total": "Total Servicio",
+        })
+    )
+
+    # ===============================
+    # MERGE WITH COMPANY DATA
+    # ===============================
+    df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
+
+    df_resumen["Partes"] = df_resumen["Partes"].fillna("")
+    df_resumen["Total Servicio"] = df_resumen["Total Servicio"].fillna(0)
+
+    # ===============================
+    # COLUMN ORDER
+    # ===============================
+    columnas = [
+        # ===== COMPANY TAB =====
+        "Fecha de Captura",
+        "Folio",
+        "Fecha de Reporte",
+        "Tipo de Proveedor",
+        "Estado",
+        "Capturo",
+        "Oste",
+        "No. de Reporte",
+        "Empresa",
+        "Tipo de Reporte",
+        "Tipo de Unidad",
+        "Operador",
+        "No. de Unidad",
+        "Marca",
+        "Modelo",
+        "Sucursal",
+        "Tipo de Caja",
+        "No. de Unidad Externo",
+        "Nombre Linea Externa",
+        "Cobro",
+        "Responsable",
+        "Descripcion Problema",
+        "Multa",
+        "No. de Inspeccion",
+        "Reparacion Multa",
+
+        # ===== CONSOLIDATED SERVICES =====
+        "Modifico",
+        "Partes",
+        "Cantidad",  # will remain if exists in merge
+        "Total Servicio",
+        "Fecha Mod",
+        "Fecha Autorizado",
+        "Fecha Sin Comenzar",
+        "Fecha Espera Refacciones",
+        "Fecha En Proceso",
+        "Fecha Facturado",
+        "Fecha Completado",
+        "Fecha Cancelado",
+    ]
+
+    columnas = [c for c in columnas if c in df_resumen.columns]
+
+    st.dataframe(
+        df_resumen[columnas],
+        hide_index=True,
+        width="stretch"
+    )
 
 # =================================
 # VIEW MODAL (READ ONLY)
