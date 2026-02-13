@@ -453,6 +453,9 @@ if buscar:
         folios_validos = df_s["Folio"].unique()
         df_p = df_p[df_p["Folio"].isin(folios_validos)]
 
+    st.session_state.df_filtrado_pases = df_p
+    st.session_state.df_filtrado_servicios = df_s
+
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
 # ======================================================
