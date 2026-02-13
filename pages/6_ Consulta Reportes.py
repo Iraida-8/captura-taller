@@ -456,50 +456,79 @@ if buscar:
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
 # ======================================================
-# base data if filters were not executed
+
+# use filtered data if available
 df_p = st.session_state.get("df_filtrado_pases", df_pases.copy())
 df_s = st.session_state.get("df_filtrado_servicios", df_services.copy())
 
-df_s = df_services.copy()
-
-# remove log rows (no refacción)
+# remove service log rows (no part)
 if "Parte" in df_s.columns:
     df_s = df_s[
         df_s["Parte"].notna() &
         (df_s["Parte"].astype(str).str.strip() != "")
     ]
 
-# merge → fan out
+# merge → one row per servicio
 df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
 st.divider()
 st.subheader("📄 Reporte Detallado")
 
-# desired column order
-cols_detalle = [
+# EXACT columns you requested
+columnas = [
+    # ===== COMPANY TAB =====
+    "Fecha de Captura",
     "Folio",
-    "Empresa",
+    "Fecha de Reporte",
+    "Tipo de Proveedor",
     "Estado",
+    "Capturo",
+    "Oste",
+    "No. de Reporte",
+    "Empresa",
+    "Tipo de Reporte",
+    "Tipo de Unidad",
+    "Operador",
+    "No. de Unidad",
+    "Marca",
+    "Modelo",
+    "Sucursal",
+    "Tipo de Caja",
+    "No. de Unidad Externo",
+    "Nombre Linea Externa",
+    "Cobro",
+    "Responsable",
+    "Descripcion Problema",
+    "Multa",
+    "No. de Inspeccion",
+    "Reparacion Multa",
+
+    # ===== SERVICES =====
+    "Modifico",
     "Parte",
     "Tipo De Parte",
     "PU",
     "IVA",
     "Cantidad",
     "Total",
+    "Fecha Mod",
+    "Fecha Autorizado",
+    "Fecha Sin Comenzar",
+    "Fecha Espera Refacciones",
+    "Fecha En Proceso",
+    "Fecha Facturado",
+    "Fecha Completado",
+    "Fecha Cancelado",
 ]
 
-# keep only existing columns (prevents crashes)
-cols_detalle = [c for c in cols_detalle if c in df_detallado.columns]
+# keep only columns that exist
+columnas = [c for c in columnas if c in df_detallado.columns]
 
-# if nothing after filtering
-if df_detallado.empty:
-    st.info("Sin información.")
-else:
-    st.dataframe(
-        df_detallado[cols_detalle],
-        hide_index=True,
-        width="stretch"
-    )
+st.dataframe(
+    df_detallado[columnas],
+    hide_index=True,
+    width="stretch"
+)
 
 # ======================================================
 # TABLE 2 — RESUMEN POR ORDEN
