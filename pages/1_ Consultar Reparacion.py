@@ -451,28 +451,97 @@ if st.session_state.get("modal_orden"):
                 return ""
             return str(x)
 
-        st.markdown(f"### {safe(r.get('Reporte'))}")
+        def safe_date(x):
+            d = pd.to_datetime(x, errors="coerce")
+            return d.date() if pd.notna(d) else "-"
 
-        st.markdown(
-            f"**Unidad:** {safe(r.get('Unidad'))}  \n"
-            f"**Tipo Unidad:** {safe(r.get('Tipo Unidad'))}"
-        )
+        st.markdown(f"## Reporte {safe(r.get('Reporte'))}")
+
+        # =====================================================
+        # VEHICLE INFO
+        # =====================================================
+        st.subheader("Unidad")
+
+        c1, c2, c3 = st.columns(3)
+        c1.markdown(f"**Unidad:** {safe(r.get('Unidad'))}")
+        c2.markdown(f"**Modelo:** {safe(r.get('Modelo'))}")
+        c3.markdown(f"**Tipo:** {safe(r.get('Tipo Unidad'))}")
+
+        c4, c5 = st.columns(2)
+        c4.markdown(f"**Flotilla:** {safe(r.get('Flotilla'))}")
+        c5.markdown(f"**Sucursal:** {safe(r.get('Sucursal'))}")
 
         st.divider()
 
-        st.markdown("**Razón de reparación**")
+        # =====================================================
+        # CLIENT INFO
+        # =====================================================
+        st.subheader("Cliente")
+
+        c1, c2 = st.columns(2)
+        c1.markdown(f"**Nombre:** {safe(r.get('Nombre Cliente'))}")
+        c2.markdown(f"**Factura:** {safe(r.get('Factura'))}")
+
+        st.divider()
+
+        # =====================================================
+        # STATUS
+        # =====================================================
+        st.subheader("Estatus")
+        st.markdown(f"**{safe(r.get('Estatus'))}**")
+
+        st.divider()
+
+        # =====================================================
+        # DESCRIPTION
+        # =====================================================
+        st.subheader("Razón de reparación")
         st.write(safe(r.get("Razon Reparacion")))
 
-        st.markdown("**Descripción**")
+        st.subheader("Descripción")
         st.write(safe(r.get("Descripcion")))
 
         st.divider()
 
-        fa = pd.to_datetime(r.get("Fecha Aceptado"), errors="coerce")
-        fi = pd.to_datetime(r.get("Fecha Iniciada"), errors="coerce")
+        # =====================================================
+        # DATES
+        # =====================================================
+        st.subheader("Fechas")
 
-        st.markdown(f"**Fecha Aceptado:** {fa.date() if pd.notna(fa) else '-'}")
-        st.markdown(f"**Fecha Iniciada:** {fi.date() if pd.notna(fi) else '-'}")
+        c1, c2, c3 = st.columns(3)
+        c1.markdown(f"**Registro:** {safe_date(r.get('Fecha Registro'))}")
+        c2.markdown(f"**Aceptado:** {safe_date(r.get('Fecha Aceptado'))}")
+        c3.markdown(f"**Iniciado:** {safe_date(r.get('Fecha Iniciada'))}")
+
+        c4, c5 = st.columns(2)
+        c4.markdown(f"**Liberada:** {safe_date(r.get('Fecha Liberada'))}")
+        c5.markdown(f"**Terminada:** {safe_date(r.get('Fecha Terminada'))}")
+
+        st.divider()
+
+        # =====================================================
+        # TOTALS
+        # =====================================================
+        st.subheader("Totales")
+
+        c1, c2, c3 = st.columns(3)
+        c1.markdown(f"**Sub Total:** {safe(r.get('Sub Total'))}")
+        c2.markdown(f"**IVA:** {safe(r.get('IVA'))}")
+        c3.markdown(f"**Total:** {safe(r.get('Total'))}")
+
+        c4, c5, c6 = st.columns(3)
+        c4.markdown(f"**Total Corrección:** {safe(r.get('Total Correccion'))}")
+        c5.markdown(f"**TC:** {safe(r.get('TC'))}")
+        c6.markdown(f"**Total USD:** {safe(r.get('Total USD'))}")
+
+        st.divider()
+
+        # =====================================================
+        # EXTRA
+        # =====================================================
+        st.subheader("Observaciones")
+        st.markdown(f"**Diferencia:** {safe(r.get('DIFERENCIA'))}")
+        st.write(safe(r.get("COMENTARIOS")))
 
         st.divider()
 
