@@ -474,17 +474,17 @@ if buscar:
         .groupby("Folio", as_index=False)
         .agg({
             "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
-            "Total MXN": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
+            "Total": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
         })
         .rename(columns={
             "Parte": "Partes",
-            "Total MXN": "Total MXN Servicios"
+            "Total": "Total Servicios"
         })
     )
 
     df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
     df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-    df_resumen["Total MXN Servicios"] = df_resumen["Total MXN Servicios"].fillna(0)
+    df_resumen["Total Servicios"] = df_resumen["Total Servicios"].fillna(0)
 
     st.dataframe(df_resumen, hide_index=True, width="stretch")
 
@@ -596,13 +596,13 @@ if st.session_state.get("modal_reporte"):
 
             else:
                 st.dataframe(
-                    df_folio[["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]],
+                    df_folio[["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]],
                     hide_index=True,
                     width="stretch"
                 )
 
-                total = pd.to_numeric(df_folio["Total MXN"], errors="coerce").fillna(0).sum()
-                st.metric("Total MXN", f"$ {total:,.2f}")
+                total = pd.to_numeric(df_folio["Total"], errors="coerce").fillna(0).sum()
+                st.metric("Total", f"$ {total:,.2f}")
 
         st.divider()
 
