@@ -33,6 +33,8 @@ st.markdown(
 require_login()
 require_access("consultar_reparacion")
 
+st.session_state.setdefault("modal_orden", None)
+
 # =================================
 # Navigation
 # =================================
@@ -289,6 +291,10 @@ else:
 
             components.html(html, height=260)
 
+            if st.button("👁 Ver", key=f"ver_{i}", use_container_width=True):
+                st.session_state.modal_orden = row.to_dict()
+
+
 
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
@@ -429,3 +435,49 @@ st.caption(
     f"Mostrando {len(df_filtrado)} registros | "
     f"Desde {fecha_inicio} hasta {fecha_fin}"
 )
+
+# =================================
+# VIEW MODAL
+# =================================
+if st.session_state.get("modal_orden"):
+
+    r = st.session_state.modal_orden
+
+    @st.dialog("Detalle de la Reparación")
+    def modal():
+
+        def safe(x):
+            if pd.isna(x) or x is None:
+                return ""
+            return str(x)
+
+        st.markdown(f"### {safe(r.get('Reporte'))}")
+
+        st.markdown(
+            f"**Unidad:** {safe(r.get('Unidad'))}  \n"
+            f"**Tipo Unidad:** {safe(r.get('Tipo Unidad'))}"
+        )
+
+        st.divider()
+
+        st.markdown("**Razón de reparación**")
+        st.write(safe(r.get("Razon Reparacion")))
+
+        st.markdown("**Descripción**")
+        st.write(safe(r.get("Descripcion")))
+
+        st.divider()
+
+        fa = pd.to_datetime(r.get("Fecha Aceptado"), errors="coerce")
+        fi = pd.to_datetime(r.get("Fecha Iniciada"), errors="coerce")
+
+        st.markdown(f"**Fecha Aceptado:** {fa.date() if pd.notna(fa) else '-'}")
+        st.markdown(f"**Fecha Iniciada:** {fi.date() if pd.notna(fi) else '-'}")
+
+        st.divider()
+
+        if st.button("Cerrar"):
+            st.session_state.modal_orden = None
+            st.rerun()
+
+    modal()
