@@ -196,7 +196,7 @@ def cargar_servicios_folio(folio):
     data = ws.get_all_records()
     if not data:
         return pd.DataFrame(columns=[
-            "Parte","Tipo de Parte","PU","IVA","Cantidad","Total"
+            "Parte","Tipo De Parte","PU","IVA","Cantidad","Total"
         ])
 
     df = pd.DataFrame(data)
@@ -434,8 +434,6 @@ def cargar_catalogo_igloo_simple():
         st.error(f"IGLOO → faltan columnas: {missing}")
         return pd.DataFrame()
 
-    df = df.rename(columns={"Tipo De Parte": "Tipo de Parte"})
-
     df["PU"] = (
         df["PU"]
         .astype(str)
@@ -462,7 +460,7 @@ def cargar_catalogo_igloo_simple():
         axis=1
     )
 
-    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
+    return df[["Parte", "Tipo De Parte", "PU", "IVA", "label"]]
 
 # LINCOLN LOADER
 @st.cache_data(ttl=600)
@@ -476,8 +474,8 @@ def cargar_catalogo_lincoln():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    if "Tipo de Parte" not in df.columns:
-        df["Tipo de Parte"] = "Servicio"
+    if "Tipo De Parte" not in df.columns:
+        df["Tipo De Parte"] = "Servicio"
 
     df["PU"] = (
         df["PU USD"]
@@ -497,7 +495,7 @@ def cargar_catalogo_lincoln():
         axis=1
     )
 
-    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
+    return df[["Parte", "Tipo De Parte", "PU", "IVA", "label"]]
 
 # PICUS LOADER
 @st.cache_data(ttl=600)
@@ -511,8 +509,8 @@ def cargar_catalogo_picus():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    if "Tipo de Parte" not in df.columns:
-        df["Tipo de Parte"] = "Servicio"
+    if "Tipo De Parte" not in df.columns:
+        df["Tipo De Parte"] = "Servicio"
 
     df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
     df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
@@ -522,7 +520,7 @@ def cargar_catalogo_picus():
         axis=1
     )
 
-    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
+    return df[["Parte", "Tipo De Parte", "PU", "IVA", "label"]]
 
 # SET FREIGHT LOADER
 @st.cache_data(ttl=600)
@@ -536,8 +534,8 @@ def cargar_catalogo_sfi():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    if "Tipo de Parte" not in df.columns:
-        df["Tipo de Parte"] = "Servicio"
+    if "Tipo De Parte" not in df.columns:
+        df["Tipo De Parte"] = "Servicio"
 
     df["PU"] = (
         df["PU USD"]
@@ -557,7 +555,7 @@ def cargar_catalogo_sfi():
         axis=1
     )
 
-    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
+    return df[["Parte", "Tipo De Parte", "PU", "IVA", "label"]]
 
 # SET LOGIS LOADER
 @st.cache_data(ttl=600)
@@ -571,8 +569,8 @@ def cargar_catalogo_slp():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    if "Tipo de Parte" not in df.columns:
-        df["Tipo de Parte"] = "Servicio"
+    if "Tipo De Parte" not in df.columns:
+        df["Tipo De Parte"] = "Servicio"
 
     df["PU"] = (
         df["PU USD"]
@@ -592,7 +590,7 @@ def cargar_catalogo_slp():
         axis=1
     )
 
-    return df[["Parte", "Tipo de Parte", "PU", "IVA", "label"]]
+    return df[["Parte", "Tipo De Parte", "PU", "IVA", "label"]]
 
 # =================================
 # Catalog dispatcher by Empresa
@@ -896,7 +894,6 @@ if not pases_df.empty:
 else:
     st.info("No hay pases registrados.")
 
-
 # =================================
 # BUSCAR
 # =================================
@@ -1130,7 +1127,6 @@ if st.session_state.modal_reporte:
             "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
             "Total": st.column_config.NumberColumn(format="$ %.2f"),
         }
-
 
         edited_df = st.data_editor(
             st.session_state.servicios_df,
