@@ -550,3 +550,4 @@ if st.session_state.get("modal_orden"):
             st.rerun()
 
     modal()
+    st.session_state.modal_orden = None
