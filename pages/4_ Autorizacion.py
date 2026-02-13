@@ -220,8 +220,11 @@ def cargar_servicios_folio(folio):
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
 
     return df[
-        ["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]
-    ]
+        ["Parte","TipoCompra","Precio","IVA","Cantidad","Total"]
+    ].rename(columns={
+        "TipoCompra": "Tipo de Parte",
+        "Precio": "PU"
+    })
 
 # =================================
 # UPSERT Servicios / Refacciones
@@ -259,14 +262,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 
     servicios_df = servicios_df.copy()
     servicios_df["Parte"] = servicios_df["Parte"].astype(str)
-
-    # =====================================================
-    # 🔥 LINCOLN NORMALIZATION (USD → system columns)
-    # =====================================================
-    if "PrecioParte" in servicios_df.columns:
-        servicios_df["Precio MXP"] = servicios_df["PrecioParte"]
-        servicios_df["IVA"] = 0
-        servicios_df["Total MXN"] = servicios_df.get("Total USD", 0)
 
     df_folio = df_db[df_db["Folio"] == str(folio)]
 
@@ -347,11 +342,11 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             folio,
             usuario,
             r["Parte"],
-            r["TipoCompra"],
-            float(r["Precio MXP"] or 0),
+            r["Tipo de Parte"],
+            float(r["PU"] or 0),
             float(r["IVA"] or 0),
             int(r["Cantidad"] or 0),
-            float(r["Total MXN"] or 0),
+            float(r["Total"] or 0),
             fecha_mod,
         ]
 
@@ -851,21 +846,6 @@ if not pases_df.empty:
 
                     df = cargar_servicios_folio(r["NoFolio"])
 
-                    if r["Empresa"] == "LINCOLN FREIGHT":
-
-                        if df.empty:
-                            df = pd.DataFrame(columns=[
-                                "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
-                            ])
-                        else:
-                            df["PrecioParte"] = df.get("Precio MXP", 0)
-                            df["Cantidad"] = df.get("Cantidad", 0)
-                            df["Total USD"] = df.get("Total MXN", 0)
-
-                            df = df[[
-                                "Parte", "TipoCompra", "PrecioParte", "Cantidad", "Total USD"
-                            ]]
-
                     st.session_state.servicios_df = df
 
 else:
@@ -1005,9 +985,6 @@ if st.session_state.modal_reporte:
 
         proveedor = (r.get("Proveedor") or "").lower()
 
-        #currency detector
-        es_lincoln = r["Empresa"] == "LINCOLN FREIGHT"
-
         if "interno" in proveedor:
             st.text_input(
                 "No. de Reporte",
@@ -1100,29 +1077,17 @@ if st.session_state.modal_reporte:
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
 
-                if es_lincoln:
-                    precio = pd.to_numeric(fila.get("PrecioParte", 0), errors="coerce") or 0
+                precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
+                iva = pd.to_numeric(fila.get("IVA", 0), errors="coerce") or 0
 
-                    nueva = {
-                        "Parte": fila.get("Parte", ""),
-                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
-                        "PrecioParte": precio,
-                        "Cantidad": 1,
-                        "Total USD": precio,
-                    }
-
-                else:
-                    precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
-                    iva = pd.to_numeric(fila.get("IvaParte", 0), errors="coerce") or 0
-
-                    nueva = {
-                        "Parte": fila.get("Parte", ""),
-                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
-                        "Precio MXP": precio,
-                        "IVA": iva,
-                        "Cantidad": 1,
-                        "Total MXN": (precio + iva),
-                    }
+                nueva = {
+                    "Parte": fila.get("Parte", ""),
+                    "Tipo de Parte": fila.get("Tipo de Parte", "Servicio"),
+                    "PU": precio,
+                    "IVA": iva,
+                    "Cantidad": 1,
+                    "Total": (precio + iva),
+                }
 
                 st.session_state.servicios_df = pd.concat(
                     [st.session_state.servicios_df, pd.DataFrame([nueva])],
@@ -1132,19 +1097,13 @@ if st.session_state.modal_reporte:
         # =====================================================
         # EDITOR
         # =====================================================
-        if es_lincoln:
-            column_config = {
-                "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
-                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-                "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
-            }
-        else:
-            column_config = {
-                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
-                "IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
-            }
+        column_config = {
+            "PU": st.column_config.NumberColumn(format="$ %.2f"),
+            "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+            "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
+            "Total": st.column_config.NumberColumn(format="$ %.2f"),
+        }
+
 
         edited_df = st.data_editor(
             st.session_state.servicios_df,
@@ -1159,36 +1118,20 @@ if st.session_state.modal_reporte:
         # =====================================================
         if not edited_df.empty:
 
-            if es_lincoln:
-                for col in ["PrecioParte", "Cantidad"]:
-                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
+            for col in ["PU", "Cantidad", "IVA"]:
+                edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
 
-                edited_df["Total USD"] = edited_df["PrecioParte"] * edited_df["Cantidad"]
-
-            else:
-                for col in ["Precio MXP", "Cantidad", "IVA"]:
-                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
-
-                edited_df["Total MXN"] = (
-                    (edited_df["Precio MXP"] + edited_df["IVA"])
-                    * edited_df["Cantidad"]
-                )
+            edited_df["Total"] = (edited_df["PU"] + edited_df["IVA"]) * edited_df["Cantidad"]
 
         st.session_state.servicios_df = edited_df
 
         # =====================================================
         # METRIC
         # =====================================================
-        if es_lincoln:
-            st.metric(
-                "Total USD",
-                f"$ {edited_df.get('Total USD', pd.Series()).fillna(0).sum():,.2f}"
-            )
-        else:
-            st.metric(
-                "Total MXN",
-                f"$ {edited_df.get('Total MXN', pd.Series()).fillna(0).sum():,.2f}"
-            )
+        st.metric(
+            "Total",
+            f"$ {edited_df.get('Total', pd.Series()).fillna(0).sum():,.2f}"
+        )
 
         st.divider()
         c1, c2 = st.columns(2)
