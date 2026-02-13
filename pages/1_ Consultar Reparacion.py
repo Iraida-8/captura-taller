@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from auth import require_login, require_access
+import streamlit.components.v1 as components
 
 st.cache_data.clear()
 
@@ -218,6 +219,11 @@ if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
+def safe(x):
+    if pd.isna(x) or x is None:
+        return ""
+    return str(x)
+
 # =================================
 # ÚLTIMOS 10 REGISTROS
 # =================================
@@ -279,6 +285,68 @@ if "FECHA" in df_interna.columns:
 if "Fecha Analisis" in df_externa.columns:
     df_externa = df_externa.sort_values("Fecha Analisis", ascending=False).head(10)
 
+# =====================================================
+# MANO DE OBRA INTERNA
+# =====================================================
+st.markdown("### 🔧 Mano de Obra Interna")
+
+if df_interna.empty:
+    st.info("No hay registros internos.")
+else:
+    cols = st.columns(5)
+
+    for i, (_, row) in enumerate(df_interna.iterrows()):
+        col = cols[i % 5]
+
+        with col:
+            reporte = safe(row.get("Reporte"))
+            unidad = safe(row.get("Unidad"))
+            tipo = safe(row.get("Tipo Unidad"))
+            razon = safe(row.get("Razon Reparacion"))
+            desc = safe(row.get("Descripcion"))
+            f_acep = safe(row.get("Fecha Aceptado"))
+            f_ini = safe(row.get("Fecha Iniciada"))
+
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#ffffff;
+                    padding:14px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    min-height:190px;
+                    font-family:sans-serif;
+                ">
+                    <div style="font-weight:900;">{reporte}</div>
+
+                    <div style="font-size:0.8rem; margin-top:4px;">
+                        {unidad} &nbsp; | &nbsp; {tipo}
+                    </div>
+
+                    <hr style="margin:6px 0">
+
+                    <div style="font-size:0.8rem;">
+                        <b>Razón:</b> {razon}
+                    </div>
+
+                    <div style="font-size:0.8rem;">
+                        <b>Descripción:</b> {desc}
+                    </div>
+
+                    <hr style="margin:6px 0">
+
+                    <div style="font-size:0.75rem;">
+                        {f_acep} &nbsp; | &nbsp; {f_ini}
+                    </div>
+                </div>
+            </div>
+            """
+
+            components.html(html, height=260)
+
+            if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
+                st.session_state.modal_orden = row.to_dict()
 
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
