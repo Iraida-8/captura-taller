@@ -537,6 +537,10 @@ columnas = [
 # keep only columns that exist
 columnas = [c for c in columnas if c in df_detallado.columns]
 
+df_detallado = df_detallado.rename(columns={
+    "Folio": "No. de Folio"
+})
+
 st.dataframe(
     df_detallado[columnas],
     hide_index=True,
@@ -650,6 +654,10 @@ else:
     ]
 
     columnas = [c for c in columnas if c in df_resumen.columns]
+
+    df_resumen = df_resumen.rename(columns={
+    "Folio": "No. de Folio"
+    })
 
     st.dataframe(
         df_resumen[columnas],
