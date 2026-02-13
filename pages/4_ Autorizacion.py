@@ -220,7 +220,7 @@ def cargar_servicios_folio(folio):
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
 
     return df[
-        ["Parte","TipoCompra","Precio","IVA","Cantidad","Total"]
+        ["Parte","Tipo de Parte","PU","IVA","Cantidad","Total"]
     ].rename(columns={
         "TipoCompra": "Tipo de Parte",
         "Precio": "PU"
