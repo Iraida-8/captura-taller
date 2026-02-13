@@ -281,9 +281,10 @@ if unidad_orden_sel != "Todas":
 # ==========================================
 # SORT & TAKE LAST 10
 # ==========================================
-if "FECHA" in df_externa.columns:
-    df_externa = df_externa.sort_values("FECHA", ascending=False).head(10)
-elif "Fecha Analisis" in df_externa.columns:
+if "FECHA" in df_interna.columns:
+    df_interna = df_interna.sort_values("FECHA", ascending=False).head(10)
+
+if "Fecha Analisis" in df_externa.columns:
     df_externa = df_externa.sort_values("Fecha Analisis", ascending=False).head(10)
 
 # =====================================================
