@@ -554,6 +554,13 @@ if st.session_state.get("modal_reporte"):
         # ===============================
         df_folio = df_services[df_services["Folio"] == folio]
 
+        # REMOVE LOG / EMPTY ROWS
+        if "Parte" in df_folio.columns:
+            df_folio = df_folio[
+                df_folio["Parte"].notna() &
+                (df_folio["Parte"].astype(str).str.strip() != "")
+            ]
+
         if not df_folio.empty and "Fecha Mod" in df_folio.columns:
             fecha_mod = df_folio["Fecha Mod"].max()
             st.markdown(f"**Fecha Mod:** {fecha_mod}")
@@ -588,7 +595,15 @@ if st.session_state.get("modal_reporte"):
             )
 
             total = pd.to_numeric(df_folio.get("Total", 0), errors="coerce").fillna(0).sum()
-            st.metric("Total", f"$ {total:,.2f}")
+
+            empresa = r.get("Empresa", "")
+
+            if empresa in ["IGLOO TRANSPORT", "PICUS"]:
+                moneda = "MXN"
+            else:
+                moneda = "USD"
+
+            st.metric(f"Total ({moneda})", f"$ {total:,.2f}")
 
         st.divider()
 
