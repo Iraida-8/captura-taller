@@ -258,11 +258,23 @@ else:
 
                     <hr style="margin:6px 0">
 
-                    <div style="font-size:0.8rem;">
+                    <div style="
+                        font-size:0.8rem;
+                        overflow:hidden;
+                        display:-webkit-box;
+                        -webkit-line-clamp:2;
+                        -webkit-box-orient:vertical;
+                    ">
                         <b>Razón:</b> {razon}
                     </div>
 
-                    <div style="font-size:0.8rem;">
+                    <div style="
+                        font-size:0.8rem;
+                        overflow:hidden;
+                        display:-webkit-box;
+                        -webkit-line-clamp:3;
+                        -webkit-box-orient:vertical;
+                    ">
                         <b>Descripción:</b> {desc}
                     </div>
 
