@@ -457,6 +457,8 @@ if buscar:
 # TABLE 1 — REPORTE DETALLADO
 # ======================================================
 
+df_s = df_services.copy()
+
 # remove log rows
 if "Parte" in df_s.columns:
     df_s = df_s[
