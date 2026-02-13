@@ -349,7 +349,8 @@ else:
 
             if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
                 st.session_state.modal_orden = row.to_dict()
-
+                
+st.divider()
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
 # =====================================================
@@ -413,6 +414,7 @@ else:
             if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
                 st.session_state.modal_orden = row.to_dict()
 
+st.divider()
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
 # =================================
