@@ -459,18 +459,20 @@ if buscar:
 
 df_s = df_services.copy()
 
-# remove log rows
+# remove log rows (no refacción)
 if "Parte" in df_s.columns:
     df_s = df_s[
         df_s["Parte"].notna() &
         (df_s["Parte"].astype(str).str.strip() != "")
     ]
 
+# merge → fan out
 df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
 st.divider()
 st.subheader("📄 Reporte Detallado")
 
+# desired column order
 cols_detalle = [
     "Folio",
     "Empresa",
@@ -483,13 +485,18 @@ cols_detalle = [
     "Total",
 ]
 
+# keep only existing columns (prevents crashes)
 cols_detalle = [c for c in cols_detalle if c in df_detallado.columns]
 
-st.dataframe(
-    df_detallado[cols_detalle],
-    hide_index=True,
-    width="stretch"
-)
+# if nothing after filtering
+if df_detallado.empty:
+    st.info("Sin información.")
+else:
+    st.dataframe(
+        df_detallado[cols_detalle],
+        hide_index=True,
+        width="stretch"
+    )
 
 # ======================================================
 # TABLE 2 — RESUMEN POR ORDEN
