@@ -221,10 +221,7 @@ def cargar_servicios_folio(folio):
 
     return df[
         ["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]
-    ].rename(columns={
-        "Tipo De Parte": "Tipo de Parte",
-        "Precio": "PU"
-    })
+    ]
 
 # =================================
 # UPSERT Servicios / Refacciones
@@ -342,7 +339,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             folio,
             usuario,
             r["Parte"],
-            r["Tipo de Parte"],
+            r["Tipo De Parte"],
             float(r["PU"] or 0),
             float(r["IVA"] or 0),
             int(r["Cantidad"] or 0),
@@ -771,7 +768,7 @@ st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
     pd.DataFrame(columns=[
-        "Parte","Tipo de Parte","PU","IVA","Cantidad","Total"
+        "Parte","Tipo De Parte","PU","IVA","Cantidad","Total"
     ])
 )
 
@@ -1082,7 +1079,7 @@ if st.session_state.modal_reporte:
 
                 nueva = {
                     "Parte": fila.get("Parte", ""),
-                    "Tipo de Parte": fila.get("Tipo de Parte", "Servicio"),
+                    "Tipo De Parte": fila.get("Tipo De Parte", "Servicio"),
                     "PU": precio,
                     "IVA": iva,
                     "Cantidad": 1,
