@@ -158,6 +158,8 @@ def cargar_ordenes(url):
         "Fecha Analisis": "FECHA",
         "Diferencia": "DIFERENCIA",
         "Comentarios": "COMENTARIOS",
+        "Tipo De Unidad": "Tipo Unidad",
+        "Razon de servicio": "Razon Reparacion",
     }
 
     df = df.rename(columns=rename_map)
