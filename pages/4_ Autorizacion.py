@@ -196,7 +196,7 @@ def cargar_servicios_folio(folio):
     data = ws.get_all_records()
     if not data:
         return pd.DataFrame(columns=[
-            "Parte","TipoCompra","Precio","IVA","Cantidad","Total"
+            "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
         ])
 
     df = pd.DataFrame(data)
@@ -220,7 +220,7 @@ def cargar_servicios_folio(folio):
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
 
     return df[
-        ["Parte","TipoCompra","Precio","IVA","Cantidad","Total"]
+        ["Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"]
     ]
 
 # =================================
@@ -344,17 +344,16 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-        folio,
-        usuario,
-        r.get("Parte", ""),
-        r.get("Tipo de Parte", ""),
-        float(r.get("PU", 0) or 0),
-        float(r.get("IVA", 0) or 0),
-        int(r.get("Cantidad", 0) or 0),
-        float(r.get("Total", 0) or 0),
-        fecha_mod,
-    ]
-
+            folio,
+            usuario,
+            r["Parte"],
+            r["TipoCompra"],
+            float(r["Precio MXP"] or 0),
+            float(r["IVA"] or 0),
+            int(r["Cantidad"] or 0),
+            float(r["Total MXN"] or 0),
+            fecha_mod,
+        ]
 
         for col in date_columns:
             existente = fechas_existentes.get(col, "")
@@ -424,10 +423,9 @@ pases_df = cargar_pases_taller()
 # Catalogs (READ ONLY)
 # =================================
 
-# IGLOO LOADER (NEW STANDARD STRUCTURE)
+# IGLOO LOADER
 @st.cache_data(ttl=600)
 def cargar_catalogo_igloo_simple():
-
     URL = (
         "https://docs.google.com/spreadsheets/d/"
         "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
@@ -437,55 +435,32 @@ def cargar_catalogo_igloo_simple():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    # =================================
+    # ================================
     # REQUIRED COLUMNS
-    # =================================
-    required = ["Parte", "Tipo De Parte", "PU", "IVA"]
-    faltantes = [c for c in required if c not in df.columns]
+    # ================================
+    required = ["Parte", "Tipo de Parte", "PU", "IVA"]
+    missing = [c for c in required if c not in df.columns]
 
-    if faltantes:
-        st.error(f"IGLOO → faltan columnas: {faltantes}")
+    if missing:
+        st.error(f"IGLOO → faltan columnas: {missing}")
         return pd.DataFrame()
 
-    # =================================
-    # CLEAN NUMBERS
-    # =================================
-    def limpiar(v):
-        try:
-            return float(str(v).replace("$", "").replace(",", "").strip())
-        except:
-            return 0
+    # ================================
+    # DIRECT MAP → SYSTEM FORMAT
+    # ================================
+    df["Precio MXP"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
+    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
+    df["TipoCompra"] = df["Tipo de Parte"].fillna("Servicio")
 
-    df["PU"] = df["PU"].apply(limpiar)
-    df["IVA"] = df["IVA"].apply(limpiar)
-
-    # =================================
-    # DEFAULTS
-    # =================================
-    df["Cantidad"] = 1
-    df["Total"] = df["PU"] + df["IVA"]
-
-    # =================================
-    # RENAME TO YOUR EXACT STANDARD
-    # =================================
-    df = df.rename(columns={
-        "Tipo De Parte": "Tipo de Parte"
-    })
-
-    # =================================
+    # ================================
     # LABEL
-    # =================================
+    # ================================
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
+        lambda r: f"{r['Parte']} - ${r['Precio MXP']:,.2f}",
         axis=1
     )
 
-    # =================================
-    # FINAL STRUCTURE
-    # =================================
-    return df[
-        ["Parte", "Tipo de Parte", "PU", "IVA", "Cantidad", "Total", "label"]
-    ]
+    return df[["Parte", "TipoCompra", "Precio MXP", "IVA", "label"]]
 
 # LINCOLN LOADER
 @st.cache_data(ttl=600)
@@ -855,7 +830,7 @@ st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
     pd.DataFrame(columns=[
-        "Parte","Tipo de Parte","PU","IVA","Cantidad","Total"
+        "Parte","TipoCompra","Precio MXP","IVA","Cantidad","Total MXN"
     ])
 )
 
@@ -1197,14 +1172,29 @@ if st.session_state.modal_reporte:
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
 
-                nueva = {
-                    "Parte": fila.get("Parte", ""),
-                    "Tipo de Parte": fila.get("Tipo de Parte", "Servicio"),
-                    "PU": float(fila.get("PU", 0)),
-                    "IVA": float(fila.get("IVA", 0)),
-                    "Cantidad": 1,
-                    "Total": float(fila.get("PU", 0)) + float(fila.get("IVA", 0)),
-                }
+                if es_lincoln:
+                    precio = pd.to_numeric(fila.get("PrecioParte", 0), errors="coerce") or 0
+
+                    nueva = {
+                        "Parte": fila.get("Parte", ""),
+                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
+                        "PrecioParte": precio,
+                        "Cantidad": 1,
+                        "Total USD": precio,
+                    }
+
+                else:
+                    precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
+                    iva = pd.to_numeric(fila.get("IvaParte", 0), errors="coerce") or 0
+
+                    nueva = {
+                        "Parte": fila.get("Parte", ""),
+                        "TipoCompra": fila.get("TipoCompra", "Servicio"),
+                        "Precio MXP": precio,
+                        "IVA": iva,
+                        "Cantidad": 1,
+                        "Total MXN": (precio + iva),
+                    }
 
                 st.session_state.servicios_df = pd.concat(
                     [st.session_state.servicios_df, pd.DataFrame([nueva])],
@@ -1222,10 +1212,10 @@ if st.session_state.modal_reporte:
             }
         else:
             column_config = {
-                "PU": st.column_config.NumberColumn(format="$ %.2f"),
+                "Precio MXP": st.column_config.NumberColumn(format="$ %.2f"),
                 "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                 "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-                "Total": st.column_config.NumberColumn(format="$ %.2f"),
+                "Total MXN": st.column_config.NumberColumn(format="$ %.2f"),
             }
 
         edited_df = st.data_editor(
@@ -1240,10 +1230,21 @@ if st.session_state.modal_reporte:
         # RECALC TOTALS
         # =====================================================
         if not edited_df.empty:
-            for col in ["PU", "IVA", "Cantidad"]:
-                edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
 
-            edited_df["Total"] = (edited_df["PU"] + edited_df["IVA"]) * edited_df["Cantidad"]
+            if es_lincoln:
+                for col in ["PrecioParte", "Cantidad"]:
+                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
+
+                edited_df["Total USD"] = edited_df["PrecioParte"] * edited_df["Cantidad"]
+
+            else:
+                for col in ["Precio MXP", "Cantidad", "IVA"]:
+                    edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
+
+                edited_df["Total MXN"] = (
+                    (edited_df["Precio MXP"] + edited_df["IVA"])
+                    * edited_df["Cantidad"]
+                )
 
         st.session_state.servicios_df = edited_df
 
@@ -1257,8 +1258,8 @@ if st.session_state.modal_reporte:
             )
         else:
             st.metric(
-                "Total",
-                f"$ {edited_df.get('Total', pd.Series()).fillna(0).sum():,.2f}"
+                "Total MXN",
+                f"$ {edited_df.get('Total MXN', pd.Series()).fillna(0).sum():,.2f}"
             )
 
         st.divider()
