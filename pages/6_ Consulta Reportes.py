@@ -393,7 +393,17 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     with d8:
         fecha_cancel = st.date_input("Fecha Cancelado", value=None)
 
-buscar = st.button("🔍 Aplicar filtros", type="primary")
+c1, c2 = st.columns([1,1])
+
+with c1:
+    buscar = st.button("🔍 Aplicar filtros", type="primary", use_container_width=True)
+
+with c2:
+    if st.button("🧹 Borrar filtros", use_container_width=True):
+        st.session_state.pop("df_filtrado_pases", None)
+        st.session_state.pop("df_filtrado_servicios", None)
+        st.session_state.modal_reporte = None
+        st.rerun()
 
 # =================================
 # APPLY FILTERS
