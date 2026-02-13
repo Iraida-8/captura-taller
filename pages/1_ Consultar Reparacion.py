@@ -125,7 +125,20 @@ def cargar_ordenes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    # ÓRDENES use FECHA
+    # =====================================================
+    # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
+    # =====================================================
+    rename_map = {
+        "Fecha Analisis": "FECHA",
+        "Diferencia": "DIFERENCIA",
+        "Comentarios": "COMENTARIOS",
+    }
+
+    df = df.rename(columns=rename_map)
+
+    # =====================================================
+    # DATE PARSE
+    # =====================================================
     if "FECHA" in df.columns:
         df["FECHA"] = pd.to_datetime(
             df["FECHA"],
