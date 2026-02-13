@@ -423,9 +423,10 @@ pases_df = cargar_pases_taller()
 # Catalogs (READ ONLY)
 # =================================
 
-# IGLOO LOADER
+# IGLOO LOADER (NEW STANDARD STRUCTURE)
 @st.cache_data(ttl=600)
 def cargar_catalogo_igloo_simple():
+
     URL = (
         "https://docs.google.com/spreadsheets/d/"
         "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
@@ -435,32 +436,55 @@ def cargar_catalogo_igloo_simple():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
-    # ================================
+    # =================================
     # REQUIRED COLUMNS
-    # ================================
-    required = ["Parte", "Tipo de Parte", "PU", "IVA"]
-    missing = [c for c in required if c not in df.columns]
+    # =================================
+    required = ["Parte", "Tipo De Parte", "PU", "IVA"]
+    faltantes = [c for c in required if c not in df.columns]
 
-    if missing:
-        st.error(f"IGLOO → faltan columnas: {missing}")
+    if faltantes:
+        st.error(f"IGLOO → faltan columnas: {faltantes}")
         return pd.DataFrame()
 
-    # ================================
-    # DIRECT MAP → SYSTEM FORMAT
-    # ================================
-    df["Precio MXP"] = pd.to_numeric(df["PU"], errors="coerce").fillna(0)
-    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce").fillna(0)
-    df["TipoCompra"] = df["Tipo de Parte"].fillna("Servicio")
+    # =================================
+    # CLEAN NUMBERS
+    # =================================
+    def limpiar(v):
+        try:
+            return float(str(v).replace("$", "").replace(",", "").strip())
+        except:
+            return 0
 
-    # ================================
+    df["PU"] = df["PU"].apply(limpiar)
+    df["IVA"] = df["IVA"].apply(limpiar)
+
+    # =================================
+    # DEFAULTS
+    # =================================
+    df["Cantidad"] = 1
+    df["Total"] = df["PU"] + df["IVA"]
+
+    # =================================
+    # RENAME TO YOUR EXACT STANDARD
+    # =================================
+    df = df.rename(columns={
+        "Tipo De Parte": "Tipo de Parte"
+    })
+
+    # =================================
     # LABEL
-    # ================================
+    # =================================
     df["label"] = df.apply(
-        lambda r: f"{r['Parte']} - ${r['Precio MXP']:,.2f}",
+        lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
     )
 
-    return df[["Parte", "TipoCompra", "Precio MXP", "IVA", "label"]]
+    # =================================
+    # FINAL STRUCTURE
+    # =================================
+    return df[
+        ["Parte", "Tipo de Parte", "PU", "IVA", "Cantidad", "Total", "label"]
+    ]
 
 # LINCOLN LOADER
 @st.cache_data(ttl=600)
