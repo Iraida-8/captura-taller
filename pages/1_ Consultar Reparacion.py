@@ -550,6 +550,27 @@ st.dataframe(
 )
 
 # =================================
+# TABLA COMPLETA OSTE
+# =================================
+st.divider()
+st.subheader("Todas las Órdenes Externas (OSTES)")
+
+df_ostes_tabla = df_ostes.copy()
+
+# safety → make sure FECHA exists
+if "FECHA" in df_ostes_tabla.columns:
+    df_ostes_tabla = df_ostes_tabla.sort_values("FECHA", ascending=False)
+
+if df_ostes_tabla.empty:
+    st.info("No hay registros externos.")
+else:
+    st.dataframe(
+        df_ostes_tabla,
+        hide_index=True,
+        width="stretch"
+    )
+
+# =================================
 # FOOTER
 # =================================
 st.caption(
