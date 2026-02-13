@@ -233,11 +233,15 @@ else:
         with col:
             reporte = safe(row.get("Reporte"))
             unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
+            tipo_unidad = safe(row.get("Tipo Unidad"))   # ← fixed name
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
-            f_acep = safe(row.get("Fecha Aceptado"))
-            f_ini = safe(row.get("Fecha Iniciada"))
+
+            fa = row.get("Fecha Aceptado")
+            fecha_aceptado = fa.date() if pd.notna(fa) else ""
+
+            fi = row.get("Fecha Iniciada")
+            fecha_iniciada = fi.date() if pd.notna(fi) else ""
 
             html = f"""
             <div style="padding:8px;">
@@ -333,8 +337,8 @@ else:
             </div>
             """
 
-
             components.html(html, height=260)
+
 
 
 # =================================
