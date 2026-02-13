@@ -456,6 +456,9 @@ if buscar:
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
 # ======================================================
+# base data if filters were not executed
+df_p = st.session_state.get("df_filtrado_pases", df_pases.copy())
+df_s = st.session_state.get("df_filtrado_servicios", df_services.copy())
 
 df_s = df_services.copy()
 
