@@ -223,7 +223,6 @@ def safe(x):
         return ""
     return str(x)
 
-
 if df_ultimos.empty:
     st.info("No hay registros.")
 else:
@@ -292,9 +291,8 @@ else:
             components.html(html, height=260)
 
             if st.button("👁 Ver", key=f"ver_{i}", use_container_width=True):
-                st.session_state.modal_orden = row.to_dict()
-
-
+                full_row = df[df["Reporte"] == row["Reporte"]].iloc[0]
+                st.session_state.modal_orden = full_row.to_dict()
 
 # =================================
 # ÚLTIMOS 10 REGISTROS (PARTES)
