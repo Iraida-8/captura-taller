@@ -577,32 +577,18 @@ if st.session_state.get("modal_reporte"):
         if df_folio.empty:
             st.info("Sin servicios registrados.")
         else:
-            es_lincoln = r.get("Empresa") == "LINCOLN FREIGHT"
+            # show unified structure for all companies
+            cols = ["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]
+            cols = [c for c in cols if c in df_folio.columns]
 
-            if es_lincoln:
-                df_show = df_folio.copy()
-                df_show["PrecioParte"] = df_show.get("Precio MXP", 0)
-                df_show["Cantidad"] = df_show.get("Cantidad", 0)
-                df_show["Total USD"] = df_show.get("Total MXN", 0)
+            st.dataframe(
+                df_folio[cols],
+                hide_index=True,
+                width="stretch"
+            )
 
-                st.dataframe(
-                    df_show[["Parte","TipoCompra","PrecioParte","Cantidad","Total USD"]],
-                    hide_index=True,
-                    width="stretch"
-                )
-
-                total = pd.to_numeric(df_show["Total USD"], errors="coerce").fillna(0).sum()
-                st.metric("Total USD", f"$ {total:,.2f}")
-
-            else:
-                st.dataframe(
-                    df_folio[["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]],
-                    hide_index=True,
-                    width="stretch"
-                )
-
-                total = pd.to_numeric(df_folio["Total"], errors="coerce").fillna(0).sum()
-                st.metric("Total", f"$ {total:,.2f}")
+            total = pd.to_numeric(df_folio.get("Total", 0), errors="coerce").fillna(0).sum()
+            st.metric("Total", f"$ {total:,.2f}")
 
         st.divider()
 
