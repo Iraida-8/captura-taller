@@ -575,7 +575,7 @@ st.dataframe(
 st.divider()
 st.subheader("Todas las Órdenes Externas (OSTES)")
 
-df_ostes_tabla = df_ostes.copy()
+df_ostes_tabla = df_ostes_filtrado.copy()
 
 # safety → make sure FECHA exists
 if "FECHA" in df_ostes_tabla.columns:
