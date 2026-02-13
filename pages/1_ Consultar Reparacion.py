@@ -330,10 +330,10 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     total_col = None
     display_total_col = None
 
-    if empresa in ["IGLOO TRANSPORT", "PICUS", "SET LOGIS PLUS"]:
+    if empresa in ["IGLOO TRANSPORT", "PICUS"]:
         total_col = "Total Correccion"
         display_total_col = "Total Correccion"
-    elif empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL"]:
+    elif empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
         total_col = "Total USD"
         display_total_col = "Total USD"
     else:
@@ -520,13 +520,15 @@ if st.session_state.get("modal_orden"):
         st.subheader("Fechas")
 
         c1, c2, c3 = st.columns(3)
-        c1.markdown(f"**Registro:** {safe_date(r.get('Fecha Registro'))}")
-        c2.markdown(f"**Aceptado:** {safe_date(r.get('Fecha Aceptado'))}")
-        c3.markdown(f"**Iniciado:** {safe_date(r.get('Fecha Iniciada'))}")
+        c1.markdown(f"**Análisis:** {safe_date(r.get('Fecha Analisis'))}")
+        c2.markdown(f"**Registro:** {safe_date(r.get('Fecha Registro'))}")
+        c3.markdown(f"**Aceptado:** {safe_date(r.get('Fecha Aceptado'))}")
 
-        c4, c5 = st.columns(2)
-        c4.markdown(f"**Liberada:** {safe_date(r.get('Fecha Liberada'))}")
-        c5.markdown(f"**Terminada:** {safe_date(r.get('Fecha Terminada'))}")
+        c4, c5, c6 = st.columns(3)
+        c4.markdown(f"**Iniciado:** {safe_date(r.get('Fecha Iniciada'))}")
+        c5.markdown(f"**Liberada:** {safe_date(r.get('Fecha Liberada'))}")
+        c6.markdown(f"**Terminada:** {safe_date(r.get('Fecha Terminada'))}")
+
 
         st.divider()
 
