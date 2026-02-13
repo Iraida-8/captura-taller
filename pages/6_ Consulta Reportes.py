@@ -453,40 +453,70 @@ if buscar:
         folios_validos = df_s["Folio"].unique()
         df_p = df_p[df_p["Folio"].isin(folios_validos)]
 
-    # ======================================================
-    # TABLE 1 — REPORTE DETALLADO
-    # ======================================================
-    df_detallado = df_p.merge(df_s, on="Folio", how="left")
+# ======================================================
+# TABLE 1 — REPORTE DETALLADO
+# ======================================================
 
-    st.divider()
-    st.subheader("📄 Reporte Detallado")
+# remove log rows
+if "Parte" in df_s.columns:
+    df_s = df_s[
+        df_s["Parte"].notna() &
+        (df_s["Parte"].astype(str).str.strip() != "")
+    ]
 
-    st.dataframe(df_detallado, hide_index=True, width="stretch")
+df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
-    # ======================================================
-    # TABLE 2 — RESUMEN POR ORDEN
-    # ======================================================
-    st.divider()
-    st.subheader("📦 Resumen por Orden")
+st.divider()
+st.subheader("📄 Reporte Detallado")
 
-    servicios_agg = (
-        df_s
-        .groupby("Folio", as_index=False)
-        .agg({
-            "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
-            "Total": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
-        })
-        .rename(columns={
-            "Parte": "Partes",
-            "Total": "Total Servicios"
-        })
-    )
+cols_detalle = [
+    "Folio",
+    "Empresa",
+    "Estado",
+    "Parte",
+    "Tipo De Parte",
+    "PU",
+    "IVA",
+    "Cantidad",
+    "Total",
+]
 
-    df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
-    df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-    df_resumen["Total Servicios"] = df_resumen["Total Servicios"].fillna(0)
+cols_detalle = [c for c in cols_detalle if c in df_detallado.columns]
 
-    st.dataframe(df_resumen, hide_index=True, width="stretch")
+st.dataframe(
+    df_detallado[cols_detalle],
+    hide_index=True,
+    width="stretch"
+)
+
+# ======================================================
+# TABLE 2 — RESUMEN POR ORDEN
+# ======================================================
+st.divider()
+st.subheader("📦 Resumen por Orden")
+
+servicios_agg = (
+    df_s
+    .groupby("Folio", as_index=False)
+    .agg({
+        "Parte": lambda x: ", ".join(sorted(set(str(v) for v in x if pd.notna(v)))),
+        "Total": lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()
+    })
+    .rename(columns={
+        "Parte": "Partes",
+        "Total": "Total Servicios"
+    })
+)
+
+df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
+df_resumen["Partes"] = df_resumen["Partes"].fillna("")
+df_resumen["Total Servicios"] = df_resumen["Total Servicios"].fillna(0)
+
+st.dataframe(
+    df_resumen,
+    hide_index=True,
+    width="stretch"
+)
 
 # =================================
 # VIEW MODAL (READ ONLY)
