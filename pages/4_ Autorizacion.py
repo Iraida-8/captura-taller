@@ -1155,8 +1155,18 @@ if st.session_state.modal_reporte:
         # =====================================================
         # METRIC
         # =====================================================
+        # =============================================
+        # VISUAL CURRENCY (UI ONLY)
+        # =============================================
+        empresa = r.get("Empresa", "")
+
+        if empresa in ["IGLOO TRANSPORT", "PICUS"]:
+            moneda = "MXN"
+        else:
+            moneda = "USD"
+
         st.metric(
-            "Total",
+            f"Total ({moneda})",
             f"$ {edited_df.get('Total', pd.Series()).fillna(0).sum():,.2f}"
         )
 
