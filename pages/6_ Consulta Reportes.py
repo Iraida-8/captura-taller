@@ -491,7 +491,7 @@ st.subheader("📄 Reporte Detallado")
 columnas = [
     # ===== COMPANY TAB =====
     "Fecha de Captura",
-    "Folio",
+    "No. de Folio",
     "Fecha de Reporte",
     "Tipo de Proveedor",
     "Estado",
@@ -613,7 +613,7 @@ else:
     columnas = [
         # ===== COMPANY TAB =====
         "Fecha de Captura",
-        "Folio",
+        "No. de Folio",
         "Fecha de Reporte",
         "Tipo de Proveedor",
         "Estado",
