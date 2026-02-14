@@ -534,12 +534,14 @@ columnas = [
     "Fecha Cancelado",
 ]
 
-# keep only columns that exist
-columnas = [c for c in columnas if c in df_detallado.columns]
-
+# FIRST rename
 df_detallado = df_detallado.rename(columns={
     "Folio": "No. de Folio"
 })
+
+# THEN validate columns
+columnas = [c for c in columnas if c in df_detallado.columns]
+
 
 st.dataframe(
     df_detallado[columnas],
@@ -653,11 +655,13 @@ else:
         "Fecha Cancelado",
     ]
 
-    columnas = [c for c in columnas if c in df_resumen.columns]
-
+    # FIRST rename
     df_resumen = df_resumen.rename(columns={
-    "Folio": "No. de Folio"
+        "Folio": "No. de Folio"
     })
+
+    # THEN validate
+    columnas = [c for c in columnas if c in df_resumen.columns]
 
     st.dataframe(
         df_resumen[columnas],
