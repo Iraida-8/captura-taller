@@ -15,55 +15,31 @@ st.set_page_config(
 )
 
 # =================================
-# Convert Supabase hash fragment to query params
-# =================================
-st.markdown("""
-<script>
-const hash = window.location.hash;
-if (hash && hash.includes("access_token")) {
-    const query = hash.substring(1);
-    const newUrl = window.location.origin + window.location.pathname + "?" + query;
-    window.location.replace(newUrl);
-}
-</script>
-""", unsafe_allow_html=True)
-
-
-# =================================
 # CSS Styling
 # =================================
 st.markdown(
     """
     <style>
-    /* Hide sidebar */
     [data-testid="stSidebar"] { display: none; }
 
-    /* Page background */
     .stApp {
         background-color: #0e1117;
     }
 
-    /* Main width + centering */
     .block-container {
         max-width: 420px;
-        padding-top: 4.2rem;   
+        padding-top: 4.2rem;
         padding-bottom: 3rem;
     }
 
-    /* =========================
-       LOGO
-       ========================= */
     img {
         display: block;
         margin-left: auto;
         margin-right: auto;
         margin-bottom: 2rem;
-        transform: scale(1.18);   
+        transform: scale(1.18);
     }
 
-    /* =========================
-       AUTH CARD
-       ========================= */
     form[data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -71,37 +47,30 @@ st.markdown(
         box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
     }
 
-    /* Title */
     h1 {
         text-align: center;
         font-size: 1.6rem;
         margin-bottom: 0.3rem;
     }
 
-    /* Divider */
     hr {
         margin: 1rem 0 1.4rem 0;
     }
 
-    /* Inputs */
     input {
         font-size: 1rem !important;
         padding: 0.7rem !important;
         border-radius: 10px !important;
     }
 
-    /* Labels */
     label {
         font-size: 0.9rem !important;
         font-weight: 500;
     }
 
-    /* =========================
-       CENTERED BUTTON
-       ========================= */
     div.stButton > button,
     button[kind="primary"] {
-        width: auto;             
+        width: auto;
         min-width: 180px;
         display: block;
         margin-left: auto;
@@ -130,27 +99,14 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Supabase recovery token
+# Handle Password Recovery
 # =================================
 params = st.query_params
-st.write("DEBUG PARAMS:", st.query_params)
+session = supabase.auth.get_session()
 
-if params.get("type") == "recovery":
+if params.get("type") == "recovery" and session and session.user:
+
     st.title("Restablecer contraseña")
-
-    access_token = params.get("access_token")
-    refresh_token = params.get("refresh_token")
-
-    if not access_token or not refresh_token:
-        st.error("Token de recuperación inválido o expirado")
-        st.stop()
-
-    # Set the session using recovery tokens
-    try:
-        supabase.auth.set_session(access_token, refresh_token)
-    except Exception:
-        st.error("El enlace ha expirado o es inválido")
-        st.stop()
 
     with st.form("reset_password_form"):
         new_password = st.text_input(
@@ -164,6 +120,7 @@ if params.get("type") == "recovery":
         reset_submit = st.form_submit_button("Actualizar contraseña")
 
     if reset_submit:
+
         if new_password != confirm_password:
             st.error("Las contraseñas no coinciden")
             st.stop()
@@ -172,18 +129,19 @@ if params.get("type") == "recovery":
             st.error("La contraseña debe tener al menos 6 caracteres")
             st.stop()
 
-        supabase.auth.update_user({
-            "password": new_password
-        })
+        try:
+            supabase.auth.update_user({
+                "password": new_password
+            })
 
-        st.success("Contraseña actualizada correctamente")
+            st.success("Contraseña actualizada correctamente")
+            st.query_params.clear()
+            st.info("Ya puedes iniciar sesión")
 
-        # Clear recovery params
-        st.query_params.clear()
+        except Exception:
+            st.error("El enlace ha expirado o es inválido")
 
-        st.info("Ya puedes iniciar sesión")
         st.stop()
-
 
 # =================================
 # Session state
@@ -192,7 +150,7 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
 
 # =================================
-# LOGIN VIEW ONLY
+# LOGIN VIEW
 # =================================
 assets_dir = Path(__file__).parent / "assets"
 logo_path = assets_dir / "pg_brand.png"
@@ -223,9 +181,6 @@ with st.form("login_form"):
 
 if submit:
     try:
-        # =================================
-        # AUTH
-        # =================================
         res = supabase.auth.sign_in_with_password({
             "email": email,
             "password": password
@@ -237,17 +192,11 @@ if submit:
 
         user_id = res.user.id
 
-        # =================================
-        # Increment login counter
-        # =================================
         supabase.rpc(
             "increment_login_count",
             {"user_id": user_id}
         ).execute()
 
-        # =================================
-        # Load profile
-        # =================================
         profile_res = (
             supabase
             .table("profiles")
@@ -259,9 +208,6 @@ if submit:
 
         profile_data = profile_res.data if profile_res and profile_res.data else {}
 
-        # =================================
-        # Session bootstrap
-        # =================================
         st.session_state.logged_in = True
         st.session_state.user = {
             "id": user_id,
