@@ -15,6 +15,21 @@ st.set_page_config(
 )
 
 # =================================
+# Convert Supabase hash fragment to query params
+# =================================
+st.markdown("""
+<script>
+const hash = window.location.hash;
+if (hash && hash.includes("access_token")) {
+    const query = hash.substring(1);
+    const newUrl = window.location.origin + window.location.pathname + "?" + query;
+    window.location.replace(newUrl);
+}
+</script>
+""", unsafe_allow_html=True)
+
+
+# =================================
 # CSS Styling
 # =================================
 st.markdown(
@@ -125,12 +140,16 @@ if params.get("type") == "recovery":
     access_token = params.get("access_token")
     refresh_token = params.get("refresh_token")
 
-    if not access_token:
+    if not access_token or not refresh_token:
         st.error("Token de recuperación inválido o expirado")
         st.stop()
 
     # Set the session using recovery tokens
-    supabase.auth.set_session(access_token, refresh_token)
+    try:
+        supabase.auth.set_session(access_token, refresh_token)
+    except Exception:
+        st.error("El enlace ha expirado o es inválido")
+        st.stop()
 
     with st.form("reset_password_form"):
         new_password = st.text_input(
