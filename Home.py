@@ -17,21 +17,72 @@ st.set_page_config(
 # =================================
 # CSS Styling
 # =================================
-st.markdown("""
-<style>
-[data-testid="stSidebar"] { display: none; }
-.stApp { background-color: #0e1117; }
-.block-container { max-width: 420px; padding-top: 4.2rem; padding-bottom: 3rem; }
-img { display:block; margin:auto; margin-bottom:2rem; transform:scale(1.18); }
-form[data-testid="stForm"] {
-    background-color:#161b22;
-    padding:2rem;
-    border-radius:16px;
-    box-shadow:0 0 0 1px rgba(255,255,255,0.06);
-}
-h1 { text-align:center; font-size:1.6rem; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] { display: none; }
+
+    .stApp {
+        background-color: #0e1117;
+    }
+
+    .block-container {
+        max-width: 420px;
+        padding-top: 4.2rem;
+        padding-bottom: 3rem;
+    }
+
+    img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 2rem;
+        transform: scale(1.18);
+    }
+
+    form[data-testid="stForm"] {
+        background-color: #161b22;
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 1.6rem;
+        margin-bottom: 0.3rem;
+    }
+
+    hr {
+        margin: 1rem 0 1.4rem 0;
+    }
+
+    input {
+        font-size: 1rem !important;
+        padding: 0.7rem !important;
+        border-radius: 10px !important;
+    }
+
+    label {
+        font-size: 0.9rem !important;
+        font-weight: 500;
+    }
+
+    div.stButton > button,
+    button[kind="primary"] {
+        width: auto;
+        min-width: 180px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # =================================
 # Supabase setup
@@ -41,32 +92,46 @@ load_dotenv(Path(__file__).parent / ".env")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    st.error("Supabase credentials not found")
+    st.stop()
+
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Recovery Code (CORRECT WAY)
+# Handle Password Recovery (PKCE)
 # =================================
 params = st.query_params
 
-if "code" in params:
+if params.get("type") == "recovery":
 
-    recovery_code = params.get("code")
+    access_token = params.get("access_token")
+    refresh_token = params.get("refresh_token")
+
+    if not access_token or not refresh_token:
+        st.error("Enlace inválido o expirado")
+        st.stop()
 
     try:
-        # Exchange recovery code for session
-        supabase.auth.exchange_code_for_session(recovery_code)
+        supabase.auth.set_session(access_token, refresh_token)
     except Exception:
-        st.error("Enlace inválido o expirado")
+        st.error("No se pudo validar el enlace")
         st.stop()
 
     st.title("Restablecer contraseña")
 
     with st.form("reset_password_form"):
-        new_password = st.text_input("Nueva contraseña", type="password")
-        confirm_password = st.text_input("Confirmar contraseña", type="password")
-        submit_reset = st.form_submit_button("Actualizar contraseña")
+        new_password = st.text_input(
+            "Nueva contraseña",
+            type="password"
+        )
+        confirm_password = st.text_input(
+            "Confirmar contraseña",
+            type="password"
+        )
+        reset_submit = st.form_submit_button("Actualizar contraseña")
 
-    if submit_reset:
+    if reset_submit:
 
         if new_password != confirm_password:
             st.error("Las contraseñas no coinciden")
@@ -77,69 +142,18 @@ if "code" in params:
             st.stop()
 
         try:
-            supabase.auth.update_user({"password": new_password})
+            supabase.auth.update_user({
+                "password": new_password
+            })
+
             st.success("Contraseña actualizada correctamente")
             st.query_params.clear()
             st.info("Ya puedes iniciar sesión")
+
         except Exception:
             st.error("Error actualizando contraseña")
 
         st.stop()
-
-# =================================
-# Login UI
-# =================================
-assets_dir = Path(__file__).parent / "assets"
-logo_path = assets_dir / "pg_brand.png"
-
-if logo_path.exists():
-    img = Image.open(logo_path)
-    st.image(img, width="stretch")
-
-st.divider()
-st.title("Inicio de Sesión")
-
-with st.form("login_form"):
-    email = st.text_input("Correo electrónico")
-    password = st.text_input("Contraseña", type="password")
-    login_btn = st.form_submit_button("Ingresar")
-
-if login_btn:
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
-
-        if not res.user:
-            st.error("Credenciales inválidas")
-            st.stop()
-
-        st.success("Sesión iniciada")
-        st.switch_page("pages/dashboard.py")
-
-    except Exception as e:
-        st.error(str(e))
-
-# =================================
-# Forgot Password Button
-# =================================
-st.markdown("---")
-if st.button("¿Olvidaste tu contraseña?"):
-    if email:
-        try:
-            supabase.auth.reset_password_for_email(
-                email,
-                {
-                    "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
-                }
-            )
-            st.success("Correo de recuperación enviado")
-        except Exception:
-            st.error("Error enviando correo")
-    else:
-        st.warning("Ingresa tu correo primero")
-
 
 # =================================
 # Session state
