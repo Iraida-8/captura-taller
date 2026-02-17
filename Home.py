@@ -99,12 +99,24 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Password Recovery
+# Handle Password Recovery (PKCE)
 # =================================
 params = st.query_params
-session = supabase.auth.get_session()
 
-if params.get("type") == "recovery" and session and session.user:
+if params.get("type") == "recovery":
+
+    access_token = params.get("access_token")
+    refresh_token = params.get("refresh_token")
+
+    if not access_token or not refresh_token:
+        st.error("Enlace inválido o expirado")
+        st.stop()
+
+    try:
+        supabase.auth.set_session(access_token, refresh_token)
+    except Exception:
+        st.error("No se pudo validar el enlace")
+        st.stop()
 
     st.title("Restablecer contraseña")
 
@@ -139,7 +151,7 @@ if params.get("type") == "recovery" and session and session.user:
             st.info("Ya puedes iniciar sesión")
 
         except Exception:
-            st.error("El enlace ha expirado o es inválido")
+            st.error("Error actualizando contraseña")
 
         st.stop()
 
