@@ -115,6 +115,57 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
+# Handle Supabase recovery token
+# =================================
+params = st.query_params
+
+if params.get("type") == "recovery":
+    st.title("Restablecer contraseña")
+
+    access_token = params.get("access_token")
+    refresh_token = params.get("refresh_token")
+
+    if not access_token:
+        st.error("Token de recuperación inválido o expirado")
+        st.stop()
+
+    # Set the session using recovery tokens
+    supabase.auth.set_session(access_token, refresh_token)
+
+    with st.form("reset_password_form"):
+        new_password = st.text_input(
+            "Nueva contraseña",
+            type="password"
+        )
+        confirm_password = st.text_input(
+            "Confirmar contraseña",
+            type="password"
+        )
+        reset_submit = st.form_submit_button("Actualizar contraseña")
+
+    if reset_submit:
+        if new_password != confirm_password:
+            st.error("Las contraseñas no coinciden")
+            st.stop()
+
+        if len(new_password) < 6:
+            st.error("La contraseña debe tener al menos 6 caracteres")
+            st.stop()
+
+        supabase.auth.update_user({
+            "password": new_password
+        })
+
+        st.success("Contraseña actualizada correctamente")
+
+        # Clear recovery params
+        st.query_params.clear()
+
+        st.info("Ya puedes iniciar sesión")
+        st.stop()
+
+
+# =================================
 # Session state
 # =================================
 st.session_state.setdefault("logged_in", False)
