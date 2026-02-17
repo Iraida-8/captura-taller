@@ -133,6 +133,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # Handle Supabase recovery token
 # =================================
 params = st.query_params
+st.write("DEBUG PARAMS:", st.query_params)
 
 if params.get("type") == "recovery":
     st.title("Restablecer contraseña")
