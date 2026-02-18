@@ -48,7 +48,7 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Recovery via token (matches your Supabase link)
+# Handle Recovery via token
 # =================================
 params = st.query_params
 
@@ -98,7 +98,6 @@ if params.get("token") and params.get("type") == "recovery":
 # =================================
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
-st.session_state.setdefault("email_input", "")
 
 # =================================
 # LOGIN VIEW
@@ -119,12 +118,13 @@ if logo_path.exists():
 st.divider()
 st.title("Inicio de Sesión")
 
+# 🔥 Email OUTSIDE the form (critical fix)
+email = st.text_input(
+    "Correo electrónico",
+    placeholder="usuario@palosgarza.com"
+)
+
 with st.form("login_form"):
-    email = st.text_input(
-        "Correo electrónico",
-        placeholder="usuario@palosgarza.com",
-        key="email_input"
-    )
     password = st.text_input(
         "Contraseña",
         type="password"
@@ -134,7 +134,7 @@ with st.form("login_form"):
 if submit:
     try:
         res = supabase.auth.sign_in_with_password({
-            "email": st.session_state.email_input,
+            "email": email,
             "password": password
         })
 
@@ -182,14 +182,12 @@ st.markdown("---")
 
 if st.button("¿Olvidaste tu contraseña?"):
 
-    email_value = st.session_state.get("email_input")
-
-    if not email_value:
+    if not email:
         st.warning("Ingresa tu correo primero")
     else:
         try:
             supabase.auth.reset_password_for_email(
-                email_value,
+                email,
                 {
                     "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
                 }
