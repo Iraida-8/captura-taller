@@ -20,16 +20,50 @@ st.set_page_config(
 st.markdown("""
 <style>
 [data-testid="stSidebar"] { display: none; }
-.stApp { background-color: #0e1117; }
-.block-container { max-width: 420px; padding-top: 4.2rem; padding-bottom: 3rem; }
-img { display:block; margin:auto; margin-bottom:2rem; transform:scale(1.18); }
+
+.stApp {
+    background-color: #0e1117;
+}
+
+.block-container {
+    max-width: 420px;
+    padding-top: 4rem;
+    padding-bottom: 3rem;
+}
+
+img {
+    display:block;
+    margin:auto;
+    margin-bottom:2rem;
+    transform:scale(1.18);
+}
+
 form[data-testid="stForm"] {
     background-color:#161b22;
     padding:2rem;
     border-radius:16px;
     box-shadow:0 0 0 1px rgba(255,255,255,0.06);
 }
-h1 { text-align:center; font-size:1.6rem; }
+
+h1 {
+    text-align:center;
+    font-size:1.6rem;
+    margin-bottom:1.2rem;
+}
+
+div.stButton > button {
+    width:100%;
+    padding:0.75rem;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.small-text {
+    text-align:center;
+    margin-top:1rem;
+    font-size:0.85rem;
+    color:#8b949e;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,7 +88,7 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
 
 # =================================
-# HANDLE PASSWORD RECOVERY (TOKEN BASED)
+# HANDLE PASSWORD RECOVERY
 # =================================
 params = st.query_params
 
@@ -115,19 +149,20 @@ if logo_path.exists():
         )
     st.image(img, width="stretch")
 
-st.divider()
 st.title("Inicio de Sesión")
 
-email = st.text_input(
-    "Correo electrónico",
-    placeholder="usuario@palosgarza.com"
-)
-
 with st.form("login_form"):
+
+    email = st.text_input(
+        "Correo electrónico",
+        placeholder="usuario@palosgarza.com"
+    )
+
     password = st.text_input(
         "Contraseña",
         type="password"
     )
+
     submit = st.form_submit_button("Ingresar")
 
 if submit:
@@ -175,15 +210,14 @@ if submit:
         st.error(str(e))
 
 # =================================
-# FORGOT PASSWORD BUTTON
+# FORGOT PASSWORD (Temporarily Disabled)
 # =================================
-ENABLE_PASSWORD_RESET = False  # 🔥 set to True when ready
+ENABLE_PASSWORD_RESET = False
 
 if ENABLE_PASSWORD_RESET:
-    st.markdown("---")
+    st.markdown('<div class="small-text">¿Olvidaste tu contraseña?</div>', unsafe_allow_html=True)
 
-    if st.button("¿Olvidaste tu contraseña?"):
-
+    if st.button("Recuperar contraseña"):
         if not email:
             st.warning("Ingresa tu correo primero")
         else:
