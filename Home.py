@@ -54,11 +54,22 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
 
 # =================================
-# Detect Recovery Session (Correct Method)
+# HANDLE PASSWORD RECOVERY (TOKEN BASED)
 # =================================
-session = supabase.auth.get_session()
+params = st.query_params
 
-if session and session.user and not st.session_state.get("logged_in"):
+if params.get("type") == "recovery" and params.get("token"):
+
+    token = params.get("token")
+
+    try:
+        supabase.auth.verify_otp({
+            "type": "recovery",
+            "token": token
+        })
+    except Exception as e:
+        st.error(f"Enlace inválido o expirado: {e}")
+        st.stop()
 
     st.title("Restablecer contraseña")
 
@@ -81,6 +92,7 @@ if session and session.user and not st.session_state.get("logged_in"):
             supabase.auth.update_user({"password": new_password})
             supabase.auth.sign_out()
             st.success("Contraseña actualizada correctamente")
+            st.query_params.clear()
             st.info("Ya puedes iniciar sesión")
         except Exception as e:
             st.error(f"Error actualizando contraseña: {e}")
@@ -106,7 +118,6 @@ if logo_path.exists():
 st.divider()
 st.title("Inicio de Sesión")
 
-# Email outside form
 email = st.text_input(
     "Correo electrónico",
     placeholder="usuario@palosgarza.com"
@@ -164,7 +175,7 @@ if submit:
         st.error(str(e))
 
 # =================================
-# Forgot Password Button
+# FORGOT PASSWORD BUTTON
 # =================================
 st.markdown("---")
 
