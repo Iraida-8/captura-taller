@@ -177,20 +177,23 @@ if submit:
 # =================================
 # FORGOT PASSWORD BUTTON
 # =================================
-st.markdown("---")
+ENABLE_PASSWORD_RESET = False  # 🔥 set to True when ready
 
-if st.button("¿Olvidaste tu contraseña?"):
+if ENABLE_PASSWORD_RESET:
+    st.markdown("---")
 
-    if not email:
-        st.warning("Ingresa tu correo primero")
-    else:
-        try:
-            supabase.auth.reset_password_for_email(
-                email,
-                {
-                    "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
-                }
-            )
-            st.success("Correo de recuperación enviado")
-        except Exception as e:
-            st.error(f"No se pudo enviar el correo: {e}")
+    if st.button("¿Olvidaste tu contraseña?"):
+
+        if not email:
+            st.warning("Ingresa tu correo primero")
+        else:
+            try:
+                supabase.auth.reset_password_for_email(
+                    email,
+                    {
+                        "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
+                    }
+                )
+                st.success("Correo de recuperación enviado")
+            except Exception as e:
+                st.error(f"No se pudo enviar el correo: {e}")
