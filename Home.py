@@ -48,7 +48,7 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Recovery via token (matches your link structure)
+# Handle Recovery via token (matches your Supabase link)
 # =================================
 params = st.query_params
 
@@ -88,8 +88,8 @@ if params.get("token") and params.get("type") == "recovery":
             st.success("Contraseña actualizada correctamente")
             st.query_params.clear()
             st.info("Ya puedes iniciar sesión")
-        except Exception:
-            st.error("Error actualizando contraseña")
+        except Exception as e:
+            st.error(f"Error actualizando contraseña: {e}")
 
         st.stop()
 
@@ -98,6 +98,7 @@ if params.get("token") and params.get("type") == "recovery":
 # =================================
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
+st.session_state.setdefault("email_input", "")
 
 # =================================
 # LOGIN VIEW
@@ -121,7 +122,8 @@ st.title("Inicio de Sesión")
 with st.form("login_form"):
     email = st.text_input(
         "Correo electrónico",
-        placeholder="usuario@palosgarza.com"
+        placeholder="usuario@palosgarza.com",
+        key="email_input"
     )
     password = st.text_input(
         "Contraseña",
@@ -132,7 +134,7 @@ with st.form("login_form"):
 if submit:
     try:
         res = supabase.auth.sign_in_with_password({
-            "email": email,
+            "email": st.session_state.email_input,
             "password": password
         })
 
@@ -180,16 +182,18 @@ st.markdown("---")
 
 if st.button("¿Olvidaste tu contraseña?"):
 
-    if not email:
+    email_value = st.session_state.get("email_input")
+
+    if not email_value:
         st.warning("Ingresa tu correo primero")
     else:
         try:
             supabase.auth.reset_password_for_email(
-                email,
+                email_value,
                 {
                     "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
                 }
             )
             st.success("Correo de recuperación enviado")
-        except Exception:
-            st.error("No se pudo enviar el correo")
+        except Exception as e:
+            st.error(f"No se pudo enviar el correo: {e}")
