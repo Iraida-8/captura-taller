@@ -48,22 +48,17 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Recovery via token
+# Session state
 # =================================
-params = st.query_params
+st.session_state.setdefault("logged_in", False)
+st.session_state.setdefault("user", None)
 
-if params.get("token") and params.get("type") == "recovery":
+# =================================
+# Detect Recovery Session (Correct Method)
+# =================================
+session = supabase.auth.get_session()
 
-    token = params.get("token")
-
-    try:
-        supabase.auth.verify_otp({
-            "type": "recovery",
-            "token": token
-        })
-    except Exception:
-        st.error("Enlace inválido o expirado")
-        st.stop()
+if session and session.user and not st.session_state.get("logged_in"):
 
     st.title("Restablecer contraseña")
 
@@ -86,18 +81,11 @@ if params.get("token") and params.get("type") == "recovery":
             supabase.auth.update_user({"password": new_password})
             supabase.auth.sign_out()
             st.success("Contraseña actualizada correctamente")
-            st.query_params.clear()
             st.info("Ya puedes iniciar sesión")
         except Exception as e:
             st.error(f"Error actualizando contraseña: {e}")
 
         st.stop()
-
-# =================================
-# Session state
-# =================================
-st.session_state.setdefault("logged_in", False)
-st.session_state.setdefault("user", None)
 
 # =================================
 # LOGIN VIEW
@@ -118,7 +106,7 @@ if logo_path.exists():
 st.divider()
 st.title("Inicio de Sesión")
 
-# 🔥 Email OUTSIDE the form (critical fix)
+# Email outside form
 email = st.text_input(
     "Correo electrónico",
     placeholder="usuario@palosgarza.com"
