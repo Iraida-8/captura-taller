@@ -17,72 +17,21 @@ st.set_page_config(
 # =================================
 # CSS Styling
 # =================================
-st.markdown(
-    """
-    <style>
-    [data-testid="stSidebar"] { display: none; }
-
-    .stApp {
-        background-color: #0e1117;
-    }
-
-    .block-container {
-        max-width: 420px;
-        padding-top: 4.2rem;
-        padding-bottom: 3rem;
-    }
-
-    img {
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        margin-bottom: 2rem;
-        transform: scale(1.18);
-    }
-
-    form[data-testid="stForm"] {
-        background-color: #161b22;
-        padding: 2rem;
-        border-radius: 16px;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
-    }
-
-    h1 {
-        text-align: center;
-        font-size: 1.6rem;
-        margin-bottom: 0.3rem;
-    }
-
-    hr {
-        margin: 1rem 0 1.4rem 0;
-    }
-
-    input {
-        font-size: 1rem !important;
-        padding: 0.7rem !important;
-        border-radius: 10px !important;
-    }
-
-    label {
-        font-size: 0.9rem !important;
-        font-weight: 500;
-    }
-
-    div.stButton > button,
-    button[kind="primary"] {
-        width: auto;
-        min-width: 180px;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        padding: 0.75rem 2rem;
-        border-radius: 12px;
-        font-weight: 600;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+[data-testid="stSidebar"] { display: none; }
+.stApp { background-color: #0e1117; }
+.block-container { max-width: 420px; padding-top: 4.2rem; padding-bottom: 3rem; }
+img { display:block; margin:auto; margin-bottom:2rem; transform:scale(1.18); }
+form[data-testid="stForm"] {
+    background-color:#161b22;
+    padding:2rem;
+    border-radius:16px;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.06);
+}
+h1 { text-align:center; font-size:1.6rem; }
+</style>
+""", unsafe_allow_html=True)
 
 # =================================
 # Supabase setup
@@ -99,16 +48,15 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Recovery via token (verify flow compatible)
+# Handle Recovery via token (matches your link structure)
 # =================================
 params = st.query_params
 
-if params.get("type") == "recovery" and params.get("token"):
+if params.get("token") and params.get("type") == "recovery":
 
     token = params.get("token")
 
     try:
-        # Verify recovery token manually
         supabase.auth.verify_otp({
             "type": "recovery",
             "token": token
@@ -135,9 +83,7 @@ if params.get("type") == "recovery" and params.get("token"):
             st.stop()
 
         try:
-            supabase.auth.update_user({
-                "password": new_password
-            })
+            supabase.auth.update_user({"password": new_password})
             supabase.auth.sign_out()
             st.success("Contraseña actualizada correctamente")
             st.query_params.clear()
@@ -146,7 +92,6 @@ if params.get("type") == "recovery" and params.get("token"):
             st.error("Error actualizando contraseña")
 
         st.stop()
-
 
 # =================================
 # Session state
@@ -227,3 +172,24 @@ if submit:
 
     except Exception as e:
         st.error(str(e))
+
+# =================================
+# Forgot Password Button
+# =================================
+st.markdown("---")
+
+if st.button("¿Olvidaste tu contraseña?"):
+
+    if not email:
+        st.warning("Ingresa tu correo primero")
+    else:
+        try:
+            supabase.auth.reset_password_for_email(
+                email,
+                {
+                    "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
+                }
+            )
+            st.success("Correo de recuperación enviado")
+        except Exception:
+            st.error("No se pudo enviar el correo")
