@@ -99,39 +99,32 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # =================================
-# Handle Password Recovery (PKCE)
+# Handle Recovery via token (verify flow compatible)
 # =================================
 params = st.query_params
 
-if params.get("type") == "recovery":
+if params.get("type") == "recovery" and params.get("token"):
 
-    access_token = params.get("access_token")
-    refresh_token = params.get("refresh_token")
-
-    if not access_token or not refresh_token:
-        st.error("Enlace inválido o expirado")
-        st.stop()
+    token = params.get("token")
 
     try:
-        supabase.auth.set_session(access_token, refresh_token)
+        # Verify recovery token manually
+        supabase.auth.verify_otp({
+            "type": "recovery",
+            "token": token
+        })
     except Exception:
-        st.error("No se pudo validar el enlace")
+        st.error("Enlace inválido o expirado")
         st.stop()
 
     st.title("Restablecer contraseña")
 
     with st.form("reset_password_form"):
-        new_password = st.text_input(
-            "Nueva contraseña",
-            type="password"
-        )
-        confirm_password = st.text_input(
-            "Confirmar contraseña",
-            type="password"
-        )
-        reset_submit = st.form_submit_button("Actualizar contraseña")
+        new_password = st.text_input("Nueva contraseña", type="password")
+        confirm_password = st.text_input("Confirmar contraseña", type="password")
+        submit_reset = st.form_submit_button("Actualizar contraseña")
 
-    if reset_submit:
+    if submit_reset:
 
         if new_password != confirm_password:
             st.error("Las contraseñas no coinciden")
@@ -145,15 +138,15 @@ if params.get("type") == "recovery":
             supabase.auth.update_user({
                 "password": new_password
             })
-
+            supabase.auth.sign_out()
             st.success("Contraseña actualizada correctamente")
             st.query_params.clear()
             st.info("Ya puedes iniciar sesión")
-
         except Exception:
             st.error("Error actualizando contraseña")
 
         st.stop()
+
 
 # =================================
 # Session state
