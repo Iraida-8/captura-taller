@@ -466,18 +466,50 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         c for c in columnas_partes if c in df_partes_filtrado.columns
     ]
 
-    df_partes_ultimos = (
-        df_partes_filtrado
-        .sort_values("Fecha Analisis", ascending=False)
-        .head(10)[columnas_disponibles_partes]
+    # Ensure date type
+    if "Fecha Analisis" in df_partes_filtrado.columns:
+        df_partes_filtrado["Fecha Analisis"] = pd.to_datetime(
+            df_partes_filtrado["Fecha Analisis"],
+            errors="coerce",
+            dayfirst=True
+        )
+
+    # Ensure date type
+    if "Fecha Analisis" in df_partes_filtrado.columns:
+        df_partes_filtrado["Fecha Analisis"] = pd.to_datetime(
+            df_partes_filtrado["Fecha Analisis"],
+            errors="coerce",
+            dayfirst=True
+        )
+
+    # Sort newest first
+    df_partes_filtrado = df_partes_filtrado.sort_values(
+        "Fecha Analisis",
+        ascending=False
     )
 
-    if "Fecha Analisis" in df_partes_ultimos.columns:
-        df_partes_ultimos["Fecha Analisis"] = (
-        df_partes_ultimos["Fecha Analisis"].dt.strftime("%Y-%m-%d")
-    )
+    # 🔥 UNIQUE BY PARTE ONLY (keep newest occurrence)
+    if "Parte" in df_partes_filtrado.columns:
+        df_partes_clean = df_partes_filtrado.drop_duplicates(
+            subset=["Parte"],
+            keep="first"
+        )
+    else:
+        df_partes_clean = df_partes_filtrado.copy()
 
-    st.dataframe(df_partes_ultimos, hide_index=True, width="stretch")
+
+    # Select visible columns
+    df_partes_final = df_partes_clean[columnas_disponibles_partes]
+
+
+    if "Fecha Analisis" in df_partes_final.columns:
+        df_partes_final["Fecha Analisis"] = (
+            df_partes_final["Fecha Analisis"].dt.strftime("%Y-%m-%d")
+        )
+
+
+    st.dataframe(df_partes_final, hide_index=True, width="stretch")
+
 else:
     st.info("No hay información de partes disponible para esta empresa.")
 
