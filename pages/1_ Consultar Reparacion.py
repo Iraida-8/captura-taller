@@ -418,11 +418,12 @@ else:
 
 st.divider()
 # =================================
-# ÚLTIMOS 10 REGISTROS (PARTES)
+# REFACCIONES RECIENTES
 # =================================
 st.subheader("Refacciones Recientes")
 
 if not df_partes.empty and "Unidad" in df_partes.columns:
+
     unidad_partes_sel = st.selectbox(
         "Filtrar por Unidad",
         ["Todas"] + sorted(df_partes["Unidad"].dropna().astype(str).unique()),
@@ -431,42 +432,13 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
     df_partes_filtrado = df_partes.copy()
 
+    # Filter by Unidad
     if unidad_partes_sel != "Todas":
         df_partes_filtrado = df_partes_filtrado[
             df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
         ]
 
-    # Empresa-specific total column
-    total_col = None
-    display_total_col = None
-
-    if empresa in ["IGLOO TRANSPORT", "PICUS"]:
-        total_col = "Total Correccion"
-        display_total_col = "Total Correccion"
-    elif empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
-        total_col = "Total USD"
-        display_total_col = "Total USD"
-    else:
-        total_col = None
-        display_total_col = None
-
-    columnas_partes = [
-        "FECHA H",
-        "Unidad",
-        "Parte",
-        "TipoCompra",
-        "PrecioParte",
-        "Cantidad",
-    ]
-
-    if total_col and total_col in df_partes_filtrado.columns:
-        columnas_partes.append(total_col)
-
-    columnas_disponibles_partes = [
-        c for c in columnas_partes if c in df_partes_filtrado.columns
-    ]
-
-    # Ensure date type
+    # Ensure Fecha Analisis is datetime
     if "Fecha Analisis" in df_partes_filtrado.columns:
         df_partes_filtrado["Fecha Analisis"] = pd.to_datetime(
             df_partes_filtrado["Fecha Analisis"],
@@ -474,21 +446,13 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             dayfirst=True
         )
 
-    # Ensure date type
-    if "Fecha Analisis" in df_partes_filtrado.columns:
-        df_partes_filtrado["Fecha Analisis"] = pd.to_datetime(
-            df_partes_filtrado["Fecha Analisis"],
-            errors="coerce",
-            dayfirst=True
+        # Sort newest first
+        df_partes_filtrado = df_partes_filtrado.sort_values(
+            "Fecha Analisis",
+            ascending=False
         )
 
-    # Sort newest first
-    df_partes_filtrado = df_partes_filtrado.sort_values(
-        "Fecha Analisis",
-        ascending=False
-    )
-
-    # 🔥 UNIQUE BY PARTE ONLY (keep newest occurrence)
+    # UNIQUE BY PARTE (keep newest record)
     if "Parte" in df_partes_filtrado.columns:
         df_partes_clean = df_partes_filtrado.drop_duplicates(
             subset=["Parte"],
@@ -497,18 +461,44 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     else:
         df_partes_clean = df_partes_filtrado.copy()
 
+    # ==========================================
+    # CORRECT COLUMN STRUCTURE PER EMPRESA
+    # ==========================================
 
-    # Select visible columns
-    df_partes_final = df_partes_clean[columnas_disponibles_partes]
+    if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
 
+        columnas_partes = [
+            "Unidad",
+            "Parte",
+            "PU USD",
+            "Total USD"
+        ]
 
-    if "Fecha Analisis" in df_partes_final.columns:
-        df_partes_final["Fecha Analisis"] = (
-            df_partes_final["Fecha Analisis"].dt.strftime("%Y-%m-%d")
-        )
+    elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
 
+        columnas_partes = [
+            "Unidad",
+            "Parte",
+            "PU",
+            "Cantidad",
+            "Total Correccion"
+        ]
 
-    st.dataframe(df_partes_final, hide_index=True, width="stretch")
+    else:
+        columnas_partes = [
+            "Unidad",
+            "Parte"
+        ]
+
+    df_partes_final = df_partes_clean[
+        [c for c in columnas_partes if c in df_partes_clean.columns]
+    ]
+
+    st.dataframe(
+        df_partes_final,
+        hide_index=True,
+        width="stretch"
+    )
 
 else:
     st.info("No hay información de partes disponible para esta empresa.")
