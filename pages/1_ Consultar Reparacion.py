@@ -481,6 +481,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             "Unidad",
             "Parte",
             "PU",
+            "IVA",
             "Cantidad",
             "Total Correccion"
         ]
