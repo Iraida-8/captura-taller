@@ -470,6 +470,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         columnas_partes = [
             "Unidad",
             "Parte",
+            "Cantidad",
             "PU USD",
             "Total USD"
         ]
