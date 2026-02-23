@@ -152,8 +152,8 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
         "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
         "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
         "En Curso / En Proceso": "Fecha En Proceso",
-        "Cerrado / Facturado": "Fecha Facturado",
         "Cerrado / Completado": "Fecha Completado",
+        "Cerrado / Facturado": "Fecha Facturado",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
