@@ -259,6 +259,10 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                 unidad = safe(r.get("No. de Unidad"))
                 estado = safe(r.get("Estado"))
                 capturo = safe(r.get("Capturo"))
+                descripcion = safe(r.get("Descripcion Problema"))
+
+                if len(descripcion) > 120:
+                    descripcion = descripcion[:120] + "..."
 
                 html = f"""
                 <div style="padding:6px;">
@@ -300,7 +304,7 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                 </div>
                 """
 
-                components.html(html, height=220)
+                components.html(html, height=260)
 
                 # =====================================
                 # VIEW BUTTON
