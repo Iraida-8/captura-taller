@@ -509,12 +509,50 @@ def cargar_catalogo_picus():
     df = pd.read_csv(URL)
     df.columns = df.columns.str.strip()
 
+    # Ensure required columns exist
+    required = ["Parte", "PU", "IVA"]
+    missing = [c for c in required if c not in df.columns]
+
+    if missing:
+        st.error(f"PICUS → faltan columnas: {missing}")
+        return pd.DataFrame()
+
+    # Ensure Tipo De Parte exists
     if "Tipo De Parte" not in df.columns:
         df["Tipo De Parte"] = "Servicio"
 
-    df["PU"] = pd.to_numeric(df.get("PU", 0), errors="coerce").fillna(0)
-    df["IVA"] = pd.to_numeric(df.get("IVA", 0), errors="coerce").fillna(0)
+    # 🔹 CLEAN PU (same logic as IGLOO)
+    df["PU"] = (
+        df["PU"]
+        .astype(str)
+        .str.replace("$", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .str.replace("USD", "", regex=False)
+        .str.strip()
+    )
 
+    df["PU"] = pd.to_numeric(df["PU"], errors="coerce")
+
+    # 🔹 CLEAN IVA
+    df["IVA"] = (
+        df["IVA"]
+        .astype(str)
+        .str.replace("$", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .str.replace("%", "", regex=False)
+        .str.strip()
+    )
+
+    df["IVA"] = pd.to_numeric(df["IVA"], errors="coerce")
+
+    # 🚨 DEBUG SAFETY — warn if everything became zero
+    if df["PU"].isna().all():
+        st.warning("PICUS → Todos los PU se convirtieron en NaN. Revisa formato de la hoja.")
+
+    df["PU"] = df["PU"].fillna(0)
+    df["IVA"] = df["IVA"].fillna(0)
+
+    # Dropdown label (parte + pu)
     df["label"] = df.apply(
         lambda r: f"{r['Parte']} - ${r['PU']:,.2f}",
         axis=1
