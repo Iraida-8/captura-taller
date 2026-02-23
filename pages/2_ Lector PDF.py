@@ -506,7 +506,10 @@ def parse_wash(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         t = strip_accents(raw)
 
         # Saltar páginas de solo observaciones
-        if "OBSERVACIONES" in (t or "").upper():
+        t_upper = (t or "").upper()
+
+        # Solo salta si es página de observaciones Y NO hay partidas (E48)
+        if "OBSERVACIONES" in t_upper and not re.search(r"\b\d+\s*E48", t, flags=re.I):
             continue
 
         # Truco clave: forzar un "salto" antes de cada renglón de tabla,
