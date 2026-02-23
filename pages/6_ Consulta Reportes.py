@@ -522,6 +522,19 @@ if "Parte" in df_s.columns:
 # merge → one row per servicio
 df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
+# =================================
+# MERGE FACTURAS
+# =================================
+if "Folio" in df_facturas.columns:
+    df_detallado = df_detallado.merge(
+        df_facturas[["Folio", "No. de Factura"]],
+        on="Folio",
+        how="left"
+    )
+else:
+    df_detallado["No. de Factura"] = None
+
+
 st.divider()
 st.subheader("📄 Reporte Detallado")
 
@@ -534,6 +547,7 @@ columnas = [
     "Tipo de Proveedor",
     "Estado",
     "Capturo",
+    "No. de Factura",
     "Oste",
     "No. de Reporte",
     "Empresa",
@@ -644,6 +658,18 @@ else:
     # ===============================
     df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
 
+    # =================================
+    # MERGE FACTURAS
+    # =================================
+    if "Folio" in df_facturas.columns:
+        df_resumen = df_resumen.merge(
+            df_facturas[["Folio", "No. de Factura"]],
+            on="Folio",
+            how="left"
+        )
+    else:
+        df_resumen["No. de Factura"] = None
+
     df_resumen["Partes"] = df_resumen["Partes"].fillna("")
     df_resumen["Total Servicio"] = df_resumen["Total Servicio"].fillna(0)
 
@@ -658,6 +684,7 @@ else:
         "Tipo de Proveedor",
         "Estado",
         "Capturo",
+        "No. de Factura",
         "Oste",
         "No. de Reporte",
         "Empresa",
