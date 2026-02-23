@@ -57,8 +57,15 @@ def extract_pages_text(pdf_bytes: bytes) -> List[str]:
         return [(p.extract_text() or "") for p in pdf.pages]
 
 def find_first(pattern: str, text: str, flags=0) -> str:
-    m = re.search(pattern, text, flags)
-    return m.group(1).strip() if m else ""
+    """
+    Devuelve el primer match.
+    - Si el patrón tiene grupo capturado ( ), regresa group(1)
+    - Si NO tiene grupos, regresa group(0)
+    """
+    m = re.search(pattern, text or "", flags)
+    if not m:
+        return ""
+    return (m.group(1) if m.lastindex else m.group(0)).strip()
 
 def norm_money(s: str) -> float:
     s = (s or "").replace("$", "").replace(",", "").strip()
@@ -299,47 +306,243 @@ def parse_royan(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]
 
     return header, items
 
+def _wash_fix_glued_text(s: str) -> str:
+    s = s or ""
+    # 3E48 -> 3 E48 (hay PDFs que lo traen pegado)
+    s = re.sub(r"\b(\d+)\s*(E48)\b", r"\1 \2", s, flags=re.I)
+    # servicio78181500 -> servicio 78181500
+    s = re.sub(r"(servicio)(\d{8})", r"\1 \2", s, flags=re.I)
+    # SERVICIOSREVISAR -> SERVICIOS REVISAR
+    s = re.sub(r"(SERVICIOS)([A-ZÁÉÍÓÚÑ])", r"\1 \2", s, flags=re.I)
+    # espacios
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def _wash_scan_whole_text(page_text: str):
+    """
+    Extrae partidas incluso si NO hay saltos de línea.
+    Corta cada partida desde '<cant> E48...' hasta antes del siguiente '<cant> E48...'
+    """
+    t = _wash_fix_glued_text(strip_accents(page_text or ""))
+
+    # Encuentra los inicios de cada partida
+    starts = [m.start() for m in re.finditer(r"\b\d+\s*E48-?Unidad\s+de\s+servicio", t, flags=re.I)]
+    if not starts:
+        return []
+
+    chunks = []
+    for i, s in enumerate(starts):
+        e = starts[i + 1] if i + 1 < len(starts) else len(t)
+        chunk = t[s:e].strip()
+        chunks.append(chunk)
+    return chunks
+
+def _parse_wash_line_tokens(line: str) -> Dict[str, Any] | None:
+    """
+    Parsea 1 renglón de WASH usando tokens desde el final:
+    ... <TRAFICO> <REF1> <REF2> <OBS> <PRECIOU> <IMPORTE>
+    donde REF2 normalmente es 'RL'
+    """
+    s = _wash_fix_glued_text(line)
+    if not s:
+        return None
+
+    toks = s.split()
+    if len(toks) < 12:
+        return None
+
+    # Debe iniciar con cantidad y tener E48 y SERVICIOS
+    if not re.fullmatch(r"\d+", toks[0]):
+        return None
+    if not any(t.upper().startswith("E48") for t in toks[:4]):
+        return None
+    if not any(t.upper().startswith("SERVICIOS") for t in toks):
+        return None
+
+    # Últimos tokens fijos
+    importe_s = toks[-1]
+    precio_s = toks[-2]
+    obs = toks[-3]
+
+    # obs debe ser fecha YYYY-MM-DD
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", obs):
+        return None
+
+    # Ref pago suele ser 2 tokens antes de OBS: "L110 RL", "LF-5600 RL", etc.
+    ref2 = toks[-4]
+    ref1 = toks[-5]
+    traf = toks[-6]
+
+    if not re.fullmatch(r"\d{6}", traf):
+        return None
+
+    # Dinero válido al final
+    if not re.fullmatch(r"[\d,]+\.\d{2}", precio_s) or not re.fullmatch(r"[\d,]+\.\d{2}", importe_s):
+        return None
+
+    # Encuentra PRODSERV (8 dígitos)
+    idx_prod = None
+    for i, tk in enumerate(toks):
+        if re.fullmatch(r"\d{8}", tk):
+            idx_prod = i
+            break
+    if idx_prod is None:
+        return None
+
+    # Después de PRODSERV viene SERVICIOS... (a veces pegado)
+    idx_desc_start = idx_prod + 1
+    if idx_desc_start >= len(toks) - 6:
+        return None
+
+    # La descripción va desde SERVICIOS... hasta antes de TRAF (posición -6)
+    desc_tokens = toks[idx_desc_start:len(toks) - 6]
+    if not desc_tokens:
+        return None
+
+    # Quita prefijo SERVICIOS si viene pegado
+    if desc_tokens[0].upper().startswith("SERVICIOS"):
+        first = desc_tokens[0]
+        rest = first[len("SERVICIOS"):]
+        if rest:
+            desc_tokens[0] = rest
+        else:
+            desc_tokens = desc_tokens[1:]
+
+    desc = " ".join(desc_tokens).strip()
+    if not desc:
+        return None
+
+    return {
+        "cant": int(toks[0]),
+        "desc": desc,
+        "traf": traf,
+        "ref_pago": f"{ref1} {ref2}".strip(),
+        "obs": obs,
+        "precio": norm_money(precio_s),
+        "importe": norm_money(importe_s),
+    }
+
+def normalize_wash_text(raw: str) -> str:
+    """
+    Normaliza el texto de una página WASH para que:
+    - no se peguen renglones
+    - el regex pueda detectar líneas aunque falten saltos/espacios
+    """
+    t = strip_accents(raw or "")
+
+    # Colapsa espacios pero conserva saltos de línea
+    t = re.sub(r"[ \t]+", " ", t)
+    t = re.sub(r"\r", "", t)
+
+    # Muchísimos PDFs traen renglones pegados.
+    # Forzamos un salto de línea antes de cada inicio de renglón: "N E48-Unidad..."
+    t = re.sub(r"(?m)(?<!\n)(\d+\s+E48-?Unidad\s+de\s+servicio)", r"\n\1", t)
+
+    # Caso común en pág 3/4: "servicio78181500" (sin espacio)
+    t = t.replace("servicio78181500", "servicio 78181500")
+
+    # Limpieza final
+    t = re.sub(r"\n{2,}", "\n", t).strip()
+    return t
+
 def parse_wash(pdf_bytes: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     pages = extract_pages_text(pdf_bytes)
-    full = "\n".join(pages)
+    if not pages:
+        return {}, []
 
-    empresa = find_first(r"\n(PICUS)\n", full)  # en tus ejemplos
-    factura = find_first(r"SERIE Y FOLIO\s+([A-Z0-9\-]+)", full)
-    uuid = find_first(r"FOLIO FISCAL \(UUID\)\s*\n([0-9A-F-]{36})", full, flags=re.I)
-    fecha = find_first(r"FECHA DE EMISION\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})", full)
+    # Header SOLO desde la página 1 (UUID, Serie/Folio, Fecha de emisión, etc.)
+    p1 = strip_accents(pages[0])
+
+    # EMPRESA = receptor (ej. LINCOLN FREIGHT COMPANY, LLC)
+    # Lo más estable en estos PDFs es tomar el texto que viene después de "Regimen Fiscal <num>"
+    empresa = find_first(r"REGIMEN\s+FISCAL\s+\d+\s+([A-Z0-9 ,.&'\-]+)", p1, flags=re.I)
+
+    folio = find_first(r"SERIE\s+Y\s+FOLIO\s+([A-Z0-9\-]+)", p1, flags=re.I)
+    uuid = find_first(r"FOLIO\s+FISCAL\s*\(UUID\)\s*([0-9A-F\-]{36})", p1, flags=re.I)
+
+    # En algunas sale con segundos, en otras sin segundos; soportamos ambos
+    fecha_factura = find_first(
+        r"FECHA\s+DE\s+EMISION\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}(?::\d{2})?)",
+        p1,
+        flags=re.I
+    )
 
     header = {
-        "EMPRESA": empresa,
-        "#FACTURA": factura,
-        "UUID": uuid,
-        "FECHA FACTURA": fecha,
+        "EMPRESA": (empresa or "").strip(),
+        "# FACTURA": (folio or "").strip(),
+        "UUID": (uuid or "").strip(),
+        "FECHA FACTURA": (fecha_factura or "").strip(),
+        "FECHA Y HR SERVICIO REALIZADO": "",  # WASH: viene en OBS (columna OBS de la tabla)
+        "# DE UNIDAD": "",                    # WASH: será REF.PAGO
     }
 
     items: List[Dict[str, Any]] = []
 
-    pat = re.compile(
-        r"^(?P<cant>\d+)\s+.+?\s+\d{8}\s+(?P<desc>.+?)\s+\d+\s+"
-        r"(?P<ref>[A-Z0-9\- ]+)\s+(?P<obs>\d{4}-\d{2}-\d{2})\s+"
-        r"[\d,]+\.\d{2}\s+(?P<importe>[\d,]+\.\d{2})$",
-        re.I
+    # Patrón robusto para renglones:
+    # - Cantidad al inicio
+    # - "E48-Unidad de servicio" (a veces pegado con el prodserv)
+    # - prodserv 8 dígitos
+    # - "SERVICIOS" pegado o separado del texto
+    # - desc (puede traer cortes tipo "R EVISAR")
+    # - trafico 6 dígitos
+    # - ref_pago puede ser 1 token o 2 tokens (ej. "L99 RL", "LF-5385 RL")
+    # - obs = fecha yyyy-mm-dd
+    # - precio / importe con decimales
+    line_pat = re.compile(
+        r"(?P<cant>\d+)\s*"
+        r"E48-?Unidad\s*de\s*servicio\s*"
+        r"(?P<prod>\d{8})\s*"
+        r"SERVICIOS\s*"
+        r"(?P<desc>.+?)\s+"
+        r"(?P<traf>\d{6})\s+"
+        r"(?P<ref>[A-Z0-9\-]+(?:\s+[A-Z0-9\-]+)?)\s+"
+        r"(?P<obs>\d{4}-\d{2}-\d{2})\s+"
+        r"(?P<precio>[\d,]+\.\d{2})\s+"
+        r"(?P<importe>[\d,]+\.\d{2})",
+        flags=re.I
     )
 
-    for line in full.splitlines():
-        s = re.sub(r"\s+", " ", line.strip())
-        if not s:
+    for raw in pages:
+        t = strip_accents(raw)
+
+        # Saltar páginas de solo observaciones
+        if "OBSERVACIONES" in (t or "").upper():
             continue
-        m = pat.match(s)
-        if m:
+
+        # Truco clave: forzar un "salto" antes de cada renglón de tabla,
+        # porque en páginas 3/4 viene todo pegado.
+        # Ej: "1 E48-Unidad..." debe iniciar renglón.
+        t2 = re.sub(r"\s+(?=\d+\s*E48-?Unidad\s*de\s*servicio)", "\n", t)
+
+        # Normaliza espacios en cada renglón (sin destruir el split por líneas)
+        lines = [re.sub(r"\s+", " ", ln).strip() for ln in t2.splitlines() if ln.strip()]
+
+        for ln in lines:
+            m = line_pat.search(ln)
+            if not m:
+                continue
+
+            cant = int(m.group("cant"))
+            desc = re.sub(r"\s+", " ", m.group("desc")).strip()
+
+            # WASH reglas:
+            obs = m.group("obs").strip()               # FECHA Y HR SERVICIO REALIZADO
+            ref_pago = m.group("ref").strip()          # # DE UNIDAD
+            subtotal = norm_money(m.group("importe"))  # SUBTOTAL = IMPORTE
+            iva = round(subtotal * 0.08, 2)
+            total = round(subtotal + iva, 2)
+
             items.append({
                 "EMPRESA": header["EMPRESA"],
-                "#FACTURA": header["#FACTURA"],
+                "# FACTURA": header["# FACTURA"],
                 "UUID": header["UUID"],
                 "FECHA FACTURA": header["FECHA FACTURA"],
-                "FECHA Y HR SERVICIO": m.group("obs").strip(),
-                "#UNIDAD": m.group("ref").strip(),
-                "ACTIVIDAD": m.group("desc").strip(),
-                "CANTIDAD": int(m.group("cant")),
-                "SUBTOTAL": norm_money(m.group("importe")),
+                "FECHA Y HR SERVICIO REALIZADO": obs,
+                "# DE UNIDAD": ref_pago,
+                "ACTIVIDAD": desc,
+                "SUBTOTAL": subtotal,
+                "IVA": iva,
+                "TOTAL": total,
             })
 
     return header, items
@@ -489,11 +692,11 @@ if st.button("Procesar") and files:
     final_df = pd.concat(all_dfs, ignore_index=True) if all_dfs else pd.DataFrame(columns=COLS)
 
     st.success(f"Listo: {len(final_df)} registros (de {len(files)} archivos).")
-    st.dataframe(final_df, use_container_width=True)
+    st.dataframe(final_df, width="stretch")
 
     if show_debug:
         st.subheader("Debug")
-        st.dataframe(pd.DataFrame(debug_rows), use_container_width=True)
+        st.dataframe(pd.DataFrame(debug_rows), width="stretch")
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
