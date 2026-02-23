@@ -877,6 +877,9 @@ if not pases_df.empty:
                 capturo = safe(r.get("Capturo"))
                 descripcion = safe(r.get("Descripcion Problema"))
 
+                if len(descripcion) > 120:
+                    descripcion = descripcion[:120] + "..."
+
                 html = f"""
                 <div style="padding:6px;">
                     <div style="
@@ -907,8 +910,6 @@ if not pases_df.empty:
                         ">
                             {descripcion}
                         </div>
-
-                        descripcion = (descripcion[:120] + "...") if len(descripcion) > 120 else descripcion
 
                         <div style="
                             margin-top:6px;
