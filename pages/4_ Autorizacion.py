@@ -1048,7 +1048,7 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
-        st.markdown(f"**Sucursal:** {r.get('Sucursal', '')}")
+        st.markdown(f"**Descripción del Problema:** {r.get('Descripcion Problema', '')}")
 
         st.divider()
         st.subheader("Información del Proveedor")
