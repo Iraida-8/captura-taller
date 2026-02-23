@@ -147,8 +147,10 @@ def cargar_facturas():
     ws = client.open_by_key(SPREADSHEET_ID).worksheet("FACTURAS")
 
     data = ws.get_all_records()
+
+    # If sheet is empty, create structure manually
     if not data:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=["Folio", "No. de Factura"])
 
     df = pd.DataFrame(data)
     df.columns = df.columns.str.strip()
@@ -820,7 +822,10 @@ if st.session_state.get("modal_reporte"):
         # ===============================
         # FACTURA (FROM FACTURAS SHEET)
         # ===============================
-        df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+        if "Folio" in df_facturas.columns:
+            df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+        else:
+            df_factura_folio = pd.DataFrame()
 
         if not df_factura_folio.empty:
             factura_row = df_factura_folio.iloc[0]
