@@ -761,6 +761,26 @@ if st.session_state.get("modal_reporte"):
         else:
             st.markdown("**Fecha Mod:** -")
 
+        descripcion = r.get("Descripcion Problema", "")
+
+        st.markdown("**Descripción del Problema:**")
+        if descripcion:
+            st.markdown(
+                f"""
+                <div style="
+                    background:#f8f9fa;
+                    padding:10px;
+                    border-radius:8px;
+                    margin-bottom:10px;
+                ">
+                    {descripcion}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown("-")
+
         st.divider()
 
         proveedor = (r.get("Tipo de Proveedor") or "").lower()
