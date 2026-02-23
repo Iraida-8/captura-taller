@@ -255,7 +255,6 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                 tipo_unidad = safe(r.get("Tipo de Unidad"))
                 fecha = r.get("Fecha de Captura")
                 fecha = fecha.date() if pd.notna(fecha) else ""
-                empresa = safe(r.get("Empresa"))
                 unidad = safe(r.get("No. de Unidad"))
                 estado = safe(r.get("Estado"))
                 capturo = safe(r.get("Capturo"))
@@ -281,7 +280,6 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
 
                         <hr style="margin:6px 0">
 
-                        <div style="font-size:0.8rem;">{empresa}</div>
                         <div style="font-size:0.8rem;">{unidad}</div>
 
                         <div style="
