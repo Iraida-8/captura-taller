@@ -738,7 +738,6 @@ if st.session_state.get("modal_reporte"):
         )
 
         st.markdown(f"**No. de Folio:** {folio}")
-        st.markdown(f"**Empresa:** {r.get('Empresa','')}")
         st.markdown(f"**Proveedor:** {r.get('Tipo de Proveedor','')}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad','')}")
         st.markdown(f"**Sucursal:** {r.get('Sucursal','')}")
