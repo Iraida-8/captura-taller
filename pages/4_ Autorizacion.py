@@ -872,7 +872,6 @@ if not pases_df.empty:
                 tipo_unidad = safe(r.get("Tipo de Unidad"))
                 fecha = r.get("Fecha")
                 fecha = fecha.date() if pd.notna(fecha) else ""
-                empresa = safe(r.get("Empresa"))
                 unidad = safe(r.get("No. de Unidad"))
                 capturo = safe(r.get("Capturo"))
                 descripcion = safe(r.get("Descripcion Problema"))
@@ -897,7 +896,6 @@ if not pases_df.empty:
 
                         <hr style="margin:6px 0">
 
-                        <div style="font-size:0.8rem;">{empresa}</div>
                         <div style="font-size:0.8rem;">{unidad}</div>
 
                         <div style="
