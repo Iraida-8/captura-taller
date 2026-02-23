@@ -412,6 +412,27 @@ def cargar_pases_taller():
 pases_df = cargar_pases_taller()
 
 # =================================
+# Load FACTURAS
+# =================================
+@st.cache_data(ttl=300)
+def cargar_facturas():
+    client = gspread.authorize(get_gsheets_credentials())
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("FACTURAS")
+
+    data = ws.get_all_records()
+
+    if not data:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(data)
+    df.columns = df.columns.str.strip()
+
+    return df
+
+# =================================
 # Catalogs (READ ONLY)
 # =================================
 
