@@ -272,7 +272,7 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                         border-radius:16px;
                         box-shadow:0 4px 10px rgba(0,0,0,0.08);
                         color:#111;
-                        min-height:170px;
+                        min-height:22-px;
                         font-family:sans-serif;
                     ">
                         <div style="font-weight:900;">{folio}</div>
@@ -283,6 +283,17 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
 
                         <div style="font-size:0.8rem;">{empresa}</div>
                         <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="
+                            font-size:0.75rem;
+                            margin-top:6px;
+                            padding:6px;
+                            background:#fff;
+                            border-radius:8px;
+                            box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                        ">
+                            {descripcion}
+                        </div>
 
                         <div style="
                             margin-top:6px;
