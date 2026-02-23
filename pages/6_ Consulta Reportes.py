@@ -768,10 +768,13 @@ if st.session_state.get("modal_reporte"):
             st.markdown(
                 f"""
                 <div style="
-                    background:#f8f9fa;
-                    padding:10px;
-                    border-radius:8px;
-                    margin-bottom:10px;
+                    background:#f1f5f9;
+                    padding:12px;
+                    border-radius:10px;
+                    margin-bottom:12px;
+                    color:#111;
+                    font-size:0.9rem;
+                    line-height:1.4;
                 ">
                     {descripcion}
                 </div>
