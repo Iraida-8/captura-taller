@@ -875,6 +875,7 @@ if not pases_df.empty:
                 empresa = safe(r.get("Empresa"))
                 unidad = safe(r.get("No. de Unidad"))
                 capturo = safe(r.get("Capturo"))
+                descripcion = safe(r.get("Descripcion Problema"))
 
                 html = f"""
                 <div style="padding:6px;">
@@ -895,6 +896,19 @@ if not pases_df.empty:
 
                         <div style="font-size:0.8rem;">{empresa}</div>
                         <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="
+                            font-size:0.75rem;
+                            margin-top:6px;
+                            padding:6px;
+                            background:#fff;
+                            border-radius:8px;
+                            box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                        ">
+                            {descripcion}
+                        </div>
+
+                        descripcion = (descripcion[:120] + "...") if len(descripcion) > 120 else descripcion
 
                         <div style="
                             margin-top:6px;
