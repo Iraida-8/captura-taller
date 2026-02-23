@@ -929,7 +929,7 @@ if not pases_df.empty:
                 </div>
                 """
 
-                components.html(html, height=190)
+                components.html(html, height=220)
 
                 # =====================================
                 # FAKE "INSIDE" BUTTON
