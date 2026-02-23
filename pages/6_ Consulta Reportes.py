@@ -138,8 +138,31 @@ def cargar_servicios():
 
     return df
 
+# =================================
+# Load FACTURAS
+# =================================
+@st.cache_data(ttl=300)
+def cargar_facturas():
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(SPREADSHEET_ID).worksheet("FACTURAS")
+
+    data = ws.get_all_records()
+    if not data:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(data)
+    df.columns = df.columns.str.strip()
+
+    if "No. de Folio" in df.columns:
+        df = df.rename(columns={"No. de Folio": "Folio"})
+
+    df["Folio"] = df["Folio"].astype(str)
+
+    return df
+
 df_pases = cargar_pases()
 df_services = cargar_servicios()
+df_facturas = cargar_facturas()
 
 # =================================
 # KPI STRIP (GLOBAL)
@@ -793,6 +816,18 @@ if st.session_state.get("modal_reporte"):
             st.markdown(f"**No. de Reporte:** {r.get('No. de Reporte','')}")
         else:
             st.markdown(f"**OSTE:** {r.get('Oste','')}")
+
+        # ===============================
+        # FACTURA (FROM FACTURAS SHEET)
+        # ===============================
+        df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+
+        if not df_factura_folio.empty:
+            factura_row = df_factura_folio.iloc[0]
+            no_factura = factura_row.get("No. de Factura", "")
+            st.markdown(f"**No. de Factura:** {no_factura}")
+        else:
+            st.markdown("**No. de Factura:** -")
 
         st.divider()
         st.subheader("Servicios y Refacciones")
