@@ -1000,10 +1000,13 @@ if not pases_df.empty:
         merged = base.copy()
         merged["No. de Factura"] = None
 
+    # 🔹 SHOW ONLY 5 POST-ITS
+    merged = merged.head(5)
+
     cols = st.columns(5)
 
     for i, (_, r) in enumerate(merged.iterrows()):
-        col = cols[i % 5]
+        col = cols[i]
 
         with col:
             folio = r.get("NoFolio", "")
