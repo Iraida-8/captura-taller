@@ -983,27 +983,62 @@ st.divider()
 st.subheader("Facturación")
 st.caption("Órdenes sin Número de Factura")
 
+fcol1, fcol2 = st.columns(2)
+
+with fcol1:
+    filtro_folio = st.text_input("Filtrar por No. de Folio")
+
+with fcol2:
+    filtro_factura = st.text_input("Filtrar por No. de Factura")
+
 if not pases_df.empty:
 
-    # All orders
-    facturados = pases_df.copy()
+    # ==================================================
+    # MERGE FACTURAS
+    # ==================================================
+    base = pases_df.copy()
 
     if not facturas_df.empty:
-        merged = facturados.merge(
+        merged = base.merge(
             facturas_df[["NoFolio", "No. de Factura"]],
             on="NoFolio",
             how="left"
         )
     else:
-        merged = facturados.copy()
+        merged = base.copy()
         merged["No. de Factura"] = None
 
-    # Filter missing factura
+    # ==================================================
+    # APPLY FILTERS (AFTER MERGE)
+    # ==================================================
+    if filtro_folio:
+        merged = merged[
+            merged["NoFolio"].astype(str).str.contains(
+                filtro_folio, case=False, na=False
+            )
+        ]
+
+    if filtro_factura:
+        merged = merged[
+            merged["No. de Factura"].astype(str).str.contains(
+                filtro_factura, case=False, na=False
+            )
+        ]
+
+    # ==================================================
+    # FILTER ONLY MISSING INVOICE
+    # ==================================================
     sin_factura = merged[
         merged["No. de Factura"].isna()
         | (merged["No. de Factura"].astype(str).str.strip() == "")
     ]
 
+    # LIMIT TO 5 AFTER FILTERING
+    sin_factura = sin_factura.head(5)
+
+    # ==================================================
+    # RENDER
+    # ==================================================
     if sin_factura.empty:
         st.info("No hay órdenes pendientes de facturación.")
     else:
@@ -1054,7 +1089,7 @@ if not pases_df.empty:
 
 else:
     st.info("No hay datos disponibles.")
-
+    
 # =================================
 # BUSCAR
 # =================================
