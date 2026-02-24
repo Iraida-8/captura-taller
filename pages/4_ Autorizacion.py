@@ -428,6 +428,17 @@ def cargar_facturas():
     df = pd.DataFrame(data)
     df.columns = df.columns.str.strip()
 
+    if "No. de Factura" in df.columns:
+        df["No. de Factura"] = (
+            df["No. de Factura"]
+            .astype(str)
+            .str.replace(".0", "", regex=False)
+            .str.strip()
+        )
+
+    if "No. de Folio" in df.columns:
+        df["No. de Folio"] = df["No. de Folio"].astype(str).str.strip()
+
     return df
 
 pases_df = cargar_pases_taller()
