@@ -1057,10 +1057,17 @@ if not pases_df.empty:
                 estado = r.get("Estado", "")
                 factura_raw = r.get("No. de Factura")
 
-                if pd.isna(factura_raw) or str(factura_raw).strip() == "":
+                factura_vacia = (
+                    pd.isna(factura_raw)
+                    or str(factura_raw).strip() == ""
+                )
+
+                if factura_vacia:
                     factura = "-"
+                    label_btn = "Agregar Factura"
                 else:
                     factura = str(factura_raw)
+                    label_btn = "Ver"
 
                 html = f"""
                 <div style="padding:6px;">
@@ -1096,6 +1103,13 @@ if not pases_df.empty:
                 """
 
                 components.html(html, height=160)
+
+                # 🔹 Button only (no logic)
+                st.button(
+                    label_btn,
+                    key=f"fact_btn_{folio}",
+                    use_container_width=True
+                )
 
 else:
     st.info("No hay datos disponibles.")
