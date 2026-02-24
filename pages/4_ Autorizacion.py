@@ -980,15 +980,13 @@ else:
 # FACTURACIÓN — SIN NÚMERO
 # =================================
 st.divider()
-st.subheader("💰 Facturación")
+st.subheader("Facturación")
 st.caption("Órdenes sin Número de Factura")
 
 if not pases_df.empty:
 
-    # Only closed & facturado
-    facturados = pases_df[
-        pases_df["Estado"] == "Cerrado / Facturado"
-    ].copy()
+    # All orders
+    facturados = pases_df.copy()
 
     if not facturas_df.empty:
         merged = facturados.merge(
