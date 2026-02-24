@@ -368,6 +368,36 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
 # =================================
+# GUARDAR FACTURA
+# =================================
+def guardar_factura(folio, numero_factura):
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("FACTURAS")
+
+    headers = [h.strip() for h in ws.row_values(1)]
+
+    if "No. de Folio" not in headers or "No. de Factura" not in headers:
+        st.error("Columnas requeridas no existen en FACTURAS.")
+        return
+
+    folio_col = headers.index("No. de Folio") + 1
+    factura_col = headers.index("No. de Factura") + 1
+
+    folios = ws.col_values(folio_col)
+
+    if folio in folios:
+        row_idx = folios.index(folio) + 1
+        ws.update_cell(row_idx, factura_col, numero_factura)
+    else:
+        new_row = [""] * len(headers)
+        new_row[folio_col - 1] = folio
+        new_row[factura_col - 1] = numero_factura
+        ws.append_row(new_row, value_input_option="USER_ENTERED")
+
+
+# =================================
 # Load Pase de Taller
 # =================================
 @st.cache_data(ttl=300)
@@ -1092,12 +1122,38 @@ if not pases_df.empty:
                 # =====================================
                 if st.button("Ver", key=f"fact_ver_{folio}", use_container_width=True):
 
-                    # Open modal
-                    st.session_state.modal_reporte = r.to_dict()
+                    @st.dialog("Detalle de Facturación")
+                    def modal_facturacion():
 
-                    # Load services for this folio
-                    df = cargar_servicios_folio(folio)
-                    st.session_state.servicios_df = df
+                        st.markdown(f"**No. de Folio:** {folio}")
+
+                        factura_actual = r.get("No. de Factura")
+
+                        if pd.isna(factura_actual) or str(factura_actual).strip() == "":
+
+                            nueva_factura = st.text_input("No. de Factura", value="")
+
+                            if st.button("Guardar", type="primary"):
+
+                                if nueva_factura.strip() == "":
+                                    st.error("Debe ingresar un número de factura.")
+                                    st.stop()
+
+                                guardar_factura(folio, nueva_factura.strip())
+                                st.success("Factura guardada correctamente.")
+                                st.cache_data.clear()
+                                st.rerun()
+
+                        else:
+                            st.text_input(
+                                "No. de Factura",
+                                value=str(factura_actual),
+                                disabled=True
+                            )
+
+                            st.caption("🔒 Factura ya registrada — no editable")
+
+                    modal_facturacion()
 
 else:
     st.info("No hay datos disponibles.")
