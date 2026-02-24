@@ -1289,10 +1289,6 @@ if st.session_state.buscar_trigger:
 if st.session_state.modal_reporte:
 
     r = st.session_state.modal_reporte
-
-    proveedor = (r.get("Proveedor") or "").lower()
-    es_interno = "interno" in proveedor
-
     editable_estado = r["Estado"].startswith("En Curso")
 
     @st.dialog("Detalle del Pase de Taller")
@@ -1314,7 +1310,9 @@ if st.session_state.modal_reporte:
             and not str(r.get("Oste", "")).strip()
         )
 
-        if es_interno:
+        proveedor = (r.get("Proveedor") or "").lower()
+
+        if "interno" in proveedor:
             st.text_input(
                 "No. de Reporte",
                 value=r.get("No. de Reporte", ""),
@@ -1375,16 +1373,10 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
-        # ==========================================
-        # 🔓 UPDATED EDIT LOGIC
-        # ==========================================
-        editable_servicios = (
-            es_interno
-            or nuevo_estado in [
-                "En Curso / Sin Comenzar",
-                "En Curso / Espera Refacciones",
-            ]
-        )
+        editable_servicios = nuevo_estado in [
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+        ]
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -1401,7 +1393,9 @@ if st.session_state.modal_reporte:
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
+        # =====================================================
         # ADD ITEM
+        # =====================================================
         if st.button(
             "Agregar refacciones o servicios",
             disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
@@ -1427,6 +1421,9 @@ if st.session_state.modal_reporte:
                     ignore_index=True
                 )
 
+        # =====================================================
+        # EDITOR
+        # =====================================================
         column_config = {
             "PU": st.column_config.NumberColumn(format="$ %.2f"),
             "IVA": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1442,18 +1439,30 @@ if st.session_state.modal_reporte:
             column_config=column_config,
         )
 
+        # =====================================================
+        # RECALC TOTALS
+        # =====================================================
         if not edited_df.empty:
+
             for col in ["PU", "Cantidad", "IVA"]:
                 edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
 
-            edited_df["Total"] = (
-                (edited_df["PU"] + edited_df["IVA"]) * edited_df["Cantidad"]
-            )
+            edited_df["Total"] = (edited_df["PU"] + edited_df["IVA"]) * edited_df["Cantidad"]
 
         st.session_state.servicios_df = edited_df
 
+        # =====================================================
+        # METRIC
+        # =====================================================
+        # =============================================
+        # VISUAL CURRENCY (UI ONLY)
+        # =============================================
         empresa = r.get("Empresa", "")
-        moneda = "MXN" if empresa in ["IGLOO TRANSPORT", "PICUS"] else "USD"
+
+        if empresa in ["IGLOO TRANSPORT", "PICUS"]:
+            moneda = "MXN"
+        else:
+            moneda = "USD"
 
         st.metric(
             f"Total ({moneda})",
@@ -1472,8 +1481,7 @@ if st.session_state.modal_reporte:
 
             mostrar_aceptar = (
                 editable_estado
-                or es_interno
-                or (not es_interno and oste_editable)
+                or ("interno" not in proveedor and oste_editable)
             )
 
             label_btn = "Guardar cambios" if editable_estado else "Guardar"
@@ -1490,28 +1498,28 @@ if st.session_state.modal_reporte:
                     st.session_state.modal_reporte = None
                     st.rerun()
 
-                if (
-                    nuevo_estado == "En Curso / En Proceso"
-                    and st.session_state.servicios_df.empty
-                ):
+                if nuevo_estado == "En Curso / En Proceso" and st.session_state.servicios_df.empty:
                     st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
                     st.stop()
 
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
-                if not es_interno and nuevo_estado == "Cerrado / Facturado":
-                    actualizar_oste_pase(
-                        r["Empresa"],
-                        r["NoFolio"],
-                        oste_val
-                    )
+                if "interno" not in proveedor:
+                    if nuevo_estado == "Cerrado / Facturado":
+                        actualizar_oste_pase(
+                            r["Empresa"],
+                            r["NoFolio"],
+                            oste_val
+                        )
 
                 usuario = (
                     st.session_state.user.get("name")
                     or st.session_state.user.get("email")
                 )
-
+                # =====================================================
+                # CREATE MILESTONE ROW IF NO REAL SERVICES
+                # =====================================================
                 df_serv = st.session_state.servicios_df
 
                 sin_partes = (
@@ -1533,9 +1541,9 @@ if st.session_state.modal_reporte:
                     st.session_state.servicios_df,
                     nuevo_estado
                 )
-
+                #Log activity
                 st.session_state.last_action = f"Folio {r['NoFolio']} → {nuevo_estado}"
-
+                
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
                 st.rerun()
