@@ -996,9 +996,20 @@ st.caption("Todas las órdenes (con información de factura)")
 
 if not pases_df.empty:
 
-    # ==================================================
+    # =============================================
+    # FILTER INPUTS
+    # =============================================
+    fcol1, fcol2 = st.columns(2)
+
+    with fcol1:
+        filtro_folio_fact = st.text_input("Filtrar por No. de Folio")
+
+    with fcol2:
+        filtro_factura_fact = st.text_input("Filtrar por No. de Factura")
+
+    # =============================================
     # MERGE ALL ORDERS WITH FACTURAS
-    # ==================================================
+    # =============================================
     base = pases_df.copy()
 
     if not facturas_df.empty:
@@ -1011,58 +1022,80 @@ if not pases_df.empty:
         merged = base.copy()
         merged["No. de Factura"] = None
 
-    # 🔹 SHOW ONLY 5 POST-ITS
+    # =============================================
+    # APPLY FILTERS
+    # =============================================
+    if filtro_folio_fact:
+        merged = merged[
+            merged["NoFolio"]
+            .astype(str)
+            .str.contains(filtro_folio_fact, case=False, na=False)
+        ]
+
+    if filtro_factura_fact:
+        merged = merged[
+            merged["No. de Factura"]
+            .astype(str)
+            .str.contains(filtro_factura_fact, case=False, na=False)
+        ]
+
+    # =============================================
+    # LIMIT TO 5 POST-ITS
+    # =============================================
     merged = merged.head(5)
 
-    cols = st.columns(5)
+    if merged.empty:
+        st.info("No hay resultados con los filtros aplicados.")
+    else:
+        cols = st.columns(5)
 
-    for i, (_, r) in enumerate(merged.iterrows()):
-        col = cols[i]
+        for i, (_, r) in enumerate(merged.iterrows()):
+            col = cols[i]
 
-        with col:
-            folio = r.get("NoFolio", "")
-            estado = r.get("Estado", "")
-            factura_raw = r.get("No. de Factura")
+            with col:
+                folio = r.get("NoFolio", "")
+                estado = r.get("Estado", "")
+                factura_raw = r.get("No. de Factura")
 
-            if pd.isna(factura_raw) or str(factura_raw).strip() == "":
-                factura = "-"
-            else:
-                factura = str(factura_raw)
+                if pd.isna(factura_raw) or str(factura_raw).strip() == "":
+                    factura = "-"
+                else:
+                    factura = str(factura_raw)
 
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffe2e2;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:120px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{folio}</div>
-
-                    <hr style="margin:6px 0">
-
+                html = f"""
+                <div style="padding:6px;">
                     <div style="
-                        font-size:0.8rem;
-                        font-weight:700;
-                        color:#721c24;
+                        background:#ffe2e2;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:120px;
+                        font-family:sans-serif;
                     ">
-                        {estado}
-                    </div>
+                        <div style="font-weight:900;">{folio}</div>
 
-                    <div style="
-                        margin-top:8px;
-                        font-size:0.75rem;
-                    ">
-                        No. de Factura: {factura}
+                        <hr style="margin:6px 0">
+
+                        <div style="
+                            font-size:0.8rem;
+                            font-weight:700;
+                            color:#721c24;
+                        ">
+                            {estado}
+                        </div>
+
+                        <div style="
+                            margin-top:8px;
+                            font-size:0.75rem;
+                        ">
+                            No. de Factura: {factura}
+                        </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=160)
+                components.html(html, height=160)
 
 else:
     st.info("No hay datos disponibles.")
