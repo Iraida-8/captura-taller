@@ -41,9 +41,10 @@ require_access("autorizacion")
 # =================================
 if st.session_state.get("_reset_autorizacion_page", True):
     st.session_state.modal_reporte = None
+    st.session_state.modal_factura = None   # ← ADD THIS
     st.session_state.buscar_trigger = False
     st.session_state["_reset_autorizacion_page"] = False
-
+    
 # =================================
 # Navigation
 # =================================
