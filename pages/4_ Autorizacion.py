@@ -872,6 +872,7 @@ with right:
 # =================================
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
+st.session_state.setdefault("modal_factura", None)
 st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
@@ -974,7 +975,7 @@ if not pases_df.empty:
                 components.html(html, height=220)
 
                 # =====================================
-                # FAKE "INSIDE" BUTTON
+                # BUTTON
                 # =====================================
                 if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
 
@@ -1104,16 +1105,49 @@ if not pases_df.empty:
 
                 components.html(html, height=160)
 
-                # 🔹 Button only (no logic)
-                st.button(
+                # View facturas
+                if st.button(
                     label_btn,
                     key=f"fact_btn_{folio}",
                     use_container_width=True
-                )
+                ):
+                    st.session_state.modal_factura = {
+                        "NoFolio": folio,
+                        "NoFactura": None if factura_vacia else factura
+                    }
 
 else:
     st.info("No hay datos disponibles.")
 
+# =================================
+# FACTURA MODAL
+# =================================
+if st.session_state.modal_factura:
+
+    data_fact = st.session_state.modal_factura
+
+    @st.dialog("Factura")
+    def modal_factura():
+
+        folio = data_fact["NoFolio"]
+        factura_actual = data_fact["NoFactura"]
+
+        st.markdown(f"**No. de Folio:** {folio}")
+
+        factura_vacia = (
+            factura_actual is None
+            or str(factura_actual).strip() == ""
+        )
+
+        st.text_input(
+            "No. de Factura",
+            value="" if factura_vacia else factura_actual,
+            disabled=not factura_vacia
+        )
+
+    modal_factura()
+    st.session_state.modal_factura = None
+    
 # =================================
 # BUSCAR
 # =================================
