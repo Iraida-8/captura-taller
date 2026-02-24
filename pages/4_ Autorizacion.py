@@ -368,36 +368,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
 # =================================
-# GUARDAR FACTURA
-# =================================
-def guardar_factura(folio, numero_factura):
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("FACTURAS")
-
-    headers = [h.strip() for h in ws.row_values(1)]
-
-    if "No. de Folio" not in headers or "No. de Factura" not in headers:
-        st.error("Columnas requeridas no existen en FACTURAS.")
-        return
-
-    folio_col = headers.index("No. de Folio") + 1
-    factura_col = headers.index("No. de Factura") + 1
-
-    folios = ws.col_values(folio_col)
-
-    if folio in folios:
-        row_idx = folios.index(folio) + 1
-        ws.update_cell(row_idx, factura_col, numero_factura)
-    else:
-        new_row = [""] * len(headers)
-        new_row[folio_col - 1] = folio
-        new_row[factura_col - 1] = numero_factura
-        ws.append_row(new_row, value_input_option="USER_ENTERED")
-
-
-# =================================
 # Load Pase de Taller
 # =================================
 @st.cache_data(ttl=300)
@@ -1010,65 +980,32 @@ else:
 # FACTURACIÓN — SIN NÚMERO
 # =================================
 st.divider()
-st.subheader("Facturación")
+st.subheader("💰 Facturación")
 st.caption("Órdenes sin Número de Factura")
-
-fcol1, fcol2 = st.columns(2)
-
-with fcol1:
-    filtro_folio = st.text_input("Filtrar por No. de Folio")
-
-with fcol2:
-    filtro_factura = st.text_input("Filtrar por No. de Factura")
 
 if not pases_df.empty:
 
-    # ==================================================
-    # MERGE FACTURAS
-    # ==================================================
-    base = pases_df.copy()
+    # Only closed & facturado
+    facturados = pases_df[
+        pases_df["Estado"] == "Cerrado / Facturado"
+    ].copy()
 
     if not facturas_df.empty:
-        merged = base.merge(
+        merged = facturados.merge(
             facturas_df[["NoFolio", "No. de Factura"]],
             on="NoFolio",
             how="left"
         )
     else:
-        merged = base.copy()
+        merged = facturados.copy()
         merged["No. de Factura"] = None
 
-    # ==================================================
-    # APPLY FILTERS (AFTER MERGE)
-    # ==================================================
-    if filtro_folio:
-        merged = merged[
-            merged["NoFolio"].astype(str).str.contains(
-                filtro_folio, case=False, na=False
-            )
-        ]
-
-    if filtro_factura:
-        merged = merged[
-            merged["No. de Factura"].astype(str).str.contains(
-                filtro_factura, case=False, na=False
-            )
-        ]
-
-    # ==================================================
-    # FILTER ONLY MISSING INVOICE
-    # ==================================================
+    # Filter missing factura
     sin_factura = merged[
         merged["No. de Factura"].isna()
         | (merged["No. de Factura"].astype(str).str.strip() == "")
     ]
 
-    # LIMIT TO 5 AFTER FILTERING
-    sin_factura = sin_factura.head(5)
-
-    # ==================================================
-    # RENDER
-    # ==================================================
     if sin_factura.empty:
         st.info("No hay órdenes pendientes de facturación.")
     else:
@@ -1080,12 +1017,7 @@ if not pases_df.empty:
             with col:
                 folio = r.get("NoFolio", "")
                 estado = r.get("Estado", "")
-                factura_raw = r.get("No. de Factura")
-
-                if pd.isna(factura_raw) or str(factura_raw).strip() == "":
-                    factura = "-"
-                else:
-                    factura = str(factura_raw)
+                factura = r.get("No. de Factura", "") or "-"
 
                 html = f"""
                 <div style="padding:6px;">
@@ -1121,44 +1053,6 @@ if not pases_df.empty:
                 """
 
                 components.html(html, height=160)
-
-                # =====================================
-                # VER BUTTON
-                # =====================================
-                if st.button("Ver", key=f"fact_ver_{folio}", use_container_width=True):
-
-                    @st.dialog("Detalle de Facturación")
-                    def modal_facturacion():
-
-                        st.markdown(f"**No. de Folio:** {folio}")
-
-                        factura_actual = r.get("No. de Factura")
-
-                        if pd.isna(factura_actual) or str(factura_actual).strip() == "":
-
-                            nueva_factura = st.text_input("No. de Factura", value="")
-
-                            if st.button("Guardar", type="primary"):
-
-                                if nueva_factura.strip() == "":
-                                    st.error("Debe ingresar un número de factura.")
-                                    st.stop()
-
-                                guardar_factura(folio, nueva_factura.strip())
-                                st.success("Factura guardada correctamente.")
-                                st.cache_data.clear()
-                                st.rerun()
-
-                        else:
-                            st.text_input(
-                                "No. de Factura",
-                                value=str(factura_actual),
-                                disabled=True
-                            )
-
-                            st.caption("🔒 Factura ya registrada — no editable")
-
-                    modal_facturacion()
 
 else:
     st.info("No hay datos disponibles.")
