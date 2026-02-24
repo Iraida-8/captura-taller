@@ -142,6 +142,35 @@ def actualizar_oste_pase(empresa, folio, oste):
     ws.update_cell(row_idx, oste_col, oste)
 
 # =================================
+# GUARDAR FACTURA
+# =================================
+def guardar_factura(folio, numero_factura):
+
+    client = gspread.authorize(get_gsheets_credentials())
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("FACTURAS")
+
+    headers = [h.strip() for h in ws.row_values(1)]
+
+    col_folio = headers.index("No. de Folio") + 1
+    col_factura = headers.index("No. de Factura") + 1
+
+    folios = ws.col_values(col_folio)
+
+    # If folio already exists → update factura
+    if folio in folios:
+        row_idx = folios.index(folio) + 1
+        ws.update_cell(row_idx, col_factura, numero_factura)
+    else:
+        # Append new row
+        ws.append_row(
+            [folio, numero_factura],
+            value_input_option="USER_ENTERED"
+        )
+
+# =================================
 # Log estado sin refacciones
 # =================================
 def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
@@ -1139,15 +1168,34 @@ if st.session_state.modal_factura:
             or str(factura_actual).strip() == ""
         )
 
-        st.text_input(
+        nueva_factura = st.text_input(
             "No. de Factura",
             value="" if factura_vacia else factura_actual,
             disabled=not factura_vacia
         )
 
+        st.divider()
+
+        # =================================
+        # BUTTON LOGIC
+        # =================================
+        if factura_vacia:
+            label_btn = "Aceptar / Guardar"
+        else:
+            label_btn = "Aceptar / Cerrar"
+
+        if st.button(label_btn, type="primary"):
+
+            # If editable and user typed something → save
+            if factura_vacia and nueva_factura.strip() != "":
+                guardar_factura(folio, nueva_factura.strip())
+                st.cache_data.clear()
+
+            st.session_state.modal_factura = None
+            st.rerun()
+
     modal_factura()
-    st.session_state.modal_factura = None
-    
+
 # =================================
 # BUSCAR
 # =================================
