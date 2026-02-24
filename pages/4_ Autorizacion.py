@@ -977,82 +977,78 @@ else:
     st.info("No hay pases registrados.")
 
 # =================================
-# FACTURACIÓN — SIN NÚMERO
+# FACTURACIÓN
 # =================================
 st.divider()
-st.subheader("💰 Facturación")
-st.caption("Órdenes sin Número de Factura")
+st.subheader("Facturación")
+st.caption("Todas las órdenes (con información de factura)")
 
 if not pases_df.empty:
 
-    # Only closed & facturado
-    facturados = pases_df[
-        pases_df["Estado"] == "Cerrado / Facturado"
-    ].copy()
+    # ==================================================
+    # MERGE ALL ORDERS WITH FACTURAS
+    # ==================================================
+    base = pases_df.copy()
 
     if not facturas_df.empty:
-        merged = facturados.merge(
+        merged = base.merge(
             facturas_df[["NoFolio", "No. de Factura"]],
             on="NoFolio",
             how="left"
         )
     else:
-        merged = facturados.copy()
+        merged = base.copy()
         merged["No. de Factura"] = None
 
-    # Filter missing factura
-    sin_factura = merged[
-        merged["No. de Factura"].isna()
-        | (merged["No. de Factura"].astype(str).str.strip() == "")
-    ]
+    cols = st.columns(5)
 
-    if sin_factura.empty:
-        st.info("No hay órdenes pendientes de facturación.")
-    else:
-        cols = st.columns(5)
+    for i, (_, r) in enumerate(merged.iterrows()):
+        col = cols[i % 5]
 
-        for i, (_, r) in enumerate(sin_factura.iterrows()):
-            col = cols[i % 5]
+        with col:
+            folio = r.get("NoFolio", "")
+            estado = r.get("Estado", "")
+            factura_raw = r.get("No. de Factura")
 
-            with col:
-                folio = r.get("NoFolio", "")
-                estado = r.get("Estado", "")
-                factura = r.get("No. de Factura", "") or "-"
+            if pd.isna(factura_raw) or str(factura_raw).strip() == "":
+                factura = "-"
+            else:
+                factura = str(factura_raw)
 
-                html = f"""
-                <div style="padding:6px;">
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#ffe2e2;
+                    padding:14px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    min-height:120px;
+                    font-family:sans-serif;
+                ">
+                    <div style="font-weight:900;">{folio}</div>
+
+                    <hr style="margin:6px 0">
+
                     <div style="
-                        background:#ffe2e2;
-                        padding:14px;
-                        border-radius:16px;
-                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                        color:#111;
-                        min-height:120px;
-                        font-family:sans-serif;
+                        font-size:0.8rem;
+                        font-weight:700;
+                        color:#721c24;
                     ">
-                        <div style="font-weight:900;">{folio}</div>
+                        {estado}
+                    </div>
 
-                        <hr style="margin:6px 0">
-
-                        <div style="
-                            font-size:0.8rem;
-                            font-weight:700;
-                            color:#721c24;
-                        ">
-                            {estado}
-                        </div>
-
-                        <div style="
-                            margin-top:8px;
-                            font-size:0.75rem;
-                        ">
-                            No. de Factura: {factura}
-                        </div>
+                    <div style="
+                        margin-top:8px;
+                        font-size:0.75rem;
+                    ">
+                        No. de Factura: {factura}
                     </div>
                 </div>
-                """
+            </div>
+            """
 
-                components.html(html, height=160)
+            components.html(html, height=160)
 
 else:
     st.info("No hay datos disponibles.")
