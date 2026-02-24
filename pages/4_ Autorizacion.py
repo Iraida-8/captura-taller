@@ -409,8 +409,6 @@ def cargar_pases_taller():
 
     return df
 
-pases_df = cargar_pases_taller()
-
 # =================================
 # Load FACTURAS
 # =================================
@@ -431,6 +429,18 @@ def cargar_facturas():
     df.columns = df.columns.str.strip()
 
     return df
+
+pases_df = cargar_pases_taller()
+
+facturas_df = cargar_facturas()
+
+if not facturas_df.empty:
+    facturas_df.columns = facturas_df.columns.str.strip()
+
+    if "No. de Folio" in facturas_df.columns:
+        facturas_df = facturas_df.rename(columns={"No. de Folio": "NoFolio"})
+
+    facturas_df["NoFolio"] = facturas_df["NoFolio"].astype(str)
 
 # =================================
 # Catalogs (READ ONLY)
@@ -965,6 +975,87 @@ if not pases_df.empty:
 
 else:
     st.info("No hay pases registrados.")
+
+# =================================
+# FACTURACIÓN — SIN NÚMERO
+# =================================
+st.divider()
+st.subheader("💰 Facturación")
+st.caption("Órdenes sin Número de Factura")
+
+if not pases_df.empty:
+
+    # Only closed & facturado
+    facturados = pases_df[
+        pases_df["Estado"] == "Cerrado / Facturado"
+    ].copy()
+
+    if not facturas_df.empty:
+        merged = facturados.merge(
+            facturas_df[["NoFolio", "No. de Factura"]],
+            on="NoFolio",
+            how="left"
+        )
+    else:
+        merged = facturados.copy()
+        merged["No. de Factura"] = None
+
+    # Filter missing factura
+    sin_factura = merged[
+        merged["No. de Factura"].isna()
+        | (merged["No. de Factura"].astype(str).str.strip() == "")
+    ]
+
+    if sin_factura.empty:
+        st.info("No hay órdenes pendientes de facturación.")
+    else:
+        cols = st.columns(5)
+
+        for i, (_, r) in enumerate(sin_factura.iterrows()):
+            col = cols[i % 5]
+
+            with col:
+                folio = r.get("NoFolio", "")
+                estado = r.get("Estado", "")
+                factura = r.get("No. de Factura", "") or "-"
+
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#ffe2e2;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:120px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{folio}</div>
+
+                        <hr style="margin:6px 0">
+
+                        <div style="
+                            font-size:0.8rem;
+                            font-weight:700;
+                            color:#721c24;
+                        ">
+                            {estado}
+                        </div>
+
+                        <div style="
+                            margin-top:8px;
+                            font-size:0.75rem;
+                        ">
+                            No. de Factura: {factura}
+                        </div>
+                    </div>
+                </div>
+                """
+
+                components.html(html, height=160)
+
+else:
+    st.info("No hay datos disponibles.")
 
 # =================================
 # BUSCAR
