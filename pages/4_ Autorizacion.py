@@ -1087,9 +1087,21 @@ if not pases_df.empty:
 
                 components.html(html, height=160)
 
+                # =====================================
+                # VER BUTTON
+                # =====================================
+                if st.button("Ver", key=f"fact_ver_{folio}", use_container_width=True):
+
+                    # Open modal
+                    st.session_state.modal_reporte = r.to_dict()
+
+                    # Load services for this folio
+                    df = cargar_servicios_folio(folio)
+                    st.session_state.servicios_df = df
+
 else:
     st.info("No hay datos disponibles.")
-    
+
 # =================================
 # BUSCAR
 # =================================
