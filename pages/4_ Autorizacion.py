@@ -1080,7 +1080,12 @@ if not pases_df.empty:
             with col:
                 folio = r.get("NoFolio", "")
                 estado = r.get("Estado", "")
-                factura = r.get("No. de Factura", "") or "-"
+                factura_raw = r.get("No. de Factura")
+
+                if pd.isna(factura_raw) or str(factura_raw).strip() == "":
+                    factura = "-"
+                else:
+                    factura = str(factura_raw)
 
                 html = f"""
                 <div style="padding:6px;">
