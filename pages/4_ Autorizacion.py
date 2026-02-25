@@ -497,30 +497,18 @@ if not facturas_df.empty:
 # =================================
 # Load Refacciones (Supabase)
 # =================================
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=0)
 def cargar_refacciones():
     supabase = get_supabase_client()
 
-    response = (
-        supabase
-        .table("parts")
-        .select("parte, tipo")   # 🔴 lowercase
-        .order("parte")
-        .execute()
-    )
-
-    if not response.data:
-        return pd.DataFrame(columns=["Parte", "Tipo"])
-
-    df = pd.DataFrame(response.data)
-
-    # Normalize to your app’s expected format
-    df = df.rename(columns={
-        "parte": "Parte",
-        "tipo": "Tipo"
-    })
-
-    return df
+    try:
+        response = supabase.table("parts").select("*").execute()
+        st.write("RESPONSE:", response)
+        return pd.DataFrame(response.data)
+    except Exception as e:
+        st.write("ERROR TYPE:", type(e))
+        st.write("ERROR DETAIL:", e)
+        raise e
 
 # =================================
 # Catalogs (READ ONLY)
