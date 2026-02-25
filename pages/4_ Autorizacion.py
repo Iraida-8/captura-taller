@@ -6,8 +6,19 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 from datetime import datetime
+from supabase import create_client
 
 fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# =================================
+# Page Cache and State Management
+# =================================
+@st.cache_resource
+def get_supabase_client():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
 
 # =================================
 # Page configuration
@@ -482,6 +493,26 @@ if not facturas_df.empty:
         facturas_df = facturas_df.rename(columns={"No. de Folio": "NoFolio"})
 
     facturas_df["NoFolio"] = facturas_df["NoFolio"].astype(str)
+
+# =================================
+# Load Refacciones (Supabase)
+# =================================
+@st.cache_data(ttl=300)
+def cargar_refacciones():
+    supabase = get_supabase_client()
+
+    response = (
+        supabase
+        .table("refacciones")
+        .select("Parte, Tipo")
+        .order("Parte")
+        .execute()
+    )
+
+    if not response.data:
+        return pd.DataFrame(columns=["Parte", "Tipo"])
+
+    return pd.DataFrame(response.data)
 
 # =================================
 # Catalogs (READ ONLY)
@@ -1381,7 +1412,7 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Servicios y Refacciones")
 
-        catalogo = cargar_catalogo_por_empresa(r["Empresa"])
+        catalogo = cargar_refacciones()
 
         if catalogo is not None and not catalogo.empty:
             st.session_state.refaccion_seleccionada = st.selectbox(
