@@ -1046,7 +1046,7 @@ with f4:
     )
 
 with f5:
-    f_fecha = st.date_input("Fecha", value=None)
+    f_fecha = st.date_input("Fecha de Captura", value=None)
 
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
