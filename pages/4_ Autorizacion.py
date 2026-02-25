@@ -504,15 +504,22 @@ def cargar_refacciones():
     response = (
         supabase
         .table("parts")
-        .select("Parte, Tipo")
-        .order("Parte")
+        .select("parte, tipo")
+        .order("parte")
         .execute()
     )
 
     if not response.data:
         return pd.DataFrame(columns=["Parte", "Tipo"])
 
-    return pd.DataFrame(response.data)
+    # 👇 PUT IT HERE
+    df = pd.DataFrame(response.data)
+    df = df.rename(columns={
+        "parte": "Parte",
+        "tipo": "Tipo"
+    })
+
+    return df
 
 # =================================
 # Catalogs (READ ONLY)
