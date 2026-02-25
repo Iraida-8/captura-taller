@@ -503,7 +503,7 @@ def cargar_refacciones():
 
     response = (
         supabase
-        .table("refacciones")
+        .table("parts")
         .select("Parte, Tipo")
         .order("Parte")
         .execute()
