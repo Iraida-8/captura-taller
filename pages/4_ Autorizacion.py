@@ -1436,23 +1436,25 @@ if st.session_state.modal_reporte:
         # ADD ITEM
         # =====================================================
         if st.button(
-            "Agregar refacciones o servicios",
+            "Agregar refacción",
             disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
         ):
-            fila = catalogo[catalogo["label"] == st.session_state.refaccion_seleccionada].iloc[0]
+
+            parte_seleccionada = st.session_state.refaccion_seleccionada
+
+            fila = catalogo[
+                catalogo["Parte"] == parte_seleccionada
+            ].iloc[0]
 
             if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
 
-                precio = pd.to_numeric(fila.get("PU", 0), errors="coerce") or 0
-                iva = pd.to_numeric(fila.get("IVA", 0), errors="coerce") or 0
-
                 nueva = {
-                    "Parte": fila.get("Parte", ""),
-                    "Tipo De Parte": fila.get("Tipo De Parte", "Servicio"),
-                    "PU": precio,
-                    "IVA": iva,
+                    "Parte": fila["Parte"],
+                    "Tipo De Parte": fila["Tipo"],
+                    "PU": 0,
+                    "IVA": 0,
                     "Cantidad": 1,
-                    "Total": (precio + iva),
+                    "Total": 0,
                 }
 
                 st.session_state.servicios_df = pd.concat(
