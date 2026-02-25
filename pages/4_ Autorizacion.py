@@ -1010,25 +1010,6 @@ with f1:
     f_folio = st.text_input("No. de Folio")
 
 with f2:
-    f_empresa = st.selectbox("Empresa", ["Selecciona empresa"] + empresas)
-
-with f3:
-    f_estado = st.selectbox(
-        "Estado",
-        [
-            "Selecciona estado",
-            "En Curso / Nuevo",
-            "En Curso / Autorizado",
-            "En Curso / Sin Comenzar",
-            "En Curso / Espera Refacciones",
-            "En Curso / En Proceso",
-            "Cerrado / Cancelado",
-            "Cerrado / Completado",
-            "Cerrado / Facturado",
-        ]
-    )
-
-with f4:
     unidades = (
         sorted(
             pases_df["No. de Unidad"]
@@ -1043,6 +1024,25 @@ with f4:
     f_unidad = st.selectbox(
         "No. de Unidad",
         ["Selecciona unidad"] + unidades
+    )
+
+with f3:
+    f_empresa = st.selectbox("Empresa", ["Selecciona empresa"] + empresas)
+
+with f4:
+    f_estado = st.selectbox(
+        "Estado",
+        [
+            "Selecciona estado",
+            "En Curso / Nuevo",
+            "En Curso / Autorizado",
+            "En Curso / Sin Comenzar",
+            "En Curso / Espera Refacciones",
+            "En Curso / En Proceso",
+            "Cerrado / Cancelado",
+            "Cerrado / Completado",
+            "Cerrado / Facturado",
+        ]
     )
 
 with f5:
