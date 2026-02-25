@@ -1004,7 +1004,7 @@ st.subheader("Buscar Pase de Taller")
 
 empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
 
-f1, f2, f3, f4 = st.columns(4)
+f1, f2, f3, f4, f5 = st.columns(5)
 
 with f1:
     f_folio = st.text_input("No. de Folio")
@@ -1029,6 +1029,23 @@ with f3:
     )
 
 with f4:
+    unidades = (
+        sorted(
+            pases_df["No. de Unidad"]
+            .dropna()
+            .astype(str)
+            .unique()
+        )
+        if not pases_df.empty and "No. de Unidad" in pases_df.columns
+        else []
+    )
+
+    f_unidad = st.selectbox(
+        "No. de Unidad",
+        ["Selecciona unidad"] + unidades
+    )
+
+with f5:
     f_fecha = st.date_input("Fecha", value=None)
 
 if st.button("Buscar"):
@@ -1050,6 +1067,10 @@ if st.session_state.buscar_trigger:
     if f_estado != "Selecciona estado":
         resultados = resultados[resultados["Estado"] == f_estado]
 
+    if f_unidad != "Selecciona unidad":
+        resultados = resultados[
+            resultados["No. de Unidad"].astype(str) == f_unidad]
+
     if f_fecha:
         resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
 
@@ -1057,7 +1078,7 @@ if st.session_state.buscar_trigger:
     st.subheader("Resultados")
 
     for _, row in resultados.iterrows():
-        c1, c2, c3, c4, c5, c6 = st.columns([1,2,2,2,2,1])
+        c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([1,2,2,2,2,3,2,1])
 
         editable = row["Estado"].startswith("En Curso")
 
@@ -1077,10 +1098,18 @@ if st.session_state.buscar_trigger:
         # INFO COLUMNS (UNCHANGED)
         # ======================================================
         c2.write(row["NoFolio"])
-        c3.write(row["Empresa"])
-        c4.write(row["Proveedor"])
-        c5.write(row["Estado"])
-        c6.write(row["Fecha"].date() if pd.notna(row["Fecha"]) else "")
+        c3.write(row.get("No. de Unidad", ""))
+        c4.write(row["Empresa"])
+        c5.write(row["Proveedor"])
+        c6.write(row["Estado"])
+
+        descripcion = row.get("Descripcion Problema", "")
+        if isinstance(descripcion, str) and len(descripcion) > 80:
+            descripcion = descripcion[:80] + "..."
+
+        c7.write(descripcion)
+
+        c8.write(row["Fecha"].date() if pd.notna(row["Fecha"]) else "")
 
 # =================================
 # MODAL
