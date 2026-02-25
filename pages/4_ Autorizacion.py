@@ -504,7 +504,7 @@ def cargar_refacciones():
     response = (
         supabase
         .table("parts")
-        .select("parte, tipo")
+        .select("parte, tipo")   # 🔴 lowercase
         .order("parte")
         .execute()
     )
@@ -512,8 +512,9 @@ def cargar_refacciones():
     if not response.data:
         return pd.DataFrame(columns=["Parte", "Tipo"])
 
-    # 👇 PUT IT HERE
     df = pd.DataFrame(response.data)
+
+    # Normalize to your app’s expected format
     df = df.rename(columns={
         "parte": "Parte",
         "tipo": "Tipo"
