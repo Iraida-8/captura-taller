@@ -1413,7 +1413,7 @@ if st.session_state.modal_reporte:
         if catalogo is not None and not catalogo.empty:
             st.session_state.refaccion_seleccionada = st.selectbox(
                 "Refacción / Servicio",
-                options=catalogo["label"].tolist(),
+                options=catalogo["Parte"].tolist(),
                 index=None,
                 disabled=not editable_servicios
             )
