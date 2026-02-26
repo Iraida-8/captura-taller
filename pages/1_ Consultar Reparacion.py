@@ -173,6 +173,7 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
+        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -294,20 +295,10 @@ if unidad_orden_sel != "Todas":
 # SORT & TAKE LAST 10
 # ==========================================
 if "Fecha Registro" in df_interna.columns:
-
-    # Do NOT force dayfirst
     df_interna["Fecha Registro"] = pd.to_datetime(
         df_interna["Fecha Registro"],
         errors="coerce"
     )
-
-    # Drop nulls explicitly
-    df_interna = df_interna[df_interna["Fecha Registro"].notna()]
-
-    # Filter 2025+
-    df_interna = df_interna[
-        df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
-    ]
 
     df_interna = df_interna.sort_values(
         "Fecha Registro",
