@@ -600,8 +600,8 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             "Unidad",
             "Fecha Compra",
             "Parte",
-            "Cantidad",
             "PU USD",
+            "Cantidad",
             "Total USD"
         ]
     elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
