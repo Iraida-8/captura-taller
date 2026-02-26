@@ -313,7 +313,7 @@ else:
             fecha_registro = row.get("Fecha Registro")
             if pd.notna(fecha_registro):
                 fecha_registro = pd.to_datetime(fecha_registro, errors="coerce")
-                fecha_registro = fecha_registro.strftime("%d/%m/%Y %H:%M")
+                fecha_registro = fecha_registro.strftime("%d/%m/%Y")
             else:
                 fecha_registro = ""
 
@@ -379,8 +379,12 @@ else:
             tipo = safe(row.get("Tipo Unidad"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
-            f_oste = safe(row.get("Fecha OSTE"))
-            f_factura = safe(row.get("Fecha Factura"))
+            fecha_oste = row.get("Fecha OSTE")
+            if pd.notna(fecha_oste):
+                fecha_oste = pd.to_datetime(fecha_oste, errors="coerce")
+                fecha_oste = fecha_oste.strftime("%d/%m/%Y")
+            else:
+                fecha_oste = ""
 
             html = f"""
             <div style="padding:6px;">
@@ -412,7 +416,7 @@ else:
                     <hr style="margin:6px 0">
 
                     <div style="font-size:0.75rem;">
-                        {f_oste} &nbsp; | &nbsp; {f_factura}
+                        <b>Fecha OSTE:</b> {fecha_oste}
                     </div>
                 </div>
             </div>
