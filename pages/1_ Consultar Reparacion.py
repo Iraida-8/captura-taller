@@ -521,7 +521,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     # ==========================================
     # FILTERS
     # ==========================================
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         unidad_partes_sel = st.selectbox(
@@ -531,21 +531,13 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         )
 
     with col2:
-        fecha_inicio_partes = st.date_input(
-            "Fecha Compra Desde",
-            value=date(2025, 1, 1),
-            min_value=date(2025, 1, 1),
-            key="fecha_inicio_partes"
-        )
-
-    with col3:
         fecha_fin_partes = st.date_input(
             "Fecha Compra Hasta",
             value=date.today(),
             key="fecha_fin_partes"
         )
 
-    with col4:
+    with col3:
         if "Parte" in df_partes.columns:
             parte_sel = st.selectbox(
                 "Filtrar por Parte",
@@ -567,11 +559,12 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         ]
 
     # Fecha Compra filter
-    if "Fecha Compra" in df_partes_filtrado.columns:
-        df_partes_filtrado = df_partes_filtrado[
-            (df_partes_filtrado["Fecha Compra"] >= pd.to_datetime(fecha_inicio_partes)) &
-            (df_partes_filtrado["Fecha Compra"] <= pd.to_datetime(fecha_fin_partes))
-        ]
+    LOCK_DATE = pd.Timestamp("2025-01-01")
+
+    df_partes_filtrado = df_partes_filtrado[
+        (df_partes_filtrado["Fecha Compra"] >= LOCK_DATE) &
+        (df_partes_filtrado["Fecha Compra"] <= pd.to_datetime(fecha_fin_partes))
+    ]
 
     # Parte filter
     if parte_sel != "Todas":
