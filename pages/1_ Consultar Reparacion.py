@@ -257,30 +257,16 @@ columnas_resumen = [
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 # =====================================================
-# BUILD INTERNAL DATASET
+# BUILD INTERNAL DATASET (NO FILTERS)
 # =====================================================
 df_interna = df.copy()
 
 if "Fecha Registro" in df_interna.columns:
-
     df_interna["Fecha Registro"] = pd.to_datetime(
         df_interna["Fecha Registro"],
         errors="coerce",
         dayfirst=True
     )
-
-    df_interna = df_interna[
-        df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
-    ]
-
-    if unidad_orden_sel != "Todas" and "Unidad" in df_interna.columns:
-        df_interna = df_interna[
-            df_interna["Unidad"]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-            == unidad_orden_sel.strip().upper()
-        ]
 
     df_interna = df_interna.sort_values(
         "Fecha Registro",
@@ -288,29 +274,15 @@ if "Fecha Registro" in df_interna.columns:
     ).head(10)
 
 # =====================================================
-# BUILD EXTERNAL DATASET (SAME STRUCTURE)
+# BUILD EXTERNAL DATASET (NO FILTERS)
 # =====================================================
 df_externa = df_ostes.copy()
 
 if "Fecha OSTE" in df_externa.columns:
-
     df_externa["Fecha OSTE"] = pd.to_datetime(
         df_externa["Fecha OSTE"],
         errors="coerce"
     )
-
-    df_externa = df_externa[
-        df_externa["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
-    ]
-
-    if unidad_orden_sel != "Todas" and "Unidad" in df_externa.columns:
-        df_externa = df_externa[
-            df_externa["Unidad"]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-            == unidad_orden_sel.strip().upper()
-        ]
 
     df_externa = df_externa.sort_values(
         "Fecha OSTE",
