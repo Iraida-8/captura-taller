@@ -214,7 +214,6 @@ if empresa == "Selecciona empresa":
 config = EMPRESA_CONFIG[empresa]
 
 df = cargar_ordenes(config["ordenes"])
-df_partes = cargar_partes(config["partes"])
 df_ostes = cargar_ostes(config["ostes"])
 
 if df.empty:
