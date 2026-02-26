@@ -262,23 +262,43 @@ columnas_resumen = [
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 # =====================================================
-# BUILD INTERNAL / EXTERNAL DATASETS
+# BUILD INTERNAL DATASET (ISOLATED)
 # =====================================================
 
 df_interna = df.copy()
 
+df_interna["Fecha Registro"] = pd.to_datetime(
+    df_interna["Fecha Registro"],
+    errors="coerce",
+    dayfirst=True
+)
+
+# ONLY date filter
 df_interna = df_interna[
     df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
 ]
 
+# Optional unidad filter
+if unidad_orden_sel != "Todas":
+    df_interna = df_interna[
+        df_interna["Unidad"].astype(str) == unidad_orden_sel
+    ]
+
+# Sort and take 10
 df_interna = df_interna.sort_values(
     "Fecha Registro",
     ascending=False
 ).head(10)
 
+
+# =====================================================
+# BUILD EXTERNAL DATASET (SAME STRUCTURE)
+# =====================================================
+
 df_externa = df_ostes.copy()
 
 if "Fecha OSTE" in df_externa.columns:
+
     df_externa["Fecha OSTE"] = pd.to_datetime(
         df_externa["Fecha OSTE"],
         errors="coerce"
@@ -288,36 +308,10 @@ if "Fecha OSTE" in df_externa.columns:
         df_externa["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
     ]
 
-# ==========================================
-# FILTER BY UNIDAD
-# ==========================================
-if unidad_orden_sel != "Todas":
-    if "Unidad" in df_interna.columns:
-        df_interna = df_interna[df_interna["Unidad"].astype(str) == unidad_orden_sel]
-
-    if "Unidad" in df_externa.columns:
-        df_externa = df_externa[df_externa["Unidad"].astype(str) == unidad_orden_sel]
-
-
-# ==========================================
-# SORT & TAKE LAST 10
-# ==========================================
-if "Fecha Registro" in df_interna.columns:
-    df_interna["Fecha Registro"] = pd.to_datetime(
-        df_interna["Fecha Registro"],
-        errors="coerce"
-    )
-
-    df_interna = df_interna.sort_values(
-        "Fecha Registro",
-        ascending=False
-    ).head(10)
-
-if "Fecha OSTE" in df_externa.columns:
-    df_externa["Fecha OSTE"] = pd.to_datetime(
-        df_externa["Fecha OSTE"],
-        errors="coerce"
-    )
+    if unidad_orden_sel != "Todas":
+        df_externa = df_externa[
+            df_externa["Unidad"].astype(str) == unidad_orden_sel
+        ]
 
     df_externa = df_externa.sort_values(
         "Fecha OSTE",
