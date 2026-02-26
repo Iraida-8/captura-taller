@@ -531,19 +531,20 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         )
 
     with col2:
-
         subcol1, subcol2 = st.columns([4, 1])
-
         with subcol1:
             fecha_compra_sel = st.date_input(
                 "Fecha Compra",
-                value=(date(2025, 1, 1), date.today()),
+                value=st.session_state.get(
+                    "fecha_compra_partes",
+                    (date(2025, 1, 1), date.today())
+                ),
                 min_value=date(2025, 1, 1),
                 key="fecha_compra_partes"
             )
 
         with subcol2:
-            st.write("")  # small vertical alignment helper
+            st.write("")  # alignment spacing
             if st.button("↺", key="reset_fecha_partes"):
                 st.session_state["fecha_compra_partes"] = (
                     date(2025, 1, 1),
