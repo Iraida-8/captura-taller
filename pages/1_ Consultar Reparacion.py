@@ -176,6 +176,8 @@ def cargar_ordenes(url):
 
         df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
 
+        return df
+
 @st.cache_data(ttl=600)
 def cargar_partes(url):
     if not url:
