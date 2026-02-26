@@ -173,7 +173,6 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -301,7 +300,6 @@ if "Fecha Registro" in df_interna.columns:
         dayfirst=True
     )
 
-    # Filter only 2025+
     df_interna = df_interna[
         df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
     ]
