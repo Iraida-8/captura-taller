@@ -151,8 +151,6 @@ def cargar_ordenes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    st.write("Columns raw:", [repr(col) for col in df.columns])
-
     # =====================================================
     # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
     # =====================================================
@@ -174,6 +172,10 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
+
+        st.write("Total rows:", len(df))
+        st.write("Non-null parsed:", df["Fecha Registro"].notna().sum())
+        st.write("Example parsed values:", df["Fecha Registro"].head(10))
 
         df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
 
