@@ -172,7 +172,7 @@ def cargar_ordenes(url):
             errors="coerce"
         )
 
-        df = df[df["Fecha Registro"] >= pd.Timestamp("2021-12-27")]
+        df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
