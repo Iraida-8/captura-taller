@@ -543,10 +543,6 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         with subcol1:
             fecha_compra_sel = st.date_input(
                 "Fecha Compra",
-                value=st.session_state.get(
-                    "fecha_compra_partes",
-                    (date(2025, 1, 1), date.today())
-                ),
                 min_value=date(2025, 1, 1),
                 key="fecha_compra_partes"
             )
