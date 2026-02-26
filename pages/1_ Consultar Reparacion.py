@@ -173,6 +173,7 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
+        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -679,8 +680,8 @@ st.subheader("Todas las Órdenes Externas (OSTES)")
 df_ostes_tabla = df_ostes_filtrado.copy()
 
 # safety → make sure FECHA exists
-if "Fecha OSTE" in df_ostes_tabla.columns:
-    df_ostes_tabla = df_ostes_tabla.sort_values("Fecha OSTE", ascending=False)
+if "FECHA" in df_ostes_tabla.columns:
+    df_ostes_tabla = df_ostes_tabla.sort_values("FECHA", ascending=False)
 
 if df_ostes_tabla.empty:
     st.info("No hay registros externos.")
