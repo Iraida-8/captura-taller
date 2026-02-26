@@ -155,7 +155,7 @@ def cargar_ordenes(url):
     # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
     # =====================================================
     rename_map = {
-        "Fecha Analisis": "FECHA",
+        "Fecha Registro": "FECHA",
         "Diferencia": "DIFERENCIA",
         "Comentarios": "COMENTARIOS",
         "Tipo De Unidad": "Tipo Unidad",
