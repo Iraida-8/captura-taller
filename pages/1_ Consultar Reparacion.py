@@ -633,16 +633,15 @@ if "FECHA" in df_filtrado.columns:
         (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
     ]
 
-if "FECHA" in df_ostes_filtrado.columns:
-    df_ostes_filtrado["FECHA"] = pd.to_datetime(
-        df_ostes_filtrado["FECHA"],
-        errors="coerce",
-        dayfirst=True
+if "Fecha OSTE" in df_ostes_filtrado.columns:
+    df_ostes_filtrado["Fecha OSTE"] = pd.to_datetime(
+        df_ostes_filtrado["Fecha OSTE"],
+        errors="coerce"
     )
 
     df_ostes_filtrado = df_ostes_filtrado[
-        (df_ostes_filtrado["FECHA"] >= pd.Timestamp("2025-01-01")) &
-        (df_ostes_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
+        (df_ostes_filtrado["Fecha OSTE"] >= pd.Timestamp("2025-01-01")) &
+        (df_ostes_filtrado["Fecha OSTE"] <= pd.to_datetime(fecha_fin))
     ]
 
 
