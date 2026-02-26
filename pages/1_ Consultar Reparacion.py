@@ -180,7 +180,7 @@ def cargar_ordenes(url):
         df["Fecha Registro"] = pd.to_datetime(
             df["Fecha Registro"],
             errors="coerce",
-            infer_datetime_format=True
+            format="mixed"
         )
 
     return df
