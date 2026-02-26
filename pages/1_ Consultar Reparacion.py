@@ -167,15 +167,14 @@ def cargar_ordenes(url):
     # =====================================================
     # DATE PARSE
     # =====================================================
-    if "FECHA" in df.columns:
-        df["FECHA"] = pd.to_datetime(
-            df["FECHA"],
+    if "Fecha Registro" in df.columns:
+        df["Fecha Registro"] = pd.to_datetime(
+            df["Fecha Registro"],
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
-    return df
+        df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
 
 @st.cache_data(ttl=600)
 def cargar_partes(url):
@@ -283,8 +282,8 @@ if unidad_orden_sel != "Todas":
 # ==========================================
 # SORT & TAKE LAST 10
 # ==========================================
-if "FECHA" in df_interna.columns:
-    df_interna = df_interna.sort_values("FECHA", ascending=False).head(10)
+if "Fecha Registro" in df_interna.columns:
+    df_interna = df_interna.sort_values("Fecha Registro", ascending=False).head(10)
 
 if "FECHA" in df_externa.columns:
     df_externa = df_externa.sort_values("FECHA", ascending=False).head(10)
