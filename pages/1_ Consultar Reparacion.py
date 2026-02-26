@@ -400,8 +400,8 @@ else:
             tipo = safe(row.get("Tipo Unidad"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
-            f_acep = safe(row.get("Fecha Aceptado"))
-            f_ini = safe(row.get("Fecha Iniciada"))
+            f_oste = safe(row.get("Fecha OSTE"))
+            f_factura = safe(row.get("Fecha Factura"))
 
             html = f"""
             <div style="padding:6px;">
@@ -433,7 +433,7 @@ else:
                     <hr style="margin:6px 0">
 
                     <div style="font-size:0.75rem;">
-                        {f_acep} &nbsp; | &nbsp; {f_ini}
+                        {f_oste} &nbsp; | &nbsp; {f_factura}
                     </div>
                 </div>
             </div>
