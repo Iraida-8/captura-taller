@@ -310,8 +310,12 @@ else:
             tipo = safe(row.get("Tipo Unidad"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
-            f_acep = safe(row.get("Fecha Aceptado"))
-            f_ini = safe(row.get("Fecha Iniciada"))
+            fecha_registro = row.get("Fecha Registro")
+            if pd.notna(fecha_registro):
+                fecha_registro = pd.to_datetime(fecha_registro, errors="coerce")
+                fecha_registro = fecha_registro.strftime("%d/%m/%Y %H:%M")
+            else:
+                fecha_registro = ""
 
             html = f"""
             <div style="padding:6px;">
@@ -343,7 +347,7 @@ else:
                     <hr style="margin:6px 0">
 
                     <div style="font-size:0.75rem;">
-                        {f_acep} &nbsp; | &nbsp; {f_ini}
+                        <b>Fecha Registro:</b> {fecha_registro}
                     </div>
                 </div>
             </div>
