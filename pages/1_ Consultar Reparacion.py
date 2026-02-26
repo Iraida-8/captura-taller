@@ -621,16 +621,15 @@ with c3:
 df_filtrado = df.copy()
 df_ostes_filtrado = df_ostes.copy()
 
-if "FECHA" in df_filtrado.columns:
-    df_filtrado["FECHA"] = pd.to_datetime(
-        df_filtrado["FECHA"],
-        errors="coerce",
-        dayfirst=True
+if "Fecha Registro" in df_filtrado.columns:
+    df_filtrado["Fecha Registro"] = pd.to_datetime(
+        df_filtrado["Fecha Registro"],
+        errors="coerce"
     )
 
     df_filtrado = df_filtrado[
-        (df_filtrado["FECHA"] >= pd.Timestamp("2025-01-01")) &
-        (df_filtrado["FECHA"] <= pd.to_datetime(fecha_fin))
+        (df_filtrado["Fecha Registro"] >= pd.Timestamp("2025-01-01")) &
+        (df_filtrado["Fecha Registro"] <= pd.to_datetime(fecha_fin))
     ]
 
 if "Fecha OSTE" in df_ostes_filtrado.columns:
@@ -667,7 +666,7 @@ columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
 
 st.dataframe(
     df_filtrado[columnas_mostrar]
-        .sort_values("FECHA", ascending=False),
+        .sort_values("Fecha Registro", ascending=False),
     hide_index=True,
     width="stretch"
 )
