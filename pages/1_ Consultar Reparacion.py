@@ -173,12 +173,6 @@ def cargar_ordenes(url):
             dayfirst=True
         )
 
-        st.write("Total rows:", len(df))
-        st.write("Non-null parsed:", df["Fecha Registro"].notna().sum())
-        st.write("Example parsed values:", df["Fecha Registro"].head(10))
-
-        df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
-
     return df
 
 @st.cache_data(ttl=600)
@@ -272,6 +266,16 @@ columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 # =====================================================
 
 df_interna = df.copy()
+
+df_interna = df_interna[
+    df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
+]
+
+df_interna = df_interna.sort_values(
+    "Fecha Registro",
+    ascending=False
+).head(10)
+
 df_externa = df_ostes.copy()
 
 if "Fecha OSTE" in df_externa.columns:
