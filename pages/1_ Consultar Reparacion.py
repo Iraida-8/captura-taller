@@ -531,10 +531,11 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         )
 
     with col2:
-        fecha_fin_partes = st.date_input(
-            "Fecha Compra Hasta",
-            value=date.today(),
-            key="fecha_fin_partes"
+        fecha_compra_sel = st.date_input(
+            "Fecha Compra",
+            value=(date(2025, 1, 1), date.today()),
+            min_value=date(2025, 1, 1),
+            key="fecha_compra_partes"
         )
 
     with col3:
@@ -561,9 +562,16 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     # Fecha Compra filter
     LOCK_DATE = pd.Timestamp("2025-01-01")
 
+    if isinstance(fecha_compra_sel, tuple):
+        fecha_inicio_sel, fecha_fin_sel = fecha_compra_sel
+    else:
+        fecha_inicio_sel = fecha_compra_sel
+        fecha_fin_sel = fecha_compra_sel
+
     df_partes_filtrado = df_partes_filtrado[
         (df_partes_filtrado["Fecha Compra"] >= LOCK_DATE) &
-        (df_partes_filtrado["Fecha Compra"] <= pd.to_datetime(fecha_fin_partes))
+        (df_partes_filtrado["Fecha Compra"] >= pd.to_datetime(fecha_inicio_sel)) &
+        (df_partes_filtrado["Fecha Compra"] <= pd.to_datetime(fecha_fin_sel))
     ]
 
     # Parte filter
