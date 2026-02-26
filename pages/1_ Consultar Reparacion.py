@@ -245,25 +245,6 @@ def safe(x):
         return ""
     return str(x)
 
-# =================================
-# ÚLTIMOS 10 REGISTROS
-# =================================
-st.subheader("Últimos registros")
-
-unidad_orden_sel = "Todas"
-
-columnas_resumen = [
-    "Fecha Aceptado",
-    "Fecha Iniciada",
-    "Unidad",
-    "Tipo Unidad",
-    "Reporte",
-    "Descripcion",
-    "Razon Reparacion"
-]
-
-columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
-
 # =====================================================
 # BUILD INTERNAL DATASET (LATEST 10)
 # =====================================================
@@ -311,7 +292,6 @@ else:
             desc = safe(row.get("Descripcion"))
             fecha_registro = row.get("Fecha Registro")
             if pd.notna(fecha_registro):
-                fecha_registro = pd.to_datetime(fecha_registro, errors="coerce")
                 fecha_registro = fecha_registro.strftime("%d/%m/%Y")
             else:
                 fecha_registro = ""
@@ -380,7 +360,6 @@ else:
             desc = safe(row.get("Descripcion"))
             fecha_oste = row.get("Fecha OSTE")
             if pd.notna(fecha_oste):
-                fecha_oste = pd.to_datetime(fecha_oste, errors="coerce")
                 fecha_oste = fecha_oste.strftime("%d/%m/%Y")
             else:
                 fecha_oste = ""
