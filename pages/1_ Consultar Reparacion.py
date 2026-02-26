@@ -170,8 +170,7 @@ def cargar_ordenes(url):
     if "Fecha Registro" in df.columns:
         df["Fecha Registro"] = pd.to_datetime(
             df["Fecha Registro"],
-            errors="coerce",
-            dayfirst=True
+            errors="coerce"
         )
 
         df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
