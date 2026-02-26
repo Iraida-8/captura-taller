@@ -663,3 +663,173 @@ else:
         hide_index=True,
         use_container_width=True
     )
+
+# =================================
+# VIEW MODAL
+# =================================
+if st.session_state.get("modal_orden"):
+
+    r = st.session_state.modal_orden
+    tipo = st.session_state.get("modal_tipo", "interna")
+
+    @st.dialog("Detalle de la Reparación")
+    def modal():
+
+        def safe(x):
+            if pd.isna(x) or x is None:
+                return ""
+            return str(x)
+
+        def safe_date(x):
+            d = pd.to_datetime(x, errors="coerce")
+            return d.date() if pd.notna(d) else "-"
+
+        # =====================================================
+        # ================== INTERNA ==========================
+        # =====================================================
+        if tipo == "interna":
+
+            st.markdown(f"## Reporte {safe(r.get('Reporte'))}")
+
+            st.subheader("Unidad")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Unidad:** {safe(r.get('Unidad'))}")
+            c2.markdown(f"**Modelo:** {safe(r.get('Modelo'))}")
+            c3.markdown(f"**Tipo:** {safe(r.get('Tipo Unidad'))}")
+
+            c4, c5 = st.columns(2)
+            c4.markdown(f"**Flotilla:** {safe(r.get('Flotilla'))}")
+            c5.markdown(f"**Sucursal:** {safe(r.get('Sucursal'))}")
+
+            st.divider()
+
+            st.subheader("Cliente")
+
+            c1, c2 = st.columns(2)
+            c1.markdown(f"**Nombre:** {safe(r.get('Nombre Cliente'))}")
+            c2.markdown(f"**Factura:** {safe(r.get('Factura'))}")
+
+            st.divider()
+
+            st.subheader("Estatus")
+            st.markdown(f"**{safe(r.get('Estatus'))}**")
+
+            st.divider()
+
+            st.subheader("Razón de reparación")
+            st.write(safe(r.get("Razon Reparacion")))
+
+            st.subheader("Descripción")
+            st.write(safe(r.get("Descripcion")))
+
+            st.divider()
+
+            st.subheader("Fechas")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Análisis:** {safe_date(r.get('Fecha Analisis'))}")
+            c2.markdown(f"**Registro:** {safe_date(r.get('Fecha Registro'))}")
+            c3.markdown(f"**Aceptado:** {safe_date(r.get('Fecha Aceptado'))}")
+
+            c4, c5, c6 = st.columns(3)
+            c4.markdown(f"**Iniciado:** {safe_date(r.get('Fecha Iniciada'))}")
+            c5.markdown(f"**Liberada:** {safe_date(r.get('Fecha Liberada'))}")
+            c6.markdown(f"**Terminada:** {safe_date(r.get('Fecha Terminada'))}")
+
+            st.divider()
+
+            st.subheader("Totales")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Sub Total:** {safe(r.get('Sub Total'))}")
+            c2.markdown(f"**IVA:** {safe(r.get('IVA'))}")
+            c3.markdown(f"**Total:** {safe(r.get('Total'))}")
+
+            c4, c5, c6 = st.columns(3)
+            c4.markdown(f"**Total Corrección:** {safe(r.get('Total Correccion'))}")
+            c5.markdown(f"**TC:** {safe(r.get('TC'))}")
+            c6.markdown(f"**Total USD:** {safe(r.get('Total USD'))}")
+
+            st.divider()
+
+            st.subheader("Observaciones")
+            st.markdown(f"**Diferencia:** {safe(r.get('DIFERENCIA'))}")
+            st.write(safe(r.get("COMENTARIOS")))
+
+        # =====================================================
+        # ================== OSTE =============================
+        # =====================================================
+        else:
+
+            st.markdown(f"## OSTE {safe(r.get('OSTE'))}")
+
+            st.subheader("Unidad")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Unidad:** {safe(r.get('Unidad'))}")
+            c2.markdown(f"**Modelo:** {safe(r.get('Modelo'))}")
+            c3.markdown(f"**Tipo:** {safe(r.get('Tipo Unidad'))}")
+
+            c4, c5 = st.columns(2)
+            c4.markdown(f"**Flotilla:** {safe(r.get('Flotilla'))}")
+            c5.markdown(f"**Sucursal:** {safe(r.get('Sucursal'))}")
+
+            st.divider()
+
+            st.subheader("Proveedor")
+
+            c1, c2 = st.columns(2)
+            c1.markdown(f"**Acreedor:** {safe(r.get('Acreedor'))}")
+            c2.markdown(f"**Factura:** {safe(r.get('Factura'))}")
+
+            st.divider()
+
+            st.subheader("Estado")
+            st.markdown(f"**{safe(r.get('Status CT'))}**")
+
+            st.divider()
+
+            st.subheader("Servicio")
+            st.markdown(f"**Reporte:** {safe(r.get('Reporte'))}")
+            st.markdown(f"**Razón:** {safe(r.get('Razon Reparacion'))}")
+            st.write(safe(r.get("Descripcion")))
+
+            st.divider()
+
+            st.subheader("Fechas")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Análisis:** {safe_date(r.get('Fecha Analisis'))}")
+            c2.markdown(f"**Factura:** {safe_date(r.get('Fecha Factura'))}")
+            c3.markdown(f"**OSTE:** {safe_date(r.get('Fecha OSTE'))}")
+
+            c4, c5 = st.columns(2)
+            c4.markdown(f"**Cierre:** {safe_date(r.get('Fecha Cierre'))}")
+            c5.markdown(f"**Días reparación:** {safe(r.get('Dias Reparacion'))}")
+
+            st.divider()
+
+            st.subheader("Totales")
+
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"**Subtotal:** {safe(r.get('Subtotal'))}")
+            c2.markdown(f"**IVA:** {safe(r.get('IVA'))}")
+            c3.markdown(f"**Total OSTE:** {safe(r.get('Total oste'))}")
+
+            c4, c5 = st.columns(2)
+            c4.markdown(f"**TC:** {safe(r.get('TC'))}")
+            c5.markdown(f"**Total Corrección:** {safe(r.get('Total Correccion'))}")
+
+            st.divider()
+
+            st.subheader("Observaciones")
+            st.write(safe(r.get("Observaciones")))
+
+        st.divider()
+
+        if st.button("Cerrar"):
+            st.session_state.modal_orden = None
+            st.rerun()
+
+    modal()
