@@ -294,8 +294,16 @@ if "Fecha Registro" in df_interna.columns:
         ascending=False
     ).head(10)
 
-if "FECHA" in df_externa.columns:
-    df_externa = df_externa.sort_values("FECHA", ascending=False).head(10)
+if "Fecha OSTE" in df_externa.columns:
+    df_externa["Fecha OSTE"] = pd.to_datetime(
+        df_externa["Fecha OSTE"],
+        errors="coerce"
+    )
+
+    df_externa = df_externa.sort_values(
+        "Fecha OSTE",
+        ascending=False
+    ).head(10)
 
 # =====================================================
 # MANO DE OBRA INTERNA
