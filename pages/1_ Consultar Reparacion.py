@@ -170,12 +170,11 @@ def cargar_ordenes(url):
     if "Fecha Registro" in df.columns:
         df["Fecha Registro"] = pd.to_datetime(
             df["Fecha Registro"],
-            errors="coerce"
+            errors="coerce",
+            dayfirst=True
         )
 
         df = df[df["Fecha Registro"] >= pd.Timestamp("2025-01-01")]
-
-        return df
 
 @st.cache_data(ttl=600)
 def cargar_partes(url):
@@ -218,8 +217,6 @@ config = EMPRESA_CONFIG[empresa]
 df = cargar_ordenes(config["ordenes"])
 df_partes = cargar_partes(config["partes"])
 df_ostes = cargar_ordenes(config["ostes"])
-
-st.write("DF TYPE:", type(df))
 
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
