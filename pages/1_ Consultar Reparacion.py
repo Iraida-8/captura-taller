@@ -577,12 +577,41 @@ else:
     st.info("No hay información de partes disponible para esta empresa.")
 
 # =================================
+# FILTRO UNIDAD - TABLAS COMPLETAS (2025+)
+# =================================
+st.markdown("### Filtro Unidad - Tablas Completas")
+
+unidades_interna_tabla = []
+unidades_externa_tabla = []
+
+if "Unidad" in df.columns:
+    unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
+
+if "Unidad" in df_ostes.columns:
+    unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+
+unidades_tabla_unificadas = sorted(
+    pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
+)
+
+unidad_tabla_sel = st.selectbox(
+    "Unidad (Tablas Completas)",
+    ["Todas"] + unidades_tabla_unificadas,
+    index=0
+)
+
+# =================================
 # TABLA COMPLETA - INTERNAS (2025+)
 # =================================
 st.divider()
 st.subheader("Todas las Órdenes Internas")
 
-df_tabla_interna = df.copy()  # df already has 2025+ hard lock
+df_tabla_interna = df.copy()
+
+if unidad_tabla_sel != "Todas":
+    df_tabla_interna = df_tabla_interna[
+        df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+    ]
 
 if df_tabla_interna.empty:
     st.info("No hay órdenes internas.")
@@ -606,14 +635,18 @@ else:
         use_container_width=True
     )
 
-
 # =================================
 # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
 # =================================
 st.divider()
 st.subheader("Todas las Órdenes Externas (OSTES)")
 
-df_tabla_externa = df_ostes.copy()  # already 2025+ locked
+df_tabla_externa = df_ostes.copy()
+
+if unidad_tabla_sel != "Todas":
+    df_tabla_externa = df_tabla_externa[
+        df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+    ]
 
 if df_tabla_externa.empty:
     st.info("No hay registros externos.")
