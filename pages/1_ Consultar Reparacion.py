@@ -294,12 +294,17 @@ if unidad_orden_sel != "Todas":
 # SORT & TAKE LAST 10
 # ==========================================
 if "Fecha Registro" in df_interna.columns:
+
+    # Do NOT force dayfirst
     df_interna["Fecha Registro"] = pd.to_datetime(
         df_interna["Fecha Registro"],
-        errors="coerce",
-        dayfirst=True
+        errors="coerce"
     )
 
+    # Drop nulls explicitly
+    df_interna = df_interna[df_interna["Fecha Registro"].notna()]
+
+    # Filter 2025+
     df_interna = df_interna[
         df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
     ]
