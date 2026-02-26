@@ -283,8 +283,16 @@ if unidad_orden_sel != "Todas":
 # ==========================================
 # SORT & TAKE LAST 10
 # ==========================================
-if "FECHA" in df_interna.columns:
-    df_interna = df_interna.sort_values("FECHA", ascending=False).head(10)
+if "Fecha Registro" in df_interna.columns:
+    df_interna["Fecha Registro"] = pd.to_datetime(
+        df_interna["Fecha Registro"],
+        errors="coerce"
+    )
+
+    df_interna = df_interna.sort_values(
+        "Fecha Registro",
+        ascending=False
+    ).head(10)
 
 if "FECHA" in df_externa.columns:
     df_externa = df_externa.sort_values("FECHA", ascending=False).head(10)
