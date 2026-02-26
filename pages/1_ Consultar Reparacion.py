@@ -424,51 +424,98 @@ st.subheader("Refacciones Recientes")
 
 if not df_partes.empty and "Unidad" in df_partes.columns:
 
-    unidad_partes_sel = st.selectbox(
-        "Filtrar por Unidad",
-        ["Todas"] + sorted(df_partes["Unidad"].dropna().astype(str).unique()),
-        index=0
-    )
+    # ==========================================
+    # ENSURE Fecha Compra EXISTS AND IS DATETIME
+    # ==========================================
+    if "Fecha Compra" in df_partes.columns:
+        df_partes["Fecha Compra"] = pd.to_datetime(
+            df_partes["Fecha Compra"],
+            errors="coerce",
+            dayfirst=True
+        )
 
+        # Base rule → only 2025+
+        df_partes = df_partes[
+            df_partes["Fecha Compra"] >= pd.Timestamp("2025-01-01")
+        ]
+
+    # ==========================================
+    # FILTERS
+    # ==========================================
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        unidad_partes_sel = st.selectbox(
+            "Filtrar por Unidad",
+            ["Todas"] + sorted(df_partes["Unidad"].dropna().astype(str).unique()),
+            index=0
+        )
+
+    with col2:
+        fecha_inicio_partes = st.date_input(
+            "Fecha Compra Desde",
+            value=date(2025, 1, 1),
+            min_value=date(2025, 1, 1),
+            key="fecha_inicio_partes"
+        )
+
+        fecha_fin_partes = st.date_input(
+            "Fecha Compra Hasta",
+            value=date.today(),
+            key="fecha_fin_partes"
+        )
+
+    with col3:
+        if "Parte" in df_partes.columns:
+            parte_sel = st.selectbox(
+                "Filtrar por Parte",
+                ["Todas"] + sorted(df_partes["Parte"].dropna().astype(str).unique()),
+                index=0
+            )
+        else:
+            parte_sel = "Todas"
+
+    # ==========================================
+    # APPLY FILTERS
+    # ==========================================
     df_partes_filtrado = df_partes.copy()
 
-    # Filter by Unidad
+    # Unidad filter
     if unidad_partes_sel != "Todas":
         df_partes_filtrado = df_partes_filtrado[
             df_partes_filtrado["Unidad"].astype(str) == unidad_partes_sel
         ]
 
-    # Ensure Fecha Analisis is datetime
-    if "Fecha Analisis" in df_partes_filtrado.columns:
-        df_partes_filtrado["Fecha Analisis"] = pd.to_datetime(
-            df_partes_filtrado["Fecha Analisis"],
-            errors="coerce",
-            dayfirst=True
-        )
+    # Fecha Compra filter
+    if "Fecha Compra" in df_partes_filtrado.columns:
+        df_partes_filtrado = df_partes_filtrado[
+            (df_partes_filtrado["Fecha Compra"] >= pd.to_datetime(fecha_inicio_partes)) &
+            (df_partes_filtrado["Fecha Compra"] <= pd.to_datetime(fecha_fin_partes))
+        ]
 
-        # Sort newest first
+    # Parte filter
+    if parte_sel != "Todas":
+        df_partes_filtrado = df_partes_filtrado[
+            df_partes_filtrado["Parte"].astype(str) == parte_sel
+        ]
+
+    # ==========================================
+    # SORT NEWEST FIRST
+    # ==========================================
+    if "Fecha Compra" in df_partes_filtrado.columns:
         df_partes_filtrado = df_partes_filtrado.sort_values(
-            "Fecha Analisis",
+            "Fecha Compra",
             ascending=False
         )
 
-    # UNIQUE BY PARTE (keep newest record)
-    if "Parte" in df_partes_filtrado.columns:
-        df_partes_clean = df_partes_filtrado.drop_duplicates(
-            subset=["Parte"],
-            keep="first"
-        )
-    else:
-        df_partes_clean = df_partes_filtrado.copy()
-
     # ==========================================
-    # CORRECT COLUMN STRUCTURE PER EMPRESA
+    # COLUMN STRUCTURE (NO DUPLICATE REMOVAL)
     # ==========================================
-
     if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
 
         columnas_partes = [
             "Unidad",
+            "Fecha Compra",
             "Parte",
             "Cantidad",
             "PU USD",
@@ -479,6 +526,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
         columnas_partes = [
             "Unidad",
+            "Fecha Compra",
             "Parte",
             "PU",
             "IVA",
@@ -487,13 +535,15 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         ]
 
     else:
+
         columnas_partes = [
             "Unidad",
+            "Fecha Compra",
             "Parte"
         ]
 
-    df_partes_final = df_partes_clean[
-        [c for c in columnas_partes if c in df_partes_clean.columns]
+    df_partes_final = df_partes_filtrado[
+        [c for c in columnas_partes if c in df_partes_filtrado.columns]
     ]
 
     st.dataframe(
