@@ -173,7 +173,6 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
