@@ -162,7 +162,7 @@ def cargar_ordenes(url):
     df.columns = df.columns.str.strip()
 
     # =====================================================
-    # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
+    # COLUMN NORMALIZATION (DATABASE → SYSTEM)
     # =====================================================
     rename_map = {
         "Diferencia": "DIFERENCIA",
