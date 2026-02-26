@@ -634,35 +634,6 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 else:
     st.info("No hay información de partes disponible para esta empresa.")
 
-# =================================
-# FILTROS
-# =================================
-st.divider()
-st.subheader("Filtros")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    fecha_inicio = st.date_input(
-        "Fecha inicio",
-        value=date(2025, 1, 1),
-        min_value=date(2025, 1, 1)
-    )
-
-with c2:
-    fecha_fin = st.date_input(
-        "Fecha fin",
-        value=date.today()
-    )
-
-with c3:
-    if "Unidad" in df.columns:
-        unidad_sel = st.selectbox(
-            "Unidad",
-            ["Todas"] + sorted(df["Unidad"].dropna().astype(str).unique())
-        )
-    else:
-        unidad_sel = "Todas"
 
 # =================================
 # APPLY FILTERS
@@ -670,6 +641,7 @@ with c3:
 df_filtrado = df.copy()
 df_ostes_filtrado = df_ostes.copy()
 
+# ---- Internas ----
 if "Fecha Registro" in df_filtrado.columns:
     df_filtrado["Fecha Registro"] = pd.to_datetime(
         df_filtrado["Fecha Registro"],
@@ -678,10 +650,10 @@ if "Fecha Registro" in df_filtrado.columns:
     )
 
     df_filtrado = df_filtrado[
-        (df_filtrado["Fecha Registro"] >= pd.Timestamp("2025-01-01")) &
-        (df_filtrado["Fecha Registro"] <= pd.to_datetime(fecha_fin))
+        df_filtrado["Fecha Registro"] >= pd.Timestamp("2025-01-01")
     ]
 
+# ---- Externas ----
 if "Fecha OSTE" in df_ostes_filtrado.columns:
     df_ostes_filtrado["Fecha OSTE"] = pd.to_datetime(
         df_ostes_filtrado["Fecha OSTE"],
@@ -689,27 +661,117 @@ if "Fecha OSTE" in df_ostes_filtrado.columns:
     )
 
     df_ostes_filtrado = df_ostes_filtrado[
-        (df_ostes_filtrado["Fecha OSTE"] >= pd.Timestamp("2025-01-01")) &
-        (df_ostes_filtrado["Fecha OSTE"] <= pd.to_datetime(fecha_fin))
+        df_ostes_filtrado["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
     ]
 
+# =================================
+# FILTROS VISIBLES (MES + UNIDAD)
+# =================================
 
-if unidad_sel != "Todas" and "Unidad" in df_filtrado.columns:
-    df_filtrado = df_filtrado[
-        df_filtrado["Unidad"].astype(str) == unidad_sel
-    ]
+st.divider()
+st.subheader("Filtros")
 
-if unidad_sel != "Todas" and "Unidad" in df_ostes_filtrado.columns:
-    df_ostes_filtrado = df_ostes_filtrado[
-        df_ostes_filtrado["Unidad"].astype(str) == unidad_sel
-    ]
+# ---- Normalize Mes to uppercase ----
+if "Mes" in df_filtrado.columns:
+    df_filtrado["Mes"] = (
+        df_filtrado["Mes"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
 
+if "Mes" in df_ostes_filtrado.columns:
+    df_ostes_filtrado["Mes"] = (
+        df_ostes_filtrado["Mes"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+# ---- Build Mes list ----
+meses = set()
+
+if "Mes" in df_filtrado.columns:
+    meses.update(df_filtrado["Mes"].dropna().unique())
+
+if "Mes" in df_ostes_filtrado.columns:
+    meses.update(df_ostes_filtrado["Mes"].dropna().unique())
+
+meses_ordenados = sorted(meses)
+
+mes_sel = st.selectbox(
+    "Mes",
+    ["Todos"] + meses_ordenados,
+    index=0
+)
+
+# ---- Build Unidad list from both tables ----
+unidades = set()
+
+if "Unidad" in df_filtrado.columns:
+    unidades.update(
+        df_filtrado["Unidad"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+    )
+
+if "Unidad" in df_ostes_filtrado.columns:
+    unidades.update(
+        df_ostes_filtrado["Unidad"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+    )
+
+unidad_sel = st.selectbox(
+    "Unidad",
+    ["Todas"] + sorted(unidades),
+    index=0
+)
+
+# =================================
+# APPLY MES + UNIDAD FILTERS
+# =================================
+
+# ---- Mes filter ----
+if mes_sel != "Todos":
+
+    if "Mes" in df_filtrado.columns:
+        df_filtrado = df_filtrado[
+            df_filtrado["Mes"] == mes_sel
+        ]
+
+    if "Mes" in df_ostes_filtrado.columns:
+        df_ostes_filtrado = df_ostes_filtrado[
+            df_ostes_filtrado["Mes"] == mes_sel
+        ]
+
+# ---- Unidad filter ----
+if unidad_sel != "Todas":
+    if "Unidad" in df_filtrado.columns:
+        df_filtrado = df_filtrado[
+            df_filtrado["Unidad"]
+            .astype(str)
+            .str.strip()
+            == unidad_sel.strip()
+        ]
+
+    if "Unidad" in df_ostes_filtrado.columns:
+        df_ostes_filtrado = df_ostes_filtrado[
+            df_ostes_filtrado["Unidad"]
+            .astype(str)
+            .str.strip()
+            == unidad_sel.strip()
+        ]
 
 # =================================
 # TABLA COMPLETA
 # =================================
 st.divider()
-st.subheader("Todas las Órdenes")
+st.subheader("Todas las Órdenes Internas")
 
 columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
 columnas_mostrar = [c for c in df_filtrado.columns if c not in columnas_ocultar]
@@ -746,8 +808,9 @@ else:
 # FOOTER
 # =================================
 st.caption(
-    f"Mostrando {len(df_filtrado)} registros | "
-    f"Desde {fecha_inicio} hasta {fecha_fin}"
+    f"Mostrando {len(df_filtrado)} registros internos | "
+    f"{len(df_ostes_filtrado)} registros externos | "
+    f"Datos desde 01/01/2025"
 )
 
 # =================================
