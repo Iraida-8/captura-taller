@@ -442,7 +442,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     # ==========================================
     # FILTERS
     # ==========================================
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         unidad_partes_sel = st.selectbox(
@@ -459,13 +459,14 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             key="fecha_inicio_partes"
         )
 
+    with col3:
         fecha_fin_partes = st.date_input(
             "Fecha Compra Hasta",
             value=date.today(),
             key="fecha_fin_partes"
         )
 
-    with col3:
+    with col4:
         if "Parte" in df_partes.columns:
             parte_sel = st.selectbox(
                 "Filtrar por Parte",
