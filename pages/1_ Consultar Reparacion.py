@@ -628,7 +628,8 @@ df_ostes_filtrado = df_ostes.copy()
 if "Fecha Registro" in df_filtrado.columns:
     df_filtrado["Fecha Registro"] = pd.to_datetime(
         df_filtrado["Fecha Registro"],
-        errors="coerce"
+        errors="coerce",
+        dayfirst=True
     )
 
     df_filtrado = df_filtrado[
