@@ -297,8 +297,14 @@ if unidad_orden_sel != "Todas":
 if "Fecha Registro" in df_interna.columns:
     df_interna["Fecha Registro"] = pd.to_datetime(
         df_interna["Fecha Registro"],
-        errors="coerce"
+        errors="coerce",
+        dayfirst=True
     )
+
+    # Filter only 2025+
+    df_interna = df_interna[
+        df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
+    ]
 
     df_interna = df_interna.sort_values(
         "Fecha Registro",
