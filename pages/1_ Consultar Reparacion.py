@@ -218,6 +218,8 @@ df = cargar_ordenes(config["ordenes"])
 df_partes = cargar_partes(config["partes"])
 df_ostes = cargar_ordenes(config["ostes"])
 
+st.write("DF TYPE:", type(df))
+
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
