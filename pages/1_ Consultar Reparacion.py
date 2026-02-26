@@ -307,7 +307,8 @@ if unidad_orden_sel != "Todas":
 if "Fecha Registro" in df_interna.columns:
     df_interna["Fecha Registro"] = pd.to_datetime(
         df_interna["Fecha Registro"],
-        errors="coerce"
+        errors="coerce",
+        dayfirst=True
     )
 
     df_interna = df_interna.sort_values(
