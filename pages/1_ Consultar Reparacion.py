@@ -572,6 +572,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         hide_index=True,
         use_container_width=True
     )
+    st.caption(f"Total de refacciones: {len(df_partes_final)}")
 
 else:
     st.info("No hay información de partes disponible para esta empresa.")
