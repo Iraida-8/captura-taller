@@ -636,7 +636,7 @@ else:
     )
 
     st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
-    
+
 # =================================
 # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
 # =================================
@@ -665,6 +665,8 @@ else:
         hide_index=True,
         use_container_width=True
     )
+
+st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
 
 # =================================
 # VIEW MODAL
