@@ -262,34 +262,32 @@ columnas_resumen = [
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 # =====================================================
-# BUILD INTERNAL DATASET (ISOLATED)
+# BUILD INTERNAL DATASET
 # =====================================================
 
 df_interna = df.copy()
 
-df_interna["Fecha Registro"] = pd.to_datetime(
-    df_interna["Fecha Registro"],
-    errors="coerce",
-    dayfirst=True
-)
+if "Fecha Registro" in df_interna.columns:
 
-# ONLY date filter
-df_interna = df_interna[
-    df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
-]
+    df_interna["Fecha Registro"] = pd.to_datetime(
+        df_interna["Fecha Registro"],
+        errors="coerce",
+        dayfirst=True
+    )
 
-# Optional unidad filter
-if unidad_orden_sel != "Todas":
     df_interna = df_interna[
-        df_interna["Unidad"].astype(str) == unidad_orden_sel
+        df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
     ]
 
-# Sort and take 10
-df_interna = df_interna.sort_values(
-    "Fecha Registro",
-    ascending=False
-).head(10)
+    if unidad_orden_sel != "Todas":
+        df_interna = df_interna[
+            df_interna["Unidad"].astype(str) == unidad_orden_sel
+        ]
 
+    df_interna = df_interna.sort_values(
+        "Fecha Registro",
+        ascending=False
+    ).head(10)
 
 # =====================================================
 # BUILD EXTERNAL DATASET (SAME STRUCTURE)
