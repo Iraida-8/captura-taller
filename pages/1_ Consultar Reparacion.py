@@ -667,9 +667,10 @@ if "Fecha OSTE" in df_ostes_filtrado.columns:
 # =================================
 # FILTROS VISIBLES (MES + UNIDAD)
 # =================================
-
 st.divider()
 st.subheader("Filtros")
+
+col1, col2 = st.columns(2)
 
 # ---- Normalize Mes to uppercase ----
 if "Mes" in df_filtrado.columns:
@@ -699,11 +700,12 @@ if "Mes" in df_ostes_filtrado.columns:
 
 meses_ordenados = sorted(meses)
 
-mes_sel = st.selectbox(
-    "Mes",
-    ["Todos"] + meses_ordenados,
-    index=0
-)
+with col1:
+    mes_sel = st.selectbox(
+        "Mes",
+        ["Todos"] + meses_ordenados,
+        index=0
+    )
 
 # ---- Build Unidad list from both tables ----
 unidades = set()
@@ -726,11 +728,12 @@ if "Unidad" in df_ostes_filtrado.columns:
         .unique()
     )
 
-unidad_sel = st.selectbox(
-    "Unidad",
-    ["Todas"] + sorted(unidades),
-    index=0
-)
+with col2:
+    unidad_sel = st.selectbox(
+        "Unidad",
+        ["Todas"] + sorted(unidades),
+        index=0
+    )
 
 # =================================
 # APPLY MES + UNIDAD FILTERS
