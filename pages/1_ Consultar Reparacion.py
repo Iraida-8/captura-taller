@@ -217,7 +217,8 @@ config = EMPRESA_CONFIG[empresa]
 
 df = cargar_ordenes(config["ordenes"])
 df_partes = cargar_partes(config["partes"])
-df_ostes = cargar_ordenes(config["ostes"])
+df_ostes = pd.read_csv(config["ostes"])
+df_ostes.columns = df_ostes.columns.str.strip()
 
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
@@ -268,6 +269,16 @@ columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 df_interna = df.copy()
 df_externa = df_ostes.copy()
+
+if "Fecha OSTE" in df_externa.columns:
+    df_externa["Fecha OSTE"] = pd.to_datetime(
+        df_externa["Fecha OSTE"],
+        errors="coerce"
+    )
+
+    df_externa = df_externa[
+        df_externa["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
+    ]
 
 # ==========================================
 # FILTER BY UNIDAD
