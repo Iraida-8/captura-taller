@@ -155,7 +155,7 @@ def cargar_ordenes(url):
     # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
     # =====================================================
     rename_map = {
-        "Fecha Registro": "FECHA",
+        "Fecha Analisis": "FECHA",
         "Diferencia": "DIFERENCIA",
         "Comentarios": "COMENTARIOS",
         "Tipo De Unidad": "Tipo Unidad",
@@ -167,13 +167,13 @@ def cargar_ordenes(url):
     # =====================================================
     # DATE PARSE
     # =====================================================
-    if "Fecha Registro" in df.columns:
-        df["Fecha Registro"] = pd.to_datetime(
-            df["Fecha Registro"],
-            errors="coerce"
+    if "FECHA" in df.columns:
+        df["FECHA"] = pd.to_datetime(
+            df["FECHA"],
+            errors="coerce",
+            dayfirst=True
         )
-
-        df = df[df["Fecha Registro"] >= "2025-01-01"]
+        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
