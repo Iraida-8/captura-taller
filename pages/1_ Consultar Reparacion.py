@@ -321,7 +321,7 @@ if "Fecha OSTE" in df_externa.columns:
 # =====================================================
 if unidad_sel != "Todas" and df_interna.empty and df_externa.empty:
     st.warning("No hay reportes para esta unidad.")
-    
+
 st.markdown("### 🔧 Mano de Obra Interna")
 
 if df_interna.empty:
@@ -575,3 +575,58 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 
 else:
     st.info("No hay información de partes disponible para esta empresa.")
+
+# =================================
+# TABLA COMPLETA - INTERNAS (2025+)
+# =================================
+st.divider()
+st.subheader("Todas las Órdenes Internas")
+
+df_tabla_interna = df.copy()  # df already has 2025+ hard lock
+
+if df_tabla_interna.empty:
+    st.info("No hay órdenes internas.")
+else:
+
+    columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+    columnas_mostrar = [
+        c for c in df_tabla_interna.columns
+        if c not in columnas_ocultar
+    ]
+
+    if "Fecha Registro" in df_tabla_interna.columns:
+        df_tabla_interna = df_tabla_interna.sort_values(
+            "Fecha Registro",
+            ascending=False
+        )
+
+    st.dataframe(
+        df_tabla_interna[columnas_mostrar],
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+# =================================
+# TABLA COMPLETA - EXTERNAS (OSTES 2025+)
+# =================================
+st.divider()
+st.subheader("Todas las Órdenes Externas (OSTES)")
+
+df_tabla_externa = df_ostes.copy()  # already 2025+ locked
+
+if df_tabla_externa.empty:
+    st.info("No hay registros externos.")
+else:
+
+    if "Fecha OSTE" in df_tabla_externa.columns:
+        df_tabla_externa = df_tabla_externa.sort_values(
+            "Fecha OSTE",
+            ascending=False
+        )
+
+    st.dataframe(
+        df_tabla_externa,
+        hide_index=True,
+        use_container_width=True
+    )
