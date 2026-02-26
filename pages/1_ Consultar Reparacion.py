@@ -40,20 +40,12 @@ require_access("consultar_reparacion")
 
 if "consulta_reparacion_initialized" not in st.session_state:
 
-    # Reset refacciones date filter
-    st.session_state["fecha_compra_partes"] = (
-        date(2025, 1, 1),
-        date.today()
-    )
-
     # Reset modals
     st.session_state["modal_orden"] = None
     st.session_state["modal_tipo"] = None
 
     # Mark as initialized to avoid loop
     st.session_state["consulta_reparacion_initialized"] = True
-
-st.session_state.setdefault("modal_orden", None)
 
 # =================================
 # Navigation
@@ -530,49 +522,17 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         dayfirst=True
     )
 
+    # 🔒 Hard lock to 2025+
     LOCK_DATE = pd.Timestamp("2025-01-01")
 
-    # ---------------------------------
-    # DATE FILTER FIRST
-    # ---------------------------------
-    col1, col2, col3 = st.columns(3)
-
-    with col2:
-        subcol1, subcol2 = st.columns([4, 1])
-
-        with subcol1:
-            fecha_compra_sel = st.date_input(
-                "Fecha Compra",
-                min_value=date(2025, 1, 1),
-                key="fecha_compra_partes"
-            )
-
-        with subcol2:
-            st.write("")
-            if st.button("↺", key="reset_fecha_partes"):
-                st.session_state["fecha_compra_partes"] = (
-                    date(2025, 1, 1),
-                    date.today()
-                )
-                st.rerun()
-
-    # Determine selected range
-    if isinstance(fecha_compra_sel, tuple):
-        fecha_inicio_sel, fecha_fin_sel = fecha_compra_sel
-    else:
-        fecha_inicio_sel = fecha_compra_sel
-        fecha_fin_sel = fecha_compra_sel
-
-    # Apply 2025 lock + selected date range
     df_partes_base = df_partes[
-        (df_partes["Fecha Compra"] >= LOCK_DATE) &
-        (df_partes["Fecha Compra"] >= pd.to_datetime(fecha_inicio_sel)) &
-        (df_partes["Fecha Compra"] <= pd.to_datetime(fecha_fin_sel))
+        df_partes["Fecha Compra"] >= LOCK_DATE
     ].copy()
 
-    # ---------------------------------
-    # BUILD DROPDOWNS FROM DATE FILTERED DATA
-    # ---------------------------------
+    # -----------------------------
+    # DROPDOWNS
+    # -----------------------------
+    col1, col2 = st.columns(2)
 
     with col1:
         unidad_partes_sel = st.selectbox(
@@ -587,7 +547,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             index=0
         )
 
-    with col3:
+    with col2:
         if "Parte" in df_partes_base.columns:
             parte_sel = st.selectbox(
                 "Filtrar por Parte",
@@ -603,10 +563,9 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
         else:
             parte_sel = "Todas"
 
-    # ---------------------------------
-    # APPLY UNIDAD / PARTE FILTERS
-    # ---------------------------------
-
+    # -----------------------------
+    # APPLY FILTERS
+    # -----------------------------
     df_partes_filtrado = df_partes_base.copy()
 
     if unidad_partes_sel != "Todas":
@@ -625,19 +584,17 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
             == parte_sel.strip()
         ]
 
-    # ---------------------------------
+    # -----------------------------
     # SORT
-    # ---------------------------------
-
+    # -----------------------------
     df_partes_filtrado = df_partes_filtrado.sort_values(
         "Fecha Compra",
         ascending=False
     )
 
-    # ---------------------------------
-    # DISPLAY
-    # ---------------------------------
-
+    # -----------------------------
+    # DISPLAY WITH YOUR ORIGINAL COLUMN LOGIC
+    # -----------------------------
     if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
         columnas_partes = [
             "Unidad",
