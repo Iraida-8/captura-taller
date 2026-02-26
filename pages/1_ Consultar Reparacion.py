@@ -151,6 +151,8 @@ def cargar_ordenes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
+    st.write("Columns raw:", [repr(col) for col in df.columns])
+
     # =====================================================
     # 🔥 COLUMN NORMALIZATION (DATABASE → SYSTEM)
     # =====================================================
