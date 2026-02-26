@@ -579,6 +579,7 @@ else:
 # =================================
 # FILTRO UNIDAD - TABLAS COMPLETAS (2025+)
 # =================================
+st.divider()
 st.markdown("### Filtro Unidad - Tablas Completas")
 
 unidades_interna_tabla = []
@@ -603,7 +604,6 @@ unidad_tabla_sel = st.selectbox(
 # =================================
 # TABLA COMPLETA - INTERNAS (2025+)
 # =================================
-st.divider()
 st.subheader("Todas las Órdenes Internas")
 
 df_tabla_interna = df.copy()
