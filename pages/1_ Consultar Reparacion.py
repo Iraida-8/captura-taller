@@ -257,7 +257,7 @@ columnas_resumen = [
 columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 # =====================================================
-# BUILD INTERNAL DATASET (SORT NEWEST → OLDEST)
+# BUILD INTERNAL DATASET (LATEST 10)
 # =====================================================
 df_interna = df.copy()
 
@@ -272,10 +272,10 @@ if "Fecha Registro" in df_interna.columns:
         by="Fecha Registro",
         ascending=False,
         na_position="last"
-    )
+    ).head(10)
 
 # =====================================================
-# BUILD EXTERNAL DATASET (SORT NEWEST → OLDEST)
+# BUILD EXTERNAL DATASET (LATEST 10)
 # =====================================================
 df_externa = df_ostes.copy()
 
@@ -289,7 +289,7 @@ if "Fecha OSTE" in df_externa.columns:
         by="Fecha OSTE",
         ascending=False,
         na_position="last"
-    )
+    ).head(10)
 
 # =====================================================
 # MANO DE OBRA INTERNA
