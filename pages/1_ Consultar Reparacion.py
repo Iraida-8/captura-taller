@@ -5,7 +5,6 @@ from auth import require_login, require_access
 import streamlit.components.v1 as components
 
 st.cache_data.clear()
-
 # =================================
 # Page configuration
 # =================================
@@ -248,7 +247,6 @@ unidad_orden_sel = "Todas"
 # ==========================================
 # BUILD UNIDADES DROPDOWN BASED ON 2025+ DATA
 # ==========================================
-
 unidades = set()
 
 # ---- INTERNA (Fecha Registro) ----
@@ -317,7 +315,6 @@ columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 # =====================================================
 # BUILD INTERNAL DATASET
 # =====================================================
-
 df_interna = df.copy()
 
 if "Fecha Registro" in df_interna.columns:
@@ -349,7 +346,6 @@ if "Fecha Registro" in df_interna.columns:
 # =====================================================
 # BUILD EXTERNAL DATASET (SAME STRUCTURE)
 # =====================================================
-
 df_externa = df_ostes.copy()
 
 if "Fecha OSTE" in df_externa.columns:
@@ -634,7 +630,6 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
 else:
     st.info("No hay información de partes disponible para esta empresa.")
 
-
 # =================================
 # APPLY FILTERS
 # =================================
@@ -698,7 +693,14 @@ if "Mes" in df_filtrado.columns:
 if "Mes" in df_ostes_filtrado.columns:
     meses.update(df_ostes_filtrado["Mes"].dropna().unique())
 
-meses_ordenados = sorted(meses)
+# ---- Proper chronological month order ----
+month_order = [
+    "JANUARY", "FEBRUARY", "MARCH", "APRIL",
+    "MAY", "JUNE", "JULY", "AUGUST",
+    "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+]
+
+meses_ordenados = [m for m in month_order if m in meses]
 
 with col1:
     mes_sel = st.selectbox(
