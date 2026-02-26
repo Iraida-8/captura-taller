@@ -279,9 +279,13 @@ if "Fecha Registro" in df_interna.columns:
         df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
     ]
 
-    if unidad_orden_sel != "Todas":
+    if unidad_orden_sel != "Todas" and "Unidad" in df_interna.columns:
         df_interna = df_interna[
-            df_interna["Unidad"].astype(str) == unidad_orden_sel
+            df_interna["Unidad"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == unidad_orden_sel.strip().upper()
         ]
 
     df_interna = df_interna.sort_values(
@@ -306,9 +310,13 @@ if "Fecha OSTE" in df_externa.columns:
         df_externa["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
     ]
 
-    if unidad_orden_sel != "Todas":
+    if unidad_orden_sel != "Todas" and "Unidad" in df_externa.columns:
         df_externa = df_externa[
-            df_externa["Unidad"].astype(str) == unidad_orden_sel
+            df_externa["Unidad"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == unidad_orden_sel.strip().upper()
         ]
 
     df_externa = df_externa.sort_values(
