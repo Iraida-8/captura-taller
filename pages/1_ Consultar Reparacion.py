@@ -236,9 +236,44 @@ df = cargar_ordenes(config["ordenes"])
 df_partes = cargar_partes(config["partes"])
 df_ostes = cargar_ostes(config["ostes"])
 
+# =================================
+# HARD LOCK 2025+ FOR INTERNA & EXTERNA
+# =================================
+LOCK_DATE = pd.Timestamp("2025-01-01")
+
+if "Fecha Registro" in df.columns:
+    df = df[df["Fecha Registro"] >= LOCK_DATE]
+
+if "Fecha OSTE" in df_ostes.columns:
+    df_ostes = df_ostes[df_ostes["Fecha OSTE"] >= LOCK_DATE]
+
 if df.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
+
+# =================================
+# UNIDAD FILTER (INTERNA + EXTERNA)
+# =================================
+st.markdown("### Filtro por Unidad")
+
+unidades_interna = []
+unidades_externa = []
+
+if "Unidad" in df.columns:
+    unidades_interna = df["Unidad"].dropna().astype(str).str.strip()
+
+if "Unidad" in df_ostes.columns:
+    unidades_externa = df_ostes["Unidad"].dropna().astype(str).str.strip()
+
+unidades_unificadas = sorted(
+    pd.concat([unidades_interna, unidades_externa]).unique()
+)
+
+unidad_sel = st.selectbox(
+    "Unidad",
+    ["Todas"] + unidades_unificadas,
+    index=0
+)
 
 def safe(x):
     if pd.isna(x) or x is None:
@@ -249,6 +284,11 @@ def safe(x):
 # BUILD INTERNAL DATASET (LATEST 10)
 # =====================================================
 df_interna = df.copy()
+
+if unidad_sel != "Todas":
+    df_interna = df_interna[
+        df_interna["Unidad"].astype(str).str.strip() == unidad_sel.strip()
+    ]
 
 if "Fecha Registro" in df_interna.columns:
 
@@ -263,6 +303,11 @@ if "Fecha Registro" in df_interna.columns:
 # =====================================================
 df_externa = df_ostes.copy()
 
+if unidad_sel != "Todas":
+    df_externa = df_externa[
+        df_externa["Unidad"].astype(str).str.strip() == unidad_sel.strip()
+    ]
+
 if "Fecha OSTE" in df_externa.columns:
 
     df_externa = df_externa.sort_values(
@@ -274,6 +319,9 @@ if "Fecha OSTE" in df_externa.columns:
 # =====================================================
 # MANO DE OBRA INTERNA
 # =====================================================
+if unidad_sel != "Todas" and df_interna.empty and df_externa.empty:
+    st.warning("No hay reportes para esta unidad.")
+    
 st.markdown("### 🔧 Mano de Obra Interna")
 
 if df_interna.empty:
