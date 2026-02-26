@@ -173,7 +173,6 @@ def cargar_ordenes(url):
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["FECHA"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
@@ -268,6 +267,17 @@ columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 # =====================================================
 
 df_interna = df.copy()
+
+if "Fecha Registro" in df_interna.columns:
+    df_interna["Fecha Registro"] = pd.to_datetime(
+        df_interna["Fecha Registro"],
+        errors="coerce"
+    )
+
+    df_interna = df_interna[
+        df_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
+    ]
+    
 df_externa = df_ostes.copy()
 
 if "Fecha OSTE" in df_externa.columns:
