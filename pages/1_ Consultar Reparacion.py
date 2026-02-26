@@ -234,14 +234,56 @@ st.subheader("Últimos registros")
 
 unidad_orden_sel = "Todas"
 
-# collect unidades from both sources
+# ==========================================
+# BUILD UNIDADES DROPDOWN BASED ON 2025+ DATA
+# ==========================================
+
 unidades = set()
 
-if "Unidad" in df.columns:
-    unidades.update(df["Unidad"].dropna().astype(str).unique())
+# ---- INTERNA (Fecha Registro) ----
+df_tmp_interna = df.copy()
 
-if not df_ostes.empty and "Unidad" in df_ostes.columns:
-    unidades.update(df_ostes["Unidad"].dropna().astype(str).unique())
+if "Fecha Registro" in df_tmp_interna.columns:
+    df_tmp_interna["Fecha Registro"] = pd.to_datetime(
+        df_tmp_interna["Fecha Registro"],
+        errors="coerce",
+        dayfirst=True
+    )
+
+    df_tmp_interna = df_tmp_interna[
+        df_tmp_interna["Fecha Registro"] >= pd.Timestamp("2025-01-01")
+    ]
+
+    if "Unidad" in df_tmp_interna.columns:
+        unidades.update(
+            df_tmp_interna["Unidad"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .unique()
+        )
+
+# ---- EXTERNA (Fecha OSTE) ----
+df_tmp_externa = df_ostes.copy()
+
+if "Fecha OSTE" in df_tmp_externa.columns:
+    df_tmp_externa["Fecha OSTE"] = pd.to_datetime(
+        df_tmp_externa["Fecha OSTE"],
+        errors="coerce"
+    )
+
+    df_tmp_externa = df_tmp_externa[
+        df_tmp_externa["Fecha OSTE"] >= pd.Timestamp("2025-01-01")
+    ]
+
+    if "Unidad" in df_tmp_externa.columns:
+        unidades.update(
+            df_tmp_externa["Unidad"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .unique()
+        )
 
 unidad_orden_sel = st.selectbox(
     "Filtrar por Unidad",
