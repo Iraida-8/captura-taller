@@ -152,7 +152,6 @@ EMPRESA_CONFIG = {
 # =================================
 # LOADERS
 # =================================
-#Internas
 @st.cache_data(ttl=600)
 def cargar_ordenes(url):
     if not url:
@@ -179,7 +178,7 @@ def cargar_ordenes(url):
 
     return df
 
-#Ostes
+
 @st.cache_data(ttl=600)
 def cargar_ostes(url):
     if not url:
@@ -191,24 +190,6 @@ def cargar_ostes(url):
     if "Fecha OSTE" in df.columns:
         df["Fecha OSTE"] = pd.to_datetime(
             df["Fecha OSTE"],
-            errors="coerce",
-            format="mixed"
-        )
-
-    return df
-
-#Cargar Partes
-@st.cache_data(ttl=600)
-def cargar_partes(url):
-    if not url:
-        return pd.DataFrame()
-
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-
-    if "Fecha Compra" in df.columns:
-        df["Fecha Compra"] = pd.to_datetime(
-            df["Fecha Compra"],
             errors="coerce",
             format="mixed"
         )
@@ -233,7 +214,6 @@ if empresa == "Selecciona empresa":
 config = EMPRESA_CONFIG[empresa]
 
 df = cargar_ordenes(config["ordenes"])
-df_partes = cargar_partes(config["partes"])
 df_ostes = cargar_ostes(config["ostes"])
 
 if df.empty:
@@ -244,6 +224,25 @@ def safe(x):
     if pd.isna(x) or x is None:
         return ""
     return str(x)
+
+# =================================
+# ÚLTIMOS 10 REGISTROS
+# =================================
+st.subheader("Últimos registros")
+
+unidad_orden_sel = "Todas"
+
+columnas_resumen = [
+    "Fecha Aceptado",
+    "Fecha Iniciada",
+    "Unidad",
+    "Tipo Unidad",
+    "Reporte",
+    "Descripcion",
+    "Razon Reparacion"
+]
+
+columnas_disponibles = [c for c in columnas_resumen if c in df.columns]
 
 # =====================================================
 # BUILD INTERNAL DATASET (LATEST 10)
@@ -292,6 +291,7 @@ else:
             desc = safe(row.get("Descripcion"))
             fecha_registro = row.get("Fecha Registro")
             if pd.notna(fecha_registro):
+                fecha_registro = pd.to_datetime(fecha_registro, errors="coerce")
                 fecha_registro = fecha_registro.strftime("%d/%m/%Y")
             else:
                 fecha_registro = ""
@@ -360,6 +360,7 @@ else:
             desc = safe(row.get("Descripcion"))
             fecha_oste = row.get("Fecha OSTE")
             if pd.notna(fecha_oste):
+                fecha_oste = pd.to_datetime(fecha_oste, errors="coerce")
                 fecha_oste = fecha_oste.strftime("%d/%m/%Y")
             else:
                 fecha_oste = ""
@@ -407,123 +408,3 @@ else:
                 st.session_state.modal_tipo = "oste"
 
 st.divider()
-
-# =================================
-# REFACCIONES RECIENTES
-# =================================
-st.subheader("Refacciones Recientes")
-
-if not df_partes.empty and "Unidad" in df_partes.columns:
-
-    # 🔒 Hard lock to 2025+
-    LOCK_DATE = pd.Timestamp("2025-01-01")
-
-    df_partes_base = df_partes[
-        df_partes["Fecha Compra"] >= LOCK_DATE
-    ].copy()
-
-    # -----------------------------
-    # DROPDOWNS
-    # -----------------------------
-    col1, col2 = st.columns(2)
-
-    with col1:
-        unidad_partes_sel = st.selectbox(
-            "Filtrar por Unidad",
-            ["Todas"] + sorted(
-                df_partes_base["Unidad"]
-                .dropna()
-                .astype(str)
-                .str.strip()
-                .unique()
-            ),
-            index=0
-        )
-
-    with col2:
-        if "Parte" in df_partes_base.columns:
-            parte_sel = st.selectbox(
-                "Filtrar por Parte",
-                ["Todas"] + sorted(
-                    df_partes_base["Parte"]
-                    .dropna()
-                    .astype(str)
-                    .str.strip()
-                    .unique()
-                ),
-                index=0
-            )
-        else:
-            parte_sel = "Todas"
-
-    # -----------------------------
-    # APPLY FILTERS
-    # -----------------------------
-    df_partes_filtrado = df_partes_base.copy()
-
-    if unidad_partes_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Unidad"]
-            .astype(str)
-            .str.strip()
-            == unidad_partes_sel.strip()
-        ]
-
-    if parte_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Parte"]
-            .astype(str)
-            .str.strip()
-            == parte_sel.strip()
-        ]
-
-    # -----------------------------
-    # SORT
-    # -----------------------------
-    df_partes_filtrado = df_partes_filtrado.sort_values(
-        "Fecha Compra",
-        ascending=False,
-        na_position="last"
-    )
-
-    # -----------------------------
-    # COLUMN LOGIC (UNCHANGED)
-    # -----------------------------
-    if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU USD",
-            "Cantidad",
-            "Total USD"
-        ]
-    elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU",
-            "IVA",
-            "Cantidad",
-            "Total Correccion"
-        ]
-    else:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte"
-        ]
-
-    df_partes_final = df_partes_filtrado[
-        [c for c in columnas_partes if c in df_partes_filtrado.columns]
-    ]
-
-    st.dataframe(
-        df_partes_final,
-        hide_index=True,
-        use_container_width=True
-    )
-
-else:
-    st.info("No hay información de partes disponible para esta empresa.")
