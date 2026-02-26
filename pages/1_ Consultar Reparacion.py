@@ -185,14 +185,16 @@ def cargar_partes(url):
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    if "Fecha Analisis" in df.columns:
-        df["Fecha Analisis"] = pd.to_datetime(
-            df["Fecha Analisis"],
+    # Parse Fecha Compra (ONLY this column matters)
+    if "Fecha Compra" in df.columns:
+        df["Fecha Compra"] = pd.to_datetime(
+            df["Fecha Compra"],
             errors="coerce",
             dayfirst=True
         )
-        df = df[df["Fecha Analisis"] >= pd.Timestamp("2025-01-01")]
 
+        # Base rule → only 2025+
+        df = df[df["Fecha Compra"] >= pd.Timestamp("2025-01-01")]
 
     return df
 
