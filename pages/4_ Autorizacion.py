@@ -1330,10 +1330,51 @@ if st.session_state.modal_reporte:
 
         catalogo = cargar_refacciones()
 
+        # ==========================================
+        # BUILD TIPO FILTER
+        # ==========================================
+        tipos_disponibles = []
+
         if catalogo is not None and not catalogo.empty:
+            tipos_disponibles = (
+                sorted(
+                    catalogo["Tipo"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                )
+            )
+
+        if catalogo is not None and not catalogo.empty:
+            # ==========================================
+            # TIPO FILTER SELECTBOX
+            # ==========================================
+            tipo_seleccionado = st.selectbox(
+                "Tipo",
+                ["Todos"] + tipos_disponibles,
+                disabled=not editable_servicios
+            )
+
+            # ==========================================
+            # FILTER PARTES BASED ON TIPO
+            # ==========================================
+            if tipo_seleccionado != "Todos":
+                catalogo_filtrado = catalogo[
+                    catalogo["Tipo"] == tipo_seleccionado
+                ]
+            else:
+                catalogo_filtrado = catalogo
+
+            partes_opciones = (
+                catalogo_filtrado["Parte"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+
             st.session_state.refaccion_seleccionada = st.selectbox(
                 "Refacción / Servicio",
-                options=catalogo["Parte"].tolist(),
+                options=partes_opciones,
                 index=None,
                 disabled=not editable_servicios
             )
@@ -1386,21 +1427,6 @@ if st.session_state.modal_reporte:
         # =====================================================
         # METRIC
         # =====================================================
-        # =============================================
-        # VISUAL CURRENCY (UI ONLY)
-        # =============================================
-        empresa = r.get("Empresa", "")
-
-        if empresa in ["IGLOO TRANSPORT", "PICUS"]:
-            moneda = "MXN"
-        else:
-            moneda = "USD"
-
-        st.metric(
-            "Total de Refacciones",
-            int(edited_df.get("Cantidad", pd.Series()).fillna(0).sum())
-        )
-
         st.divider()
         c1, c2 = st.columns(2)
 
