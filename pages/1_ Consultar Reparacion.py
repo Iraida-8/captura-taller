@@ -252,6 +252,14 @@ if df.empty and df_ostes.empty:
     st.stop()
 
 # =================================
+# SAFE HELPERS
+# =================================
+def safe(x):
+    if pd.isna(x) or x is None:
+        return ""
+    return str(x)
+
+# =================================
 # TOP FILTERS (UNIDAD + FACTURA)
 # =================================
 st.markdown("### Filtros")
