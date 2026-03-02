@@ -262,7 +262,7 @@ def registrar_cambio_log(
 
     ws = client.open_by_key(
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("CHANGELOG")
+    ).worksheet("AUDIT")
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
