@@ -207,6 +207,44 @@ def guardar_factura(folio, numero_factura):
         )
 
 # =================================
+# Registrar Cambio en CHANGELOG
+# =================================
+def registrar_cambio_log(
+    usuario,
+    empresa,
+    folio,
+    tipo_cambio,
+    estado_anterior=None,
+    estado_nuevo=None,
+    oste_anterior=None,
+    oste_nuevo=None,
+    comentario=""
+):
+
+    client = gspread.authorize(get_gsheets_credentials())
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("CHANGELOG")
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    row = [
+        timestamp,
+        usuario,
+        empresa,
+        folio,
+        tipo_cambio,
+        estado_anterior or "",
+        estado_nuevo or "",
+        oste_anterior or "",
+        oste_nuevo or "",
+        comentario,
+    ]
+
+    ws.append_row(row, value_input_option="USER_ENTERED")
+
+# =================================
 # Log estado sin refacciones
 # =================================
 def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
@@ -1351,14 +1389,45 @@ if st.session_state.modal_reporte:
                     st.rerun()
 
                 if nuevo_estado != estado_actual:
-                    actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
+
+                    actualizar_estado_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        nuevo_estado
+                    )
+
+                    registrar_cambio_log(
+                        usuario=usuario,
+                        empresa=r["Empresa"],
+                        folio=r["NoFolio"],
+                        tipo_cambio="Cambio Estado",
+                        estado_anterior=estado_actual,
+                        estado_nuevo=nuevo_estado,
+                        oste_anterior=r.get("Oste", ""),
+                        oste_nuevo=r.get("Oste", "")
+                    )
 
                 if "interno" not in proveedor:
                     if nuevo_estado in estados_oste and oste_val.strip():
+
+                        oste_anterior = r.get("Oste", "") or ""
+                        oste_nuevo = oste_val.strip()
+
                         actualizar_oste_pase(
                             r["Empresa"],
                             r["NoFolio"],
-                            oste_val.strip()
+                            oste_nuevo
+                        )
+
+                        registrar_cambio_log(
+                            usuario=usuario,
+                            empresa=r["Empresa"],
+                            folio=r["NoFolio"],
+                            tipo_cambio="Actualización OSTE",
+                            estado_anterior=nuevo_estado,
+                            estado_nuevo=nuevo_estado,
+                            oste_anterior=oste_anterior,
+                            oste_nuevo=oste_nuevo
                         )
 
                 usuario = (
@@ -1389,8 +1458,6 @@ if st.session_state.modal_reporte:
                     st.session_state.servicios_df,
                     nuevo_estado
                 )
-                #Log activity
-                st.session_state.last_action = f"Folio {r['NoFolio']} → {nuevo_estado}"
                 
                 st.session_state.modal_reporte = None
                 st.cache_data.clear()
