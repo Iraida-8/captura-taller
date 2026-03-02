@@ -238,7 +238,10 @@ def cargar_servicios_folio(folio):
     data = ws.get_all_records()
     if not data:
         return pd.DataFrame(columns=[
-            "Parte","Tipo De Parte","PU","IVA","Cantidad","Total"
+            "Parte",
+            "Tipo De Parte",
+            "Posicion",
+            "Cantidad"
         ])
 
     df = pd.DataFrame(data)
@@ -294,8 +297,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
     # =====================================================
     if "No. de Folio" in df_db.columns:
         df_db = df_db.rename(columns={"No. de Folio": "Folio"})
-    if "Iva" in df_db.columns:
-        df_db = df_db.rename(columns={"Iva": "IVA"})
 
     df_db["Folio"] = df_db["Folio"].astype(str)
 
