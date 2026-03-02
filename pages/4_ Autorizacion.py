@@ -1011,6 +1011,10 @@ if not pases_df.empty:
     with fcol2:
         filtro_factura_fact = st.text_input("Filtrar por No. de Factura")
 
+    # CLOSE FACTURA MODAL IF USER STARTS FILTERING
+    if filtro_folio_fact or filtro_factura_fact:
+        st.session_state.modal_factura = None
+
     # =============================================
     # MERGE ALL ORDERS WITH FACTURAS
     # =============================================
@@ -1226,6 +1230,7 @@ with f5:
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
     st.session_state.modal_reporte = None
+    st.session_state.modal_factura = None
 
 # =================================
 # RESULTADOS
