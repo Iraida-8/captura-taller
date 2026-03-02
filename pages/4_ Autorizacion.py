@@ -189,12 +189,13 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
     from datetime import datetime
 
     estado_fecha_map = {
-        "En Curso / Autorizado": "Fecha Autorizado",
-        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
-        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
-        "En Curso / En Proceso": "Fecha En Proceso",
-        "Cerrado / Completado": "Fecha Completado",
-        "Cerrado / Facturado": "Fecha Facturado",
+        "En Curso / En Diagnostico": "Fecha Diagnostico",
+        "En Curso / No Diagnosticado": "Fecha No Diagnosticado",
+        "En Curso / En Reparacion": "Fecha En Reparacion",
+        "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
+        "Cerrado / Resuelto": "Fecha Resuelto",
+        "Cerrado / Terminado": "Fecha Terminado",
+        "Cerrado / Concluido": "Fecha Concluido",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -261,7 +262,7 @@ def cargar_servicios_folio(folio):
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
 
     return df[
-        ["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]
+        ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
     ]
 
 # =================================
@@ -337,13 +338,14 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
     # CAPTURE EXISTING DATES (FROM ANY ROW)
     # =====================================================
     date_columns = [
-        "Fecha Autorizado",
-        "Fecha Sin Comenzar",
-        "Fecha Espera Refacciones",
-        "Fecha En Proceso",
-        "Fecha Facturado",
-        "Fecha Completado",
         "Fecha Cancelado",
+        "Fecha Diagnostico",
+        "Fecha No Diagnosticado",
+        "Fecha En Reparacion",
+        "Fecha Espera Refaccion",
+        "Fecha Resuelto",
+        "Fecha Terminado",
+        "Fecha Concluido",
     ]
 
     fechas_existentes = {}
@@ -359,12 +361,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
     # MAP NEW STATUS → DATE COLUMN
     # =====================================================
     estado_fecha_map = {
-        "En Curso / Autorizado": "Fecha Autorizado",
-        "En Curso / Sin Comenzar": "Fecha Sin Comenzar",
-        "En Curso / Espera Refacciones": "Fecha Espera Refacciones",
-        "En Curso / En Proceso": "Fecha En Proceso",
-        "Cerrado / Facturado": "Fecha Facturado",
-        "Cerrado / Completado": "Fecha Completado",
+        "En Curso / En Diagnostico": "Fecha Diagnostico",
+        "En Curso / No Diagnosticado": "Fecha No Diagnosticado",
+        "En Curso / En Reparacion": "Fecha En Reparacion",
+        "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
+        "Cerrado / Resuelto": "Fecha Resuelto",
+        "Cerrado / Terminado": "Fecha Terminado",
+        "Cerrado / Concluido": "Fecha Concluido",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -539,24 +542,29 @@ def porcentaje(n):
         return 0
     return round((n / total_ordenes) * 100, 1)
 
-pendientes = len(pases_df[pases_df["Estado"] == "En Curso / Nuevo"])
+pendientes = len(
+    pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
+)
 
 diagnosticos = len(
-    pases_df[pases_df["Estado"] == "En Curso / Autorizado"]
+    pases_df[pases_df["Estado"].isin([
+        "En Curso / En Diagnostico",
+        "En Curso / No Diagnosticado",
+    ])]
 )
 
 en_proceso = len(
     pases_df[pases_df["Estado"].isin([
-        "En Curso / Sin Comenzar",
-        "En Curso / Espera Refacciones",
-        "En Curso / En Proceso",
+        "En Curso / En Reparacion",
+        "En Curso / Espera de Refaccion",
     ])]
 )
 
 completadas = len(
     pases_df[pases_df["Estado"].isin([
-        "Cerrado / Completado",
-        "Cerrado / Facturado",
+        "Cerrado / Resuelto",
+        "Cerrado / Terminado",
+        "Cerrado / Concluido",
     ])]
 )
 
@@ -1035,13 +1043,14 @@ with f4:
         [
             "Selecciona estado",
             "En Curso / Nuevo",
-            "En Curso / Autorizado",
-            "En Curso / Sin Comenzar",
-            "En Curso / Espera Refacciones",
-            "En Curso / En Proceso",
+            "En Curso / En Diagnostico",
+            "En Curso / No Diagnosticado",
+            "En Curso / En Reparacion",
+            "En Curso / Espera de Refaccion",
+            "Cerrado / Resuelto",
+            "Cerrado / Terminado",
+            "Cerrado / Concluido",
             "Cerrado / Cancelado",
-            "Cerrado / Completado",
-            "Cerrado / Facturado",
         ]
     )
 
@@ -1166,27 +1175,27 @@ if st.session_state.modal_reporte:
 
         transiciones = {
             "En Curso / Nuevo": [
-                "En Curso / Autorizado",
+                "En Curso / En Diagnostico",
+                "En Curso / No Diagnosticado",
                 "Cerrado / Cancelado",
             ],
-            "En Curso / Autorizado": [
-                "En Curso / Sin Comenzar",
-                "En Curso / Espera Refacciones",
+            "En Curso / En Diagnostico": [
+                "En Curso / En Reparacion",
+                "En Curso / Espera de Refaccion",
                 "Cerrado / Cancelado",
             ],
-            "En Curso / Sin Comenzar": [
-                "En Curso / Espera Refacciones",
-                "En Curso / En Proceso",
+            "En Curso / No Diagnosticado": [
+                "Cerrado / Cancelado",
+                "Cerrado / Resuelto",
+            ],
+            "En Curso / Espera de Refaccion": [
+                "En Curso / En Reparacion",
                 "Cerrado / Cancelado",
             ],
-            "En Curso / Espera Refacciones": [
-                "En Curso / Sin Comenzar",
-                "En Curso / En Proceso",
-                "Cerrado / Cancelado",
-            ],
-            "En Curso / En Proceso": [
-                "Cerrado / Completado",
-                "Cerrado / Facturado",
+            "En Curso / En Reparacion": [
+                "Cerrado / Resuelto",
+                "Cerrado / Terminado",
+                "Cerrado / Concluido",
                 "Cerrado / Cancelado",
             ],
         }
