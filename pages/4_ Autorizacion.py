@@ -798,7 +798,7 @@ with right:
         audit_sorted = (
             audit_df
             .sort_values("Timestamp", ascending=False)
-            .head(8)
+            .head(9)
         )
 
         rows_html = ""
