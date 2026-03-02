@@ -329,8 +329,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 
     if "No. de Folio" in df_db.columns:
         df_db = df_db.rename(columns={"No. de Folio": "Folio"})
-    if "Iva" in df_db.columns:
-        df_db = df_db.rename(columns={"Iva": "IVA"})
 
     df_db["Folio"] = df_db["Folio"].astype(str)
     df_folio = df_db[df_db["Folio"] == str(folio)]
@@ -406,7 +404,10 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
-            ws.update(f"A{rownum}:O{rownum}", [row_data])
+
+            last_col_letter = chr(64 + len(row_data))
+            ws.update(f"A{rownum}:{last_col_letter}{rownum}", [row_data])
+
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
@@ -1144,8 +1145,17 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Información del Proveedor")
 
+        # ==========================================
+        # OSTE EDIT RULE
+        # ==========================================
+        estados_oste = [
+            "Cerrado / Resuelto",
+            "Cerrado / Terminado",
+            "Cerrado / Concluido",
+        ]
+
         oste_editable = (
-            r["Estado"] == "Cerrado / Facturado"
+            r["Estado"] in estados_oste
             and not str(r.get("Oste", "")).strip()
         )
 
@@ -1163,12 +1173,6 @@ if st.session_state.modal_reporte:
                 value=r.get("Oste", "") or "",
                 disabled=not oste_editable
             )
-
-        if (
-            r["Estado"] == "Cerrado / Facturado"
-            and str(r.get("Oste", "")).strip()
-        ):
-            st.caption("🔒 OSTE ya registrado — orden en modo solo lectura")
 
         # ==========================================
         # SMART STATE VISIBILITY
@@ -1322,19 +1326,15 @@ if st.session_state.modal_reporte:
                     st.session_state.modal_reporte = None
                     st.rerun()
 
-                if nuevo_estado == "En Curso / En Proceso" and st.session_state.servicios_df.empty:
-                    st.error("Debe agregar refacciones antes de pasar a 'En Proceso'.")
-                    st.stop()
-
                 if nuevo_estado != estado_actual:
                     actualizar_estado_pase(r["Empresa"], r["NoFolio"], nuevo_estado)
 
                 if "interno" not in proveedor:
-                    if nuevo_estado == "Cerrado / Facturado":
+                    if nuevo_estado in estados_oste and oste_val.strip():
                         actualizar_oste_pase(
                             r["Empresa"],
                             r["NoFolio"],
-                            oste_val
+                            oste_val.strip()
                         )
 
                 usuario = (
