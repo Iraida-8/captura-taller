@@ -247,7 +247,7 @@ if "Fecha Registro" in df.columns:
 if "Fecha OSTE" in df_ostes.columns:
     df_ostes = df_ostes[df_ostes["Fecha OSTE"] >= LOCK_DATE]
 
-if df.empty:
+if df.empty and df_ostes.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
@@ -280,6 +280,42 @@ def safe(x):
         return ""
     return str(x)
 
+# =================================
+# FACTURA FILTER (INTERNA + EXTERNA)
+# =================================
+st.markdown("### Filtro por Factura")
+
+facturas_interna = []
+facturas_externa = []
+
+if "Factura" in df.columns:
+    facturas_interna = (
+        df["Factura"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+    )
+    facturas_interna = facturas_interna[facturas_interna != ""]
+
+if "Factura" in df_ostes.columns:
+    facturas_externa = (
+        df_ostes["Factura"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+    )
+    facturas_externa = facturas_externa[facturas_externa != ""]
+
+facturas_unificadas = sorted(
+    pd.concat([facturas_interna, facturas_externa]).unique()
+)
+
+factura_sel = st.selectbox(
+    "Factura",
+    ["Todas"] + facturas_unificadas,
+    index=0
+)
+
 # =====================================================
 # BUILD INTERNAL DATASET (LATEST 10)
 # =====================================================
@@ -290,8 +326,12 @@ if unidad_sel != "Todas":
         df_interna["Unidad"].astype(str).str.strip() == unidad_sel.strip()
     ]
 
-if "Fecha Registro" in df_interna.columns:
+if factura_sel != "Todas":
+    df_interna = df_interna[
+        df_interna["Factura"].astype(str).str.strip() == factura_sel.strip()
+    ]
 
+if "Fecha Registro" in df_interna.columns:
     df_interna = df_interna.sort_values(
         by="Fecha Registro",
         ascending=False,
@@ -308,8 +348,12 @@ if unidad_sel != "Todas":
         df_externa["Unidad"].astype(str).str.strip() == unidad_sel.strip()
     ]
 
-if "Fecha OSTE" in df_externa.columns:
+if factura_sel != "Todas":
+    df_externa = df_externa[
+        df_externa["Factura"].astype(str).str.strip() == factura_sel.strip()
+    ]
 
+if "Fecha OSTE" in df_externa.columns:
     df_externa = df_externa.sort_values(
         by="Fecha OSTE",
         ascending=False,
@@ -319,8 +363,12 @@ if "Fecha OSTE" in df_externa.columns:
 # =====================================================
 # MANO DE OBRA INTERNA
 # =====================================================
-if unidad_sel != "Todas" and df_interna.empty and df_externa.empty:
-    st.warning("No hay reportes para esta unidad.")
+if (
+    (unidad_sel != "Todas" or factura_sel != "Todas")
+    and df_interna.empty
+    and df_externa.empty
+):
+    st.warning("No hay reportes para el filtro seleccionado.")
 
 st.markdown("### 🔧 Mano de Obra Interna")
 
@@ -336,6 +384,7 @@ else:
             reporte = safe(row.get("Reporte"))
             unidad = safe(row.get("Unidad"))
             tipo = safe(row.get("Tipo Unidad"))
+            factura = safe(row.get("Factura"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
             fecha_registro = row.get("Fecha Registro")
@@ -359,6 +408,10 @@ else:
 
                     <div style="font-size:0.8rem; margin-top:4px;">
                         {unidad} &nbsp; | &nbsp; {tipo}
+                    </div>
+
+                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                        {factura}
                     </div>
 
                     <hr style="margin:6px 0">
@@ -404,6 +457,7 @@ else:
             reporte = safe(row.get("Reporte"))
             unidad = safe(row.get("Unidad"))
             tipo = safe(row.get("Tipo Unidad"))
+            factura = safe(row.get("Factura"))
             razon = safe(row.get("Razon Reparacion"))
             desc = safe(row.get("Descripcion"))
             fecha_oste = row.get("Fecha OSTE")
@@ -427,6 +481,10 @@ else:
 
                     <div style="font-size:0.8rem; margin-top:4px;">
                         {unidad} &nbsp; | &nbsp; {tipo}
+                    </div>
+
+                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                        {factura}
                     </div>
 
                     <hr style="margin:6px 0">
@@ -667,7 +725,7 @@ else:
         use_container_width=True
     )
 
-st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
+    st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
 
 # =================================
 # VIEW MODAL
