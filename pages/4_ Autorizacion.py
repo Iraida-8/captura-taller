@@ -1480,6 +1480,8 @@ if st.session_state.modal_reporte:
         # EDITOR
         # =====================================================
         column_config = {
+            "Parte": st.column_config.TextColumn(required=False),
+            "Tipo De Parte": st.column_config.TextColumn(required=False),
             "Posicion": st.column_config.TextColumn(),
             "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
         }
@@ -1613,7 +1615,34 @@ if st.session_state.modal_reporte:
                         nuevo_estado
                     )
 
-                st.session_state.servicios_df = edited_df
+                # Normalize edited dataframe
+                df_final = edited_df.copy()
+
+                # Ensure columns exist
+                if "Tipo De Parte" in df_final.columns:
+                    df_final["Tipo De Parte"] = (
+                        df_final["Tipo De Parte"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                    )
+
+                    # If empty → default to Mano de Obra
+                    df_final.loc[
+                        df_final["Tipo De Parte"] == "",
+                        "Tipo De Parte"
+                    ] = "Mano de Obra"
+
+                # Clean Parte column as well
+                if "Parte" in df_final.columns:
+                    df_final["Parte"] = (
+                        df_final["Parte"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                    )
+
+                st.session_state.servicios_df = df_final
 
                 guardar_servicios_refacciones(
                     r["NoFolio"],
