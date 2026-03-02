@@ -1378,6 +1378,11 @@ if st.session_state.modal_reporte:
 
             if mostrar_aceptar and st.button(label_btn, type="primary"):
 
+                usuario = (
+                    st.session_state.user.get("name")
+                    or st.session_state.user.get("email")
+                )
+
                 estado_actual = r["Estado"]
 
                 if (
@@ -1430,10 +1435,6 @@ if st.session_state.modal_reporte:
                             oste_nuevo=oste_nuevo
                         )
 
-                usuario = (
-                    st.session_state.user.get("name")
-                    or st.session_state.user.get("email")
-                )
                 # =====================================================
                 # CREATE MILESTONE ROW IF NO REAL SERVICES
                 # =====================================================
