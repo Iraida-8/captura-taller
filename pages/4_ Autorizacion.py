@@ -178,6 +178,43 @@ def actualizar_oste_pase(empresa, folio, oste):
     ws.update_cell(row_idx, oste_col, oste)
 
 # =================================
+# Update Descripcion Problema
+# =================================
+def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
+
+    sheet_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    hoja = sheet_map.get(empresa)
+    if not hoja:
+        return
+
+    client = gspread.authorize(get_gsheets_credentials())
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet(hoja)
+
+    headers = [h.strip() for h in ws.row_values(1)]
+
+    if "Descripcion Problema" not in headers:
+        return
+
+    col_desc = headers.index("Descripcion Problema") + 1
+
+    folios = ws.col_values(2)
+    if folio not in folios:
+        return
+
+    row_idx = folios.index(folio) + 1
+
+    ws.update_cell(row_idx, col_desc, nueva_descripcion)
+
+# =================================
 # GUARDAR FACTURA
 # =================================
 def guardar_factura(folio, numero_factura):
@@ -1202,7 +1239,12 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
-        st.markdown(f"**Descripción del Problema:** {r.get('Descripcion Problema', '')}")
+        descripcion_actual = r.get("Descripcion Problema", "") or ""
+        descripcion_editada = st.text_area(
+            "Descripción del Problema",
+            value=descripcion_actual,
+            height=120
+        )
 
         st.divider()
         st.subheader("Información del Proveedor")
@@ -1382,6 +1424,30 @@ if st.session_state.modal_reporte:
                     st.session_state.user.get("name")
                     or st.session_state.user.get("email")
                 )
+  
+                # =================================
+                # UPDATE DESCRIPCION IF CHANGED
+                # =================================
+                descripcion_original = descripcion_actual or ""
+                descripcion_nueva = descripcion_editada or ""
+
+                if descripcion_nueva.strip() != descripcion_original.strip():
+
+                    actualizar_descripcion_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        descripcion_nueva.strip()
+                    )
+
+                    registrar_cambio_log(
+                        usuario=usuario,
+                        empresa=r["Empresa"],
+                        folio=r["NoFolio"],
+                        tipo_cambio="Edición Descripción",
+                        estado_anterior=r["Estado"],
+                        estado_nuevo=r["Estado"],
+                        comentario="Descripción modificada"
+                    )
 
                 estado_actual = r["Estado"]
 
