@@ -252,69 +252,78 @@ if df.empty and df_ostes.empty:
     st.stop()
 
 # =================================
-# UNIDAD FILTER (INTERNA + EXTERNA)
+# TOP FILTERS (UNIDAD + FACTURA)
 # =================================
-st.markdown("### Filtro por Unidad")
+st.markdown("### Filtros")
 
-unidades_interna = []
-unidades_externa = []
+col1, col2 = st.columns(2)
 
-if "Unidad" in df.columns:
-    unidades_interna = df["Unidad"].dropna().astype(str).str.strip()
+# -------- UNIDAD --------
+with col1:
 
-if "Unidad" in df_ostes.columns:
-    unidades_externa = df_ostes["Unidad"].dropna().astype(str).str.strip()
+    unidades_interna = []
+    unidades_externa = []
 
-unidades_unificadas = sorted(
-    pd.concat([unidades_interna, unidades_externa]).unique()
-)
+    if "Unidad" in df.columns:
+        unidades_interna = df["Unidad"].dropna().astype(str).str.strip()
 
-unidad_sel = st.selectbox(
-    "Unidad",
-    ["Todas"] + unidades_unificadas,
-    index=0
-)
+    if "Unidad" in df_ostes.columns:
+        unidades_externa = df_ostes["Unidad"].dropna().astype(str).str.strip()
 
-def safe(x):
-    if pd.isna(x) or x is None:
-        return ""
-    return str(x)
-
-# =================================
-# FACTURA FILTER (INTERNA + EXTERNA)
-# =================================
-st.markdown("### Filtro por Factura")
-
-facturas_interna = []
-facturas_externa = []
-
-if "Factura" in df.columns:
-    facturas_interna = (
-        df["Factura"]
-        .dropna()
-        .astype(str)
-        .str.strip()
+    unidades_unificadas = sorted(
+        pd.concat([unidades_interna, unidades_externa]).unique()
     )
-    facturas_interna = facturas_interna[facturas_interna != ""]
 
-if "Factura" in df_ostes.columns:
-    facturas_externa = (
-        df_ostes["Factura"]
-        .dropna()
-        .astype(str)
-        .str.strip()
+    unidad_sel = st.selectbox(
+        "Unidad",
+        ["Todas"] + unidades_unificadas,
+        index=0
     )
-    facturas_externa = facturas_externa[facturas_externa != ""]
 
-facturas_unificadas = sorted(
-    pd.concat([facturas_interna, facturas_externa]).unique()
-)
+# -------- FACTURA --------
+with col2:
 
-factura_sel = st.selectbox(
-    "Factura",
-    ["Todas"] + facturas_unificadas,
-    index=0
-)
+    facturas_interna = []
+    facturas_externa = []
+
+    if "Factura" in df.columns:
+        facturas_interna = (
+            df["Factura"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        facturas_interna = facturas_interna[facturas_interna != ""]
+
+    if "Factura" in df_ostes.columns:
+        facturas_externa = (
+            df_ostes["Factura"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        facturas_externa = facturas_externa[facturas_externa != ""]
+
+    facturas_unificadas = sorted(
+        pd.concat([facturas_interna, facturas_externa]).unique()
+    )
+
+    factura_sel = st.selectbox(
+        "Factura",
+        ["Todas"] + facturas_unificadas,
+        index=0
+    )
+
+# Reset modal if filters change
+if "last_filters" not in st.session_state:
+    st.session_state.last_filters = (unidad_sel, factura_sel)
+
+current_filters = (unidad_sel, factura_sel)
+
+if st.session_state.last_filters != current_filters:
+    st.session_state.modal_orden = None
+    st.session_state.modal_tipo = None
+    st.session_state.last_filters = current_filters
 
 # =====================================================
 # BUILD INTERNAL DATASET (LATEST 10)
