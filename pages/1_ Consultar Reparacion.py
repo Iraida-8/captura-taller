@@ -653,29 +653,70 @@ else:
     st.info("No hay información de partes disponible para esta empresa.")
 
 # =================================
-# FILTRO UNIDAD - TABLAS COMPLETAS (2025+)
+# FILTROS - TABLAS COMPLETAS (2025+)
 # =================================
 st.divider()
-st.markdown("### Filtro Unidad - Tablas Completas")
+st.markdown("### Filtros - Tablas Completas")
 
-unidades_interna_tabla = []
-unidades_externa_tabla = []
+col1, col2 = st.columns(2)
 
-if "Unidad" in df.columns:
-    unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
+# -------- UNIDAD TABLA --------
+with col1:
 
-if "Unidad" in df_ostes.columns:
-    unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+    unidades_interna_tabla = []
+    unidades_externa_tabla = []
 
-unidades_tabla_unificadas = sorted(
-    pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
-)
+    if "Unidad" in df.columns:
+        unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
 
-unidad_tabla_sel = st.selectbox(
-    "Unidad (Tablas Completas)",
-    ["Todas"] + unidades_tabla_unificadas,
-    index=0
-)
+    if "Unidad" in df_ostes.columns:
+        unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+
+    unidades_tabla_unificadas = sorted(
+        pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
+    )
+
+    unidad_tabla_sel = st.selectbox(
+        "Unidad",
+        ["Todas"] + unidades_tabla_unificadas,
+        index=0,
+        key="unidad_tabla"
+    )
+
+# -------- FACTURA TABLA --------
+with col2:
+
+    facturas_interna_tabla = []
+    facturas_externa_tabla = []
+
+    if "Factura" in df.columns:
+        facturas_interna_tabla = (
+            df["Factura"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
+
+    if "Factura" in df_ostes.columns:
+        facturas_externa_tabla = (
+            df_ostes["Factura"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
+
+    facturas_tabla_unificadas = sorted(
+        pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
+    )
+
+    factura_tabla_sel = st.selectbox(
+        "Factura",
+        ["Todas"] + facturas_tabla_unificadas,
+        index=0,
+        key="factura_tabla"
+    )
 
 # =================================
 # TABLA COMPLETA - INTERNAS (2025+)
@@ -684,9 +725,16 @@ st.subheader("Todas las Órdenes Internas")
 
 df_tabla_interna = df.copy()
 
+df_tabla_interna = df.copy()
+
 if unidad_tabla_sel != "Todas":
     df_tabla_interna = df_tabla_interna[
         df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+    ]
+
+if factura_tabla_sel != "Todas":
+    df_tabla_interna = df_tabla_interna[
+        df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
     ]
 
 if df_tabla_interna.empty:
@@ -724,6 +772,11 @@ df_tabla_externa = df_ostes.copy()
 if unidad_tabla_sel != "Todas":
     df_tabla_externa = df_tabla_externa[
         df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+    ]
+
+if factura_tabla_sel != "Todas":
+    df_tabla_externa = df_tabla_externa[
+        df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
     ]
 
 if df_tabla_externa.empty:
