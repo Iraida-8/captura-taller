@@ -1545,6 +1545,8 @@ if st.session_state.modal_reporte:
                         nuevo_estado
                     )
 
+                st.session_state.servicios_df = edited_df
+                
                 guardar_servicios_refacciones(
                     r["NoFolio"],
                     usuario,
