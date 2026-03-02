@@ -746,47 +746,59 @@ with left:
     st.markdown("### Órdenes por Empresa")
 
     if not pases_df.empty:
-        conteo_empresas = (
-            pases_df["Empresa"]
-            .value_counts()
-            .reset_index()
-        )
-        conteo_empresas.columns = ["Empresa", "Cantidad"]
 
-        total = conteo_empresas["Cantidad"].sum()
+        empresas = pases_df["Empresa"].dropna().unique()
+        total_global = len(pases_df)
 
-        rows_html = ""
-        for _, row_emp in conteo_empresas.iterrows():
-            empresa = row_emp["Empresa"]
-            cantidad = row_emp["Cantidad"]
-            pct = (cantidad / total) * 100 if total else 0
+        cards_html = ""
 
-            rows_html += f"""
+        for empresa in sorted(empresas):
+
+            df_emp = pases_df[pases_df["Empresa"] == empresa]
+            total_emp = len(df_emp)
+            pct = (total_emp / total_global * 100) if total_global else 0
+
+            pendientes = len(df_emp[df_emp["Estado"] == "En Curso / Nuevo"])
+            proceso = len(df_emp[df_emp["Estado"].isin([
+                "En Curso / En Diagnostico",
+                "En Curso / No Diagnosticado",
+                "En Curso / En Reparacion",
+                "En Curso / Espera de Refaccion",
+            ])])
+            completadas = len(df_emp[df_emp["Estado"].isin([
+                "Cerrado / Resuelto",
+                "Cerrado / Terminado",
+                "Cerrado / Concluido",
+            ])])
+            canceladas = len(df_emp[df_emp["Estado"] == "Cerrado / Cancelado"])
+
+            cards_html += f"""
             <div style="
-                display:flex;
-                justify-content:space-between;
-                margin-bottom:6px;
-                font-weight:600;
-            ">
-                <span>{empresa}</span>
-                <span>{cantidad} &nbsp; ({pct:.1f}%)</span>
-            </div>
-            """
-
-        st.markdown(
-            f"""
-            <div style="
-                background:#ffffff;
-                padding:18px;
+                margin-bottom:14px;
+                padding:14px;
                 border-radius:14px;
+                background:#ffffff;
                 box-shadow:0 3px 8px rgba(0,0,0,0.06);
                 color:#111;
             ">
-                {rows_html}
+                <div style="font-weight:900; font-size:0.95rem;">
+                    {empresa}
+                </div>
+
+                <div style="font-size:0.8rem; margin-bottom:6px;">
+                    Total: {total_emp} ({pct:.1f}%)
+                </div>
+
+                <div style="font-size:0.75rem;">
+                    🟡 Pendientes: {pendientes}<br>
+                    🔵 En Proceso: {proceso}<br>
+                    🟢 Completadas: {completadas}<br>
+                    🔴 Canceladas: {canceladas}
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            """
+
+        st.markdown(cards_html, unsafe_allow_html=True)
 
     else:
         st.info("No hay datos.")
