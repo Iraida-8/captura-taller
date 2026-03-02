@@ -714,7 +714,10 @@ st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
     pd.DataFrame(columns=[
-        "Parte","Tipo De Parte","PU","IVA","Cantidad","Total"
+        "Parte",
+        "Tipo De Parte",
+        "Posicion",
+        "Cantidad"
     ])
 )
 
@@ -1249,10 +1252,8 @@ if st.session_state.modal_reporte:
                 nueva = {
                     "Parte": fila["Parte"],
                     "Tipo De Parte": fila["Tipo"],
-                    "PU": 0,
-                    "IVA": 0,
+                    "Posicion": "",
                     "Cantidad": 1,
-                    "Total": 0,
                 }
 
                 st.session_state.servicios_df = pd.concat(
@@ -1279,18 +1280,6 @@ if st.session_state.modal_reporte:
         )
 
         # =====================================================
-        # RECALC TOTALS
-        # =====================================================
-        if not edited_df.empty:
-
-            for col in ["PU", "Cantidad", "IVA"]:
-                edited_df[col] = pd.to_numeric(edited_df[col], errors="coerce").fillna(0)
-
-            edited_df["Total"] = (edited_df["PU"] + edited_df["IVA"]) * edited_df["Cantidad"]
-
-        st.session_state.servicios_df = edited_df
-
-        # =====================================================
         # METRIC
         # =====================================================
         # =============================================
@@ -1304,8 +1293,8 @@ if st.session_state.modal_reporte:
             moneda = "USD"
 
         st.metric(
-            f"Total ({moneda})",
-            f"$ {edited_df.get('Total', pd.Series()).fillna(0).sum():,.2f}"
+            "Total de Refacciones",
+            int(edited_df.get("Cantidad", pd.Series()).fillna(0).sum())
         )
 
         st.divider()
