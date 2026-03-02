@@ -770,34 +770,17 @@ with left:
             ])])
             canceladas = len(df_emp[df_emp["Estado"] == "Cerrado / Cancelado"])
 
-            st.markdown(
-                f"""
-                <div style="
-                    margin-bottom:14px;
-                    padding:14px;
-                    border-radius:14px;
-                    background:#ffffff;
-                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
-                    color:#111;
-                ">
-                    <div style="font-weight:900; font-size:0.95rem;">
-                        {empresa}
-                    </div>
+            with st.container(border=True):
 
-                    <div style="font-size:0.8rem; margin-bottom:6px;">
-                        Total: {total_emp} ({pct:.1f}%)
-                    </div>
+                st.markdown(f"**{empresa}**")
+                st.caption(f"Total: {total_emp} ({pct:.1f}%)")
 
-                    <div style="font-size:0.75rem;">
-                        Pendientes: {pendientes} |
-                        Proceso: {proceso} |
-                        Completadas: {completadas} |
-                        Canceladas: {canceladas}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                c1, c2, c3, c4 = st.columns(4)
+
+                c1.metric("Pendientes", pendientes)
+                c2.metric("Proceso", proceso)
+                c3.metric("Completadas", completadas)
+                c4.metric("Canceladas", canceladas)
 
     else:
         st.info("No hay datos.")
