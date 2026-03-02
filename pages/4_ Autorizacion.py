@@ -359,9 +359,11 @@ def cargar_servicios_folio(folio):
 
     df = df[df["Folio"] == str(folio)]
 
-    # ✅ NEW — REMOVE STATUS LOG ROWS
+    # NEW — REMOVE STATUS LOG ROWS
     if "Parte" in df.columns:
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
+
+    df["Posicion"] = df["Posicion"].astype(str)
 
     return df[
         ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
@@ -1413,6 +1415,7 @@ if st.session_state.modal_reporte:
         # EDITOR
         # =====================================================
         column_config = {
+            "Posicion": st.column_config.TextColumn(),
             "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
         }
 
