@@ -747,12 +747,10 @@ with left:
 
     if not pases_df.empty:
 
-        empresas = pases_df["Empresa"].dropna().unique()
+        empresas = sorted(pases_df["Empresa"].dropna().unique())
         total_global = len(pases_df)
 
-        cards_html = ""
-
-        for empresa in sorted(empresas):
+        for empresa in empresas:
 
             df_emp = pases_df[pases_df["Empresa"] == empresa]
             total_emp = len(df_emp)
@@ -772,33 +770,34 @@ with left:
             ])])
             canceladas = len(df_emp[df_emp["Estado"] == "Cerrado / Cancelado"])
 
-            cards_html += f"""
-            <div style="
-                margin-bottom:14px;
-                padding:14px;
-                border-radius:14px;
-                background:#ffffff;
-                box-shadow:0 3px 8px rgba(0,0,0,0.06);
-                color:#111;
-            ">
-                <div style="font-weight:900; font-size:0.95rem;">
-                    {empresa}
-                </div>
+            st.markdown(
+                f"""
+                <div style="
+                    margin-bottom:14px;
+                    padding:14px;
+                    border-radius:14px;
+                    background:#ffffff;
+                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                    color:#111;
+                ">
+                    <div style="font-weight:900; font-size:0.95rem;">
+                        {empresa}
+                    </div>
 
-                <div style="font-size:0.8rem; margin-bottom:6px;">
-                    Total: {total_emp} ({pct:.1f}%)
-                </div>
+                    <div style="font-size:0.8rem; margin-bottom:6px;">
+                        Total: {total_emp} ({pct:.1f}%)
+                    </div>
 
-                <div style="font-size:0.75rem;">
-                    🟡 Pendientes: {pendientes}<br>
-                    🔵 En Proceso: {proceso}<br>
-                    🟢 Completadas: {completadas}<br>
-                    🔴 Canceladas: {canceladas}
+                    <div style="font-size:0.75rem;">
+                        Pendientes: {pendientes} |
+                        Proceso: {proceso} |
+                        Completadas: {completadas} |
+                        Canceladas: {canceladas}
+                    </div>
                 </div>
-            </div>
-            """
-
-        st.markdown(cards_html, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True
+            )
 
     else:
         st.info("No hay datos.")
