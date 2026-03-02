@@ -380,15 +380,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-            folio,
-            usuario,
-            r["Parte"],
-            r["Tipo De Parte"],
-            float(r["PU"] or 0),
-            float(r["IVA"] or 0),
-            int(r["Cantidad"] or 0),
-            float(r["Total"] or 0),
-            fecha_mod,
+            folio,                          # A
+            usuario,                        # B
+            r["Parte"],                     # C
+            r["Tipo De Parte"],             # D
+            r.get("Posicion", ""),          # E
+            int(r["Cantidad"] or 0),        # F
+            fecha_mod,                      # G
         ]
 
         for col in date_columns:
@@ -407,7 +405,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 
         if not match.empty:
             rownum = int(match.iloc[0]["__rownum__"])
-            ws.update(f"A{rownum}:P{rownum}", [row_data])
+            ws.update(f"A{rownum}:O{rownum}", [row_data])
         else:
             ws.append_row(row_data, value_input_option="USER_ENTERED")
 
@@ -1214,8 +1212,8 @@ if st.session_state.modal_reporte:
         )
 
         editable_servicios = nuevo_estado in [
-            "En Curso / Sin Comenzar",
-            "En Curso / Espera Refacciones",
+            "En Curso / En Reparacion",
+            "En Curso / Espera de Refaccion",
         ]
 
         st.divider()
@@ -1265,10 +1263,7 @@ if st.session_state.modal_reporte:
         # EDITOR
         # =====================================================
         column_config = {
-            "PU": st.column_config.NumberColumn(format="$ %.2f"),
-            "IVA": st.column_config.NumberColumn(format="$ %.2f"),
             "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-            "Total": st.column_config.NumberColumn(format="$ %.2f"),
         }
 
         edited_df = st.data_editor(
