@@ -28,7 +28,6 @@ st.set_page_config(
     layout="wide"
 )
 
-st.session_state.setdefault("last_action", None)
 # =================================
 # Hide sidebar
 # =================================
@@ -590,9 +589,37 @@ def cargar_facturas():
 
     return df
 
-pases_df = cargar_pases_taller()
+# =================================
+# Load Audit Log
+# =================================
+@st.cache_data(ttl=120)
+def cargar_audit():
 
+    client = gspread.authorize(get_gsheets_credentials())
+
+    ws = client.open_by_key(
+        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    ).worksheet("AUDIT")
+
+    all_values = ws.get_all_values()
+
+    if not all_values or len(all_values) < 2:
+        return pd.DataFrame()
+
+    headers = [h.strip() for h in all_values[0]]
+    rows = all_values[1:]
+
+    df = pd.DataFrame(rows, columns=headers)
+
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+
+    return df
+
+#loaders
+pases_df = cargar_pases_taller()
 facturas_df = cargar_facturas()
+audit_df = cargar_audit()
 
 if not facturas_df.empty:
     facturas_df.columns = facturas_df.columns.str.strip()
@@ -770,24 +797,64 @@ with left:
 with right:
     st.markdown("### Última actividad")
 
-    acciones = st.session_state.get("last_action", [])
+    if audit_df.empty:
+        st.info("Sin actividad registrada.")
+    else:
 
-    # if someone saved a single string → convert to list
-    if isinstance(acciones, str):
-        acciones = [acciones]
-
-    if acciones:
-        acciones = acciones[:3]  # max 3
+        audit_sorted = (
+            audit_df
+            .sort_values("Timestamp", ascending=False)
+            .head(5)
+        )
 
         rows_html = ""
-        for a in acciones:
+
+        for _, row in audit_sorted.iterrows():
+
+            timestamp = row.get("Timestamp")
+            usuario = row.get("Usuario", "")
+            empresa = row.get("Empresa", "")
+            folio = row.get("No. de Folio", "")
+            tipo = row.get("Tipo Cambio", "")
+            estado_nuevo = row.get("Estado Nuevo", "")
+            oste_nuevo = row.get("OSTE Nuevo", "")
+            comentario = row.get("Comentario", "")
+
+            fecha_txt = (
+                timestamp.strftime("%Y-%m-%d %H:%M")
+                if pd.notna(timestamp)
+                else ""
+            )
+
+            detalle = tipo
+
+            if estado_nuevo:
+                detalle += f" → {estado_nuevo}"
+
+            if oste_nuevo:
+                detalle += f" (OSTE: {oste_nuevo})"
+
+            if comentario:
+                detalle += f" — {comentario}"
+
             rows_html += f"""
             <div style="
-                margin-bottom:8px;
+                margin-bottom:10px;
                 padding-bottom:8px;
                 border-bottom:1px solid #eee;
             ">
-                {a}
+                <div style="font-size:0.75rem; opacity:0.7;">
+                    {fecha_txt}
+                </div>
+                <div style="font-weight:700;">
+                    {folio} — {empresa}
+                </div>
+                <div style="font-size:0.8rem;">
+                    {detalle}
+                </div>
+                <div style="font-size:0.75rem; opacity:0.6;">
+                    por {usuario}
+                </div>
             </div>
             """
 
@@ -799,15 +866,12 @@ with right:
                 border-radius:14px;
                 box-shadow:0 3px 8px rgba(0,0,0,0.06);
                 color:#111;
-                font-weight:600;
             ">
                 {rows_html}
             </div>
             """,
             unsafe_allow_html=True
         )
-    else:
-        st.info("Sin actividad reciente.")
 
 # =================================
 # Session state defaults
