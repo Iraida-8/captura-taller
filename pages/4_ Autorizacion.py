@@ -91,7 +91,24 @@ def get_gsheets_credentials():
 # =================================
 # Update Estado
 # =================================
+VALID_ESTADOS = [
+    "En Curso / Nuevo",
+    "En Curso / En Diagnostico",
+    "En Curso / No Diagnosticado",
+    "En Curso / En Reparacion",
+    "En Curso / Espera de Refaccion",
+    "Cerrado / Resuelto",
+    "Cerrado / Terminado",
+    "Cerrado / Concluido",
+    "Cerrado / Cancelado",
+]
+
 def actualizar_estado_pase(empresa, folio, nuevo_estado):
+
+    # 🔒 1. Validate estado
+    if nuevo_estado not in VALID_ESTADOS:
+        return
+
     sheet_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
@@ -109,14 +126,21 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet(hoja)
 
+    # 🔎 2. Find folio
     folios = ws.col_values(2)
     if folio not in folios:
         return
 
     row_idx = folios.index(folio) + 1
-    headers = ws.row_values(1)
+
+    headers = [h.strip() for h in ws.row_values(1)]
+
+    if "Estado" not in headers:
+        return
+
     estado_col = headers.index("Estado") + 1
 
+    # ✅ 3. Update safely
     ws.update_cell(row_idx, estado_col, nuevo_estado)
 
 # =================================
