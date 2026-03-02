@@ -478,13 +478,13 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         match = df_folio[df_folio["Parte"] == r["Parte"]]
 
         row_data = [
-            folio,                          # A
-            usuario,                        # B
-            r["Parte"],                     # C
-            r["Tipo De Parte"],             # D
-            r.get("Posicion", ""),          # E
-            int(r["Cantidad"] or 0),        # F
-            fecha_mod,                      # G
+            folio,                         
+            usuario,                       
+            r["Parte"],                    
+            r["Tipo De Parte"],             
+            str(r.get("Posicion", "")).strip(),       
+            int(r["Cantidad"] or 0),        
+            fecha_mod,                     
         ]
 
         for col in date_columns:
@@ -508,7 +508,7 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
             ws.update(f"A{rownum}:{last_col_letter}{rownum}", [row_data])
 
         else:
-            ws.append_row(row_data, value_input_option="USER_ENTERED")
+            ws.append_row(row_data, value_input_option="RAW")
 
 # =================================
 # Load Pase de Taller
@@ -1546,7 +1546,7 @@ if st.session_state.modal_reporte:
                     )
 
                 st.session_state.servicios_df = edited_df
-                
+
                 guardar_servicios_refacciones(
                     r["NoFolio"],
                     usuario,
