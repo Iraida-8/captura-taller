@@ -1309,10 +1309,12 @@ if st.session_state.modal_reporte:
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         descripcion_actual = r.get("Descripcion Problema", "") or ""
+        es_cerrado = r["Estado"].startswith("Cerrado")
         descripcion_editada = st.text_area(
             "Descripción del Problema",
             value=descripcion_actual,
-            height=120
+            height=120,
+            disabled=es_cerrado
         )
 
         st.divider()
@@ -1321,15 +1323,11 @@ if st.session_state.modal_reporte:
         # ==========================================
         # OSTE EDIT RULE
         # ==========================================
-        estados_oste = [
-            "Cerrado / Resuelto",
-            "Cerrado / Terminado",
-            "Cerrado / Concluido",
-        ]
+        es_cerrado = r["Estado"].startswith("Cerrado")
+        oste_actual = str(r.get("Oste", "") or "").strip()
 
         oste_editable = (
-            r["Estado"] in estados_oste
-            and not str(r.get("Oste", "")).strip()
+            es_cerrado and oste_actual == ""
         )
 
         proveedor = (r.get("Proveedor") or "").lower()
@@ -1575,7 +1573,7 @@ if st.session_state.modal_reporte:
                     )
 
                 if "interno" not in proveedor:
-                    if nuevo_estado in estados_oste and oste_val.strip():
+                    if nuevo_estado.startswith("Cerrado") and oste_val.strip():
 
                         oste_anterior = r.get("Oste", "") or ""
                         oste_nuevo = oste_val.strip()
