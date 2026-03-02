@@ -334,8 +334,9 @@ def cargar_servicios_folio(folio):
         "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
     ).worksheet("SERVICES")
 
-    data = ws.get_all_records()
-    if not data:
+    all_values = ws.get_all_values()
+
+    if not all_values or len(all_values) < 2:
         return pd.DataFrame(columns=[
             "Parte",
             "Tipo De Parte",
@@ -343,7 +344,10 @@ def cargar_servicios_folio(folio):
             "Cantidad"
         ])
 
-    df = pd.DataFrame(data)
+    headers = [h.strip() for h in all_values[0]]
+    rows = all_values[1:]
+
+    df = pd.DataFrame(rows, columns=headers)
 
     # 🔹 PATCH: normalize headers
     df.columns = df.columns.str.strip()
