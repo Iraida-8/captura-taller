@@ -296,7 +296,8 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
     if ultimos.empty:
         st.info("No hay actividad reciente.")
     else:
-        cols = st.columns(5)
+        num = min(len(ultimos), 5)
+        cols = st.columns(num)
 
         for i, (_, srow) in enumerate(ultimos.iterrows()):
             col = cols[i]
@@ -311,9 +312,19 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
 
             r = match.iloc[0]
 
+            # ===== FACTURA LOOKUP =====
+            df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+
+            if not df_factura_folio.empty:
+                no_factura = df_factura_folio.iloc[0].get("No. de Factura", "")
+            else:
+                no_factura = ""
+
             with col:
                 tipo_unidad = safe(r.get("Tipo de Unidad"))
                 fecha = r.get("Fecha de Captura")
+                oste_val = safe(r.get("Oste"))
+                orden_val = safe(r.get("No. de Reporte"))
                 fecha = fecha.date() if pd.notna(fecha) else ""
                 unidad = safe(r.get("No. de Unidad"))
                 estado = safe(r.get("Estado"))
@@ -331,7 +342,7 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                         border-radius:16px;
                         box-shadow:0 4px 10px rgba(0,0,0,0.08);
                         color:#111;
-                        min-height:22-px;
+                        min-height:220px;
                         font-family:sans-serif;
                     ">
                         <div style="font-weight:900;">{folio}</div>
@@ -341,6 +352,18 @@ if not df_services.empty and "Fecha Mod" in df_services.columns:
                         <hr style="margin:6px 0">
 
                         <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="font-size:0.75rem; margin-top:4px;">
+                            <strong>OSTE:</strong> {oste_val if oste_val else "-"}
+                        </div>
+
+                        <div style="font-size:0.75rem;">
+                            <strong>No. Orden:</strong> {orden_val if orden_val else "-"}
+                        </div>
+
+                        <div style="font-size:0.75rem;">
+                            <strong>Factura:</strong> {no_factura if no_factura else "-"}
+                        </div>
 
                         <div style="
                             font-size:0.75rem;
@@ -739,17 +762,14 @@ else:
         "Reparacion Multa",
 
         # ===== CONSOLIDATED SERVICES =====
-        "Modifico",
         "Partes",
-        "Cantidad",  # will remain if exists in merge
-        "Total Servicio",
-        "Fecha Mod",
-        "Fecha Autorizado",
-        "Fecha Sin Comenzar",
-        "Fecha Espera Refacciones",
-        "Fecha En Proceso",
-        "Fecha Facturado",
-        "Fecha Completado",
+        "Fecha Diagnostico",
+        "Fecha No Diagnosticado",
+        "Fecha En Reparacion",
+        "Fecha Espera Refaccion",
+        "Fecha Resuelto",
+        "Fecha Terminado",
+        "Fecha Concluido",
         "Fecha Cancelado",
     ]
 
