@@ -638,7 +638,6 @@ else:
     df_detallado["No. de Factura"] = None
 
 
-st.divider()
 st.subheader("📄 Reporte Detallado")
 
 # =================================
@@ -824,6 +823,8 @@ df_detallado = df_detallado.rename(columns={
 # THEN validate columns
 columnas = [c for c in columnas if c in df_detallado.columns]
 
+st.divider()
+st.subheader("📄 Reporte Detallado")
 
 st.dataframe(
     df_detallado[columnas],
