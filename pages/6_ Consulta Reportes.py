@@ -427,16 +427,16 @@ if st.session_state.get("modal_reporte") and st.session_state.get("filtros_aplic
 f1, f2, f3, f4 = st.columns(4)
 
 with f1:
-    folio = st.text_input("No. de Folio")
+    folio = st.text_input("No. de Folio", key="f_folio")
 
 with f2:
-    no_reporte = st.text_input("No. de Reporte")
+    no_reporte = st.text_input("No. de Reporte", key="f_no_reporte")
 
 with f3:
-    oste = st.text_input("OSTE")
+    oste = st.text_input("OSTE", key="f_oste")
 
 with f4:
-    no_factura = st.text_input("No. de Factura")
+    no_factura = st.text_input("No. de Factura", key="f_no_factura")
 
 
 # ===== ROW 2 =====
@@ -445,7 +445,8 @@ f5, f6, f7, f8 = st.columns(4)
 with f5:
     empresa = st.selectbox(
         "Empresa",
-        ["Todas"] + sorted(df_pases["Empresa"].dropna().unique().tolist())
+        ["Todas"] + sorted(df_pases["Empresa"].dropna().unique().tolist()),
+        key="f_empresa"
     )
 
 with f6:
@@ -453,8 +454,8 @@ with f6:
         "No. de Unidad",
         ["Todas"] + sorted(
             df_pases["No. de Unidad"].dropna().astype(str).unique().tolist()
-        )
-        if "No. de Unidad" in df_pases.columns else ["Todas"]
+        ) if "No. de Unidad" in df_pases.columns else ["Todas"],
+        key="f_unidad"
     )
 
 with f7:
@@ -462,8 +463,8 @@ with f7:
         "Capturó",
         ["Todos"] + sorted(
             df_pases["Capturo"].dropna().unique().tolist()
-        )
-        if "Capturo" in df_pases.columns else ["Todos"]
+        ) if "Capturo" in df_pases.columns else ["Todos"],
+        key="f_capturo"
     )
 
 with f8:
@@ -481,7 +482,8 @@ with f8:
 
     estado = st.selectbox(
         "Estado",
-        ["Todos"] + ESTADOS
+        ["Todos"] + ESTADOS,
+        key="f_estado"
     )
 
 # =========================================================
@@ -492,34 +494,34 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     d1, d2, d3 = st.columns(3)
 
     with d1:
-        fecha_mod = st.date_input("Fecha Mod", value=None)
+        fecha_mod = st.date_input("Fecha Mod", value=None, key="f_fecha_mod")
 
     with d2:
-        fecha_diag = st.date_input("Fecha Diagnostico", value=None)
+        fecha_diag = st.date_input("Fecha Diagnostico", value=None, key="f_fecha_diag")
 
     with d3:
-        fecha_no_diag = st.date_input("Fecha No Diagnosticado", value=None)
+        fecha_no_diag = st.date_input("Fecha No Diagnosticado", value=None, key="f_fecha_no_diag")
 
     d4, d5, d6 = st.columns(3)
 
     with d4:
-        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None)
+        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None, key="f_fecha_reparacion")
 
     with d5:
-        fecha_espera = st.date_input("Fecha Espera Refaccion", value=None)
+        fecha_espera = st.date_input("Fecha Espera Refaccion", value=None, key="f_fecha_espera")
 
     with d6:
-        fecha_resuelto = st.date_input("Fecha Resuelto", value=None)
+        fecha_resuelto = st.date_input("Fecha Resuelto", value=None, key="f_fecha_resuelto")
 
     d7, d8 = st.columns(2)
 
     with d7:
-        fecha_terminado = st.date_input("Fecha Terminado", value=None)
+        fecha_terminado = st.date_input("Fecha Terminado", value=None, key="f_fecha_terminado")
 
     with d8:
-        fecha_concluido = st.date_input("Fecha Concluido", value=None)
+        fecha_concluido = st.date_input("Fecha Concluido", value=None, key="f_fecha_concluido")
 
-    fecha_cancel = st.date_input("Fecha Cancelado", value=None)
+    fecha_cancel = st.date_input("Fecha Cancelado", value=None, key="f_fecha_cancel")
 
 c1, c2 = st.columns([1,1])
 
@@ -528,9 +530,39 @@ with c1:
 
 with c2:
     if st.button("🧹 Borrar filtros", use_container_width=True):
+
+        # Reset widget values
+        st.session_state["f_folio"] = ""
+        st.session_state["f_no_reporte"] = ""
+        st.session_state["f_oste"] = ""
+        st.session_state["f_no_factura"] = ""
+
+        st.session_state["f_empresa"] = "Todas"
+        st.session_state["f_unidad"] = "Todas"
+        st.session_state["f_capturo"] = "Todos"
+        st.session_state["f_estado"] = "Todos"
+
+        # Reset date filters
+        st.session_state["f_fecha_mod"] = None
+        st.session_state["f_fecha_diag"] = None
+        st.session_state["f_fecha_no_diag"] = None
+        st.session_state["f_fecha_reparacion"] = None
+        st.session_state["f_fecha_espera"] = None
+        st.session_state["f_fecha_resuelto"] = None
+        st.session_state["f_fecha_terminado"] = None
+        st.session_state["f_fecha_concluido"] = None
+        st.session_state["f_fecha_cancel"] = None
+
+        # Reset filtered data
         st.session_state.pop("df_filtrado_pases", None)
         st.session_state.pop("df_filtrado_servicios", None)
+
+        # Reset filter flag
+        st.session_state["filtros_aplicados"] = False
+
+        # Close modal
         st.session_state.modal_reporte = None
+
         st.rerun()
 
 # =================================
