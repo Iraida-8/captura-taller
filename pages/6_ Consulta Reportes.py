@@ -575,6 +575,26 @@ if buscar:
     st.session_state.df_filtrado_pases = df_p
     st.session_state.df_filtrado_servicios = df_s
 
+    # Flag to know if any filter was applied
+    filtros_aplicados = any([
+        folio,
+        no_reporte,
+        oste,
+        empresa != "Todas",
+        estado != "Todos",
+        no_unidad != "Todas",
+        fecha_diag,
+        fecha_no_diag,
+        fecha_reparacion,
+        fecha_espera,
+        fecha_resuelto,
+        fecha_terminado,
+        fecha_concluido,
+        fecha_cancel
+    ])
+
+st.session_state["filtros_aplicados"] = filtros_aplicados
+
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
 # ======================================================
@@ -609,6 +629,90 @@ else:
 st.divider()
 st.subheader("📄 Reporte Detallado")
 
+# =================================
+# POSTITS — RESULTADOS FILTRADOS
+# =================================
+
+if st.session_state.get("filtros_aplicados"):
+
+    st.divider()
+    st.subheader("📌 Órdenes Filtradas")
+
+    df_postits = st.session_state.get("df_filtrado_pases", df_pases.copy())
+
+    if not df_postits.empty:
+
+        # Limit to max 25
+        df_postits = df_postits.head(25)
+
+        total = len(df_postits)
+        rows_needed = min((total - 1) // 5 + 1, 5)
+
+        idx = 0
+
+        for _ in range(rows_needed):
+
+            cols = st.columns(5)
+
+            for col in cols:
+
+                if idx >= total:
+                    break
+
+                r = df_postits.iloc[idx]
+                folio = str(r.get("Folio", ""))
+                unidad = r.get("No. de Unidad", "")
+                estado = r.get("Estado", "")
+                empresa_val = r.get("Empresa", "")
+                oste_val = r.get("Oste", "")
+                orden_val = r.get("No. de Reporte", "")
+
+                with col:
+
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background:#f8fafc;
+                            padding:14px;
+                            border-radius:14px;
+                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                            min-height:180px;
+                        ">
+                            <div style="font-weight:900;">{folio}</div>
+                            <div style="font-size:0.8rem;">{empresa_val}</div>
+                            <div style="font-size:0.8rem;">Unidad: {unidad}</div>
+
+                            <hr style="margin:6px 0">
+
+                            <div style="font-size:0.75rem;">
+                                <strong>OSTE:</strong> {oste_val if oste_val else "-"}
+                            </div>
+
+                            <div style="font-size:0.75rem;">
+                                <strong>No. Orden:</strong> {orden_val if orden_val else "-"}
+                            </div>
+
+                            <div style="
+                                margin-top:6px;
+                                font-size:0.75rem;
+                                font-weight:700;
+                                color:#1e40af;
+                            ">
+                                {estado}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    if st.button("👁 Ver", key=f"view_filtro_{folio}_{idx}", use_container_width=True):
+                        st.session_state.modal_reporte = r.to_dict()
+
+                idx += 1
+
+    else:
+        st.info("No hay resultados con los filtros aplicados.")
+        
 # EXACT columns you requested
 columnas = [
     # ===== COMPANY TAB =====
