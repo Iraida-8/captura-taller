@@ -838,122 +838,121 @@ with st.expander("📄 Reporte Detallado", expanded=False):
 # TABLE 2 — RESUMEN POR ORDEN (1 LINE PER FOLIO)
 # ======================================================
 st.divider()
-st.subheader("📦 Resumen por Orden")
 
-df_s = df_s.copy()
+st.info(
+    "Para consultar el Resumen por Orden, expanda la sección inferior."
+)
 
-# remove log rows
-if "Parte" in df_s.columns:
-    df_s = df_s[
-        df_s["Parte"].notna() &
-        (df_s["Parte"].astype(str).str.strip() != "")
-    ]
+with st.expander("📦 Resumen por Orden", expanded=False):
 
-if df_s.empty:
-    st.info("Sin servicios.")
-else:
+    df_s = df_s.copy()
 
-    # ===============================
-    # AGGREGATE SERVICES
-    # ===============================
-    servicios_agg = (
-        df_s
-        .groupby("Folio", as_index=False)
-        .agg({
-            "Parte": lambda x: ", ".join(
-                sorted(set(str(v) for v in x if pd.notna(v)))
-            ),
+    # remove log rows
+    if "Parte" in df_s.columns:
+        df_s = df_s[
+            df_s["Parte"].notna() &
+            (df_s["Parte"].astype(str).str.strip() != "")
+        ]
 
-            "Fecha Diagnostico": "max",
-            "Fecha No Diagnosticado": "max",
-            "Fecha En Reparacion": "max",
-            "Fecha Espera Refaccion": "max",
-            "Fecha Resuelto": "max",
-            "Fecha Terminado": "max",
-            "Fecha Concluido": "max",
-            "Fecha Cancelado": "max",
-        })
-        .rename(columns={
-            "Parte": "Partes"
-        })
-    )
-
-    # ===============================
-    # MERGE WITH COMPANY DATA
-    # ===============================
-    df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
-
-    # =================================
-    # MERGE FACTURAS
-    # =================================
-    if "Folio" in df_facturas.columns:
-        df_resumen = df_resumen.merge(
-            df_facturas[["Folio", "No. de Factura"]],
-            on="Folio",
-            how="left"
-        )
+    if df_s.empty:
+        st.info("Sin servicios.")
     else:
-        df_resumen["No. de Factura"] = None
 
-    df_resumen["Partes"] = df_resumen["Partes"].fillna("")
+        # ===============================
+        # AGGREGATE SERVICES
+        # ===============================
+        servicios_agg = (
+            df_s
+            .groupby("Folio", as_index=False)
+            .agg({
+                "Parte": lambda x: ", ".join(
+                    sorted(set(str(v) for v in x if pd.notna(v)))
+                ),
+                "Fecha Diagnostico": "max",
+                "Fecha No Diagnosticado": "max",
+                "Fecha En Reparacion": "max",
+                "Fecha Espera Refaccion": "max",
+                "Fecha Resuelto": "max",
+                "Fecha Terminado": "max",
+                "Fecha Concluido": "max",
+                "Fecha Cancelado": "max",
+            })
+            .rename(columns={
+                "Parte": "Partes"
+            })
+        )
 
-    # ===============================
-    # COLUMN ORDER
-    # ===============================
-    columnas = [
-        # ===== COMPANY TAB =====
-        "Fecha de Captura",
-        "No. de Folio",
-        "Fecha de Reporte",
-        "Tipo de Proveedor",
-        "Estado",
-        "Capturo",
-        "No. de Factura",
-        "Oste",
-        "No. de Reporte",
-        "Empresa",
-        "Tipo de Reporte",
-        "Tipo de Unidad",
-        "Operador",
-        "No. de Unidad",
-        "Marca",
-        "Modelo",
-        "Sucursal",
-        "Tipo de Caja",
-        "No. de Unidad Externo",
-        "Nombre Linea Externa",
-        "Cobro",
-        "Responsable",
-        "Descripcion Problema",
-        "Multa",
-        "No. de Inspeccion",
-        "Reparacion Multa",
+        # ===============================
+        # MERGE WITH COMPANY DATA
+        # ===============================
+        df_resumen = df_p.merge(servicios_agg, on="Folio", how="left")
 
-        # ===== CONSOLIDATED SERVICES =====
-        "Partes",
-        "Fecha Diagnostico",
-        "Fecha No Diagnosticado",
-        "Fecha En Reparacion",
-        "Fecha Espera Refaccion",
-        "Fecha Resuelto",
-        "Fecha Terminado",
-        "Fecha Concluido",
-        "Fecha Cancelado",
-    ]
+        # ===============================
+        # MERGE FACTURAS
+        # ===============================
+        if "Folio" in df_facturas.columns:
+            df_resumen = df_resumen.merge(
+                df_facturas[["Folio", "No. de Factura"]],
+                on="Folio",
+                how="left"
+            )
+        else:
+            df_resumen["No. de Factura"] = None
 
-    # FIRST rename
-    df_resumen = df_resumen.rename(columns={
-        "Folio": "No. de Folio"
-    })
+        df_resumen["Partes"] = df_resumen["Partes"].fillna("")
 
-    # THEN validate
-    columnas = [c for c in columnas if c in df_resumen.columns]
+        # ===============================
+        # COLUMN ORDER
+        # ===============================
+        columnas = [
+            "Fecha de Captura",
+            "No. de Folio",
+            "Fecha de Reporte",
+            "Tipo de Proveedor",
+            "Estado",
+            "Capturo",
+            "No. de Factura",
+            "Oste",
+            "No. de Reporte",
+            "Empresa",
+            "Tipo de Reporte",
+            "Tipo de Unidad",
+            "Operador",
+            "No. de Unidad",
+            "Marca",
+            "Modelo",
+            "Sucursal",
+            "Tipo de Caja",
+            "No. de Unidad Externo",
+            "Nombre Linea Externa",
+            "Cobro",
+            "Responsable",
+            "Descripcion Problema",
+            "Multa",
+            "No. de Inspeccion",
+            "Reparacion Multa",
+            "Partes",
+            "Fecha Diagnostico",
+            "Fecha No Diagnosticado",
+            "Fecha En Reparacion",
+            "Fecha Espera Refaccion",
+            "Fecha Resuelto",
+            "Fecha Terminado",
+            "Fecha Concluido",
+            "Fecha Cancelado",
+        ]
 
-    st.dataframe(
-        df_resumen[columnas],
-        hide_index=True,
-        width="stretch"
-    )
+        df_resumen = df_resumen.rename(columns={
+            "Folio": "No. de Folio"
+        })
+
+        columnas = [c for c in columnas if c in df_resumen.columns]
+
+        st.dataframe(
+            df_resumen[columnas],
+            hide_index=True,
+            width="stretch"
+        )
 
 #date parse
 def fmt_date(value):
