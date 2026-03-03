@@ -638,7 +638,7 @@ else:
     df_detallado["No. de Factura"] = None
 
 
-st.subheader("📄 Reporte Detallado")
+st.divider()
 
 # =================================
 # POSTITS — RESULTADOS FILTRADOS
