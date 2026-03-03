@@ -640,7 +640,7 @@ st.divider()
 if not st.session_state.get("filtros_aplicados"):
     st.markdown("## 📌 Órdenes Filtradas")
     st.info(
-        "Aplica al menos un filtro para visualizar las órdenes en formato post-it. "
+        "Aplica al menos un filtro para visualizar las órdenes. "
         "Máximo 25 resultados."
     )
 
