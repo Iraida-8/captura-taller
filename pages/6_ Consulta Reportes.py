@@ -590,22 +590,17 @@ if buscar:
     # FILTER FLAG
     # ======================================================
 
-    st.session_state["filtros_aplicados"] = any([
+    # Only BASIC filters trigger post-its
+    filtros_basicos = any([
         folio,
         no_reporte,
         oste,
         empresa != "Todas",
         estado != "Todos",
-        no_unidad != "Todas",
-        fecha_diag,
-        fecha_no_diag,
-        fecha_reparacion,
-        fecha_espera,
-        fecha_resuelto,
-        fecha_terminado,
-        fecha_concluido,
-        fecha_cancel
+        no_unidad != "Todas"
     ])
+
+    st.session_state["filtros_aplicados"] = filtros_basicos
 
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
@@ -640,10 +635,16 @@ else:
 # =================================
 # POSTITS — RESULTADOS FILTRADOS
 # =================================
+st.divider()
 
-if st.session_state.get("filtros_aplicados"):
+if not st.session_state.get("filtros_aplicados"):
+    st.markdown("## 📌 Órdenes Filtradas")
+    st.info(
+        "Aplica al menos un filtro para visualizar las órdenes en formato post-it. "
+        "Máximo 25 resultados."
+    )
 
-    st.divider()
+else:
     st.markdown("## 📌 Órdenes Filtradas")
     st.caption("Mostrando máximo 25 resultados")
 
@@ -679,17 +680,14 @@ if st.session_state.get("filtros_aplicados"):
                 capturo = r.get("Capturo", "")
                 descripcion = r.get("Descripcion Problema", "")
 
-                # Format date
                 fecha = fecha.date() if pd.notna(fecha) else ""
 
-                # Factura lookup
                 df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
-                if not df_factura_folio.empty:
-                    no_factura = df_factura_folio.iloc[0].get("No. de Factura", "")
-                else:
-                    no_factura = ""
+                no_factura = (
+                    df_factura_folio.iloc[0].get("No. de Factura", "")
+                    if not df_factura_folio.empty else ""
+                )
 
-                # Truncate description
                 if descripcion and len(descripcion) > 120:
                     descripcion = descripcion[:120] + "..."
 
@@ -756,7 +754,6 @@ if st.session_state.get("filtros_aplicados"):
                         </div>
                     </div>
                     """
-
                     components.html(html, height=260)
 
                     if st.button(
@@ -769,7 +766,7 @@ if st.session_state.get("filtros_aplicados"):
                 idx += 1
 
     else:
-        st.info("No hay resultados con los filtros aplicados.")
+        st.warning("No se encontraron órdenes con los filtros aplicados.")
 
 # EXACT columns you requested
 columnas = [
