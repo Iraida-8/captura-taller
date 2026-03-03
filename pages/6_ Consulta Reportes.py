@@ -220,22 +220,23 @@ pendientes = len(
 
 diagnosticos = len(
     df_pases[df_pases["Estado"].isin([
-        "En Curso / Autorizado",
-        "En Curso / Sin Comenzar",
+        "En Curso / En Diagnostico",
+        "En Curso / No Diagnosticado",
     ])]
 )
 
 en_proceso = len(
     df_pases[df_pases["Estado"].isin([
-        "En Curso / Espera Refacciones",
-        "En Curso / En Proceso",
+        "En Curso / En Reparacion",
+        "En Curso / Espera de Refaccion",
     ])]
 )
 
 completadas = len(
     df_pases[df_pases["Estado"].isin([
-        "Cerrado / Completado",
-        "Cerrado / Facturado",
+        "Cerrado / Resuelto",
+        "Cerrado / Terminado",
+        "Cerrado / Concluido",
     ])]
 )
 
@@ -453,12 +454,13 @@ with r2c3:
 
     ESTADOS = [
         "En Curso / Nuevo",
-        "En Curso / Autorizado",
-        "En Curso / Sin Comenzar",
-        "En Curso / Espera Refacciones",
-        "En Curso / En Proceso",
-        "Cerrado / Completado",
-        "Cerrado / Facturado",
+        "En Curso / En Diagnostico",
+        "En Curso / No Diagnosticado",
+        "En Curso / En Reparacion",
+        "En Curso / Espera de Refaccion",
+        "Cerrado / Resuelto",
+        "Cerrado / Terminado",
+        "Cerrado / Concluido",
         "Cerrado / Cancelado",
     ]
 
