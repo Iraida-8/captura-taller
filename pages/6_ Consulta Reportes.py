@@ -637,9 +637,6 @@ if "Folio" in df_facturas.columns:
 else:
     df_detallado["No. de Factura"] = None
 
-
-st.divider()
-
 # =================================
 # POSTITS — RESULTADOS FILTRADOS
 # =================================
@@ -647,7 +644,8 @@ st.divider()
 if st.session_state.get("filtros_aplicados"):
 
     st.divider()
-    st.subheader("📌 Órdenes Filtradas")
+    st.markdown("## 📌 Órdenes Filtradas")
+    st.caption("Mostrando máximo 25 resultados")
 
     df_postits = st.session_state.get("df_filtrado_pases", df_pases.copy())
 
