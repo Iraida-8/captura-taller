@@ -420,38 +420,53 @@ if st.session_state.get("modal_reporte") and st.session_state.get("filtros_aplic
     st.session_state.modal_reporte = None
 
 # =========================================================
-# SECTION 1 → MAIN DATA
+# MAIN FILTERS (2 rows × 4 columns)
 # =========================================================
-r1c1, r1c2, r1c3 = st.columns(3)
 
-with r1c1:
+# ===== ROW 1 =====
+f1, f2, f3, f4 = st.columns(4)
+
+with f1:
     folio = st.text_input("No. de Folio")
 
-with r1c2:
+with f2:
     no_reporte = st.text_input("No. de Reporte")
 
-with r1c3:
+with f3:
     oste = st.text_input("OSTE")
 
+with f4:
+    no_factura = st.text_input("No. de Factura")
 
-r2c1, r2c2, r2c3 = st.columns(3)
 
-with r2c1:
+# ===== ROW 2 =====
+f5, f6, f7, f8 = st.columns(4)
+
+with f5:
     empresa = st.selectbox(
         "Empresa",
         ["Todas"] + sorted(df_pases["Empresa"].dropna().unique().tolist())
-        if not df_pases.empty else ["Todas"]
     )
 
-with r2c2:
+with f6:
     no_unidad = st.selectbox(
         "No. de Unidad",
-        ["Todas"] + sorted(df_pases["No. de Unidad"].dropna().astype(str).unique().tolist())
+        ["Todas"] + sorted(
+            df_pases["No. de Unidad"].dropna().astype(str).unique().tolist()
+        )
         if "No. de Unidad" in df_pases.columns else ["Todas"]
     )
 
-with r2c3:
+with f7:
+    capturo = st.selectbox(
+        "Capturó",
+        ["Todos"] + sorted(
+            df_pases["Capturo"].dropna().unique().tolist()
+        )
+        if "Capturo" in df_pases.columns else ["Todos"]
+    )
 
+with f8:
     ESTADOS = [
         "En Curso / Nuevo",
         "En Curso / En Diagnostico",
@@ -540,6 +555,9 @@ if buscar:
 
     if empresa != "Todas":
         df_p = df_p[df_p["Empresa"] == empresa]
+    
+    if capturo != "Todos":
+      df_p = df_p[df_p["Capturo"] == capturo]
 
     if estado != "Todos":
         df_p = df_p[df_p["Estado"] == estado]
@@ -552,6 +570,13 @@ if buscar:
 
     if oste and "Oste" in df_p.columns:
         df_p = df_p[df_p["Oste"].astype(str).str.contains(oste, na=False)]
+
+    if no_factura:
+        df_fact_filter = df_facturas[
+            df_facturas["No. de Factura"].astype(str).str.contains(no_factura, na=False)
+        ]
+        folios_fact = df_fact_filter["Folio"].unique()
+        df_p = df_p[df_p["Folio"].isin(folios_fact)]
 
     # ======================================================
     # DATE FILTERS (SERVICES)
@@ -597,9 +622,11 @@ if buscar:
         folio,
         no_reporte,
         oste,
+        no_factura,
         empresa != "Todas",
         estado != "Todos",
-        no_unidad != "Todas"
+        no_unidad != "Todas",
+        capturo != "Todos"
     ])
 
     st.session_state["filtros_aplicados"] = filtros_basicos
