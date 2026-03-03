@@ -650,7 +650,7 @@ if st.session_state.get("filtros_aplicados"):
 
     if not df_postits.empty:
 
-        # Limit to max 25
+        # Limit to max 25 (5 rows x 5 columns)
         df_postits = df_postits.head(25)
 
         total = len(df_postits)
@@ -668,6 +668,7 @@ if st.session_state.get("filtros_aplicados"):
                     break
 
                 r = df_postits.iloc[idx]
+
                 folio = str(r.get("Folio", ""))
                 unidad = r.get("No. de Unidad", "")
                 estado = r.get("Estado", "")
@@ -677,14 +678,16 @@ if st.session_state.get("filtros_aplicados"):
 
                 with col:
 
-                    st.markdown(
-                        f"""
+                    html = f"""
+                    <div style="padding:6px;">
                         <div style="
-                            background:#f8fafc;
+                            background:#e8f0ff;
                             padding:14px;
-                            border-radius:14px;
+                            border-radius:16px;
                             box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            min-height:180px;
+                            color:#111;
+                            min-height:220px;
+                            font-family:sans-serif;
                         ">
                             <div style="font-weight:900;">{folio}</div>
                             <div style="font-size:0.8rem;">{empresa_val}</div>
@@ -692,7 +695,7 @@ if st.session_state.get("filtros_aplicados"):
 
                             <hr style="margin:6px 0">
 
-                            <div style="font-size:0.75rem;">
+                            <div style="font-size:0.75rem; margin-top:4px;">
                                 <strong>OSTE:</strong> {oste_val if oste_val else "-"}
                             </div>
 
@@ -709,11 +712,16 @@ if st.session_state.get("filtros_aplicados"):
                                 {estado}
                             </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    </div>
+                    """
 
-                    if st.button("👁 Ver", key=f"view_filtro_{folio}_{idx}", use_container_width=True):
+                    components.html(html, height=260)
+
+                    if st.button(
+                        "👁 Ver",
+                        key=f"view_filtro_{folio}_{idx}",
+                        use_container_width=True
+                    ):
                         st.session_state.modal_reporte = r.to_dict()
 
                 idx += 1
