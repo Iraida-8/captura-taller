@@ -515,7 +515,12 @@ with c2:
 # =================================
 # APPLY FILTERS
 # =================================
+
+# Ensure default flag exists
+st.session_state.setdefault("filtros_aplicados", False)
+
 if buscar:
+
     st.session_state.modal_reporte = None
     df_p = df_pases.copy()
     df_s = df_services.copy()
@@ -563,6 +568,7 @@ if buscar:
     # ======================================================
     # MATCH SERVICES → PASES
     # ======================================================
+
     if (
         fecha_diag or fecha_no_diag or fecha_reparacion
         or fecha_espera or fecha_resuelto
@@ -572,11 +578,15 @@ if buscar:
         folios_validos = df_s["Folio"].unique()
         df_p = df_p[df_p["Folio"].isin(folios_validos)]
 
+    # Save filtered data
     st.session_state.df_filtrado_pases = df_p
     st.session_state.df_filtrado_servicios = df_s
 
-    # Flag to know if any filter was applied
-    filtros_aplicados = any([
+    # ======================================================
+    # FILTER FLAG
+    # ======================================================
+
+    st.session_state["filtros_aplicados"] = any([
         folio,
         no_reporte,
         oste,
@@ -592,8 +602,6 @@ if buscar:
         fecha_concluido,
         fecha_cancel
     ])
-
-st.session_state["filtros_aplicados"] = filtros_aplicados
 
 # ======================================================
 # TABLE 1 — REPORTE DETALLADO
@@ -712,7 +720,7 @@ if st.session_state.get("filtros_aplicados"):
 
     else:
         st.info("No hay resultados con los filtros aplicados.")
-        
+
 # EXACT columns you requested
 columnas = [
     # ===== COMPANY TAB =====
