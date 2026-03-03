@@ -795,8 +795,143 @@ if st.session_state.get("modal_reporte"):
     r = st.session_state.modal_reporte
     folio = str(r.get("Folio"))
 
-    @st.dialog("Detalle del Pase de Taller")
+    @st.dialog("Reporte Completo")
     def modal_ver():
+
+        st.markdown(f"# Folio {folio}")
+
+        # Pull full merged data row
+        df_full = df_detallado[df_detallado["No. de Folio"] == folio]
+
+        if df_full.empty:
+            st.error("No se encontró información completa.")
+            return
+
+        r_full = df_full.iloc[0]
+
+        # ===============================
+        # SECTION 1 — IDENTIFICACIÓN
+        # ===============================
+        st.subheader("📌 Información General")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f"**Empresa:** {r_full.get('Empresa','')}")
+            st.markdown(f"**Tipo de Reporte:** {r_full.get('Tipo de Reporte','')}")
+            st.markdown(f"**Tipo de Unidad:** {r_full.get('Tipo de Unidad','')}")
+
+        with col2:
+            st.markdown(f"**No. Unidad:** {r_full.get('No. de Unidad','')}")
+            st.markdown(f"**Marca:** {r_full.get('Marca','')}")
+            st.markdown(f"**Modelo:** {r_full.get('Modelo','')}")
+
+        with col3:
+            st.markdown(f"**Estado:** {r_full.get('Estado','')}")
+            st.markdown(f"**Capturó:** {r_full.get('Capturo','')}")
+            st.markdown(f"**Fecha Captura:** {r_full.get('Fecha de Captura','')}")
+
+        st.divider()
+
+        # ===============================
+        # SECTION 2 — PROVEEDOR
+        # ===============================
+        st.subheader("🏭 Información de Proveedor")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown(f"**Tipo Proveedor:** {r_full.get('Tipo de Proveedor','')}")
+            st.markdown(f"**OSTE:** {r_full.get('Oste','')}")
+
+        with col2:
+            st.markdown(f"**No. Orden:** {r_full.get('No. de Reporte','')}")
+            st.markdown(f"**No. Factura:** {r_full.get('No. de Factura','')}")
+
+        st.divider()
+
+        # ===============================
+        # SECTION 3 — DESCRIPCIÓN
+        # ===============================
+        st.subheader("📝 Descripción del Problema")
+
+        descripcion = r_full.get("Descripcion Problema","")
+
+        st.markdown(
+            f"""
+            <div style="
+                background:#f1f5f9;
+                padding:16px;
+                border-radius:12px;
+                font-size:0.95rem;
+            ">
+                {descripcion}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.divider()
+
+        # ===============================
+        # SECTION 4 — SERVICIOS / PARTES
+        # ===============================
+        st.subheader("🔧 Servicios y Refacciones")
+
+        df_serv = df_services[df_services["Folio"] == folio]
+
+        if not df_serv.empty:
+            cols = ["Parte","Tipo De Parte","Posicion","Cantidad"]
+            cols = [c for c in cols if c in df_serv.columns]
+
+            st.dataframe(df_serv[cols], use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin servicios registrados.")
+
+        st.divider()
+
+        # ===============================
+        # SECTION 5 — FECHAS OPERATIVAS
+        # ===============================
+        st.subheader("📅 Fechas Operativas")
+
+        fecha_cols = [
+            "Fecha Diagnostico",
+            "Fecha No Diagnosticado",
+            "Fecha En Reparacion",
+            "Fecha Espera Refaccion",
+            "Fecha Resuelto",
+            "Fecha Terminado",
+            "Fecha Concluido",
+            "Fecha Cancelado",
+        ]
+
+        fechas = df_serv[fecha_cols].max() if not df_serv.empty else {}
+
+        for col in fecha_cols:
+            if col in fechas:
+                st.markdown(f"**{col}:** {fechas[col]}")
+
+        st.divider()
+
+        # ===============================
+        # SECTION 6 — OTROS DATOS
+        # ===============================
+        st.subheader("📎 Información Adicional")
+
+        st.markdown(f"**Sucursal:** {r_full.get('Sucursal','')}")
+        st.markdown(f"**Operador:** {r_full.get('Operador','')}")
+        st.markdown(f"**Responsable:** {r_full.get('Responsable','')}")
+        st.markdown(f"**Cobro:** {r_full.get('Cobro','')}")
+        st.markdown(f"**Multa:** {r_full.get('Multa','')}")
+        st.markdown(f"**No. Inspección:** {r_full.get('No. de Inspeccion','')}")
+        st.markdown(f"**Reparación Multa:** {r_full.get('Reparacion Multa','')}")
+
+        st.divider()
+
+        if st.button("Cerrar"):
+            st.session_state.modal_reporte = None
+            st.rerun()
 
         # =================================
         # STATUS CAPSULE
