@@ -787,6 +787,17 @@ else:
         width="stretch"
     )
 
+#date parse
+def fmt_date(value):
+    if value is None:
+        return "-"
+    if pd.isna(value):
+        return "-"
+    try:
+        return pd.to_datetime(value).date()
+    except Exception:
+        return "-"
+    
 # =================================
 # VIEW MODAL (READ ONLY)
 # =================================
@@ -829,7 +840,7 @@ if st.session_state.get("modal_reporte"):
         with col3:
             st.markdown(f"**Estado:** {r_full.get('Estado','')}")
             st.markdown(f"**Capturó:** {r_full.get('Capturo','')}")
-            st.markdown(f"**Fecha Captura:** {r_full.get('Fecha de Captura','')}")
+            st.markdown(f"**Fecha Captura:** {fmt_date(r_full.get('Fecha de Captura'))}")
 
         st.divider()
 
@@ -918,8 +929,8 @@ if st.session_state.get("modal_reporte"):
         fechas = df_serv[fecha_cols].max() if not df_serv.empty else {}
 
         for col in fecha_cols:
-            if col in fechas:
-                st.markdown(f"**{col}:** {fechas[col]}")
+            value = fechas[col] if col in fechas else None
+            st.markdown(f"**{col}:** {fmt_date(value)}")
 
         st.divider()
 
