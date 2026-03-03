@@ -414,6 +414,10 @@ st.divider()
 # =================================
 st.subheader("Filtros")
 
+# Close any open modal before running filters
+if st.session_state.get("modal_reporte") and st.session_state.get("filtros_aplicados"):
+    st.session_state.modal_reporte = None
+
 # =========================================================
 # SECTION 1 → MAIN DATA
 # =========================================================
@@ -650,7 +654,6 @@ if st.session_state.get("filtros_aplicados"):
 
     if not df_postits.empty:
 
-        # Limit to max 25 (5 rows x 5 columns)
         df_postits = df_postits.head(25)
 
         total = len(df_postits)
@@ -670,11 +673,28 @@ if st.session_state.get("filtros_aplicados"):
                 r = df_postits.iloc[idx]
 
                 folio = str(r.get("Folio", ""))
+                tipo_unidad = r.get("Tipo de Unidad", "")
+                fecha = r.get("Fecha de Captura")
                 unidad = r.get("No. de Unidad", "")
                 estado = r.get("Estado", "")
-                empresa_val = r.get("Empresa", "")
                 oste_val = r.get("Oste", "")
                 orden_val = r.get("No. de Reporte", "")
+                capturo = r.get("Capturo", "")
+                descripcion = r.get("Descripcion Problema", "")
+
+                # Format date
+                fecha = fecha.date() if pd.notna(fecha) else ""
+
+                # Factura lookup
+                df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+                if not df_factura_folio.empty:
+                    no_factura = df_factura_folio.iloc[0].get("No. de Factura", "")
+                else:
+                    no_factura = ""
+
+                # Truncate description
+                if descripcion and len(descripcion) > 120:
+                    descripcion = descripcion[:120] + "..."
 
                 with col:
 
@@ -690,10 +710,12 @@ if st.session_state.get("filtros_aplicados"):
                             font-family:sans-serif;
                         ">
                             <div style="font-weight:900;">{folio}</div>
-                            <div style="font-size:0.8rem;">{empresa_val}</div>
-                            <div style="font-size:0.8rem;">Unidad: {unidad}</div>
+                            <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                            <div style="font-size:0.8rem;">{fecha}</div>
 
                             <hr style="margin:6px 0">
+
+                            <div style="font-size:0.8rem;">{unidad}</div>
 
                             <div style="font-size:0.75rem; margin-top:4px;">
                                 <strong>OSTE:</strong> {oste_val if oste_val else "-"}
@@ -703,6 +725,21 @@ if st.session_state.get("filtros_aplicados"):
                                 <strong>No. Orden:</strong> {orden_val if orden_val else "-"}
                             </div>
 
+                            <div style="font-size:0.75rem;">
+                                <strong>Factura:</strong> {no_factura if no_factura else "-"}
+                            </div>
+
+                            <div style="
+                                font-size:0.75rem;
+                                margin-top:6px;
+                                padding:6px;
+                                background:#fff;
+                                border-radius:8px;
+                                box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                            ">
+                                {descripcion if descripcion else "-"}
+                            </div>
+
                             <div style="
                                 margin-top:6px;
                                 font-size:0.75rem;
@@ -710,6 +747,14 @@ if st.session_state.get("filtros_aplicados"):
                                 color:#1e40af;
                             ">
                                 {estado}
+                            </div>
+
+                            <div style="
+                                font-size:0.75rem;
+                                margin-top:4px;
+                                opacity:0.8;
+                            ">
+                                Capturó: {capturo}
                             </div>
                         </div>
                     </div>
