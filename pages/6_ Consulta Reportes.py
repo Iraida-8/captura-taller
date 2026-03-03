@@ -214,27 +214,28 @@ def porcentaje(n):
         return 0
     return round((n / total_ordenes) * 100, 1)
 
-pendientes = len(df_pases[df_pases["Estado"] == "En Curso / Nuevo"])
+pendientes = len(
+    df_pases[df_pases["Estado"] == "En Curso / Nuevo"]
+)
 
 diagnosticos = len(
     df_pases[df_pases["Estado"].isin([
-        "En Curso / En Diagnostico",
-        "En Curso / No Diagnosticado",
+        "En Curso / Autorizado",
+        "En Curso / Sin Comenzar",
     ])]
 )
 
 en_proceso = len(
     df_pases[df_pases["Estado"].isin([
-        "En Curso / En Reparacion",
-        "En Curso / Espera de Refaccion",
+        "En Curso / Espera Refacciones",
+        "En Curso / En Proceso",
     ])]
 )
 
 completadas = len(
     df_pases[df_pases["Estado"].isin([
-        "Cerrado / Resuelto",
-        "Cerrado / Terminado",
-        "Cerrado / Concluido",
+        "Cerrado / Completado",
+        "Cerrado / Facturado",
     ])]
 )
 
@@ -422,10 +423,21 @@ with r2c2:
     )
 
 with r2c3:
+
+    ESTADOS = [
+        "En Curso / Nuevo",
+        "En Curso / Autorizado",
+        "En Curso / Sin Comenzar",
+        "En Curso / Espera Refacciones",
+        "En Curso / En Proceso",
+        "Cerrado / Completado",
+        "Cerrado / Facturado",
+        "Cerrado / Cancelado",
+    ]
+
     estado = st.selectbox(
         "Estado",
-        ["Todos"] + sorted(df_pases["Estado"].dropna().unique().tolist())
-        if not df_pases.empty else ["Todos"]
+        ["Todos"] + ESTADOS
     )
 
 # =========================================================
@@ -605,7 +617,6 @@ columnas = [
     "Reparacion Multa",
 
     # ===== CONSOLIDATED SERVICES =====
-    "Modifico",
     "Partes",
     "Fecha Diagnostico",
     "Fecha No Diagnosticado",
@@ -774,31 +785,23 @@ if st.session_state.get("modal_reporte"):
 
         color_map = {
             "En Curso / Nuevo": "#856404",
-
-            "En Curso / En Diagnostico": "#0c5460",
-            "En Curso / No Diagnosticado": "#1e3a8a",
-            "En Curso / En Reparacion": "#4f46e5",
-            "En Curso / Espera de Refaccion": "#5a189a",
-
-            "Cerrado / Resuelto": "#155724",
-            "Cerrado / Terminado": "#14532d",
-            "Cerrado / Concluido": "#166534",
-
+            "En Curso / Autorizado": "#0c5460",
+            "En Curso / Sin Comenzar": "#383d41",
+            "En Curso / Espera Refacciones": "#5a189a",
+            "En Curso / En Proceso": "#4f46e5",
+            "Cerrado / Completado": "#155724",
+            "Cerrado / Facturado": "#155724",
             "Cerrado / Cancelado": "#721c24",
         }
 
         bg_map = {
             "En Curso / Nuevo": "#fff3cd",
-
-            "En Curso / En Diagnostico": "#d1ecf1",
-            "En Curso / No Diagnosticado": "#dbeafe",
-            "En Curso / En Reparacion": "#e0e7ff",
-            "En Curso / Espera de Refaccion": "#ede9fe",
-
-            "Cerrado / Resuelto": "#d4edda",
-            "Cerrado / Terminado": "#dcfce7",
-            "Cerrado / Concluido": "#bbf7d0",
-
+            "En Curso / Autorizado": "#d1ecf1",
+            "En Curso / Sin Comenzar": "#e2e3e5",
+            "En Curso / Espera Refacciones": "#e2d9f3",
+            "En Curso / En Proceso": "#e0e7ff",
+            "Cerrado / Completado": "#d4edda",
+            "Cerrado / Facturado": "#d4edda",
             "Cerrado / Cancelado": "#f8d7da",
         }
 
