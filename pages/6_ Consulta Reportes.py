@@ -121,20 +121,51 @@ def cargar_servicios():
 
     data = ws.get_all_records()
     if not data:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=[
+            "Folio",
+            "Modifico",
+            "Parte",
+            "Tipo De Parte",
+            "Posicion",
+            "Cantidad",
+            "Fecha Mod",
+            "Fecha Diagnostico",
+            "Fecha No Diagnosticado",
+            "Fecha En Reparacion",
+            "Fecha Espera Refaccion",
+            "Fecha Resuelto",
+            "Fecha Terminado",
+            "Fecha Concluido",
+            "Fecha Cancelado",
+        ])
 
     df = pd.DataFrame(data)
     df.columns = df.columns.str.strip()
 
+    # Rename Folio
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
-    if "Iva" in df.columns:
-        df = df.rename(columns={"Iva": "IVA"})
 
-    df["Folio"] = df["Folio"].astype(str)
+    # Ensure Folio is string
+    if "Folio" in df.columns:
+        df["Folio"] = df["Folio"].astype(str)
 
-    if "Fecha Mod" in df.columns:
-        df["Fecha Mod"] = pd.to_datetime(df["Fecha Mod"], errors="coerce")
+    # Convert ALL date columns safely
+    date_cols = [
+        "Fecha Mod",
+        "Fecha Diagnostico",
+        "Fecha No Diagnosticado",
+        "Fecha En Reparacion",
+        "Fecha Espera Refaccion",
+        "Fecha Resuelto",
+        "Fecha Terminado",
+        "Fecha Concluido",
+        "Fecha Cancelado",
+    ]
+
+    for col in date_cols:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
 
@@ -186,21 +217,24 @@ def porcentaje(n):
 pendientes = len(df_pases[df_pases["Estado"] == "En Curso / Nuevo"])
 
 diagnosticos = len(
-    df_pases[df_pases["Estado"] == "En Curso / Autorizado"]
+    df_pases[df_pases["Estado"].isin([
+        "En Curso / En Diagnostico",
+        "En Curso / No Diagnosticado",
+    ])]
 )
 
 en_proceso = len(
     df_pases[df_pases["Estado"].isin([
-        "En Curso / Sin Comenzar",
-        "En Curso / Espera Refacciones",
-        "En Curso / En Proceso",
+        "En Curso / En Reparacion",
+        "En Curso / Espera de Refaccion",
     ])]
 )
 
 completadas = len(
     df_pases[df_pases["Estado"].isin([
-        "Cerrado / Completado",
-        "Cerrado / Facturado",
+        "Cerrado / Resuelto",
+        "Cerrado / Terminado",
+        "Cerrado / Concluido",
     ])]
 )
 
@@ -405,31 +439,31 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
         fecha_mod = st.date_input("Fecha Mod", value=None)
 
     with d2:
-        fecha_aut = st.date_input("Fecha Autorizado", value=None)
+        fecha_diag = st.date_input("Fecha Diagnostico", value=None)
 
     with d3:
-        fecha_sin = st.date_input("Fecha Sin Comenzar", value=None)
-
+        fecha_no_diag = st.date_input("Fecha No Diagnosticado", value=None)
 
     d4, d5, d6 = st.columns(3)
 
     with d4:
-        fecha_espera = st.date_input("Fecha Espera Refacciones", value=None)
+        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None)
 
     with d5:
-        fecha_proceso = st.date_input("Fecha En Proceso", value=None)
+        fecha_espera = st.date_input("Fecha Espera Refaccion", value=None)
 
     with d6:
-        fecha_fact = st.date_input("Fecha Facturado", value=None)
-
+        fecha_resuelto = st.date_input("Fecha Resuelto", value=None)
 
     d7, d8 = st.columns(2)
 
     with d7:
-        fecha_comp = st.date_input("Fecha Completado", value=None)
+        fecha_terminado = st.date_input("Fecha Terminado", value=None)
 
     with d8:
-        fecha_cancel = st.date_input("Fecha Cancelado", value=None)
+        fecha_concluido = st.date_input("Fecha Concluido", value=None)
+
+    fecha_cancel = st.date_input("Fecha Cancelado", value=None)
 
 c1, c2 = st.columns([1,1])
 
@@ -482,21 +516,23 @@ if buscar:
             df = df[df[columna].dt.date == valor]
         return df
 
-    df_s = filtrar_fecha(df_s, "Fecha Mod", fecha_mod)
-    df_s = filtrar_fecha(df_s, "Fecha Autorizado", fecha_aut)
-    df_s = filtrar_fecha(df_s, "Fecha Sin Comenzar", fecha_sin)
-    df_s = filtrar_fecha(df_s, "Fecha Espera Refacciones", fecha_espera)
-    df_s = filtrar_fecha(df_s, "Fecha En Proceso", fecha_proceso)
-    df_s = filtrar_fecha(df_s, "Fecha Facturado", fecha_fact)
-    df_s = filtrar_fecha(df_s, "Fecha Completado", fecha_comp)
+    df_s = filtrar_fecha(df_s, "Fecha Diagnostico", fecha_diag)
+    df_s = filtrar_fecha(df_s, "Fecha No Diagnosticado", fecha_no_diag)
+    df_s = filtrar_fecha(df_s, "Fecha En Reparacion", fecha_reparacion)
+    df_s = filtrar_fecha(df_s, "Fecha Espera Refaccion", fecha_espera)
+    df_s = filtrar_fecha(df_s, "Fecha Resuelto", fecha_resuelto)
+    df_s = filtrar_fecha(df_s, "Fecha Terminado", fecha_terminado)
+    df_s = filtrar_fecha(df_s, "Fecha Concluido", fecha_concluido)
     df_s = filtrar_fecha(df_s, "Fecha Cancelado", fecha_cancel)
 
     # ======================================================
     # MATCH SERVICES → PASES
     # ======================================================
     if (
-        fecha_mod or fecha_aut or fecha_sin or fecha_espera
-        or fecha_proceso or fecha_fact or fecha_comp or fecha_cancel
+        fecha_diag or fecha_no_diag or fecha_reparacion
+        or fecha_espera or fecha_resuelto
+        or fecha_terminado or fecha_concluido
+        or fecha_cancel
     ):
         folios_validos = df_s["Folio"].unique()
         df_p = df_p[df_p["Folio"].isin(folios_validos)]
@@ -568,21 +604,16 @@ columnas = [
     "No. de Inspeccion",
     "Reparacion Multa",
 
-    # ===== SERVICES =====
+    # ===== CONSOLIDATED SERVICES =====
     "Modifico",
-    "Parte",
-    "Tipo De Parte",
-    "PU",
-    "IVA",
-    "Cantidad",
-    "Total",
-    "Fecha Mod",
-    "Fecha Autorizado",
-    "Fecha Sin Comenzar",
-    "Fecha Espera Refacciones",
-    "Fecha En Proceso",
-    "Fecha Facturado",
-    "Fecha Completado",
+    "Partes",
+    "Fecha Diagnostico",
+    "Fecha No Diagnosticado",
+    "Fecha En Reparacion",
+    "Fecha Espera Refaccion",
+    "Fecha Resuelto",
+    "Fecha Terminado",
+    "Fecha Concluido",
     "Fecha Cancelado",
 ]
 
@@ -627,29 +658,21 @@ else:
         df_s
         .groupby("Folio", as_index=False)
         .agg({
-            # concatenate parts
             "Parte": lambda x: ", ".join(
                 sorted(set(str(v) for v in x if pd.notna(v)))
             ),
 
-            # sum totals
-            "Total": lambda x: pd.to_numeric(
-                x, errors="coerce"
-            ).fillna(0).sum(),
-
-            # latest dates
-            "Fecha Mod": "max",
-            "Fecha Autorizado": "max",
-            "Fecha Sin Comenzar": "max",
-            "Fecha Espera Refacciones": "max",
-            "Fecha En Proceso": "max",
-            "Fecha Facturado": "max",
-            "Fecha Completado": "max",
+            "Fecha Diagnostico": "max",
+            "Fecha No Diagnosticado": "max",
+            "Fecha En Reparacion": "max",
+            "Fecha Espera Refaccion": "max",
+            "Fecha Resuelto": "max",
+            "Fecha Terminado": "max",
+            "Fecha Concluido": "max",
             "Fecha Cancelado": "max",
         })
         .rename(columns={
-            "Parte": "Partes",
-            "Total": "Total Servicio",
+            "Parte": "Partes"
         })
     )
 
@@ -671,7 +694,6 @@ else:
         df_resumen["No. de Factura"] = None
 
     df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-    df_resumen["Total Servicio"] = df_resumen["Total Servicio"].fillna(0)
 
     # ===============================
     # COLUMN ORDER
@@ -752,23 +774,31 @@ if st.session_state.get("modal_reporte"):
 
         color_map = {
             "En Curso / Nuevo": "#856404",
-            "En Curso / Autorizado": "#0c5460",
-            "En Curso / Sin Comenzar": "#383d41",
-            "En Curso / Espera Refacciones": "#5a189a",
-            "En Curso / En Proceso": "#4f46e5",
-            "Cerrado / Completado": "#155724",
-            "Cerrado / Facturado": "#155724",
+
+            "En Curso / En Diagnostico": "#0c5460",
+            "En Curso / No Diagnosticado": "#1e3a8a",
+            "En Curso / En Reparacion": "#4f46e5",
+            "En Curso / Espera de Refaccion": "#5a189a",
+
+            "Cerrado / Resuelto": "#155724",
+            "Cerrado / Terminado": "#14532d",
+            "Cerrado / Concluido": "#166534",
+
             "Cerrado / Cancelado": "#721c24",
         }
 
         bg_map = {
             "En Curso / Nuevo": "#fff3cd",
-            "En Curso / Autorizado": "#d1ecf1",
-            "En Curso / Sin Comenzar": "#e2e3e5",
-            "En Curso / Espera Refacciones": "#e2d9f3",
-            "En Curso / En Proceso": "#e0e7ff",
-            "Cerrado / Completado": "#d4edda",
-            "Cerrado / Facturado": "#d4edda",
+
+            "En Curso / En Diagnostico": "#d1ecf1",
+            "En Curso / No Diagnosticado": "#dbeafe",
+            "En Curso / En Reparacion": "#e0e7ff",
+            "En Curso / Espera de Refaccion": "#ede9fe",
+
+            "Cerrado / Resuelto": "#d4edda",
+            "Cerrado / Terminado": "#dcfce7",
+            "Cerrado / Concluido": "#bbf7d0",
+
             "Cerrado / Cancelado": "#f8d7da",
         }
 
@@ -868,7 +898,7 @@ if st.session_state.get("modal_reporte"):
             st.info("Sin servicios registrados.")
         else:
             # show unified structure for all companies
-            cols = ["Parte","Tipo De Parte","PU","IVA","Cantidad","Total"]
+            cols = ["Parte","Tipo De Parte","Posicion","Cantidad"]
             cols = [c for c in cols if c in df_folio.columns]
 
             st.dataframe(
@@ -876,17 +906,6 @@ if st.session_state.get("modal_reporte"):
                 hide_index=True,
                 width="stretch"
             )
-
-            total = pd.to_numeric(df_folio.get("Total", 0), errors="coerce").fillna(0).sum()
-
-            empresa = r.get("Empresa", "")
-
-            if empresa in ["IGLOO TRANSPORT", "PICUS"]:
-                moneda = "MXN"
-            else:
-                moneda = "USD"
-
-            st.metric(f"Total ({moneda})", f"$ {total:,.2f}")
 
         st.divider()
 
