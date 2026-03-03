@@ -821,13 +821,18 @@ df_detallado = df_detallado.rename(columns={
 columnas = [c for c in columnas if c in df_detallado.columns]
 
 st.divider()
-st.subheader("📄 Reporte Detallado")
 
-st.dataframe(
-    df_detallado[columnas],
-    hide_index=True,
-    width="stretch"
+st.info(
+    "Para consultar el Reporte Detallado, expanda la sección inferior."
 )
+
+with st.expander("📄 Reporte Detallado", expanded=False):
+
+    st.dataframe(
+        df_detallado[columnas],
+        hide_index=True,
+        width="stretch"
+    )
 
 # ======================================================
 # TABLE 2 — RESUMEN POR ORDEN (1 LINE PER FOLIO)
