@@ -864,8 +864,10 @@ if st.session_state.get("modal_reporte"):
                 padding:16px;
                 border-radius:12px;
                 font-size:0.95rem;
+                color:#111111;
+                line-height:1.5;
             ">
-                {descripcion}
+                {descripcion if descripcion else "-"}
             </div>
             """,
             unsafe_allow_html=True
@@ -878,7 +880,14 @@ if st.session_state.get("modal_reporte"):
         # ===============================
         st.subheader("🔧 Servicios y Refacciones")
 
-        df_serv = df_services[df_services["Folio"] == folio]
+        df_serv = df_services[df_services["Folio"] == folio].copy()
+
+        # Remove log-only rows (empty Parte)
+        if "Parte" in df_serv.columns:
+            df_serv = df_serv[
+                df_serv["Parte"].notna() &
+                (df_serv["Parte"].astype(str).str.strip() != "")
+            ]
 
         if not df_serv.empty:
             cols = ["Parte","Tipo De Parte","Posicion","Cantidad"]
