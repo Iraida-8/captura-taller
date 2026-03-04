@@ -279,16 +279,16 @@ def cargar_remolques_empresa(empresa):
         if c in ["CAJA", "REMOLQUE", "UNIDAD", "NO UNIDAD", "NO. UNIDAD"]:
             column_map["UNIDAD"] = col
 
-        elif c in ["MARCA"]:
+        elif c == "MARCA":
             column_map["MARCA"] = col
 
-        elif c in ["MODELO"]:
+        elif c == "MODELO":
             column_map["MODELO"] = col
 
         elif c in ["SUCURSAL", "BASE"]:
             column_map["SUCURSAL"] = col
 
-        elif "REMOLQUE" in c or "CAJA" in c:
+        elif c == "TIPO DE REMOLQUE":
             column_map["TIPO_CAJA"] = col
 
     # --- Create normalized columns ---
@@ -513,7 +513,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
             if "seca" in tipo_lower:
                 index_default = 1
-            elif "fria" in tipo_lower or "frío" in tipo_lower:
+            elif "refriger" in tipo_lower or "fria" in tipo_lower or "frío" in tipo_lower:
                 index_default = 2
             else:
                 index_default = 0
