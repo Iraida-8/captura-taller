@@ -255,6 +255,7 @@ def cargar_catalogos():
 def cargar_tractores():
     df = pd.read_csv(TRACTORES_URL)
     df.columns = df.columns.str.strip()
+    df = df.fillna("")
     return df
 
 @st.cache_data(ttl=3600)
@@ -267,6 +268,7 @@ def cargar_remolques_empresa(empresa):
 
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
+    df = df.fillna("")
 
     # --- Column detection ---
     column_map = {}
@@ -286,7 +288,7 @@ def cargar_remolques_empresa(empresa):
         elif c in ["SUCURSAL", "BASE"]:
             column_map["SUCURSAL"] = col
 
-        elif c in ["TIPO DE REMOLQUE", "TIPO REMOLQUE", "TIPO DE CAJA"]:
+        elif "REMOLQUE" in c or "CAJA" in c:
             column_map["TIPO_CAJA"] = col
 
     # --- Create normalized columns ---
