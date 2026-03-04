@@ -301,6 +301,7 @@ def cargar_remolques_empresa(empresa):
     df_normalized["TIPO_CAJA"] = df[column_map["TIPO_CAJA"]] if "TIPO_CAJA" in column_map else ""
 
     df_normalized["UNIDAD"] = df_normalized["UNIDAD"].astype(str).str.strip()
+    df_normalized = df_normalized[df_normalized["UNIDAD"].str.strip() != ""]
     return df_normalized
 
 catalogos_df, empresas = cargar_catalogos()
@@ -439,7 +440,15 @@ if tipo_proveedor in ["Interno", "Externo"]:
     elif tipo_unidad_operador == "Remolques":
 
         if not remolques_df.empty:
-            lista_remolques = sorted(remolques_df["UNIDAD"].dropna().astype(str))
+            lista_remolques = sorted(
+                remolques_df["UNIDAD"]
+                .astype(str)
+                .str.strip()
+                .replace("", pd.NA)
+                .dropna()
+                .unique()
+                .tolist()
+            )
         else:
             lista_remolques = []
 
