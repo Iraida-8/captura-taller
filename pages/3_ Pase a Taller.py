@@ -209,8 +209,8 @@ CATALOGOS_URL = (
 
 TRACTORES_URL = (
     "https://docs.google.com/spreadsheets/d/"
-    "1qlIcKouGS2cxsCsCdNh5pMgLfWXj41dXfaeq5cyktZ8"
-    "/export?format=csv&gid=1152583226"
+    "1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop"
+    "/export?format=csv&gid=897787433"
 )
 
 # =================================
@@ -253,10 +253,23 @@ def cargar_catalogos():
 
 @st.cache_data(ttl=3600)
 def cargar_tractores():
+
     df = pd.read_csv(TRACTORES_URL)
     df.columns = df.columns.str.strip()
     df = df.fillna("")
-    return df
+
+    df_normalized = pd.DataFrame()
+
+    df_normalized["TRACTOR"] = df["TRACTOR"].astype(str).str.strip()
+    df_normalized["MARCA"] = df.get("MARCA", "")
+    df_normalized["MODELO"] = df.get("MODELO", "")
+    df_normalized["SUCURSAL"] = df.get("SUCURSAL", "")
+    df_normalized["EMPRESA"] = df.get("EMPRESA", "").astype(str).str.strip()
+
+    # remove blank rows
+    df_normalized = df_normalized[df_normalized["TRACTOR"] != ""]
+
+    return df_normalized
 
 @st.cache_data(ttl=3600)
 def cargar_remolques_empresa(empresa):
@@ -435,7 +448,13 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     if tipo_unidad_operador == "Tractores":
         unidades = ["Selecciona Unidad"] + sorted(
-            tractores_filtrados["TRACTOR"].dropna().astype(str)
+            tractores_filtrados["TRACTOR"]
+            .astype(str)
+            .str.strip()
+            .replace("", pd.NA)
+            .dropna()
+            .unique()
+            .tolist()
         )
     elif tipo_unidad_operador == "Remolques":
 
