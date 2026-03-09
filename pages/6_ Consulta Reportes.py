@@ -142,6 +142,10 @@ def cargar_servicios():
     df = pd.DataFrame(data)
     df.columns = df.columns.str.strip()
 
+    # Ensure Posicion stays as text
+    if "Posicion" in df.columns:
+        df["Posicion"] = df["Posicion"].astype(str)
+
     # Rename Folio
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
@@ -1118,6 +1122,8 @@ if st.session_state.get("modal_reporte"):
         st.subheader("🔧 Servicios y Refacciones")
 
         df_serv = df_services[df_services["Folio"] == folio].copy()
+        if "Posicion" in df_serv.columns:
+            df_serv["Posicion"] = df_serv["Posicion"].astype(str)
 
         # Remove log-only rows (empty Parte)
         if "Parte" in df_serv.columns:
