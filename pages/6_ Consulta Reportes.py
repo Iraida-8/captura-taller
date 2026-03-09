@@ -1125,6 +1125,32 @@ if st.session_state.get("modal_reporte"):
         if "Posicion" in df_serv.columns:
             df_serv["Posicion"] = df_serv["Posicion"].astype(str)
 
+        # Fix Posicion formatting
+        if "Posicion" in df_serv.columns:
+            def format_posicion(x):
+                if pd.isna(x):
+                    return ""
+                s = str(x)
+
+                # already correct
+                if "," in s:
+                    return s
+
+                # split every 2 digits (works for positions like 8,11,13)
+                parts = []
+                i = 0
+                while i < len(s):
+                    if i == 0 and len(s) % 2 == 1:
+                        parts.append(s[i])
+                        i += 1
+                    else:
+                        parts.append(s[i:i+2])
+                        i += 2
+
+                return ",".join(parts)
+
+            df_serv["Posicion"] = df_serv["Posicion"].apply(format_posicion)
+
         # Remove log-only rows (empty Parte)
         if "Parte" in df_serv.columns:
             df_serv = df_serv[
