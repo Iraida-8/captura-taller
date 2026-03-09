@@ -636,20 +636,33 @@ if not facturas_df.empty:
 def cargar_refacciones():
     supabase = get_supabase_client()
 
-    response = supabase.table("parts").select("*").execute()
+    page_size = 1000
+    start = 0
+    all_rows = []
 
-    # 🔴 IMPORTANT: extract .data
-    data = response.data
+    while True:
+        response = (
+            supabase
+            .table("parts")
+            .select("*")
+            .range(start, start + page_size - 1)
+            .execute()
+        )
 
-    if not data:
+        data = response.data
+        if not data:
+            break
+
+        all_rows.extend(data)
+        start += page_size
+
+    if not all_rows:
         return pd.DataFrame(columns=["Parte", "Tipo"])
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(all_rows)
 
-    # Normalize lowercase columns
     df.columns = df.columns.str.strip().str.lower()
 
-    # Rename to match your app
     df = df.rename(columns={
         "parte": "Parte",
         "tipo": "Tipo"
@@ -1418,7 +1431,7 @@ if st.session_state.modal_reporte:
             # ==========================================
             tipo_seleccionado = st.selectbox(
                 "Tipo",
-                ["Todos"] + tipos_disponibles,
+                ["Selecciona tipo"] + tipos_disponibles,
                 disabled=not editable_servicios
             )
 
@@ -1439,12 +1452,15 @@ if st.session_state.modal_reporte:
                 .tolist()
             )
 
+            tipo_elegido = tipo_seleccionado != "Selecciona tipo"
+
             st.session_state.refaccion_seleccionada = st.selectbox(
                 "Refacción / Servicio",
-                options=partes_opciones,
+                options=partes_opciones if tipo_elegido else [],
                 index=None,
-                disabled=not editable_servicios
+                disabled=(not editable_servicios or not tipo_elegido)
             )
+            
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
