@@ -1132,9 +1132,10 @@ if not pases_df.empty:
                     use_container_width=True
                 ):
                     st.session_state.modal_factura = {
-                        "NoFolio": folio,
-                        "NoFactura": None if factura_vacia else factura
-                    }
+                    "NoFolio": folio,
+                    "NoFactura": None if factura_vacia else factura
+                }
+                st.session_state.modal_factura_open = True
 
 else:
     st.info("No hay datos disponibles.")
@@ -1142,7 +1143,7 @@ else:
 # =================================
 # FACTURA MODAL
 # =================================
-if st.session_state.modal_factura:
+if st.session_state.get("modal_factura") and st.session_state.get("modal_factura_open"):
 
     data_fact = st.session_state.modal_factura
 
@@ -1183,9 +1184,14 @@ if st.session_state.modal_factura:
                 st.cache_data.clear()
 
             st.session_state.modal_factura = None
+            st.session_state.modal_factura_open = False
             st.rerun()
 
     modal_factura()
+
+    # Prevent modal from reopening after closing
+    if st.session_state.get("modal_factura") and not st.session_state.get("_factura_open"):
+        st.session_state.modal_factura = None
 
 # =================================
 # BUSCAR
@@ -1460,7 +1466,7 @@ if st.session_state.modal_reporte:
                 index=None,
                 disabled=(not editable_servicios or not tipo_elegido)
             )
-            
+
         else:
             st.info("Catálogo no disponible para esta empresa.")
 
