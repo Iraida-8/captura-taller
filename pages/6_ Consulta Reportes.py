@@ -1123,20 +1123,27 @@ if st.session_state.get("modal_reporte"):
 
         df_serv = df_services[df_services["Folio"] == folio].copy()
         if "Posicion" in df_serv.columns:
-            df_serv["Posicion"] = df_serv["Posicion"].astype(str)
 
-        # Fix Posicion formatting
-        if "Posicion" in df_serv.columns:
             def format_posicion(x):
-                if pd.isna(x):
-                    return ""
-                s = str(x)
 
-                # already correct
+                # Handle empty values
+                if x is None or pd.isna(x):
+                    return ""
+
+                s = str(x).strip()
+
+                if s == "" or s.lower() == "none":
+                    return ""
+
+                # If already formatted correctly
                 if "," in s:
                     return s
 
-                # split every 2 digits (works for positions like 8,11,13)
+                # If it contains letters, don't touch it
+                if not s.isdigit():
+                    return s
+
+                # Rebuild positions
                 parts = []
                 i = 0
                 while i < len(s):
