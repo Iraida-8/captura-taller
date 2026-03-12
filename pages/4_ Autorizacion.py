@@ -595,26 +595,37 @@ def cargar_facturas():
 @st.cache_data(ttl=120)
 def cargar_audit():
 
+    import time
+
     client = gspread.authorize(get_gsheets_credentials())
 
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("AUDIT")
+    for intento in range(3):
 
-    all_values = ws.get_all_values()
+        try:
 
-    if not all_values or len(all_values) < 2:
-        return pd.DataFrame()
+            ws = client.open_by_key(
+                "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+            ).worksheet("AUDIT")
 
-    headers = [h.strip() for h in all_values[0]]
-    rows = all_values[1:]
+            all_values = ws.get_all_values()
 
-    df = pd.DataFrame(rows, columns=headers)
+            if not all_values or len(all_values) < 2:
+                return pd.DataFrame()
 
-    if "Timestamp" in df.columns:
-        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+            headers = [h.strip() for h in all_values[0]]
+            rows = all_values[1:]
 
-    return df
+            df = pd.DataFrame(rows, columns=headers)
+
+            if "Timestamp" in df.columns:
+                df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+
+            return df
+
+        except Exception:
+            time.sleep(2)
+
+    return pd.DataFrame()
 
 #loaders
 pases_df = cargar_pases_taller()
