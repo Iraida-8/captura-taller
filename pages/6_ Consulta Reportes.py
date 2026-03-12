@@ -488,28 +488,23 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     d1, d2, d3 = st.columns(3)
 
     with d1:
-        fecha_mod = st.date_input("Fecha Mod", value=None, key="f_fecha_mod")
-
-    with d2:
         fecha_diag = st.date_input("Fecha Diagnostico", value=None, key="f_fecha_diag")
 
-    with d3:
+    with d2:
         fecha_no_diag = st.date_input("Fecha No Diagnosticado", value=None, key="f_fecha_no_diag")
+
+    with d3:
+        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None, key="f_fecha_reparacion")
 
     d4, d5, d6 = st.columns(3)
 
     with d4:
-        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None, key="f_fecha_reparacion")
-
-    with d5:
         fecha_espera = st.date_input("Fecha Espera Refaccion", value=None, key="f_fecha_espera")
 
-    with d6:
+    with d5:
         fecha_resuelto = st.date_input("Fecha Resuelto", value=None, key="f_fecha_resuelto")
 
-    d7, d8 = st.columns(2)
-
-    with d7:
+    with d6:
         fecha_cancel = st.date_input("Fecha Cancelado", value=None, key="f_fecha_cancel")
 
 c1, c2 = st.columns([1,1])
@@ -532,7 +527,6 @@ with c2:
         st.session_state["f_estado"] = "Todos"
 
         # Reset date filters
-        st.session_state["f_fecha_mod"] = None
         st.session_state["f_fecha_diag"] = None
         st.session_state["f_fecha_no_diag"] = None
         st.session_state["f_fecha_reparacion"] = None
