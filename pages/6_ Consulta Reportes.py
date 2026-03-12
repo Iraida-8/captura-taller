@@ -134,8 +134,6 @@ def cargar_servicios():
             "Fecha En Reparacion",
             "Fecha Espera Refaccion",
             "Fecha Resuelto",
-            "Fecha Terminado",
-            "Fecha Concluido",
             "Fecha Cancelado",
         ])
 
@@ -162,8 +160,6 @@ def cargar_servicios():
         "Fecha En Reparacion",
         "Fecha Espera Refaccion",
         "Fecha Resuelto",
-        "Fecha Terminado",
-        "Fecha Concluido",
         "Fecha Cancelado",
     ]
 
@@ -237,11 +233,7 @@ en_proceso = len(
 )
 
 completadas = len(
-    df_pases[df_pases["Estado"].isin([
-        "Cerrado / Resuelto",
-        "Cerrado / Terminado",
-        "Cerrado / Concluido",
-    ])]
+    df_pases[df_pases["Estado"] == "Cerrado / Resuelto"]
 )
 
 canceladas = len(
@@ -479,8 +471,6 @@ with f8:
         "En Curso / En Reparacion",
         "En Curso / Espera de Refaccion",
         "Cerrado / Resuelto",
-        "Cerrado / Terminado",
-        "Cerrado / Concluido",
         "Cerrado / Cancelado",
     ]
 
@@ -520,12 +510,7 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     d7, d8 = st.columns(2)
 
     with d7:
-        fecha_terminado = st.date_input("Fecha Terminado", value=None, key="f_fecha_terminado")
-
-    with d8:
-        fecha_concluido = st.date_input("Fecha Concluido", value=None, key="f_fecha_concluido")
-
-    fecha_cancel = st.date_input("Fecha Cancelado", value=None, key="f_fecha_cancel")
+        fecha_cancel = st.date_input("Fecha Cancelado", value=None, key="f_fecha_cancel")
 
 c1, c2 = st.columns([1,1])
 
@@ -553,8 +538,6 @@ with c2:
         st.session_state["f_fecha_reparacion"] = None
         st.session_state["f_fecha_espera"] = None
         st.session_state["f_fecha_resuelto"] = None
-        st.session_state["f_fecha_terminado"] = None
-        st.session_state["f_fecha_concluido"] = None
         st.session_state["f_fecha_cancel"] = None
 
         # Reset filtered data
@@ -628,8 +611,6 @@ if buscar:
     df_s = filtrar_fecha(df_s, "Fecha En Reparacion", fecha_reparacion)
     df_s = filtrar_fecha(df_s, "Fecha Espera Refaccion", fecha_espera)
     df_s = filtrar_fecha(df_s, "Fecha Resuelto", fecha_resuelto)
-    df_s = filtrar_fecha(df_s, "Fecha Terminado", fecha_terminado)
-    df_s = filtrar_fecha(df_s, "Fecha Concluido", fecha_concluido)
     df_s = filtrar_fecha(df_s, "Fecha Cancelado", fecha_cancel)
 
     # ======================================================
@@ -639,7 +620,6 @@ if buscar:
     if (
         fecha_diag or fecha_no_diag or fecha_reparacion
         or fecha_espera or fecha_resuelto
-        or fecha_terminado or fecha_concluido
         or fecha_cancel
     ):
         folios_validos = df_s["Folio"].unique()
@@ -870,8 +850,6 @@ columnas = [
     "Fecha En Reparacion",
     "Fecha Espera Refaccion",
     "Fecha Resuelto",
-    "Fecha Terminado",
-    "Fecha Concluido",
     "Fecha Cancelado",
 ]
 
@@ -936,8 +914,6 @@ with st.expander("📦 Resumen por Orden", expanded=False):
                 "Fecha En Reparacion": "max",
                 "Fecha Espera Refaccion": "max",
                 "Fecha Resuelto": "max",
-                "Fecha Terminado": "max",
-                "Fecha Concluido": "max",
                 "Fecha Cancelado": "max",
             })
             .rename(columns={
@@ -1000,8 +976,6 @@ with st.expander("📦 Resumen por Orden", expanded=False):
             "Fecha En Reparacion",
             "Fecha Espera Refaccion",
             "Fecha Resuelto",
-            "Fecha Terminado",
-            "Fecha Concluido",
             "Fecha Cancelado",
         ]
 
@@ -1186,8 +1160,6 @@ if st.session_state.get("modal_reporte"):
             "Fecha En Reparacion",
             "Fecha Espera Refaccion",
             "Fecha Resuelto",
-            "Fecha Terminado",
-            "Fecha Concluido",
             "Fecha Cancelado",
         ]
 
