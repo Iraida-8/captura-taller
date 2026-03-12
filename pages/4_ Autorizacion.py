@@ -97,8 +97,6 @@ VALID_ESTADOS = [
     "En Curso / En Reparacion",
     "En Curso / Espera de Refaccion",
     "Cerrado / Resuelto",
-    "Cerrado / Terminado",
-    "Cerrado / Concluido",
     "Cerrado / Cancelado",
 ]
 
@@ -292,8 +290,6 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
         "En Curso / En Reparacion": "Fecha En Reparacion",
         "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
         "Cerrado / Resuelto": "Fecha Resuelto",
-        "Cerrado / Terminado": "Fecha Terminado",
-        "Cerrado / Concluido": "Fecha Concluido",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -447,8 +443,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         "Fecha En Reparacion",
         "Fecha Espera Refaccion",
         "Fecha Resuelto",
-        "Fecha Terminado",
-        "Fecha Concluido",
     ]
 
     fechas_existentes = {}
@@ -469,8 +463,6 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         "En Curso / En Reparacion": "Fecha En Reparacion",
         "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
         "Cerrado / Resuelto": "Fecha Resuelto",
-        "Cerrado / Terminado": "Fecha Terminado",
-        "Cerrado / Concluido": "Fecha Concluido",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -717,11 +709,7 @@ en_proceso = len(
 )
 
 completadas = len(
-    pases_df[pases_df["Estado"].isin([
-        "Cerrado / Resuelto",
-        "Cerrado / Terminado",
-        "Cerrado / Concluido",
-    ])]
+    pases_df[pases_df["Estado"] == "Cerrado / Resuelto"]
 )
 
 canceladas = len(
@@ -787,11 +775,8 @@ with left:
                 "En Curso / En Reparacion",
                 "En Curso / Espera de Refaccion",
             ])])
-            completadas = len(df_emp[df_emp["Estado"].isin([
-                "Cerrado / Resuelto",
-                "Cerrado / Terminado",
-                "Cerrado / Concluido",
-            ])])
+            
+            completadas = len(df_emp[df_emp["Estado"] == "Cerrado / Resuelto"])
             canceladas = len(df_emp[df_emp["Estado"] == "Cerrado / Cancelado"])
 
             with st.container(border=True):
@@ -1248,8 +1233,6 @@ with f4:
             "En Curso / En Reparacion",
             "En Curso / Espera de Refaccion",
             "Cerrado / Resuelto",
-            "Cerrado / Terminado",
-            "Cerrado / Concluido",
             "Cerrado / Cancelado",
         ]
     )
@@ -1401,8 +1384,6 @@ if st.session_state.modal_reporte:
             ],
             "En Curso / En Reparacion": [
                 "Cerrado / Resuelto",
-                "Cerrado / Terminado",
-                "Cerrado / Concluido",
                 "Cerrado / Cancelado",
             ],
         }
