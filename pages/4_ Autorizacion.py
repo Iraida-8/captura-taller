@@ -5,7 +5,6 @@ from auth import require_login, require_access
 import gspread
 from google.oauth2.service_account import Credentials
 import os
-from datetime import datetime
 from supabase import create_client
 
 fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1128,10 +1127,10 @@ if not pases_df.empty:
                     use_container_width=True
                 ):
                     st.session_state.modal_factura = {
-                    "NoFolio": folio,
-                    "NoFactura": None if factura_vacia else factura
-                }
-                st.session_state.modal_factura_open = True
+                        "NoFolio": folio,
+                        "NoFactura": None if factura_vacia else factura
+                    }
+                    st.session_state.modal_factura_open = True
 
 else:
     st.info("No hay datos disponibles.")
@@ -1184,10 +1183,6 @@ if st.session_state.get("modal_factura") and st.session_state.get("modal_factura
             st.rerun()
 
     modal_factura()
-
-    # Prevent modal from reopening after closing
-    if st.session_state.get("modal_factura") and not st.session_state.get("_factura_open"):
-        st.session_state.modal_factura = None
 
 # =================================
 # BUSCAR
