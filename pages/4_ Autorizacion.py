@@ -598,11 +598,6 @@ def cargar_audit():
 
     df = pd.DataFrame(data)
 
-    # 🔧 Normalize column names to match the rest of the app
-    df = df.rename(columns={
-        "No. de Folio": "NoFolio"
-    })
-
     if "Timestamp" in df.columns:
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
 
