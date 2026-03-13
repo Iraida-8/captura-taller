@@ -614,7 +614,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "Aplica Cobro": aplica_cobro,
             "Responsable": responsable,
             "Descripcion": descripcion_problema,
-            "Genero Multa": genero_multa,
+            "Genero Multa": bool(genero_multa),
             "No. de Inspeccion": no_inspeccion,
             "Reparacion Multa": reparacion_multa,
         }
