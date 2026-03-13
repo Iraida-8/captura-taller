@@ -56,6 +56,17 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# SUPABASE TABLE MAP
+# =================================
+TABLE_MAP = {
+    "IGLOO TRANSPORT": "IGLOO",
+    "LINCOLN FREIGHT": "LINCOLN",
+    "PICUS": "PICUS",
+    "SET FREIGHT INTERNATIONAL": "SFI",
+    "SET LOGIS PLUS": "SLP"
+}
+
+# =================================
 # Google Sheets credentials (LOCAL + CLOUD)
 # =================================
 def get_gsheets_credentials():
@@ -92,12 +103,14 @@ def safe_value(v):
 # =================================
 def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
 
+    table_name = TABLE_MAP[empresa]
+
     unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
 
     limite = (datetime.now() - pd.Timedelta(hours=24)).isoformat()
 
     response = (
-        supabase.table("IGLOO")
+        supabase.table(table_name)
         .select('"No. de Folio", "Fecha de Captura"')
         .eq('"No. de Unidad"', unidad)
         .gte('"Fecha de Captura"', limite)
@@ -118,6 +131,9 @@ def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
 # =================================
 def append_pase_to_sheet(data: dict):
 
+    empresa = data["Empresa"]
+    table_name = TABLE_MAP[empresa]
+
     prefix_map = {
         "IGLOO TRANSPORT": "IG",
         "LINCOLN FREIGHT": "LF",
@@ -130,7 +146,7 @@ def append_pase_to_sheet(data: dict):
 
     # ---- GET LAST FOLIO ----
     response = (
-        supabase.table("IGLOO")
+        supabase.table(table_name)
         .select('"No. de Folio"')
         .ilike('"No. de Folio"', f"{prefix}%")
         .order('"No. de Folio"', desc=True)
@@ -156,7 +172,7 @@ def append_pase_to_sheet(data: dict):
     payload = {k: (None if v is None else str(v) if not isinstance(v, (int, float, bool)) else v) for k, v in payload.items()}
 
     try:
-        response = supabase.table("IGLOO").insert(payload).execute()
+        response = supabase.table(table_name).insert(payload).execute()
         return folio
 
     except Exception as e:
