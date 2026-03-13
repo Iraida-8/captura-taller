@@ -237,12 +237,16 @@ def cargar_remolques_empresa(empresa):
 
     df_normalized["UNIDAD"] = df[column_map["UNIDAD"]] if "UNIDAD" in column_map else ""
     df_normalized["MARCA"] = df[column_map["MARCA"]] if "MARCA" in column_map else ""
-    df_normalized["MODELO"] = df[column_map["MODELO"]] if "MODELO" in column_map else ""
+    df_normalized["MODELO"] = (
+        pd.to_numeric(df[column_map["MODELO"]], errors="coerce").astype("Int64")
+        if "MODELO" in column_map else pd.Series(dtype="Int64")
+    )
     df_normalized["SUCURSAL"] = df[column_map["SUCURSAL"]] if "SUCURSAL" in column_map else ""
     df_normalized["TIPO_CAJA"] = df[column_map["TIPO_CAJA"]] if "TIPO_CAJA" in column_map else ""
 
     df_normalized["UNIDAD"] = df_normalized["UNIDAD"].astype(str).str.strip()
     df_normalized = df_normalized[df_normalized["UNIDAD"].str.strip() != ""]
+
     return df_normalized
 
 tractores_df = cargar_tractores()
