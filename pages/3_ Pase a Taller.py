@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
-from datetime import datetime, timezone
+from datetime import datetime, date, timezone
 from auth import require_login, require_access
 
 # =================================
