@@ -353,7 +353,7 @@ def cargar_pases_taller():
         "Tipo de Proveedor": "Proveedor",
     }, inplace=True)
 
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", utc=True).dt.tz_localize(None)
     df["NoFolio"] = df["NoFolio"].astype(str)
 
     return df

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
-from datetime import date, datetime
+from datetime import datetime, timezone
 from auth import require_login, require_access
 
 # =================================
@@ -568,7 +568,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
         # NORMAL SAVE
         # ==========================================
         payload = {
-            "Fecha de Captura": datetime.now().isoformat(),
+            "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "Fecha de Reporte": str(fecha_reporte),
             "Tipo de Proveedor": tipo_proveedor,
             "Estado": "En Curso / Nuevo",
