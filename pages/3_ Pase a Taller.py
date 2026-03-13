@@ -126,7 +126,7 @@ def append_pase_to_sheet(data: dict):
         "SET LOGIS PLUS": "SLP",
     }
 
-    prefix = prefix_map[data["empresa"]]
+    prefix = prefix_map.get(data["Empresa"])
 
     # ---- GET LAST FOLIO ----
     response = (
