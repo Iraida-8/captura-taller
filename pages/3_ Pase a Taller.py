@@ -136,7 +136,7 @@ def append_pase_to_sheet(data: dict):
     payload["No. de Folio"] = folio
 
     # force JSON-safe values
-    payload = {k: (None if v is None else str(v) if not isinstance(v, (int, float, bool)) else v) for k, v in payload.items()}
+    payload = {k: (None if pd.isna(v) else v) for k, v in payload.items()}
 
     try:
         response = supabase.table(table_name).insert(payload).execute()
