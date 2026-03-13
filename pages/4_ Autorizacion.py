@@ -2,10 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 from auth import require_login, require_access
-import gspread
 import html
-from google.oauth2.service_account import Credentials
-import os
 from supabase import create_client
 
 # =================================
@@ -64,28 +61,6 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
-# Google Sheets credentials
-# =================================
-def get_gsheets_credentials():
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-
-    try:
-        if "gcp_service_account" in st.secrets:
-            return Credentials.from_service_account_info(
-                st.secrets["gcp_service_account"], scopes=scopes
-            )
-    except Exception as e:
-        st.error(f"Error loading Google Sheets credentials: {e}")
-
-
-    if os.path.exists("google_service_account.json"):
-        return Credentials.from_service_account_file(
-            "google_service_account.json", scopes=scopes
-        )
-
-    raise RuntimeError("Google Sheets credentials not found")
-
-# =================================
 # Update Estado
 # =================================
 VALID_ESTADOS = [
@@ -100,11 +75,10 @@ VALID_ESTADOS = [
 
 def actualizar_estado_pase(empresa, folio, nuevo_estado):
 
-    # 🔒 1. Validate estado
     if nuevo_estado not in VALID_ESTADOS:
         return
 
-    sheet_map = {
+    table_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
         "PICUS": "PICUS",
@@ -112,37 +86,23 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
         "SET LOGIS PLUS": "SLP",
     }
 
-    hoja = sheet_map.get(empresa)
-    if not hoja:
+    table_name = table_map.get(empresa)
+    if not table_name:
         return
 
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet(hoja)
+    supabase = get_supabase_client()
 
-    # 🔎 2. Find folio
-    folios = ws.col_values(2)
-    if folio not in folios:
-        return
-
-    row_idx = folios.index(folio) + 1
-
-    headers = [h.strip() for h in ws.row_values(1)]
-
-    if "Estado" not in headers:
-        return
-
-    estado_col = headers.index("Estado") + 1
-
-    # ✅ 3. Update safely
-    ws.update_cell(row_idx, estado_col, nuevo_estado)
+    supabase.table(table_name)\
+        .update({"Estado": nuevo_estado})\
+        .eq("No. de Folio", folio)\
+        .execute()
 
 # =================================
-# Update OSTE
+# Update OSTE (SUPABASE)
 # =================================
 def actualizar_oste_pase(empresa, folio, oste):
-    sheet_map = {
+
+    table_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
         "PICUS": "PICUS",
@@ -150,34 +110,24 @@ def actualizar_oste_pase(empresa, folio, oste):
         "SET LOGIS PLUS": "SLP",
     }
 
-    hoja = sheet_map.get(empresa)
-    if not hoja:
+    table_name = table_map.get(empresa)
+
+    if not table_name:
         return
 
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet(hoja)
+    supabase = get_supabase_client()
 
-    folios = ws.col_values(2)
-    if folio not in folios:
-        return
-
-    row_idx = folios.index(folio) + 1
-    headers = ws.row_values(1)
-
-    if "Oste" not in headers:
-        return
-
-    oste_col = headers.index("Oste") + 1
-    ws.update_cell(row_idx, oste_col, oste)
+    supabase.table(table_name)\
+        .update({"Oste": oste})\
+        .eq("No. de Folio", folio)\
+        .execute()
 
 # =================================
 # Update Descripcion Problema
 # =================================
 def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
 
-    sheet_map = {
+    table_map = {
         "IGLOO TRANSPORT": "IGLOO",
         "LINCOLN FREIGHT": "LINCOLN",
         "PICUS": "PICUS",
@@ -185,58 +135,46 @@ def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
         "SET LOGIS PLUS": "SLP",
     }
 
-    hoja = sheet_map.get(empresa)
-    if not hoja:
+    table_name = table_map.get(empresa)
+    if not table_name:
         return
 
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet(hoja)
+    supabase = get_supabase_client()
 
-    headers = [h.strip() for h in ws.row_values(1)]
-
-    if "Descripcion Problema" not in headers:
-        return
-
-    col_desc = headers.index("Descripcion Problema") + 1
-
-    folios = ws.col_values(2)
-    if folio not in folios:
-        return
-
-    row_idx = folios.index(folio) + 1
-
-    ws.update_cell(row_idx, col_desc, nueva_descripcion)
+    supabase.table(table_name)\
+        .update({"Descripcion Problema": nueva_descripcion})\
+        .eq("No. de Folio", folio)\
+        .execute()
 
 # =================================
 # GUARDAR FACTURA
 # =================================
 def guardar_factura(folio, numero_factura):
 
-    client = gspread.authorize(get_gsheets_credentials())
+    supabase = get_supabase_client()
 
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("FACTURAS")
+    response = (
+        supabase
+        .table("INVOICES")
+        .select("*")
+        .eq("No. de Folio", folio)
+        .execute()
+    )
 
-    headers = [h.strip() for h in ws.row_values(1)]
+    data = response.data
 
-    col_folio = headers.index("No. de Folio") + 1
-    col_factura = headers.index("No. de Factura") + 1
-
-    folios = ws.col_values(col_folio)
-
-    # If folio already exists → update factura
-    if folio in folios:
-        row_idx = folios.index(folio) + 1
-        ws.update_cell(row_idx, col_factura, numero_factura)
+    if data:
+        supabase.table("INVOICES")\
+            .update({"No. de Factura": numero_factura})\
+            .eq("No. de Folio", folio)\
+            .execute()
     else:
-        # Append new row
-        ws.append_row(
-            [folio, numero_factura],
-            value_input_option="USER_ENTERED"
-        )
+        supabase.table("INVOICES")\
+            .insert({
+                "No. de Folio": folio,
+                "No. de Factura": numero_factura
+            })\
+            .execute()
 
 # =================================
 # Registrar Cambio en CHANGELOG
@@ -275,7 +213,8 @@ def registrar_cambio_log(
 # Log estado sin refacciones
 # =================================
 def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
-    from datetime import datetime
+
+    supabase = get_supabase_client()
 
     estado_fecha_map = {
         "En Curso / En Diagnostico": "Fecha Diagnostico",
@@ -287,44 +226,39 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
     }
 
     fecha_col = estado_fecha_map.get(nuevo_estado)
+
     if not fecha_col:
         return
 
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("SERVICES")
-
     fecha_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    headers = [h.strip() for h in ws.row_values(1)]
+    payload = {
+        "No. de Folio": folio,
+        "Modifico": usuario,
+        "Fecha Mod": fecha_now,
+        fecha_col: fecha_now
+    }
 
-    # Build empty row aligned to headers
-    row = [""] * len(headers)
-
-    def set_if_exists(col_name, value):
-        if col_name in headers:
-            row[headers.index(col_name)] = value
-
-    set_if_exists("No. de Folio", folio)
-    set_if_exists("Modifico", usuario)
-    set_if_exists("Fecha Mod", fecha_now)
-    set_if_exists(fecha_col, fecha_now)
-
-    ws.append_row(row, value_input_option="USER_ENTERED")
+    supabase.table("SERVICES").insert(payload).execute()
 
 # =================================
-# Load Servicios for Folio
+# Load Servicios for Folio (SUPABASE)
 # =================================
 def cargar_servicios_folio(folio):
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("SERVICES")
 
-    all_values = ws.get_all_values()
+    supabase = get_supabase_client()
 
-    if not all_values or len(all_values) < 2:
+    response = (
+        supabase
+        .table("SERVICES")
+        .select("*")
+        .eq("No. de Folio", folio)
+        .execute()
+    )
+
+    data = response.data
+
+    if not data:
         return pd.DataFrame(columns=[
             "Parte",
             "Tipo De Parte",
@@ -332,124 +266,28 @@ def cargar_servicios_folio(folio):
             "Cantidad"
         ])
 
-    headers = [h.strip() for h in all_values[0]]
-    rows = all_values[1:]
+    df = pd.DataFrame(data)
 
-    df = pd.DataFrame(rows, columns=headers)
-
-    # 🔹 PATCH: normalize headers
-    df.columns = df.columns.str.strip()
-
-    if "No. de Folio" in df.columns:
-        df = df.rename(columns={"No. de Folio": "Folio"})
-
-    if "Iva" in df.columns:
-        df = df.rename(columns={"Iva": "IVA"})
-
-    # 🔹 Ensure string comparison
-    df["Folio"] = df["Folio"].astype(str)
-
-    df = df[df["Folio"] == str(folio)]
-
-    # NEW — REMOVE STATUS LOG ROWS
+    # remove status rows
     if "Parte" in df.columns:
         df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
-
-    df["Posicion"] = df["Posicion"].astype(str)
 
     return df[
         ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
     ]
 
 # =================================
-# UPSERT Servicios / Refacciones
+# UPSERT Servicios / Refacciones (SUPABASE)
 # =================================
 def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=None):
+
+    supabase = get_supabase_client()
+
     if servicios_df is None or servicios_df.empty:
         return
 
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("SERVICES")
-
     fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # =====================================================
-    # PHASE 1 — LOAD WITH REAL ROW NUMBERS
-    # =====================================================
-    all_values = ws.get_all_values()
-
-    headers = [h.strip() for h in all_values[0]]
-    rows = all_values[1:]
-    df_db = pd.DataFrame(rows, columns=headers)
-    df_db["__rownum__"] = range(2, len(rows) + 2)
-
-    # =====================================================
-    # Normalize headers
-    # =====================================================
-    if "No. de Folio" in df_db.columns:
-        df_db = df_db.rename(columns={"No. de Folio": "Folio"})
-
-    df_db["Folio"] = df_db["Folio"].astype(str)
-
-    servicios_df = servicios_df.copy()
-    servicios_df["Parte"] = servicios_df["Parte"].astype(str)
-
-    df_folio = df_db[df_db["Folio"] == str(folio)]
-
-    # =====================================================
-    # PHASE 2 — DELETE REMOVED ITEMS (REAL PARTS ONLY)
-    # =====================================================
-    partes_actuales = set(servicios_df["Parte"])
-
-    rows_to_delete = df_folio[
-        df_folio["Parte"].astype(str).str.strip().ne("")
-        & ~df_folio["Parte"].isin(partes_actuales)
-    ]["__rownum__"].tolist()
-
-    for rownum in sorted(rows_to_delete, reverse=True):
-        ws.delete_rows(int(rownum))
-
-    # =====================================================
-    # PHASE 3 — RELOAD AFTER DELETE
-    # =====================================================
-    all_values = ws.get_all_values()
-    headers = [h.strip() for h in all_values[0]]
-    rows = all_values[1:]
-    df_db = pd.DataFrame(rows, columns=headers)
-    df_db["__rownum__"] = range(2, len(rows) + 2)
-
-    if "No. de Folio" in df_db.columns:
-        df_db = df_db.rename(columns={"No. de Folio": "Folio"})
-
-    df_db["Folio"] = df_db["Folio"].astype(str)
-    df_folio = df_db[df_db["Folio"] == str(folio)]
-
-    # =====================================================
-    # CAPTURE EXISTING DATES (FROM ANY ROW)
-    # =====================================================
-    date_columns = [
-        "Fecha Cancelado",
-        "Fecha Diagnostico",
-        "Fecha No Diagnosticado",
-        "Fecha En Reparacion",
-        "Fecha Espera Refaccion",
-        "Fecha Resuelto",
-    ]
-
-    fechas_existentes = {}
-
-    for col in date_columns:
-        if col in df_folio.columns:
-            vals = df_folio[col].dropna()
-            vals = vals[vals.astype(str).str.strip() != ""]
-            if not vals.empty:
-                fechas_existentes[col] = vals.iloc[0]
-
-    # =====================================================
-    # MAP NEW STATUS → DATE COLUMN
-    # =====================================================
     estado_fecha_map = {
         "En Curso / En Diagnostico": "Fecha Diagnostico",
         "En Curso / No Diagnosticado": "Fecha No Diagnosticado",
@@ -459,74 +297,52 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
-    col_nueva_fecha = estado_fecha_map.get(nuevo_estado)
+    fecha_col = estado_fecha_map.get(nuevo_estado)
 
-    # =====================================================
-    # PHASE 4 — UPSERT WITH TRUE HISTORY PROTECTION
-    # =====================================================
     for _, r in servicios_df.iterrows():
-        match = df_folio[df_folio["Parte"] == r["Parte"]]
 
-        row_data = [
-            folio,                         
-            usuario,                       
-            r["Parte"],                    
-            r["Tipo De Parte"],             
-            str(r.get("Posicion", "")).strip(),       
-            int(r["Cantidad"] or 0),        
-            fecha_mod,                     
-        ]
+        payload = {
+            "No. de Folio": folio,
+            "Modifico": usuario,
+            "Parte": str(r.get("Parte", "")).strip(),
+            "Tipo De Parte": str(r.get("Tipo De Parte", "")).strip(),
+            "Posicion": str(r.get("Posicion", "")).strip(),
+            "Cantidad": int(r.get("Cantidad", 0) or 0),
+            "Fecha Mod": fecha_mod,
+        }
 
-        for col in date_columns:
-            existente = fechas_existentes.get(col, "")
+        if fecha_col:
+            payload[fecha_col] = fecha_mod
 
-            # keep old history
-            if str(existente).strip() != "":
-                row_data.append(existente)
-
-            # write new milestone
-            elif col == col_nueva_fecha:
-                row_data.append(fecha_mod)
-
-            else:
-                row_data.append("")
-
-        if not match.empty:
-            rownum = int(match.iloc[0]["__rownum__"])
-
-            last_col_letter = chr(64 + len(row_data))
-            ws.update(f"A{rownum}:{last_col_letter}{rownum}", [row_data])
-
-        else:
-            ws.append_row(row_data, value_input_option="RAW")
+        supabase.table("SERVICES").insert(payload).execute()
 
 # =================================
-# Load Pase de Taller
+# Load Pase de Taller (SUPABASE)
 # =================================
 @st.cache_data(ttl=300)
 def cargar_pases_taller():
-    import time
 
-    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    hojas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
+    supabase = get_supabase_client()
 
-    client = gspread.authorize(get_gsheets_credentials())
+    tablas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
+
     dfs = []
 
-    for hoja in hojas:
+    for tabla in tablas:
 
-        for intento in range(3):  # retry up to 3 times
-            try:
-                ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
-                data = ws.get_all_records()
-                if data:
-                    dfs.append(pd.DataFrame(data))
-                break
-            except Exception:
-                time.sleep(2)  # wait and retry
+        response = (
+            supabase
+            .table(tabla)
+            .select("*")
+            .execute()
+        )
+
+        data = response.data
+
+        if data:
+            dfs.append(pd.DataFrame(data))
 
     if not dfs:
-        st.warning("Google Sheets is temporarily busy. Please wait a moment and refresh.")
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
@@ -543,22 +359,27 @@ def cargar_pases_taller():
     return df
 
 # =================================
-# Load FACTURAS
+# Load FACTURAS (SUPABASE)
 # =================================
 @st.cache_data(ttl=300)
 def cargar_facturas():
-    client = gspread.authorize(get_gsheets_credentials())
 
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("FACTURAS")
+    supabase = get_supabase_client()
 
-    data = ws.get_all_records()
+    response = (
+        supabase
+        .table("INVOICES")
+        .select("*")
+        .execute()
+    )
+
+    data = response.data
 
     if not data:
         return pd.DataFrame()
 
     df = pd.DataFrame(data)
+
     df.columns = df.columns.str.strip()
 
     if "No. de Factura" in df.columns:
@@ -607,7 +428,7 @@ def cargar_audit():
 pases_df = cargar_pases_taller()
 facturas_df = cargar_facturas()
 audit_df = cargar_audit()
-st.write(audit_df)
+
 if not facturas_df.empty:
     facturas_df.columns = facturas_df.columns.str.strip()
 
