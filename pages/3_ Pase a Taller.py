@@ -190,7 +190,7 @@ def cargar_tractores():
 
     df_normalized["TRACTOR"] = df["TRACTOR"].astype(str).str.strip()
     df_normalized["MARCA"] = df.get("MARCA", "")
-    df_normalized["MODELO"] = df.get("MODELO", "")
+    df_normalized["MODELO"] = pd.to_numeric(df.get("MODELO", ""), errors="coerce").astype("Int64")
     df_normalized["SUCURSAL"] = df.get("SUCURSAL", "")
     df_normalized["EMPRESA"] = df.get("EMPRESA", "").astype(str).str.strip()
 
@@ -422,6 +422,11 @@ if tipo_proveedor in ["Interno", "Externo"]:
             fila = {}
         marca_valor = fila["MARCA"]
         modelo_valor = fila["MODELO"]
+        if pd.notna(modelo_valor):
+            try:
+                modelo_valor = int(float(modelo_valor))
+            except:
+                modelo_valor = None
         sucursal_valor = fila.get("SUCURSAL", "")
 
     elif tipo_unidad_operador == "Remolques":
