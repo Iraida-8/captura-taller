@@ -149,33 +149,8 @@ def append_pase_to_sheet(data: dict):
     folio = f"{prefix}{str(next_num).zfill(5)}"
 
     # ---- INSERT INTO SUPABASE ----
-    payload = {
-        "Fecha de Captura": data["timestamp"],
-        "No. de Folio": folio,
-        "Fecha de Reporte": data["fecha_reporte"],
-        "Tipo de Proveedor": data["tipo_proveedor"],
-        "Estado": data["estado"],
-        "Capturo": data["capturo"],
-        "OSTE": data["oste"],
-        "No. de Reporte": data["no_reporte"],
-        "Empresa": data["empresa"],
-        "Tipo de Reporte": data["tipo_reporte"],
-        "Tipo de Unidad": data["tipo_unidad"],
-        "Operador": data["operador"],
-        "No. de Unidad": data["no_unidad"],
-        "Marca": data["marca"],
-        "Modelo": data["modelo"],
-        "Sucursal": data["sucursal"],
-        "Tipo de Caja": data["tipo_caja"],
-        "No. de Unidad Externo": data["no_unidad_externo"],
-        "Linea Externa": data["linea_externa"],
-        "Aplica Cobro": data["aplica_cobro"],
-        "Responsable": data["responsable"],
-        "Descripcion": data["descripcion"],
-        "Genero Multa": data["genero_multa"],
-        "No. de Inspeccion": data["no_inspeccion"],
-        "Reparacion Multa": data["reparacion_multa"],
-    }
+    payload = data.copy()
+    payload["No. de Folio"] = folio
 
     response = supabase.table("IGLOO").insert(payload).execute()
 
