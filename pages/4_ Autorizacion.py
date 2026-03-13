@@ -598,6 +598,11 @@ def cargar_audit():
 
     df = pd.DataFrame(data)
 
+    # 🔧 Normalize column names to match the rest of the app
+    df = df.rename(columns={
+        "No. de Folio": "NoFolio"
+    })
+
     if "Timestamp" in df.columns:
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
 
@@ -1292,7 +1297,7 @@ if st.session_state.modal_reporte:
     @st.dialog("Detalle del Pase de Taller")
     def modal():
 
-        st.markdown(f"**No. de Folio:** {r['NoFolio']}")
+        st.markdown(f"**No. de Folio:** {r.get('NoFolio', r.get('No. de Folio',''))}")
         st.markdown(f"**Empresa:** {r['Empresa']}")
         st.markdown(f"**Fecha:** {r['Fecha']}")
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
