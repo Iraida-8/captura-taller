@@ -615,10 +615,10 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "Tipo de Caja": tipo_caja,
             "No. de Unidad Externo": no_unidad_externo,
             "Linea Externa": linea_externa,
-            "Aplica Cobro": aplica_cobro,
+            "Cobro": str(aplica_cobro),
             "Responsable": responsable,
             "Descripcion": descripcion_problema,
-            "Genero Multa": bool(genero_multa),
+            "Multa": "Sí" if genero_multa else "No",
             "No. de Inspeccion": no_inspeccion,
             "Reparacion Multa": reparacion_multa,
         }
