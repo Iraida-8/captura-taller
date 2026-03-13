@@ -596,7 +596,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
         folio_real = append_pase_to_sheet(payload)
 
-        # 🔥 important → clear force flag after using it
+        # important → clear force flag after using it
         st.session_state.forzar_guardado = False
 
         st.session_state.folio_generado = folio_real
