@@ -155,12 +155,13 @@ def append_pase_to_sheet(data: dict):
     # force JSON-safe values
     payload = {k: (None if v is None else str(v) if not isinstance(v, (int, float, bool)) else v) for k, v in payload.items()}
 
-    response = supabase.table("IGLOO").insert(payload).execute()
+    try:
+        response = supabase.table("IGLOO").insert(payload).execute()
+        return folio
 
-    if response.data is None:
-        st.error("Error inserting row into Supabase")
-
-    return folio
+    except Exception as e:
+        st.error(f"Supabase error: {e}")
+        raise
 
 # =================================
 # Google Sheets configuration
