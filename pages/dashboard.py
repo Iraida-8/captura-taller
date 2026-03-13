@@ -144,6 +144,15 @@ with col6:
         if st.button("📊  Consulta Reportes", use_container_width=True):
             st.switch_page("pages/6_ Consulta Reportes.py")
 
+col7, col8, col9 = st.columns(3)
+
+# 7️⃣ Preparación de Reportes
+with col7:
+    if "prepara_reportes" in access:
+        if st.button("�  Preparación de Reportes", use_container_width=True):
+            st.switch_page("pages/7_ Preparacion de Reportes.py")
+
+
 # -------------------------------
 # Logout
 # -------------------------------
