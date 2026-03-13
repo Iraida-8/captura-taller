@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from supabase import create_client
 from datetime import date, datetime
 from auth import require_login, require_access
 import gspread
@@ -43,6 +44,18 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
+# SUPABASE CONFIGURATION
+# =================================
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
+
+supabase = get_supabase()
+
+# =================================
 # Google Sheets credentials (LOCAL + CLOUD)
 # =================================
 def get_gsheets_credentials():
@@ -75,128 +88,101 @@ def safe_value(v):
     return str(v)
 
 # =================================
-# Check duplicate unit in last 24h
+# Check duplicate unit in last 24h (SUPABASE)
 # =================================
 def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
-    creds = get_gsheets_credentials()
-    client = gspread.authorize(creds)
 
-    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
+    unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
 
-    sheet_map = {
-        "IGLOO TRANSPORT": "IGLOO",
-        "LINCOLN FREIGHT": "LINCOLN",
-        "PICUS": "PICUS",
-        "SET FREIGHT INTERNATIONAL": "SFI",
-        "SET LOGIS PLUS": "SLP",
-    }
+    limite = (datetime.now() - pd.Timedelta(hours=24)).isoformat()
 
-    hoja = sheet_map.get(empresa)
-    if not hoja:
-        return None
+    response = (
+        supabase.table("IGLOO")
+        .select('"No. de Folio", "Fecha de Captura"')
+        .eq('"No. de Unidad"', unidad)
+        .gte('"Fecha de Captura"', limite)
+        .order('"Fecha de Captura"', desc=True)
+        .limit(1)
+        .execute()
+    )
 
-    ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
-    data = ws.get_all_records()
+    data = response.data
 
     if not data:
         return None
 
-    df = pd.DataFrame(data)
-    df.columns = df.columns.str.strip()
-
-    if "Fecha de Captura" not in df.columns:
-        return None
-
-    df["Fecha de Captura"] = pd.to_datetime(df["Fecha de Captura"], errors="coerce")
-
-    limite = datetime.now() - pd.Timedelta(hours=24)
-
-    #external trailer logic
-    if no_unidad == "REMOLQUE EXTERNO":
-        if "No. de Unidad Externo" not in df.columns:
-            return None
-        filtro = df["No. de Unidad Externo"].astype(str) == str(no_unidad_externo)
-    else:
-        if "No. de Unidad" not in df.columns:
-            return None
-        filtro = df["No. de Unidad"].astype(str) == str(no_unidad)
-
-    recientes = df[
-        filtro &
-        (df["Fecha de Captura"] >= limite)
-    ]
-
-    if recientes.empty:
-        return None
-
-    return recientes.sort_values("Fecha de Captura", ascending=False).iloc[0]["No. de Folio"]
+    return data[0]["No. de Folio"]
 
 # =================================
-# Append Pase de Taller to Sheet
+# Append Pase de Taller to Supabase
 # =================================
 def append_pase_to_sheet(data: dict):
-    creds = get_gsheets_credentials()
-    client = gspread.authorize(creds)
 
-    SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-
-    sheet_map = {
-        "IGLOO TRANSPORT": ("IGLOO", "IG"),
-        "LINCOLN FREIGHT": ("LINCOLN", "LF"),
-        "PICUS": ("PICUS", "PI"),
-        "SET FREIGHT INTERNATIONAL": ("SFI", "SFI"),
-        "SET LOGIS PLUS": ("SLP", "SLP"),
+    prefix_map = {
+        "IGLOO TRANSPORT": "IG",
+        "LINCOLN FREIGHT": "LF",
+        "PICUS": "PI",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
     }
 
-    empresa = data["empresa"]
-    sheet_name, prefix = sheet_map[empresa]
+    prefix = prefix_map[data["empresa"]]
 
-    sheet = client.open_by_key(SPREADSHEET_ID).worksheet(sheet_name)
+    # ---- GET LAST FOLIO ----
+    response = (
+        supabase.table("IGLOO")
+        .select('"No. de Folio"')
+        .ilike('"No. de Folio"', f"{prefix}%")
+        .order('"No. de Folio"', desc=True)
+        .limit(1)
+        .execute()
+    )
 
-    # ---- AUTO-INCREMENT FOLIO (COLUMN B) ----
-    existing = sheet.col_values(2)[1:]  # skip header
-    nums = []
-    for f in existing:
-        if f.startswith(prefix):
-            try:
-                nums.append(int(f.replace(prefix, "")))
-            except:
-                pass
+    last = response.data
 
-    next_num = max(nums) + 1 if nums else 1
+    if last:
+        num = int(last[0]["No. de Folio"].replace(prefix, ""))
+        next_num = num + 1
+    else:
+        next_num = 1
+
     folio = f"{prefix}{str(next_num).zfill(5)}"
 
-    # ---- COLUMN ORDER MUST MATCH HEADER EXACTLY ----
-    row = [
-        safe_value(data["timestamp"]),
-        safe_value(folio),
-        safe_value(data["fecha_reporte"]),
-        safe_value(data["tipo_proveedor"]),
-        safe_value(data["estado"]),
-        safe_value(data["capturo"]),
-        safe_value(data["oste"]),
-        safe_value(data["no_reporte"]),
-        safe_value(data["empresa"]),
-        safe_value(data["tipo_reporte"]),
-        safe_value(data["tipo_unidad"]),
-        safe_value(data["operador"]),
-        safe_value(data["no_unidad"]),
-        safe_value(data["marca"]),
-        safe_value(data["modelo"]),
-        safe_value(data["sucursal"]),
-        safe_value(data["tipo_caja"]),
-        safe_value(data["no_unidad_externo"]),
-        safe_value(data["linea_externa"]),
-        safe_value(data["aplica_cobro"]),
-        safe_value(data["responsable"]),
-        safe_value(data["descripcion"]),
-        safe_value(data["genero_multa"]),
-        safe_value(data["no_inspeccion"]),
-        safe_value(data["reparacion_multa"]),
-    ]
+    # ---- INSERT INTO SUPABASE ----
+    payload = {
+        "Fecha de Captura": data["timestamp"],
+        "No. de Folio": folio,
+        "Fecha de Reporte": data["fecha_reporte"],
+        "Tipo de Proveedor": data["tipo_proveedor"],
+        "Estado": data["estado"],
+        "Capturo": data["capturo"],
+        "OSTE": data["oste"],
+        "No. de Reporte": data["no_reporte"],
+        "Empresa": data["empresa"],
+        "Tipo de Reporte": data["tipo_reporte"],
+        "Tipo de Unidad": data["tipo_unidad"],
+        "Operador": data["operador"],
+        "No. de Unidad": data["no_unidad"],
+        "Marca": data["marca"],
+        "Modelo": data["modelo"],
+        "Sucursal": data["sucursal"],
+        "Tipo de Caja": data["tipo_caja"],
+        "No. de Unidad Externo": data["no_unidad_externo"],
+        "Linea Externa": data["linea_externa"],
+        "Aplica Cobro": data["aplica_cobro"],
+        "Responsable": data["responsable"],
+        "Descripcion": data["descripcion"],
+        "Genero Multa": data["genero_multa"],
+        "No. de Inspeccion": data["no_inspeccion"],
+        "Reparacion Multa": data["reparacion_multa"],
+    }
 
-    sheet.append_row(row, value_input_option="USER_ENTERED")
-    return folio   # authoritative folio returned
+    response = supabase.table("IGLOO").insert(payload).execute()
+
+    if response.data is None:
+        st.error("Error inserting row into Supabase")
+
+    return folio
 
 # =================================
 # Google Sheets configuration
@@ -632,30 +618,30 @@ if tipo_proveedor in ["Interno", "Externo"]:
         # NORMAL SAVE
         # ==========================================
         payload = {
-            "timestamp": datetime.now().isoformat(),
-            "fecha_reporte": str(fecha_reporte),
-            "tipo_proveedor": tipo_proveedor,
-            "estado": "En Curso / Nuevo",
-            "capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
-            "oste": oste,
-            "no_reporte": no_reporte,
-            "empresa": empresa,
-            "tipo_reporte": tipo_reporte,
-            "tipo_unidad": tipo_unidad_operador,
-            "operador": operador,
-            "no_unidad": no_unidad,
-            "marca": marca_valor,
-            "modelo": modelo_valor,
-            "sucursal": sucursal_valor,
-            "tipo_caja": tipo_caja,
-            "no_unidad_externo": no_unidad_externo,
-            "linea_externa": linea_externa,
-            "aplica_cobro": aplica_cobro,
-            "responsable": responsable,
-            "descripcion": descripcion_problema,
-            "genero_multa": genero_multa,
-            "no_inspeccion": no_inspeccion,
-            "reparacion_multa": reparacion_multa,
+            "Fecha de Captura": datetime.now().isoformat(),
+            "Fecha de Reporte": str(fecha_reporte),
+            "Tipo de Proveedor": tipo_proveedor,
+            "Estado": "En Curso / Nuevo",
+            "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
+            "OSTE": oste,
+            "No. de Reporte": no_reporte,
+            "Empresa": empresa,
+            "Tipo de Reporte": tipo_reporte,
+            "Tipo de Unidad": tipo_unidad_operador,
+            "Operador": operador,
+            "No. de Unidad": no_unidad,
+            "Marca": marca_valor,
+            "Modelo": modelo_valor,
+            "Sucursal": sucursal_valor,
+            "Tipo de Caja": tipo_caja,
+            "No. de Unidad Externo": no_unidad_externo,
+            "Linea Externa": linea_externa,
+            "Aplica Cobro": aplica_cobro,
+            "Responsable": responsable,
+            "Descripcion": descripcion_problema,
+            "Genero Multa": genero_multa,
+            "No. de Inspeccion": no_inspeccion,
+            "Reparacion Multa": reparacion_multa,
         }
 
         folio_real = append_pase_to_sheet(payload)
