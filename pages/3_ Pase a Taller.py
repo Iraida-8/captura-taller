@@ -136,7 +136,7 @@ def append_pase_to_sheet(data: dict):
     payload["No. de Folio"] = folio
 
     payload = {
-        k: None if pd.isna(v)
+        k: None if (pd.isna(v) or v == "")
         else v.item() if hasattr(v, "item")
         else v
         for k, v in payload.items()
