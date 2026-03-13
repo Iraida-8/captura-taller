@@ -3,9 +3,6 @@ import pandas as pd
 from supabase import create_client
 from datetime import date, datetime
 from auth import require_login, require_access
-import gspread
-from google.oauth2.service_account import Credentials
-import os
 
 # =================================
 # Page configuration
@@ -66,37 +63,7 @@ TABLE_MAP = {
     "SET LOGIS PLUS": "SLP"
 }
 
-# =================================
-# Google Sheets credentials (LOCAL + CLOUD)
-# =================================
-def get_gsheets_credentials():
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-
-    # Streamlit Cloud
-    if "gcp_service_account" in st.secrets:
-        return Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"],
-            scopes=scopes
-        )
-
-    # Local
-    if os.path.exists("google_service_account.json"):
-        return Credentials.from_service_account_file(
-            "google_service_account.json",
-            scopes=scopes
-        )
-
-    raise RuntimeError("Google Sheets credentials not found")
-
-# =================================
-# Helpers
-# =================================
-def safe_value(v):
-    if v is None:
-        return ""
-    if isinstance(v, bool):
-        return "Sí" if v else "No"
-    return str(v)
+EMPRESAS = list(TABLE_MAP.keys())
 
 # =================================
 # Check duplicate unit in last 24h (SUPABASE)
@@ -182,12 +149,6 @@ def append_pase_to_sheet(data: dict):
 # =================================
 # Google Sheets configuration
 # =================================
-CATALOGOS_URL = (
-    "https://docs.google.com/spreadsheets/d/"
-    "1qlIcKouGS2cxsCsCdNh5pMgLfWXj41dXfaeq5cyktZ8"
-    "/export?format=csv&gid=0"
-)
-
 TRACTORES_URL = (
     "https://docs.google.com/spreadsheets/d/"
     "1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop"
@@ -218,20 +179,6 @@ REMOLQUES_SHEETS = {
 # =================================
 # Load catalogs
 # =================================
-@st.cache_data(ttl=3600)
-def cargar_catalogos():
-    df = pd.read_csv(CATALOGOS_URL)
-    df.columns = df.columns.str.strip()
-    empresas = (
-        df["EMPRESA"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .unique()
-        .tolist()
-    )
-    return df, sorted(empresas)
-
 @st.cache_data(ttl=3600)
 def cargar_tractores():
 
@@ -298,7 +245,6 @@ def cargar_remolques_empresa(empresa):
     df_normalized = df_normalized[df_normalized["UNIDAD"].str.strip() != ""]
     return df_normalized
 
-catalogos_df, empresas = cargar_catalogos()
 tractores_df = cargar_tractores()
 
 # =================================
@@ -390,7 +336,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     empresa = st.selectbox(
         "Empresa",
-        ["Selecciona Empresa"] + empresas
+        ["Selecciona Empresa"] + EMPRESAS
     )
 
     if empresa == "Selecciona Empresa":
@@ -412,10 +358,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "Tipo de Unidad",
             ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
         )
-
-    catalogos_filtrados = catalogos_df[
-        catalogos_df["EMPRESA"].astype(str).str.strip() == empresa
-    ]
 
     tractores_filtrados = tractores_df[
         tractores_df["EMPRESA"].astype(str).str.strip() == empresa
