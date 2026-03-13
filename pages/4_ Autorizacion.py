@@ -7,8 +7,6 @@ from google.oauth2.service_account import Credentials
 import os
 from supabase import create_client
 
-fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 # =================================
 # Page Cache and State Management
 # =================================
@@ -254,28 +252,23 @@ def registrar_cambio_log(
     comentario=""
 ):
 
-    client = gspread.authorize(get_gsheets_credentials())
+    supabase = get_supabase_client()
 
-    ws = client.open_by_key(
-        "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-    ).worksheet("AUDIT")
+    response = supabase.table("AUDIT").insert({
+        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Usuario": usuario,
+        "Empresa": empresa,
+        "No. de Folio": folio,
+        "Tipo Cambio": tipo_cambio,
+        "Estado Anterior": estado_anterior or "",
+        "Estado Nuevo": estado_nuevo or "",
+        "OSTE Anterior": oste_anterior or "",
+        "OSTE Nuevo": oste_nuevo or "",
+        "Comentario": comentario
+    }).execute()
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    row = [
-        timestamp,
-        usuario,
-        empresa,
-        folio,
-        tipo_cambio,
-        estado_anterior or "",
-        estado_nuevo or "",
-        oste_anterior or "",
-        oste_nuevo or "",
-        comentario,
-    ]
-
-    ws.append_row(row, value_input_option="USER_ENTERED")
+    if getattr(response, "error", None):
+        st.error(f"Audit log error: {response.error}")
 
 # =================================
 # Log estado sin refacciones
@@ -586,37 +579,28 @@ def cargar_facturas():
 @st.cache_data(ttl=120)
 def cargar_audit():
 
-    import time
+    supabase = get_supabase_client()
 
-    client = gspread.authorize(get_gsheets_credentials())
+    response = (
+        supabase
+        .table("AUDIT")
+        .select("*")
+        .order("Timestamp", desc=True)
+        .limit(200)
+        .execute()
+    )
 
-    for intento in range(3):
+    data = response.data
 
-        try:
+    if not data:
+        return pd.DataFrame()
 
-            ws = client.open_by_key(
-                "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-            ).worksheet("AUDIT")
+    df = pd.DataFrame(data)
 
-            all_values = ws.get_all_values()
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
 
-            if not all_values or len(all_values) < 2:
-                return pd.DataFrame()
-
-            headers = [h.strip() for h in all_values[0]]
-            rows = all_values[1:]
-
-            df = pd.DataFrame(rows, columns=headers)
-
-            if "Timestamp" in df.columns:
-                df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
-
-            return df
-
-        except Exception:
-            time.sleep(2)
-
-    return pd.DataFrame()
+    return df
 
 #loaders
 pases_df = cargar_pases_taller()
@@ -803,11 +787,7 @@ with right:
         st.info("Sin actividad registrada.")
     else:
 
-        audit_sorted = (
-            audit_df
-            .sort_values("Timestamp", ascending=False)
-            .head(9)
-        )
+        audit_sorted = audit_df.head(9)
 
         rows_html = ""
 
