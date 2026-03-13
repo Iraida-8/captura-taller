@@ -143,7 +143,7 @@ def append_pase_to_sheet(data: dict):
         return folio
 
     except Exception as e:
-        st.error(f"Supabase error: {e}")
+        st.error(f"Supabase error: {e.args}")
         raise
 
 # =================================
