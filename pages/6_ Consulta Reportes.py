@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, date
-import gspread
-from google.oauth2.service_account import Credentials
-import os
+from supabase import create_client
 from auth import require_login, require_access
 
 # =================================
@@ -33,6 +30,50 @@ require_login()
 require_access("consulta_reportes")
 
 # =================================
+# Supabase Client
+# =================================
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase()
+
+# =================================
+# Supabase pagination helper
+# =================================
+def fetch_all_rows(table_name, page_size=1000):
+
+    start = 0
+    all_rows = []
+
+    while True:
+
+        response = (
+            supabase
+            .table(table_name)
+            .select("*")
+            .range(start, start + page_size - 1)
+            .execute()
+        )
+
+        data = response.data
+
+        if not data:
+            break
+
+        all_rows.extend(data)
+
+        if len(data) < page_size:
+            break
+
+        start += page_size
+
+    return all_rows
+
+# =================================
 # Defensive reset on page entry
 # =================================
 if st.session_state.get("_reset_consulta_page", True):
@@ -54,50 +95,27 @@ st.divider()
 st.title("📊 Consulta de Reportes")
 
 # =================================
-# Google Sheets credentials
-# =================================
-def get_gsheets_credentials():
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-
-    try:
-        if "gcp_service_account" in st.secrets:
-            return Credentials.from_service_account_info(
-                st.secrets["gcp_service_account"], scopes=scopes
-            )
-    except Exception:
-        pass
-
-    if os.path.exists("google_service_account.json"):
-        return Credentials.from_service_account_file(
-            "google_service_account.json", scopes=scopes
-        )
-
-    raise RuntimeError("Google Sheets credentials not found")
-
-SPREADSHEET_ID = "1ca46k4PCbvNMvZjsgU_2MHJULADRJS5fnghLopSWGDA"
-
-# =================================
-# Load PASES (ALL COMPANIES)
+# Load PASES (SUPABASE PAGINATED)
 # =================================
 @st.cache_data(ttl=300)
 def cargar_pases():
-    hojas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
-    client = gspread.authorize(get_gsheets_credentials())
+
+    tablas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
 
     dfs = []
-    for hoja in hojas:
-        try:
-            ws = client.open_by_key(SPREADSHEET_ID).worksheet(hoja)
-            data = ws.get_all_records()
-            if data:
-                dfs.append(pd.DataFrame(data))
-        except Exception:
-            pass
+
+    for tabla in tablas:
+
+        data = fetch_all_rows(tabla)
+
+        if data:
+            dfs.append(pd.DataFrame(data))
 
     if not dfs:
         return pd.DataFrame()
 
     df = pd.concat(dfs, ignore_index=True)
+
     df.columns = df.columns.str.strip()
 
     if "No. de Folio" in df.columns:
@@ -112,14 +130,13 @@ def cargar_pases():
     return df
 
 # =================================
-# Load SERVICES
+# Load SERVICES (SUPABASE PAGINATED)
 # =================================
 @st.cache_data(ttl=300)
 def cargar_servicios():
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(SPREADSHEET_ID).worksheet("SERVICES")
 
-    data = ws.get_all_records()
+    data = fetch_all_rows("SERVICES")
+
     if not data:
         return pd.DataFrame(columns=[
             "Folio",
@@ -138,21 +155,17 @@ def cargar_servicios():
         ])
 
     df = pd.DataFrame(data)
+
     df.columns = df.columns.str.strip()
 
-    # Ensure Posicion stays as text
-    if "Posicion" in df.columns:
-        df["Posicion"] = df["Posicion"].astype(str)
-
-    # Rename Folio
     if "No. de Folio" in df.columns:
         df = df.rename(columns={"No. de Folio": "Folio"})
 
-    # Ensure Folio is string
-    if "Folio" in df.columns:
-        df["Folio"] = df["Folio"].astype(str)
+    df["Folio"] = df["Folio"].astype(str)
 
-    # Convert ALL date columns safely
+    if "Posicion" in df.columns:
+        df["Posicion"] = df["Posicion"].astype(str)
+
     date_cols = [
         "Fecha Mod",
         "Fecha Diagnostico",
@@ -170,20 +183,18 @@ def cargar_servicios():
     return df
 
 # =================================
-# Load FACTURAS
+# Load FACTURAS (SUPABASE PAGINATED)
 # =================================
 @st.cache_data(ttl=300)
 def cargar_facturas():
-    client = gspread.authorize(get_gsheets_credentials())
-    ws = client.open_by_key(SPREADSHEET_ID).worksheet("FACTURAS")
 
-    data = ws.get_all_records()
+    data = fetch_all_rows("INVOICES")
 
-    # If sheet is empty, create structure manually
     if not data:
         return pd.DataFrame(columns=["Folio", "No. de Factura"])
 
     df = pd.DataFrame(data)
+
     df.columns = df.columns.str.strip()
 
     if "No. de Folio" in df.columns:
@@ -555,6 +566,7 @@ st.session_state.setdefault("filtros_aplicados", False)
 
 if buscar:
 
+    st.cache_data.clear()
     st.session_state.modal_reporte = None
     df_p = df_pases.copy()
     df_s = df_services.copy()
@@ -721,7 +733,10 @@ else:
 
                 fecha = fecha.date() if pd.notna(fecha) else ""
 
-                df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+                if "Folio" in df_facturas.columns:
+                    df_factura_folio = df_facturas[df_facturas["Folio"] == folio]
+                else:
+                    df_factura_folio = pd.DataFrame()
                 no_factura = (
                     df_factura_folio.iloc[0].get("No. de Factura", "")
                     if not df_factura_folio.empty else ""
