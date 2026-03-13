@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 from auth import require_login, require_access
 import gspread
+import html
 from google.oauth2.service_account import Credentials
 import os
 from supabase import create_client
@@ -794,13 +795,13 @@ with right:
         for _, row in audit_sorted.iterrows():
 
             timestamp = row.get("Timestamp")
-            usuario = row.get("Usuario", "")
-            empresa = row.get("Empresa", "")
-            folio = row.get("No. de Folio", "")
-            tipo = row.get("Tipo Cambio", "")
-            estado_nuevo = row.get("Estado Nuevo", "")
-            oste_nuevo = row.get("OSTE Nuevo", "")
-            comentario = row.get("Comentario", "")
+            usuario = html.escape(str(row.get("Usuario", "")))
+            empresa = html.escape(str(row.get("Empresa", "")))
+            folio = html.escape(str(row.get("No. de Folio", "")))
+            tipo = html.escape(str(row.get("Tipo Cambio", "")))
+            estado_nuevo = html.escape(str(row.get("Estado Nuevo", "")))
+            oste_nuevo = html.escape(str(row.get("OSTE Nuevo", "")))
+            comentario = html.escape(str(row.get("Comentario", "")))
 
             fecha_txt = (
                 timestamp.strftime("%Y-%m-%d %H:%M")
@@ -817,7 +818,8 @@ with right:
                 detalle += f" (OSTE: {oste_nuevo})"
 
             if comentario:
-                detalle += f" — {comentario}"
+                comentario_safe = html.escape(str(comentario))
+                detalle += f" — {comentario_safe}"
 
             rows_html += f"""
             <div style="
