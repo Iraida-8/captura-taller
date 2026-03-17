@@ -94,7 +94,7 @@ def actualizar_estado_pase(empresa, folio, nuevo_estado):
 
     supabase.table(table_name)\
         .update({"Estado": nuevo_estado})\
-        .eq("No. de Folio", folio)\
+        .eq('"No. de Folio"', folio)\
         .execute()
 
 # =================================
@@ -119,7 +119,7 @@ def actualizar_oste_pase(empresa, folio, oste):
 
     supabase.table(table_name)\
         .update({"Oste": oste})\
-        .eq("No. de Folio", folio)\
+        .eq('"No. de Folio"', folio)\
         .execute()
 
 # =================================
@@ -143,7 +143,7 @@ def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
 
     supabase.table(table_name)\
         .update({"Descripcion Problema": nueva_descripcion})\
-        .eq("No. de Folio", folio)\
+        .eq('"No. de Folio"', folio)\
         .execute()
 
 # =================================
@@ -157,7 +157,7 @@ def guardar_factura(folio, numero_factura):
         supabase
         .table("INVOICES")
         .select("*")
-        .eq("No. de Folio", folio)
+        .eq('"No. de Folio"', folio)
         .execute()
     )
 
@@ -166,7 +166,7 @@ def guardar_factura(folio, numero_factura):
     if data:
         supabase.table("INVOICES")\
             .update({"No. de Factura": numero_factura})\
-            .eq("No. de Folio", folio)\
+            .eq('"No. de Folio"', folio)\
             .execute()
     else:
         supabase.table("INVOICES")\
@@ -252,7 +252,7 @@ def cargar_servicios_folio(folio):
         supabase
         .table("SERVICES")
         .select("*")
-        .eq("No. de Folio", folio)
+        .eq('"No. de Folio"', folio)
         .execute()
     )
 
