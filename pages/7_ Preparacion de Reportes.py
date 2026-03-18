@@ -77,7 +77,7 @@ if empresa == "SELECCIONA EMPRESA":
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
-# Dynamic uploader keys (CRITICAL FIX)
+# Dynamic uploader keys
 # =================================
 key_suffix = empresa.replace(" ", "_")
 
@@ -286,24 +286,13 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (1 + df_final_ref["Tasaiva"].fillna(0))
 
             # =============================
-            # TC SAFE MERGE (FIXED)
+            # TC SAFE MERGE
             # =============================
             df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
 
             df_final_ref["Año"] = df_final_ref["Año"].astype(int)
             df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
 
-            # 🔥 ADD THIS HERE
-            st.write("LEFT TYPES:", df_final_ref[["Año", "Mes"]].dtypes)
-            st.write("RIGHT TYPES:", df_tc[["year", "month"]].dtypes)
-
-            st.write("LEFT SAMPLE:")
-            st.write(df_final_ref[["Año", "Mes"]].drop_duplicates().head(20))
-
-            st.write("RIGHT SAMPLE:")
-            st.write(df_tc[["year", "month"]].drop_duplicates().head(20))
-
-            # 👇 THIS IS YOUR EXISTING CODE
             if df_tc is not None and not df_tc.empty:
 
                 df_final_ref = df_final_ref.merge(
@@ -373,8 +362,6 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # FORMAT DISPLAY
             # =============================
-
-            # Remove time from Fecha Compra
             df_final_ref["Fecha Compra"] = df_final_ref["Fecha Compra"].dt.date
 
             # Ensure numeric
@@ -407,7 +394,7 @@ if file_ordenes and file_mantenimientos:
             )
 
 # =================================
-# BUILD OSTES LINCOLN (FIXED)
+# BUILD OSTES LINCOLN
 # =================================
 if file_ostes and file_mantenimientos and file_ordenes:
 
@@ -431,7 +418,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
 
             # =============================
-            # DATE HANDLING (FIXED)
+            # DATE HANDLING
             # =============================
             df_ostes["Fecha Analisis"] = pd.to_datetime(
                 df_ostes["Fecha Cierre"],
@@ -458,7 +445,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             )
 
             # =============================
-            # MAP ACREEDOR FROM ORDENES (NUMERIC SAFE)
+            # MAP ACREEDOR FROM ORDENES
             # =============================
             df_ordenes = read_file(file_ordenes)
 
@@ -490,7 +477,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
 
             # =============================
-            # TIME METRICS (FIXED DATES)
+            # TIME METRICS
             # =============================
             fecha_cierre = pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
             fecha_oste = pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
@@ -510,7 +497,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["IVA"] = df_final_ostes["Total oste"] - df_final_ostes["Subtotal"]
 
             # =============================
-            # TC MERGE (UNCHANGED)
+            # TC MERGE
             # =============================
             df_final_ostes = df_final_ostes.dropna(subset=["Año", "Mes"])
 
@@ -581,17 +568,13 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # FORMAT DISPLAY
             # =============================
-
-            # Fix Reporte (no decimals)
             df_final_ostes["Reporte"] = df_final_ostes["Reporte"].astype(str).str.replace(".0", "", regex=False)
 
-            # Fix dates (remove time)
             date_cols = ["Fecha Analisis", "Fecha Factura", "Fecha Oste", "Fecha Cierre"]
             for col in date_cols:
                 if col in df_final_ostes.columns:
                     df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.date
 
-            # Ensure numeric for currency fields
             currency_cols = [
                 "Subtotal", "IVA", "Total oste",
                 "TC", "Total Correccion"
@@ -620,7 +603,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             )
 
 # =================================
-# BUILD LINCOLN MANO DE OBRA REPORT (FIXED)
+# BUILD LINCOLN MANO DE OBRA REPORT
 # =================================
 if file_ordenes and file_ostes and file_mantenimientos:
 
@@ -673,7 +656,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final = df_mant.merge(df_ostes_agg, on="Reporte", how="left")
 
             # =============================
-            # DATE HANDLING (FIXED)
+            # DATE HANDLING
             # =============================
             df_final["Fecha Analisis"] = pd.to_datetime(
                 df_final["Fecha Liberada"],
