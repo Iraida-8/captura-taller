@@ -134,6 +134,18 @@ def load_tc():
 
         if not df.empty:
             df.columns = df.columns.str.lower()
+
+            MESES_MAP = {
+                "january": 1, "february": 2, "march": 3, "april": 4,
+                "may": 5, "june": 6, "july": 7, "august": 8,
+                "september": 9, "october": 10, "november": 11, "december": 12
+            }
+
+            df["month"] = df["month"].str.lower().map(MESES_MAP)
+
+            df["year"] = df["year"].astype(int)
+            df["month"] = df["month"].astype(int)
+            df["tc"] = df["tc"].astype(float)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
             # ✅ ADD THIS
