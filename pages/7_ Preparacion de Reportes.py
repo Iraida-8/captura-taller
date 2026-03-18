@@ -177,7 +177,6 @@ if file_mantenimientos:
 # =================================
 # BUILD DATA LINCOLN REFACCIONES
 # =================================
-
 if file_ordenes and file_mantenimientos:
 
     valid_ordenes = validate_filename(file_ordenes, ["buscar", "ordenes", "sac"])
@@ -280,11 +279,124 @@ if file_ordenes and file_mantenimientos:
 
             st.dataframe(df_final_ref, use_container_width=True)
 
+# =================================
+# BUILD OSTES LINCOLN
+# =================================
+if file_ostes and file_mantenimientos:
+
+    valid_ostes = validate_filename(file_ostes, ["ostes"])
+    valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
+
+    if valid_ostes and valid_mant:
+
+        df_ostes = read_file(file_ostes)
+        df_mant = read_file(file_mantenimientos)
+
+        if df_ostes is not None and df_mant is not None:
+
+            # =============================
+            # NORMALIZE KEYS
+            # =============================
+            df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
+            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
+
+            # =============================
+            # DATE HANDLING
+            # =============================
+            df_ostes["Fecha Analisis"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce")
+
+            df_ostes["Año"] = df_ostes["Fecha Analisis"].dt.year
+            df_ostes["Mes"] = df_ostes["Fecha Analisis"].dt.month
+
+            # =============================
+            # JOIN MANTENIMIENTOS
+            # =============================
+            df_final_ostes = df_ostes.merge(
+                df_mant[[
+                    "Reporte",
+                    "Descripcion",
+                    "Razon Servicio"
+                ]],
+                on="Reporte",
+                how="left"
+            )
+
+            # =============================
+            # TIME METRICS
+            # =============================
+            df_final_ostes["Dias para cerrar orden"] = (
+                pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce") -
+                pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce")
+            ).dt.days
+
+            df_final_ostes["Dias Reparacion"] = (
+                pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce") -
+                pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
+            ).dt.days
+
+            # =============================
+            # FINANCIAL DERIVATIONS
+            # =============================
+            df_final_ostes["Total oste"] = df_final_ostes["Total Pesos"]
+
+            df_final_ostes["Subtotal"] = df_final_ostes["Total oste"] / 1.16
+            df_final_ostes["IVA"] = df_final_ostes["Total oste"] - df_final_ostes["Subtotal"]
+
+            df_final_ostes["TC"] = 1
+            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
+
+            # =============================
+            # PLACEHOLDERS
+            # =============================
+            df_final_ostes["Flotilla"] = "N/A"
+            df_final_ostes["Modelo"] = "N/A"
+            df_final_ostes["Sucursal"] = "N/A"
+            df_final_ostes["Status CT"] = df_final_ostes["Status"]
+
+            # =============================
+            # RENAME
+            # =============================
+            df_final_ostes.rename(columns={
+                "# Oste": "OSTE",
+                "Proveedor": "Acreedor",
+                "No. Factura": "Factura",
+                "Observaciones": "Observaciones",
+                "Tipo Unidad": "Tipo De Unidad",
+                "Razon Servicio": "Razon de servicio"
+            }, inplace=True)
+
+            # =============================
+            # FINAL COLUMNS
+            # =============================
+            final_cols_ostes = [
+                "Año", "Mes", "OSTE", "Fecha Analisis", "Reporte",
+                "Acreedor", "Fecha Factura", "Fecha Oste", "Fecha Cierre",
+                "Dias para cerrar orden", "Dias Reparacion",
+                "Empresa", "Sucursal", "Observaciones", "Status CT",
+                "Factura", "Subtotal", "IVA", "Total oste",
+                "Moneda", "TC", "Total Correccion",
+                "Unidad", "Flotilla", "Modelo",
+                "Descripcion", "Tipo De Unidad", "Razon de servicio"
+            ]
+
+            # SAFETY
+            for col in final_cols_ostes:
+                if col not in df_final_ostes.columns:
+                    df_final_ostes[col] = None
+
+            df_final_ostes = df_final_ostes[final_cols_ostes]
+
+            # =============================
+            # DISPLAY
+            # =============================
+            st.divider()
+            st.subheader("💰 OSTES LINCOLN")
+
+            st.dataframe(df_final_ostes, use_container_width=True)
 
 # =================================
 # BUILD LINCOLN MANO DE OBRA REPORT
 # =================================
-
 if file_ordenes and file_ostes and file_mantenimientos:
 
     # Validate all first
