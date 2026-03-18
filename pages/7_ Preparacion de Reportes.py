@@ -132,7 +132,7 @@ with col3:
 st.divider()
 
 # =================================
-# Display tables with validation
+# Display tables with validation (COLLAPSIBLE)
 # =================================
 
 # ---- ORDENES ----
@@ -142,8 +142,8 @@ if file_ordenes:
     else:
         df_ordenes = read_file(file_ordenes)
         if df_ordenes is not None:
-            st.subheader("📄 Buscar Ordenes SAC")
-            st.dataframe(df_ordenes, use_container_width=True)
+            with st.expander("📄 Buscar Ordenes SAC", expanded=False):
+                st.dataframe(df_ordenes, use_container_width=True)
 
 # ---- OSTES ----
 if file_ostes:
@@ -152,8 +152,8 @@ if file_ostes:
     else:
         df_ostes = read_file(file_ostes)
         if df_ostes is not None:
-            st.subheader(f"📄 Reporte Ostes ({empresa})")
-            st.dataframe(df_ostes, use_container_width=True)
+            with st.expander(f"📄 Reporte Ostes ({empresa})", expanded=False):
+                st.dataframe(df_ostes, use_container_width=True)
 
 # ---- MANTENIMIENTOS ----
 if file_mantenimientos:
@@ -162,5 +162,5 @@ if file_mantenimientos:
     else:
         df_mantenimientos = read_file(file_mantenimientos)
         if df_mantenimientos is not None:
-            st.subheader(f"📄 Reporte de Mantenimientos ({empresa})")
-            st.dataframe(df_mantenimientos, use_container_width=True)
+            with st.expander(f"📄 Reporte de Mantenimientos ({empresa})", expanded=False):
+                st.dataframe(df_mantenimientos, use_container_width=True)
