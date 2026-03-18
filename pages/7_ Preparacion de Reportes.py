@@ -164,7 +164,7 @@ def load_tc():
 # =================================
 df_tc = load_tc()
 
-#st.write("TC DATA:", df_tc.head() if df_tc is not None else "NO DATA")
+st.write("TC DATA:", df_tc.head() if df_tc is not None else "NO DATA")
 
 # =================================
 # Uploaders
@@ -301,7 +301,7 @@ if file_ordenes and file_mantenimientos:
                     how="left"
                 )
 
-                df_final_ref["TC"] = df_final_ref["tc"].fillna(1)
+                df_final_ref["TC"] = df_final_ref["tc"]
                 df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
