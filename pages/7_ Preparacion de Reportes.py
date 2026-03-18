@@ -275,8 +275,10 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # TC SAFE MERGE (FIXED)
             # =============================
-            df_final_ref["Año"] = df_final_ref["Año"].fillna(0).astype(int)
-            df_final_ref["Mes"] = df_final_ref["Mes"].fillna(0).astype(int)
+            df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
+
+            df_final_ref["Año"] = df_final_ref["Año"].astype(int)
+            df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
 
             if df_tc is not None and not df_tc.empty:
 
@@ -423,8 +425,10 @@ if file_ostes and file_mantenimientos:
             # =============================
             # TC SAFE MERGE (FIXED)
             # =============================
-            df_final_ostes["Año"] = df_final_ostes["Año"].fillna(0).astype(int)
-            df_final_ostes["Mes"] = df_final_ostes["Mes"].fillna(0).astype(int)
+            df_final_ostes = df_final_ostes.dropna(subset=["Año", "Mes"])
+
+            df_final_ostes["Año"] = df_final_ostes["Año"].astype(int)
+            df_final_ostes["Mes"] = df_final_ostes["Mes"].astype(int)
 
             if df_tc is not None and not df_tc.empty:
 
@@ -561,8 +565,10 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # TC SAFE MERGE (FIXED)
             # =============================
-            df_final["Año"] = df_final["Año"].fillna(0).astype(int)
-            df_final["Mes"] = df_final["Mes"].fillna(0).astype(int)
+            df_final = df_final.dropna(subset=["Año", "Mes"])
+
+            df_final["Año"] = df_final["Año"].astype(int)
+            df_final["Mes"] = df_final["Mes"].astype(int)
 
             if df_tc is not None and not df_tc.empty:
 
