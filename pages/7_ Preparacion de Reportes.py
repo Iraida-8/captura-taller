@@ -390,21 +390,17 @@ if file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # TIME METRICS (CORRECTED)
+            # TIME METRICS
             # =============================
             fecha_cierre = pd.to_datetime(df_final_ostes.get("Fecha Cierre"), errors="coerce")
             fecha_oste = pd.to_datetime(df_final_ostes.get("Fecha Oste"), errors="coerce")
             fecha_factura = pd.to_datetime(df_final_ostes.get("Fecha Factura"), errors="coerce")
 
-            # Dias para cerrar orden → Cierre - Oste
-            dias_cierre = (fecha_cierre - fecha_oste).dt.days
-            df_final_ostes["Dias para cerrar orden"] = dias_cierre
-            df_final_ostes.loc[df_final_ostes["Dias para cerrar orden"] < 0, "Dias para cerrar orden"] = 0
+            df_final_ostes["Dias para cerrar orden"] = (fecha_cierre - fecha_oste).dt.days
+            df_final_ostes["Dias Reparacion"] = (fecha_factura - fecha_oste).dt.days
 
-            # Dias Reparacion → Factura - Oste (NEW LOGIC)
-            dias_rep = (fecha_factura - fecha_oste).dt.days
-            df_final_ostes["Dias Reparacion"] = dias_rep
-            df_final_ostes.loc[df_final_ostes["Dias Reparacion"] < 0, "Dias Reparacion"] = 0
+            df_final_ostes["Dias para cerrar orden"] = df_final_ostes["Dias para cerrar orden"].clip(lower=0)
+            df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].clip(lower=0)
 
             # =============================
             # FINANCIAL DERIVATIONS
@@ -415,21 +411,25 @@ if file_ostes and file_mantenimientos:
             df_final_ostes["IVA"] = df_final_ostes["Total oste"] - df_final_ostes["Subtotal"]
 
             # =============================
-            # TC MERGE
+            # TC SAFE MERGE (FIXED)
             # =============================
-            df_final_ostes["Año"] = df_final_ostes["Año"].astype(int)
-            df_final_ostes["Mes"] = df_final_ostes["Mes"].astype(int)
+            df_final_ostes["Año"] = df_final_ostes["Año"].fillna(0).astype(int)
+            df_final_ostes["Mes"] = df_final_ostes["Mes"].fillna(0).astype(int)
 
-            df_final_ostes = df_final_ostes.merge(
-                df_tc,
-                left_on=["Año", "Mes"],
-                right_on=["year", "month"],
-                how="left"
-            )
+            if df_tc is not None and not df_tc.empty:
 
-            df_final_ostes["TC"] = df_final_ostes["tc"].fillna(1)
+                df_final_ostes = df_final_ostes.merge(
+                    df_tc,
+                    left_on=["Año", "Mes"],
+                    right_on=["year", "month"],
+                    how="left"
+                )
 
-            df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+                df_final_ostes["TC"] = df_final_ostes["tc"].fillna(1)
+                df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["TC"] = 1
 
             df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
 
@@ -448,7 +448,6 @@ if file_ostes and file_mantenimientos:
                 "# Oste": "OSTE",
                 "Proveedor": "Acreedor",
                 "No. Factura": "Factura",
-                "Observaciones": "Observaciones",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Razon Servicio": "Razon de servicio"
             }, inplace=True)
@@ -467,7 +466,6 @@ if file_ostes and file_mantenimientos:
                 "Descripcion", "Tipo De Unidad", "Razon de servicio"
             ]
 
-            # SAFETY
             for col in final_cols_ostes:
                 if col not in df_final_ostes.columns:
                     df_final_ostes[col] = None
