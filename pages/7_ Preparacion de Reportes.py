@@ -485,7 +485,6 @@ if file_ostes and file_mantenimientos:
 # =================================
 if file_ordenes and file_ostes and file_mantenimientos:
 
-    # Validate all first
     valid_ordenes = validate_filename(file_ordenes, ["buscar", "ordenes", "sac"])
     valid_ostes = validate_filename(file_ostes, ["ostes"])
     valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
@@ -542,29 +541,35 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
             # =============================
-            # TC MERGE
+            # TC SAFE MERGE (FIXED)
             # =============================
-            df_final["Año"] = df_final["Año"].astype(int)
-            df_final["Mes"] = df_final["Mes"].astype(int)
+            df_final["Año"] = df_final["Año"].fillna(0).astype(int)
+            df_final["Mes"] = df_final["Mes"].fillna(0).astype(int)
 
-            df_final = df_final.merge(
-                df_tc,
-                left_on=["Año", "Mes"],
-                right_on=["year", "month"],
-                how="left"
-            )
+            if df_tc is not None and not df_tc.empty:
 
-            df_final["TC"] = df_final["tc"].fillna(1)
+                df_final = df_final.merge(
+                    df_tc,
+                    left_on=["Año", "Mes"],
+                    right_on=["year", "month"],
+                    how="left"
+                )
 
-            df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+                df_final["TC"] = df_final["tc"].fillna(1)
+                df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
+            else:
+                df_final["TC"] = 1
+
+            # =============================
+            # USD + CORRECTIONS
+            # =============================
             df_final["Total USD"] = df_final["Total"] / df_final["TC"]
-
-            df_final["Total Correccion"] = df_final["Total"]  # Placeholder
-            df_final["Diferencia"] = 0  # Placeholder
+            df_final["Total Correccion"] = df_final["Total"]
+            df_final["Diferencia"] = 0
 
             # =============================
-            # MISSING FIELDS (PLACEHOLDERS)
+            # MISSING FIELDS
             # =============================
             df_final["Flotilla"] = "N/A"
             df_final["Modelo"] = "N/A"
@@ -573,17 +578,16 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Comentarios"] = "N/A"
 
             # =============================
-            # RENAME FIELDS
+            # RENAME
             # =============================
             df_final.rename(columns={
-                "Tipo Unidad": "Tipo Unidad",
                 "Descripcion": "Descripcion",
                 "Razon Servicio": "Razon Reparacion",
                 "Status": "Estatus"
             }, inplace=True)
 
             # =============================
-            # SELECT FINAL COLUMNS
+            # FINAL COLUMNS
             # =============================
             final_columns = [
                 "Año", "Mes", "Unidad", "Fecha Analisis",
@@ -596,10 +600,14 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 "Razon Reparacion", "Diferencia", "Comentarios"
             ]
 
+            for col in final_columns:
+                if col not in df_final.columns:
+                    df_final[col] = None
+
             df_final = df_final[final_columns]
 
             # =============================
-            # DISPLAY (NOT COLLAPSED)
+            # DISPLAY
             # =============================
             st.divider()
             st.subheader("🚛 Reporte Mano de Obra Lincoln")
