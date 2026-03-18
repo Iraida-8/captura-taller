@@ -54,7 +54,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Preparación y Generación de Reportes")
+st.title("📊 Consulta, Preparación y Generación de Reportes")
 
 # =================================
 # MODE SELECTOR
