@@ -5,6 +5,7 @@ from auth import require_login, require_access
 import gspread
 from google.oauth2.service_account import Credentials
 import os
+from supabase import create_client
 import unicodedata
 
 # =================================
@@ -34,6 +35,12 @@ st.markdown(
 # =================================
 require_login()
 require_access("prepara_reportes")
+
+def get_supabase_client():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
 
 # =================================
 # Top navigation
@@ -110,41 +117,38 @@ def read_file(file):
         return None
 
 # =================================
-# LOAD GOOGLE SHEET (CONFIG / TC)
+# LOAD TC FROM SUPABASE
 # =================================
 @st.cache_data
-def load_gsheet(sheet_name):
+def load_tc():
     try:
-        scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        supabase = get_supabase_client()
 
-        creds = Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"],
-            scopes=scope
-        )
+        response = supabase.table("tc_mensual").select("*").execute()
 
-        client = gspread.authorize(creds)
+        df = pd.DataFrame(response.data)
 
-        sheet = client.open_by_key("1CDxrE97XFVK8EvdAXocSFL0aFB4w_MJc")
-        worksheet = sheet.worksheet(sheet_name)
+        if not df.empty:
+            df.columns = df.columns.str.lower()
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-        data = worksheet.get_all_records()
-        df = pd.DataFrame(data)
-
-        df.columns = df.columns.str.strip()
+            # ✅ ADD THIS
+            df["year"] = df["year"].astype(int)
+            df["month"] = df["month"].astype(int)
+            df["tc"] = df["tc"].astype(float)
 
         return df
 
     except Exception as e:
-        st.error(f"Error cargando Google Sheet: {e}")
+        st.error(f"Error cargando TC: {e}")
         return None
-    
-# =================================
-# LOAD CONFIG DATA
-# =================================
-df_config = load_gsheet("TC-MENSUAL")
 
-# ✅ TEMP DEBUG
-st.write("CONFIG DATA:", df_config.head() if df_config is not None else "NO DATA")
+# =================================
+# LOAD TC DATA
+# =================================
+df_tc = load_tc()
+
+st.write("TC DATA:", df_tc.head() if df_tc is not None else "NO DATA")
 
 # =================================
 # Uploaders
@@ -263,9 +267,22 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (1 + df_final_ref["Tasaiva"].fillna(0))
 
             # =============================
-            # USD / TC PLACEHOLDERS
+            # TC MERGE
             # =============================
-            df_final_ref["TC"] = 1
+            df_final_ref["Año"] = df_final_ref["Año"].astype(int)
+            df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
+
+            df_final_ref = df_final_ref.merge(
+                df_tc,
+                left_on=["Año", "Mes"],
+                right_on=["year", "month"],
+                how="left"
+            )
+
+            df_final_ref["TC"] = df_final_ref["tc"].fillna(1)
+            df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
+            # USD CALC
             df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
@@ -386,7 +403,23 @@ if file_ostes and file_mantenimientos:
             df_final_ostes["Subtotal"] = df_final_ostes["Total oste"] / 1.16
             df_final_ostes["IVA"] = df_final_ostes["Total oste"] - df_final_ostes["Subtotal"]
 
-            df_final_ostes["TC"] = 1
+            # =============================
+            # TC MERGE
+            # =============================
+            df_final_ostes["Año"] = df_final_ostes["Año"].astype(int)
+            df_final_ostes["Mes"] = df_final_ostes["Mes"].astype(int)
+
+            df_final_ostes = df_final_ostes.merge(
+                df_tc,
+                left_on=["Año", "Mes"],
+                right_on=["year", "month"],
+                how="left"
+            )
+
+            df_final_ostes["TC"] = df_final_ostes["tc"].fillna(1)
+
+            df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
             df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
 
             # =============================
@@ -499,7 +532,23 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Sub Total"] = df_final["Total"] / 1.16
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
-            df_final["TC"] = 1  # Placeholder
+            # =============================
+            # TC MERGE
+            # =============================
+            df_final["Año"] = df_final["Año"].astype(int)
+            df_final["Mes"] = df_final["Mes"].astype(int)
+
+            df_final = df_final.merge(
+                df_tc,
+                left_on=["Año", "Mes"],
+                right_on=["year", "month"],
+                how="left"
+            )
+
+            df_final["TC"] = df_final["tc"].fillna(1)
+
+            df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
             df_final["Total USD"] = df_final["Total"] / df_final["TC"]
 
             df_final["Total Correccion"] = df_final["Total"]  # Placeholder
