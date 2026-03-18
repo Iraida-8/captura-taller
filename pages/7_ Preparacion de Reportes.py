@@ -379,7 +379,7 @@ if file_ordenes and file_mantenimientos:
             st.dataframe(df_final_ref, use_container_width=True)
 
 # =================================
-# BUILD OSTES LINCOLN
+# BUILD OSTES LINCOLN (FIXED)
 # =================================
 if file_ostes and file_mantenimientos:
 
@@ -403,9 +403,13 @@ if file_ostes and file_mantenimientos:
             df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
 
             # =============================
-            # DATE HANDLING
+            # DATE HANDLING (FIXED)
             # =============================
-            df_ostes["Fecha Analisis"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce")
+            df_ostes["Fecha Analisis"] = pd.to_datetime(
+                df_ostes["Fecha Cierre"],
+                errors="coerce",
+                dayfirst=True
+            )
 
             df_ostes["Año"] = df_ostes["Fecha Analisis"].dt.year
             df_ostes["Mes"] = df_ostes["Fecha Analisis"].dt.month
@@ -426,11 +430,11 @@ if file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # TIME METRICS
+            # TIME METRICS (FIXED DATES)
             # =============================
-            fecha_cierre = pd.to_datetime(df_final_ostes.get("Fecha Cierre"), errors="coerce")
-            fecha_oste = pd.to_datetime(df_final_ostes.get("Fecha Oste"), errors="coerce")
-            fecha_factura = pd.to_datetime(df_final_ostes.get("Fecha Factura"), errors="coerce")
+            fecha_cierre = pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
+            fecha_oste = pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
+            fecha_factura = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce", dayfirst=True)
 
             df_final_ostes["Dias para cerrar orden"] = (fecha_cierre - fecha_oste).dt.days
             df_final_ostes["Dias Reparacion"] = (fecha_factura - fecha_oste).dt.days
@@ -442,12 +446,11 @@ if file_ostes and file_mantenimientos:
             # FINANCIAL DERIVATIONS
             # =============================
             df_final_ostes["Total oste"] = df_final_ostes["Total Pesos"]
-
             df_final_ostes["Subtotal"] = df_final_ostes["Total oste"] / 1.16
             df_final_ostes["IVA"] = df_final_ostes["Total oste"] - df_final_ostes["Subtotal"]
 
             # =============================
-            # TC SAFE MERGE (FIXED)
+            # TC MERGE (UNCHANGED)
             # =============================
             df_final_ostes = df_final_ostes.dropna(subset=["Año", "Mes"])
 
@@ -463,7 +466,7 @@ if file_ostes and file_mantenimientos:
                     how="left"
                 )
 
-                df_final_ostes["TC"] = df_final_ostes["tc"].fillna(1)
+                df_final_ostes["TC"] = df_final_ostes["tc"]
                 df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
@@ -525,7 +528,7 @@ if file_ostes and file_mantenimientos:
             st.dataframe(df_final_ostes, use_container_width=True)
 
 # =================================
-# BUILD LINCOLN MANO DE OBRA REPORT
+# BUILD LINCOLN MANO DE OBRA REPORT (FIXED)
 # =================================
 if file_ordenes and file_ostes and file_mantenimientos:
 
@@ -547,6 +550,13 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
             df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
             df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
+
+            # =============================
+            # FIX DATES IN OSTES (CRITICAL)
+            # =============================
+            df_ostes["Fecha Oste"] = pd.to_datetime(df_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
+            df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce", dayfirst=True)
+            df_ostes["Fecha Cierre"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
 
             # =============================
             # AGGREGATE OSTES
@@ -571,9 +581,13 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final = df_mant.merge(df_ostes_agg, on="Reporte", how="left")
 
             # =============================
-            # DATE HANDLING
+            # DATE HANDLING (FIXED)
             # =============================
-            df_final["Fecha Analisis"] = pd.to_datetime(df_final["Fecha Liberada"], errors="coerce")
+            df_final["Fecha Analisis"] = pd.to_datetime(
+                df_final["Fecha Liberada"],
+                errors="coerce",
+                dayfirst=True
+            )
 
             df_final["Año"] = df_final["Fecha Analisis"].dt.year
             df_final["Mes"] = df_final["Fecha Analisis"].dt.month
@@ -587,7 +601,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
             # =============================
-            # TC SAFE MERGE (FIXED)
+            # TC SAFE MERGE
             # =============================
             df_final = df_final.dropna(subset=["Año", "Mes"])
 
@@ -603,7 +617,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     how="left"
                 )
 
-                df_final["TC"] = df_final["tc"].fillna(1)
+                df_final["TC"] = df_final["tc"]
                 df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
