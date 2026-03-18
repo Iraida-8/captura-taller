@@ -380,6 +380,9 @@ if file_ordenes and file_mantenimientos:
             st.divider()
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
 
+            # 🔥 ADD THIS
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.date
+
             st.dataframe(
                 df_final_ref,
                 use_container_width=True,
@@ -393,6 +396,7 @@ if file_ordenes and file_mantenimientos:
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
+
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
                 st.success("Datos Cargados")
 
