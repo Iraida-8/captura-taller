@@ -627,31 +627,33 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
 
             # =============================
-            # FIX DATES IN OSTES (CRITICAL)
+            # FIX DATES IN OSTES
             # =============================
             df_ostes["Fecha Oste"] = pd.to_datetime(df_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
             df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce", dayfirst=True)
             df_ostes["Fecha Cierre"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
 
             # =============================
-            # AGGREGATE OSTES
+            # AGGREGATE OSTES (CLIENT + FACTURA)
             # =============================
             df_ostes_agg = (
                 df_ostes
                 .groupby("Reporte", as_index=False)
                 .agg({
                     "Total Pesos": "sum",
-                    "No. Factura": "first"
+                    "No. Factura": "first",
+                    "Empresa": "first"
                 })
             )
 
             df_ostes_agg.rename(columns={
                 "Total Pesos": "Total",
-                "No. Factura": "Factura"
+                "No. Factura": "Factura",
+                "Empresa": "Nombre Cliente"
             }, inplace=True)
 
             # =============================
-            # MERGE BASE (MANTENIMIENTOS)
+            # MERGE BASE
             # =============================
             df_final = df_mant.merge(df_ostes_agg, on="Reporte", how="left")
 
@@ -667,16 +669,14 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Año"] = df_final["Fecha Analisis"].dt.year
             df_final["Mes"] = df_final["Fecha Analisis"].dt.month
 
-            df_final["Mes Nombre"] = df_final["Fecha Analisis"].dt.month_name()
-
             # =============================
-            # FINANCIAL DERIVATIONS
+            # FINANCIALS
             # =============================
             df_final["Sub Total"] = df_final["Total"] / 1.16
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
             # =============================
-            # TC SAFE MERGE
+            # TC MERGE
             # =============================
             df_final = df_final.dropna(subset=["Año", "Mes"])
 
@@ -706,22 +706,42 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Diferencia"] = 0
 
             # =============================
-            # MISSING FIELDS
+            # STATIC FIELDS
             # =============================
             df_final["Flotilla"] = "N/A"
             df_final["Modelo"] = "N/A"
             df_final["Sucursal"] = "N/A"
-            df_final["Nombre Cliente"] = "N/A"
             df_final["Comentarios"] = "N/A"
 
             # =============================
-            # RENAME
+            # CLEAN FORMATS
             # =============================
-            df_final.rename(columns={
-                "Descripcion": "Descripcion",
-                "Razon Servicio": "Razon Reparacion",
-                "Status": "Estatus"
-            }, inplace=True)
+
+            # Fix Reporte (remove decimals)
+            df_final["Reporte"] = df_final["Reporte"].astype(str).str.replace(".0", "", regex=False)
+
+            # Fix dates (remove time)
+            date_cols = [
+                "Fecha Analisis",
+                "Fecha Registro",
+                "Fecha Aceptado",
+                "Fecha Iniciada",
+                "Fecha Liberada",
+                "Fecha Terminada"
+            ]
+
+            for col in date_cols:
+                if col in df_final.columns:
+                    df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.date
+
+            # Ensure numeric for money
+            currency_cols = [
+                "Sub Total", "IVA", "Total",
+                "Total Correccion", "TC", "Total USD"
+            ]
+
+            for col in currency_cols:
+                df_final[col] = pd.to_numeric(df_final[col], errors="coerce")
 
             # =============================
             # FINAL COLUMNS
@@ -743,6 +763,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             df_final = df_final[final_columns]
 
+            # Month names
             df_final["Mes"] = df_final["Mes"].map({
                 1: "January", 2: "February", 3: "March", 4: "April",
                 5: "May", 6: "June", 7: "July", 8: "August",
@@ -755,4 +776,15 @@ if file_ordenes and file_ostes and file_mantenimientos:
             st.divider()
             st.subheader("🚛 Reporte Mano de Obra Lincoln")
 
-            st.dataframe(df_final, use_container_width=True)
+            st.dataframe(
+                df_final,
+                use_container_width=True,
+                column_config={
+                    "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
+                    "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Total": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                    "TC": st.column_config.NumberColumn(format="$ %.4f"),
+                    "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
+                }
+            )
