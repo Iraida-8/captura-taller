@@ -409,7 +409,7 @@ if file_ordenes and file_mantenimientos:
 # =================================
 # BUILD OSTES LINCOLN (FIXED)
 # =================================
-if file_ostes and file_mantenimientos:
+if file_ostes and file_mantenimientos and file_ordenes:
 
     valid_ostes = validate_filename(file_ostes, ["ostes"])
     valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
@@ -456,6 +456,34 @@ if file_ostes and file_mantenimientos:
                 on="Reporte",
                 how="left"
             )
+
+            # =============================
+            # MAP ACREEDOR FROM ORDENES
+            # =============================
+            df_ordenes = read_file(file_ordenes)
+
+            if df_ordenes is not None:
+
+                df_ordenes.columns = df_ordenes.columns.str.strip()
+
+                df_ordenes["Proveedor"] = df_ordenes["Proveedor"].astype(str).str.strip()
+                df_ordenes["NombreProveedor"] = df_ordenes["NombreProveedor"].astype(str).str.strip()
+
+                df_final_ostes["Proveedor"] = df_final_ostes["Proveedor"].astype(str).str.strip()
+
+                proveedor_lookup = (
+                    df_ordenes[["Proveedor", "NombreProveedor"]]
+                    .dropna()
+                    .drop_duplicates(subset=["Proveedor"])
+                )
+
+                df_final_ostes = df_final_ostes.merge(
+                    proveedor_lookup,
+                    on="Proveedor",
+                    how="left"
+                )
+
+                df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
 
             # =============================
             # TIME METRICS (FIXED DATES)
@@ -515,7 +543,6 @@ if file_ostes and file_mantenimientos:
             # =============================
             df_final_ostes.rename(columns={
                 "# Oste": "OSTE",
-                "Proveedor": "Acreedor",
                 "No. Factura": "Factura",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Razon Servicio": "Razon de servicio"
