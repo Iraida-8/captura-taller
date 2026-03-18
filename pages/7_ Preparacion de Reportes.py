@@ -371,12 +371,40 @@ if file_ordenes and file_mantenimientos:
             })
 
             # =============================
+            # FORMAT DISPLAY
+            # =============================
+
+            # Remove time from Fecha Compra
+            df_final_ref["Fecha Compra"] = df_final_ref["Fecha Compra"].dt.date
+
+            # Ensure numeric
+            currency_cols = [
+                "PU", "PrecioParte", "Precio Sin IVA",
+                "TC", "PU USD", "Total USD", "Total Correccion"
+            ]
+
+            for col in currency_cols:
+                df_final_ref[col] = pd.to_numeric(df_final_ref[col], errors="coerce")
+
+            # =============================
             # DISPLAY
             # =============================
             st.divider()
             st.subheader("🔧 DATA LINCOLN REFACCIONES")
 
-            st.dataframe(df_final_ref, use_container_width=True)
+            st.dataframe(
+                df_final_ref,
+                use_container_width=True,
+                column_config={
+                    "PU": st.column_config.NumberColumn(format="$ %.2f"),
+                    "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                    "TC": st.column_config.NumberColumn(format="$ %.4f"),
+                    "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                }
+            )
 
 # =================================
 # BUILD OSTES LINCOLN (FIXED)
