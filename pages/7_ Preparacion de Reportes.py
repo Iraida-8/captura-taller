@@ -36,12 +36,6 @@ st.markdown(
 require_login()
 require_access("prepara_reportes")
 
-def get_supabase_client():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
 # =================================
 # Page Cache and State Management
 # =================================
@@ -277,22 +271,29 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (1 + df_final_ref["Tasaiva"].fillna(0))
 
             # =============================
-            # TC MERGE
+            # TC SAFE MERGE (FIXED)
             # =============================
-            df_final_ref["Año"] = df_final_ref["Año"].astype(int)
-            df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
+            df_final_ref["Año"] = df_final_ref["Año"].fillna(0).astype(int)
+            df_final_ref["Mes"] = df_final_ref["Mes"].fillna(0).astype(int)
 
-            df_final_ref = df_final_ref.merge(
-                df_tc,
-                left_on=["Año", "Mes"],
-                right_on=["year", "month"],
-                how="left"
-            )
+            if df_tc is not None and not df_tc.empty:
 
-            df_final_ref["TC"] = df_final_ref["tc"].fillna(1)
-            df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+                df_final_ref = df_final_ref.merge(
+                    df_tc,
+                    left_on=["Año", "Mes"],
+                    right_on=["year", "month"],
+                    how="left"
+                )
 
+                df_final_ref["TC"] = df_final_ref["tc"].fillna(1)
+                df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ref["TC"] = 1
+
+            # =============================
             # USD CALC
+            # =============================
             df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
