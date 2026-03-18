@@ -110,6 +110,43 @@ def read_file(file):
         return None
 
 # =================================
+# LOAD GOOGLE SHEET (CONFIG / TC)
+# =================================
+@st.cache_data
+def load_gsheet(sheet_name):
+    try:
+        scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=scope
+        )
+
+        client = gspread.authorize(creds)
+
+        sheet = client.open_by_key("1CDxrE97XFVK8EvdAXocSFL0aFB4w_MJc")
+        worksheet = sheet.worksheet(sheet_name)
+
+        data = worksheet.get_all_records()
+        df = pd.DataFrame(data)
+
+        df.columns = df.columns.str.strip()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando Google Sheet: {e}")
+        return None
+    
+# =================================
+# LOAD CONFIG DATA
+# =================================
+df_config = load_gsheet("TC-MENSUAL")
+
+# ✅ TEMP DEBUG
+st.write("CONFIG DATA:", df_config.head() if df_config is not None else "NO DATA")
+
+# =================================
 # Uploaders
 # =================================
 col1, col2, col3 = st.columns(3)
