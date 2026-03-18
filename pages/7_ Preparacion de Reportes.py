@@ -622,8 +622,18 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
-            df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
+
+            df_mant["Reporte"] = (
+                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
+            df_ostes["Reporte"] = (
+                pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
 
             # =============================
             # CLEAN OSTES (NO GROUPBY)
