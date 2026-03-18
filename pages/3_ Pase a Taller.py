@@ -539,6 +539,17 @@ if tipo_proveedor in ["Interno", "Externo"]:
     # =================================
     if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
 
+        # ==========================================
+        # HARD VALIDATIONS (LOCK)
+        # ==========================================
+        if no_unidad == "Selecciona Unidad":
+            st.error("Debes seleccionar un No. de Unidad válido antes de guardar.")
+            st.stop()
+
+        if no_unidad == "REMOLQUE EXTERNO" and not (no_unidad_externo and str(no_unidad_externo).strip()):
+            st.error("Debes capturar el No. de Unidad Externo.")
+            st.stop()
+
         # make sure flags exist
         st.session_state.setdefault("forzar_guardado", False)
         st.session_state.setdefault("confirmar_guardado", False)
