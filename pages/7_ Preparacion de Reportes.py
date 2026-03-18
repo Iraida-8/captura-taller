@@ -173,3 +173,114 @@ if file_mantenimientos:
         if df is not None:
             with st.expander(f"📄 Reporte de Mantenimientos ({empresa})"):
                 st.dataframe(df, use_container_width=True)
+
+# =================================
+# BUILD LINCOLN MANO DE OBRA REPORT
+# =================================
+
+if file_ordenes and file_ostes and file_mantenimientos:
+
+    # Validate all first
+    valid_ordenes = validate_filename(file_ordenes, ["buscar", "ordenes", "sac"])
+    valid_ostes = validate_filename(file_ostes, ["ostes"])
+    valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
+
+    if valid_ordenes and valid_ostes and valid_mant:
+
+        df_ordenes = read_file(file_ordenes)
+        df_ostes = read_file(file_ostes)
+        df_mant = read_file(file_mantenimientos)
+
+        if df_ordenes is not None and df_ostes is not None and df_mant is not None:
+
+            # =============================
+            # NORMALIZE KEYS
+            # =============================
+            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
+            df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
+            df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
+
+            # =============================
+            # AGGREGATE OSTES
+            # =============================
+            df_ostes_agg = (
+                df_ostes
+                .groupby("Reporte", as_index=False)
+                .agg({
+                    "Total Pesos": "sum",
+                    "No. Factura": "first"
+                })
+            )
+
+            df_ostes_agg.rename(columns={
+                "Total Pesos": "Total",
+                "No. Factura": "Factura"
+            }, inplace=True)
+
+            # =============================
+            # MERGE BASE (MANTENIMIENTOS)
+            # =============================
+            df_final = df_mant.merge(df_ostes_agg, on="Reporte", how="left")
+
+            # =============================
+            # DATE HANDLING
+            # =============================
+            df_final["Fecha Analisis"] = pd.to_datetime(df_final["Fecha Liberada"], errors="coerce")
+
+            df_final["Año"] = df_final["Fecha Analisis"].dt.year
+            df_final["Mes"] = df_final["Fecha Analisis"].dt.month
+
+            # =============================
+            # FINANCIAL DERIVATIONS
+            # =============================
+            df_final["Sub Total"] = df_final["Total"] / 1.16
+            df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
+
+            df_final["TC"] = 1  # Placeholder
+            df_final["Total USD"] = df_final["Total"] / df_final["TC"]
+
+            df_final["Total Correccion"] = df_final["Total"]  # Placeholder
+            df_final["Diferencia"] = 0  # Placeholder
+
+            # =============================
+            # MISSING FIELDS (PLACEHOLDERS)
+            # =============================
+            df_final["Flotilla"] = "N/A"
+            df_final["Modelo"] = "N/A"
+            df_final["Sucursal"] = "N/A"
+            df_final["Nombre Cliente"] = "N/A"
+            df_final["Comentarios"] = "N/A"
+
+            # =============================
+            # RENAME FIELDS
+            # =============================
+            df_final.rename(columns={
+                "Tipo Unidad": "Tipo Unidad",
+                "Descripcion": "Descripcion",
+                "Razon Servicio": "Razon Reparacion",
+                "Status": "Estatus"
+            }, inplace=True)
+
+            # =============================
+            # SELECT FINAL COLUMNS
+            # =============================
+            final_columns = [
+                "Año", "Mes", "Unidad", "Fecha Analisis",
+                "Flotilla", "Modelo", "Tipo Unidad", "Sucursal",
+                "Reporte", "Fecha Registro", "Fecha Aceptado",
+                "Fecha Iniciada", "Fecha Liberada", "Fecha Terminada",
+                "Nombre Cliente", "Factura", "Estatus",
+                "Sub Total", "IVA", "Total", "Total Correccion",
+                "TC", "Total USD", "Descripcion",
+                "Razon Reparacion", "Diferencia", "Comentarios"
+            ]
+
+            df_final = df_final[final_columns]
+
+            # =============================
+            # DISPLAY (NOT COLLAPSED)
+            # =============================
+            st.divider()
+            st.subheader("🚛 Reporte Mano de Obra Lincoln")
+
+            st.dataframe(df_final, use_container_width=True)
