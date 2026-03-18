@@ -48,17 +48,17 @@ st.title("📊 Preparación de Reportes")
 # Company selector (LOCK)
 # =================================
 companies = [
-    "Selecciona Empresa",
-    "Igloo",
-    "Lincoln Freight",
-    "Picus",
-    "Set Freight International",
-    "Set Logis Plus"
+    "SELECCIONA EMPRESA",
+    "IGLOO",
+    "LINCOLN FREIGHT",
+    "PICUS",
+    "SET FREIGHT INTERNATIONAL",
+    "SET LOGIS PLUS"
 ]
 
 empresa = st.selectbox("Selecciona la empresa:", companies)
 
-if empresa == "Selecciona Empresa":
+if empresa == "SELECCIONA EMPRESA":
     st.warning("Debes seleccionar una empresa para continuar.")
     st.stop()
 
@@ -70,9 +70,13 @@ st.success(f"Empresa seleccionada: {empresa}")
 def read_file(file):
     try:
         if file.name.endswith(".csv"):
-            return pd.read_csv(file)
+            try:
+                return pd.read_csv(file, encoding="utf-8")
+            except:
+                file.seek(0)
+                return pd.read_csv(file, encoding="latin-1")
         elif file.name.endswith(".xlsx"):
-            return pd.read_excel(file)
+            return pd.read_excel(file, engine="openpyxl")
         else:
             st.error("Formato no soportado. Usa CSV o XLSX.")
             return None
@@ -88,7 +92,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.subheader("1. Buscar Ordenes SAC")
     file_ordenes = st.file_uploader(
-        "Sube el reporte",
+        "Sube Buscar Ordenes SAC",
         type=["csv", "xlsx"],
         key="ordenes"
     )
@@ -96,7 +100,7 @@ with col1:
 with col2:
     st.subheader(f"2. Reporte Ostes ({empresa})")
     file_ostes = st.file_uploader(
-        "Sube el reporte",
+        "Sube Reporte Ostes",
         type=["csv", "xlsx"],
         key="ostes"
     )
@@ -104,7 +108,7 @@ with col2:
 with col3:
     st.subheader(f"3. Reporte de Mantenimientos ({empresa})")
     file_mantenimientos = st.file_uploader(
-        "Sube el reporte",
+        "Sube Reporte de Mantenimientos",
         type=["csv", "xlsx"],
         key="mantenimientos"
     )
