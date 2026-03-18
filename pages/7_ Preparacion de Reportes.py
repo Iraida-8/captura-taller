@@ -164,8 +164,8 @@ def load_tc():
 # =================================
 df_tc = load_tc()
 
-st.write("TC SHAPE:", df_tc.shape)
-st.dataframe(df_tc)
+#st.write("TC SHAPE:", df_tc.shape)
+#st.dataframe(df_tc)
 
 # =================================
 # Uploaders
