@@ -1,15 +1,48 @@
 import streamlit as st
 import pandas as pd
+from datetime import date, datetime
+from auth import require_login, require_access
+import gspread
+from google.oauth2.service_account import Credentials
+import os
 
 # =================================
-# Page config
+# Page configuration
 # =================================
 st.set_page_config(
-    page_title="Carga de Reportes",
+    page_title="Preparación de Reportes",
     layout="wide"
 )
 
-st.title("📊 Carga de Reportes")
+# =================================
+# Hide sidebar completely
+# =================================
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("prepara_reportes")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+st.title("📊 Preparación de Reportes")
 
 # =================================
 # Company selector (LOCK)
@@ -32,7 +65,7 @@ if empresa == "Selecciona Empresa":
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
-# Helper function to read files
+# Helper: Read file safely
 # =================================
 def read_file(file):
     try:
@@ -76,11 +109,11 @@ with col3:
         key="mantenimientos"
     )
 
-# =================================
-# Display Tables
-# =================================
 st.divider()
 
+# =================================
+# Display tables
+# =================================
 if file_ordenes:
     df_ordenes = read_file(file_ordenes)
     if df_ordenes is not None:
