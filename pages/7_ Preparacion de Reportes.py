@@ -63,6 +63,18 @@ if empresa == "SELECCIONA EMPRESA":
     st.warning("Debes seleccionar una empresa para continuar.")
     st.stop()
 
+# =================================
+# Reset uploaders when company changes
+# =================================
+prev_empresa = st.session_state.get("prev_empresa", None)
+
+if prev_empresa is not None and prev_empresa != empresa:
+    for key in ["ordenes", "ostes", "mantenimientos"]:
+        st.session_state.pop(key, None)
+    st.rerun()
+
+st.session_state.prev_empresa = empresa
+
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
