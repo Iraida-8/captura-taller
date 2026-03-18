@@ -54,7 +54,38 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Preparación de Reportes")
+st.title("📊 Preparación y Generación de Reportes")
+
+# =================================
+# MODE SELECTOR
+# =================================
+st.subheader("¿Qué quieres hacer?")
+
+col_a, col_b = st.columns(2)
+
+if "modo_reportes" not in st.session_state:
+    st.session_state.modo_reportes = None
+
+with col_a:
+    if st.button("📄 Consultar Reportes", use_container_width=True):
+        st.session_state.modo_reportes = "consultar"
+
+with col_b:
+    if st.button("📤 Cargar Reportes", use_container_width=True):
+        st.session_state.modo_reportes = "cargar"
+
+# =================================
+# FLOW CONTROL
+# =================================
+if st.session_state.modo_reportes is None:
+    st.info("Selecciona una opción para continuar.")
+    st.stop()
+
+if st.session_state.modo_reportes == "consultar":
+    st.warning("Módulo de consulta aún no disponible.")
+    st.stop()
+
+# If it's "cargar", execution continues normally
 
 # =================================
 # Company selector
