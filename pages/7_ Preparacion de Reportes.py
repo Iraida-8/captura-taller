@@ -458,7 +458,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             )
 
             # =============================
-            # MAP ACREEDOR FROM ORDENES (ROBUST)
+            # MAP ACREEDOR FROM ORDENES (NUMERIC SAFE)
             # =============================
             df_ordenes = read_file(file_ordenes)
 
@@ -466,35 +466,27 @@ if file_ostes and file_mantenimientos and file_ordenes:
 
                 df_ordenes.columns = df_ordenes.columns.str.strip()
 
-                def clean_text(x):
-                    if pd.isna(x):
-                        return ""
-                    x = str(x).lower().strip()
-                    x = unicodedata.normalize("NFKD", x)
-                    x = "".join(c for c in x if not unicodedata.combining(c))
-                    return x
+                # 🔥 FORCE SAME TYPE
+                df_ordenes["Proveedor_key"] = pd.to_numeric(df_ordenes["Proveedor"], errors="coerce").astype("Int64")
+                df_final_ostes["Proveedor_key"] = pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce").astype("Int64")
 
-                # Normalize BOTH sides
-                df_ordenes["Proveedor_key"] = df_ordenes["Proveedor"].apply(clean_text)
+                # Clean name
                 df_ordenes["NombreProveedor"] = df_ordenes["NombreProveedor"].astype(str).str.strip()
 
-                df_final_ostes["Proveedor_key"] = df_final_ostes["Proveedor"].apply(clean_text)
-
-                # Build lookup
+                # Lookup
                 proveedor_lookup = (
                     df_ordenes[["Proveedor_key", "NombreProveedor"]]
                     .dropna()
                     .drop_duplicates(subset=["Proveedor_key"])
                 )
 
-                # Merge using CLEAN KEY
+                # Merge
                 df_final_ostes = df_final_ostes.merge(
                     proveedor_lookup,
                     on="Proveedor_key",
                     how="left"
                 )
 
-                # Assign final column
                 df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
 
             # =============================
