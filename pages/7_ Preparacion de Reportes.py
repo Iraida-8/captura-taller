@@ -293,6 +293,17 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Año"] = df_final_ref["Año"].astype(int)
             df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
 
+            # 🔥 ADD THIS HERE
+            st.write("LEFT TYPES:", df_final_ref[["Año", "Mes"]].dtypes)
+            st.write("RIGHT TYPES:", df_tc[["year", "month"]].dtypes)
+
+            st.write("LEFT SAMPLE:")
+            st.write(df_final_ref[["Año", "Mes"]].drop_duplicates().head(20))
+
+            st.write("RIGHT SAMPLE:")
+            st.write(df_tc[["year", "month"]].drop_duplicates().head(20))
+
+            # 👇 THIS IS YOUR EXISTING CODE
             if df_tc is not None and not df_tc.empty:
 
                 df_final_ref = df_final_ref.merge(
