@@ -620,9 +620,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
         if df_ordenes is not None and df_ostes is not None and df_mant is not None:
 
             # =============================
-            # NORMALIZE KEYS
+            # NORMALIZE KEYS (CRITICAL FIX)
             # =============================
-
             df_mant["Reporte"] = (
                 pd.to_numeric(df_mant["# Reporte"], errors="coerce")
                 .astype("Int64")
@@ -636,7 +635,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # CLEAN OSTES (NO GROUPBY)
+            # BUILD OSTES LOOKUP (NO GROUPBY)
             # =============================
             df_ostes_lookup = df_ostes[[
                 "Reporte",
@@ -653,13 +652,17 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 "Total Pesos": "Total"
             }, inplace=True)
 
-            # remove duplicates safely (keep first occurrence per Reporte)
             df_ostes_lookup = df_ostes_lookup.drop_duplicates(subset=["Reporte"])
 
             # =============================
-            # MERGE (THIS IS THE KEY FIX)
+            # MERGE
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
+
+            # =============================
+            # MAP RAZON REPARACION (FIX)
+            # =============================
+            df_final["Razon Reparacion"] = df_final.get("Razon Servicio")
 
             # =============================
             # DATE HANDLING
@@ -720,11 +723,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # CLEAN FORMATS
             # =============================
-
-            # Reporte without decimals
             df_final["Reporte"] = df_final["Reporte"].astype(str).str.replace(".0", "", regex=False)
 
-            # Remove time from dates
             date_cols = [
                 "Fecha Analisis",
                 "Fecha Registro",
@@ -738,7 +738,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 if col in df_final.columns:
                     df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.date
 
-            # Currency formatting prep
             currency_cols = [
                 "Sub Total", "IVA", "Total",
                 "Total Correccion", "TC", "Total USD"
