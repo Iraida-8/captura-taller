@@ -325,7 +325,7 @@ if file_ordenes and file_mantenimientos:
             # SELECT FINAL COLUMNS
             # =============================
             final_cols_ref = [
-                "Año", "Mes Nombre", "Fecha Analisis",
+                "Año", "Mes", "Fecha Analisis",
                 "Folio", "Contrarecibo", "Fecha Compra",
                 "Nombre Proveedor", "Factura", "Unidad",
                 "Flotilla", "Modelo", "Tipo De Unidad", "Sucursal",
@@ -337,6 +337,12 @@ if file_ordenes and file_mantenimientos:
             ]
 
             df_final_ref = df_final_ref[final_cols_ref]
+
+            df_final_ref["Mes"] = df_final_ref["Mes"].map({
+                1: "January", 2: "February", 3: "March", 4: "April",
+                5: "May", 6: "June", 7: "July", 8: "August",
+                9: "September", 10: "October", 11: "November", 12: "December"
+            })
 
             # =============================
             # DISPLAY
@@ -476,6 +482,12 @@ if file_ostes and file_mantenimientos:
 
             df_final_ostes = df_final_ostes[final_cols_ostes]
 
+            df_final_ostes["Mes"] = df_final_ostes["Mes"].map({
+                1: "January", 2: "February", 3: "March", 4: "April",
+                5: "May", 6: "June", 7: "July", 8: "August",
+                9: "September", 10: "October", 11: "November", 12: "December"
+            })
+
             # =============================
             # DISPLAY
             # =============================
@@ -611,6 +623,12 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     df_final[col] = None
 
             df_final = df_final[final_columns]
+
+            df_final["Mes"] = df_final["Mes"].map({
+                1: "January", 2: "February", 3: "March", 4: "April",
+                5: "May", 6: "June", 7: "July", 8: "August",
+                9: "September", 10: "October", 11: "November", 12: "December"
+            })
 
             # =============================
             # DISPLAY
