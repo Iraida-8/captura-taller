@@ -43,6 +43,16 @@ def get_supabase_client():
     )
 
 # =================================
+# Page Cache and State Management
+# =================================
+@st.cache_resource
+def get_supabase_client():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
