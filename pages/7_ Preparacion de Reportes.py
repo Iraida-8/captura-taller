@@ -624,38 +624,32 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
             df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
-            df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
 
             # =============================
-            # FIX DATES IN OSTES
+            # CLEAN OSTES (NO GROUPBY)
             # =============================
-            df_ostes["Fecha Oste"] = pd.to_datetime(df_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
-            df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce", dayfirst=True)
-            df_ostes["Fecha Cierre"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
+            df_ostes_lookup = df_ostes[[
+                "Reporte",
+                "Empresa",
+                "No. Factura",
+                "Status",
+                "Total Pesos"
+            ]].copy()
 
-            # =============================
-            # AGGREGATE OSTES (CLIENT + FACTURA)
-            # =============================
-            df_ostes_agg = (
-                df_ostes
-                .groupby("Reporte", as_index=False)
-                .agg({
-                    "Total Pesos": "sum",
-                    "No. Factura": "first",
-                    "Empresa": "first"
-                })
-            )
-
-            df_ostes_agg.rename(columns={
-                "Total Pesos": "Total",
+            df_ostes_lookup.rename(columns={
+                "Empresa": "Nombre Cliente",
                 "No. Factura": "Factura",
-                "Empresa": "Nombre Cliente"
+                "Status": "Estatus",
+                "Total Pesos": "Total"
             }, inplace=True)
 
+            # remove duplicates safely (keep first occurrence per Reporte)
+            df_ostes_lookup = df_ostes_lookup.drop_duplicates(subset=["Reporte"])
+
             # =============================
-            # MERGE BASE
+            # MERGE (THIS IS THE KEY FIX)
             # =============================
-            df_final = df_mant.merge(df_ostes_agg, on="Reporte", how="left")
+            df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
 
             # =============================
             # DATE HANDLING
@@ -717,10 +711,10 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # CLEAN FORMATS
             # =============================
 
-            # Fix Reporte (remove decimals)
+            # Reporte without decimals
             df_final["Reporte"] = df_final["Reporte"].astype(str).str.replace(".0", "", regex=False)
 
-            # Fix dates (remove time)
+            # Remove time from dates
             date_cols = [
                 "Fecha Analisis",
                 "Fecha Registro",
@@ -734,7 +728,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 if col in df_final.columns:
                     df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.date
 
-            # Ensure numeric for money
+            # Currency formatting prep
             currency_cols = [
                 "Sub Total", "IVA", "Total",
                 "Total Correccion", "TC", "Total USD"
