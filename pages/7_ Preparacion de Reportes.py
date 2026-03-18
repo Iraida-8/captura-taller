@@ -175,6 +175,112 @@ if file_mantenimientos:
                 st.dataframe(df, use_container_width=True)
 
 # =================================
+# BUILD DATA LINCOLN REFACCIONES
+# =================================
+
+if file_ordenes and file_mantenimientos:
+
+    valid_ordenes = validate_filename(file_ordenes, ["buscar", "ordenes", "sac"])
+    valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
+
+    if valid_ordenes and valid_mant:
+
+        df_ordenes = read_file(file_ordenes)
+        df_mant = read_file(file_mantenimientos)
+
+        if df_ordenes is not None and df_mant is not None:
+
+            # =============================
+            # NORMALIZE KEYS
+            # =============================
+            df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
+            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
+
+            # =============================
+            # DATE HANDLING
+            # =============================
+            df_ordenes["Fecha Compra"] = pd.to_datetime(df_ordenes["Fecha"], errors="coerce")
+
+            df_ordenes["Año"] = df_ordenes["Fecha Compra"].dt.year
+            df_ordenes["Mes"] = df_ordenes["Fecha Compra"].dt.month
+
+            # =============================
+            # JOIN MANTENIMIENTOS
+            # =============================
+            df_final_ref = df_ordenes.merge(
+                df_mant[[
+                    "Reporte",
+                    "Tipo Unidad",
+                    "Descripcion",
+                    "Razon Servicio",
+                    "Fecha Liberada"
+                ]],
+                on="Reporte",
+                how="left"
+            )
+
+            # =============================
+            # DERIVED FIELDS
+            # =============================
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Liberada"], errors="coerce")
+
+            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (1 + df_final_ref["Tasaiva"].fillna(0))
+
+            # =============================
+            # USD / TC PLACEHOLDERS
+            # =============================
+            df_final_ref["TC"] = 1
+            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
+            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
+
+            df_final_ref["Total Correccion"] = df_final_ref["PrecioParte"]
+
+            # =============================
+            # MISSING FIELDS
+            # =============================
+            df_final_ref["Flotilla"] = "N/A"
+            df_final_ref["Modelo"] = "N/A"
+            df_final_ref["Sucursal"] = "N/A"
+
+            # =============================
+            # RENAME
+            # =============================
+            df_final_ref.rename(columns={
+                "NombreProveedor": "Nombre Proveedor",
+                "TipoCompra": "Tipo De Parte",
+                "Tipo Unidad": "Tipo De Unidad",
+                "Tasaiva": "Tasa IVA",
+                "Descripcion": "Descripcion",
+                "Razon Servicio": "Razon Reparacion"
+            }, inplace=True)
+
+            # =============================
+            # SELECT FINAL COLUMNS
+            # =============================
+            final_cols_ref = [
+                "Año", "Mes", "Fecha Analisis",
+                "Folio", "Contrarecibo", "Fecha Compra",
+                "Nombre Proveedor", "Factura", "Unidad",
+                "Flotilla", "Modelo", "Tipo De Unidad", "Sucursal",
+                "Parte", "Tipo De Parte", "Cantidad", "PU",
+                "PrecioParte", "Precio Sin IVA", "Tasa IVA", "IVA",
+                "TC", "PU USD", "Total USD", "Total Correccion",
+                "Moneda", "Usuario", "Reporte",
+                "Descripcion", "Razon Reparacion"
+            ]
+
+            df_final_ref = df_final_ref[final_cols_ref]
+
+            # =============================
+            # DISPLAY
+            # =============================
+            st.divider()
+            st.subheader("🔧 DATA LINCOLN REFACCIONES")
+
+            st.dataframe(df_final_ref, use_container_width=True)
+
+            
+# =================================
 # BUILD LINCOLN MANO DE OBRA REPORT
 # =================================
 
