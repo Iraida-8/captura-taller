@@ -548,12 +548,45 @@ if file_ostes and file_mantenimientos:
             })
 
             # =============================
+            # FORMAT DISPLAY
+            # =============================
+
+            # Fix Reporte (no decimals)
+            df_final_ostes["Reporte"] = df_final_ostes["Reporte"].astype(str).str.replace(".0", "", regex=False)
+
+            # Fix dates (remove time)
+            date_cols = ["Fecha Analisis", "Fecha Factura", "Fecha Oste", "Fecha Cierre"]
+            for col in date_cols:
+                if col in df_final_ostes.columns:
+                    df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.date
+
+            # Ensure numeric for currency fields
+            currency_cols = [
+                "Subtotal", "IVA", "Total oste",
+                "TC", "Total Correccion"
+            ]
+
+            for col in currency_cols:
+                if col in df_final_ostes.columns:
+                    df_final_ostes[col] = pd.to_numeric(df_final_ostes[col], errors="coerce")
+
+            # =============================
             # DISPLAY
             # =============================
             st.divider()
             st.subheader("💰 OSTES LINCOLN")
 
-            st.dataframe(df_final_ostes, use_container_width=True)
+            st.dataframe(
+                df_final_ostes,
+                use_container_width=True,
+                column_config={
+                    "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+                    "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                    "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
+                    "TC": st.column_config.NumberColumn(format="$ %.4f"),
+                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                }
+            )
 
 # =================================
 # BUILD LINCOLN MANO DE OBRA REPORT (FIXED)
