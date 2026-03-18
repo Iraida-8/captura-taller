@@ -5,6 +5,7 @@ from auth import require_login, require_access
 import gspread
 from google.oauth2.service_account import Credentials
 import os
+import unicodedata
 
 # =================================
 # Page configuration
@@ -65,6 +66,21 @@ if empresa == "SELECCIONA EMPRESA":
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
+# Normalize text (remove accents + lowercase)
+# =================================
+def normalize_text(text):
+    text = text.lower()
+    text = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+# =================================
+# Validate filename
+# =================================
+def validate_filename(file, required_words):
+    name = normalize_text(file.name)
+    return all(word in name for word in required_words)
+
+# =================================
 # Helper: Read file safely
 # =================================
 def read_file(file):
@@ -116,22 +132,35 @@ with col3:
 st.divider()
 
 # =================================
-# Display tables
+# Display tables with validation
 # =================================
+
+# ---- ORDENES ----
 if file_ordenes:
-    df_ordenes = read_file(file_ordenes)
-    if df_ordenes is not None:
-        st.subheader("📄 Buscar Ordenes SAC")
-        st.dataframe(df_ordenes, use_container_width=True)
+    if not validate_filename(file_ordenes, ["buscar", "ordenes", "sac"]):
+        st.error("El archivo debe contener: buscar + ordenes + sac en el nombre.")
+    else:
+        df_ordenes = read_file(file_ordenes)
+        if df_ordenes is not None:
+            st.subheader("📄 Buscar Ordenes SAC")
+            st.dataframe(df_ordenes, use_container_width=True)
 
+# ---- OSTES ----
 if file_ostes:
-    df_ostes = read_file(file_ostes)
-    if df_ostes is not None:
-        st.subheader(f"📄 Reporte Ostes ({empresa})")
-        st.dataframe(df_ostes, use_container_width=True)
+    if not validate_filename(file_ostes, ["ostes"]):
+        st.error("El archivo debe contener: ostes en el nombre.")
+    else:
+        df_ostes = read_file(file_ostes)
+        if df_ostes is not None:
+            st.subheader(f"📄 Reporte Ostes ({empresa})")
+            st.dataframe(df_ostes, use_container_width=True)
 
+# ---- MANTENIMIENTOS ----
 if file_mantenimientos:
-    df_mantenimientos = read_file(file_mantenimientos)
-    if df_mantenimientos is not None:
-        st.subheader(f"📄 Reporte de Mantenimientos ({empresa})")
-        st.dataframe(df_mantenimientos, use_container_width=True)
+    if not validate_filename(file_mantenimientos, ["mantenimientos"]):
+        st.error("El archivo debe contener: mantenimientos en el nombre.")
+    else:
+        df_mantenimientos = read_file(file_mantenimientos)
+        if df_mantenimientos is not None:
+            st.subheader(f"📄 Reporte de Mantenimientos ({empresa})")
+            st.dataframe(df_mantenimientos, use_container_width=True)
