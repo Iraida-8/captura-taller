@@ -248,6 +248,8 @@ if file_ordenes and file_mantenimientos:
             df_ordenes["Año"] = df_ordenes["Fecha Compra"].dt.year
             df_ordenes["Mes"] = df_ordenes["Fecha Compra"].dt.month
 
+            df_ordenes["Mes Nombre"] = df_ordenes["Fecha Compra"].dt.month_name()
+
             # =============================
             # JOIN MANTENIMIENTOS
             # =============================
@@ -323,7 +325,7 @@ if file_ordenes and file_mantenimientos:
             # SELECT FINAL COLUMNS
             # =============================
             final_cols_ref = [
-                "Año", "Mes", "Fecha Analisis",
+                "Año", "Mes Nombre", "Fecha Analisis",
                 "Folio", "Contrarecibo", "Fecha Compra",
                 "Nombre Proveedor", "Factura", "Unidad",
                 "Flotilla", "Modelo", "Tipo De Unidad", "Sucursal",
@@ -375,6 +377,8 @@ if file_ostes and file_mantenimientos:
 
             df_ostes["Año"] = df_ostes["Fecha Analisis"].dt.year
             df_ostes["Mes"] = df_ostes["Fecha Analisis"].dt.month
+
+            df_ostes["Mes Nombre"] = df_ostes["Fecha Analisis"].dt.month_name()
 
             # =============================
             # JOIN MANTENIMIENTOS
@@ -533,6 +537,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             df_final["Año"] = df_final["Fecha Analisis"].dt.year
             df_final["Mes"] = df_final["Fecha Analisis"].dt.month
+
+            df_final["Mes Nombre"] = df_final["Fecha Analisis"].dt.month_name()
 
             # =============================
             # FINANCIAL DERIVATIONS
