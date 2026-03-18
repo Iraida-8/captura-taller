@@ -233,6 +233,26 @@ if file_mantenimientos:
                 st.dataframe(df, use_container_width=True)
 
 # =================================
+# LOAD BUTTONS (UI ONLY)
+# =================================
+st.divider()
+
+col_btn1, col_btn2, col_btn3 = st.columns(3)
+
+with col_btn1:
+    if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
+        st.success("Datos Cargados")
+
+with col_btn2:
+    if st.button("📥 Cargar Datos - OSTES", use_container_width=True):
+        st.success("Datos Cargados")
+
+with col_btn3:
+    if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
+        st.success("Datos Cargados")
+
+
+# =================================
 # BUILD DATA LINCOLN REFACCIONES
 # =================================
 if file_ordenes and file_mantenimientos:
