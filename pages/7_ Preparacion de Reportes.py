@@ -46,7 +46,7 @@ st.divider()
 st.title("📊 Preparación de Reportes")
 
 # =================================
-# Company selector (LOCK)
+# Company selector
 # =================================
 companies = [
     "SELECCIONA EMPRESA",
@@ -63,22 +63,19 @@ if empresa == "SELECCIONA EMPRESA":
     st.warning("Debes seleccionar una empresa para continuar.")
     st.stop()
 
-# =================================
-# Reset uploaders when company changes (STABLE)
-# =================================
-if "prev_empresa" not in st.session_state:
-    st.session_state.prev_empresa = empresa
-
-if st.session_state.prev_empresa != empresa:
-    for key in ["ordenes", "ostes", "mantenimientos"]:
-        st.session_state[key] = None
-
-st.session_state.prev_empresa = empresa
-
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
-# Normalize text (remove accents + lowercase)
+# Dynamic uploader keys (CRITICAL FIX)
+# =================================
+key_suffix = empresa.replace(" ", "_")
+
+key_ordenes = f"ordenes_{key_suffix}"
+key_ostes = f"ostes_{key_suffix}"
+key_mantenimientos = f"mantenimientos_{key_suffix}"
+
+# =================================
+# Normalize text
 # =================================
 def normalize_text(text):
     text = text.lower()
@@ -93,7 +90,7 @@ def validate_filename(file, required_words):
     return all(word in name for word in required_words)
 
 # =================================
-# Helper: Read file safely
+# Read file safely
 # =================================
 def read_file(file):
     try:
@@ -122,7 +119,7 @@ with col1:
     file_ordenes = st.file_uploader(
         "Sube Buscar Ordenes SAC",
         type=["csv", "xlsx"],
-        key="ordenes"
+        key=key_ordenes
     )
 
 with col2:
@@ -130,7 +127,7 @@ with col2:
     file_ostes = st.file_uploader(
         "Sube Reporte Ostes",
         type=["csv", "xlsx"],
-        key="ostes"
+        key=key_ostes
     )
 
 with col3:
@@ -138,41 +135,41 @@ with col3:
     file_mantenimientos = st.file_uploader(
         "Sube Reporte de Mantenimientos",
         type=["csv", "xlsx"],
-        key="mantenimientos"
+        key=key_mantenimientos
     )
 
 st.divider()
 
 # =================================
-# Display tables with validation (COLLAPSIBLE)
+# Display tables (collapsible)
 # =================================
 
-# ---- ORDENES ----
+# ORDENES
 if file_ordenes:
     if not validate_filename(file_ordenes, ["buscar", "ordenes", "sac"]):
         st.error("El archivo debe contener: buscar + ordenes + sac en el nombre.")
     else:
-        df_ordenes = read_file(file_ordenes)
-        if df_ordenes is not None:
-            with st.expander("📄 Buscar Ordenes SAC", expanded=False):
-                st.dataframe(df_ordenes, use_container_width=True)
+        df = read_file(file_ordenes)
+        if df is not None:
+            with st.expander("📄 Buscar Ordenes SAC"):
+                st.dataframe(df, use_container_width=True)
 
-# ---- OSTES ----
+# OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
         st.error("El archivo debe contener: ostes en el nombre.")
     else:
-        df_ostes = read_file(file_ostes)
-        if df_ostes is not None:
-            with st.expander(f"📄 Reporte Ostes ({empresa})", expanded=False):
-                st.dataframe(df_ostes, use_container_width=True)
+        df = read_file(file_ostes)
+        if df is not None:
+            with st.expander(f"📄 Reporte Ostes ({empresa})"):
+                st.dataframe(df, use_container_width=True)
 
-# ---- MANTENIMIENTOS ----
+# MANTENIMIENTOS
 if file_mantenimientos:
     if not validate_filename(file_mantenimientos, ["mantenimientos"]):
         st.error("El archivo debe contener: mantenimientos en el nombre.")
     else:
-        df_mantenimientos = read_file(file_mantenimientos)
-        if df_mantenimientos is not None:
-            with st.expander(f"📄 Reporte de Mantenimientos ({empresa})", expanded=False):
-                st.dataframe(df_mantenimientos, use_container_width=True)
+        df = read_file(file_mantenimientos)
+        if df is not None:
+            with st.expander(f"📄 Reporte de Mantenimientos ({empresa})"):
+                st.dataframe(df, use_container_width=True)
