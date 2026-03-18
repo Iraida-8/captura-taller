@@ -250,6 +250,7 @@ if file_ordenes and file_mantenimientos:
                 "TipoCompra": "Tipo De Parte",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Tasaiva": "Tasa IVA",
+                "IvaParte": "IVA",
                 "Descripcion": "Descripcion",
                 "Razon Servicio": "Razon Reparacion"
             }, inplace=True)
@@ -279,7 +280,7 @@ if file_ordenes and file_mantenimientos:
 
             st.dataframe(df_final_ref, use_container_width=True)
 
-            
+
 # =================================
 # BUILD LINCOLN MANO DE OBRA REPORT
 # =================================
