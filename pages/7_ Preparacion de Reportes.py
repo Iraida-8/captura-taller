@@ -64,14 +64,14 @@ if empresa == "SELECCIONA EMPRESA":
     st.stop()
 
 # =================================
-# Reset uploaders when company changes
+# Reset uploaders when company changes (STABLE)
 # =================================
-prev_empresa = st.session_state.get("prev_empresa", None)
+if "prev_empresa" not in st.session_state:
+    st.session_state.prev_empresa = empresa
 
-if prev_empresa is not None and prev_empresa != empresa:
+if st.session_state.prev_empresa != empresa:
     for key in ["ordenes", "ostes", "mantenimientos"]:
-        st.session_state.pop(key, None)
-    st.rerun()
+        st.session_state[key] = None
 
 st.session_state.prev_empresa = empresa
 
