@@ -234,7 +234,7 @@ if file_mantenimientos:
 
 
 # =================================
-# BUILD DATA LINCOLN REFACCIONES
+# BUILD DATA REFACCIONES
 # =================================
 if file_ordenes and file_mantenimientos:
 
@@ -378,7 +378,7 @@ if file_ordenes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
-            st.subheader("🔧 DATA LINCOLN REFACCIONES")
+            st.subheader(f"🔧 DATA {empresa} REFACCIONES")
 
             st.dataframe(
                 df_final_ref,
@@ -397,7 +397,7 @@ if file_ordenes and file_mantenimientos:
                 st.success("Datos Cargados")
 
 # =================================
-# BUILD OSTES LINCOLN
+# BUILD OSTES
 # =================================
 if file_ostes and file_mantenimientos and file_ordenes:
 
@@ -591,7 +591,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # DISPLAY
             # =============================
             st.divider()
-            st.subheader("💰 OSTES LINCOLN")
+            st.subheader(f"💰 OSTES {empresa}")
 
             st.dataframe(
                 df_final_ostes,
@@ -608,7 +608,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 st.success("Datos Cargados")
 
 # =================================
-# BUILD LINCOLN MANO DE OBRA REPORT
+# BUILD MANO DE OBRA REPORT
 # =================================
 if file_ordenes and file_ostes and file_mantenimientos:
 
@@ -782,7 +782,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
-            st.subheader("🚛 Reporte Mano de Obra Lincoln")
+            st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
 
             st.dataframe(
                 df_final,
