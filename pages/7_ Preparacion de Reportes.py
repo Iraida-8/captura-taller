@@ -322,17 +322,21 @@ if file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # TIME METRICS
+            # TIME METRICS (FIXED + SAFE)
             # =============================
-            df_final_ostes["Dias para cerrar orden"] = (
-                pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce") -
-                pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce")
-            ).dt.days
+            fecha_cierre = pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce")
+            fecha_oste = pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce")
+            fecha_factura = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
 
-            df_final_ostes["Dias Reparacion"] = (
-                pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce") -
-                pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
-            ).dt.days
+            # Dias para cerrar orden
+            df_final_ostes["Dias para cerrar orden"] = (fecha_cierre - fecha_oste).dt.days
+            df_final_ostes["Dias para cerrar orden"] = df_final_ostes["Dias para cerrar orden"].fillna(0)
+            df_final_ostes["Dias para cerrar orden"] = df_final_ostes["Dias para cerrar orden"].clip(lower=0).astype(int)
+
+            # Dias Reparacion
+            df_final_ostes["Dias Reparacion"] = (fecha_cierre - fecha_factura).dt.days
+            df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].fillna(0)
+            df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].clip(lower=0).astype(int)
 
             # =============================
             # FINANCIAL DERIVATIONS
