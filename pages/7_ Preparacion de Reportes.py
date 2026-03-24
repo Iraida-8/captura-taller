@@ -728,13 +728,23 @@ if empresa_config and empresa_config["empresa_gid"]:
     )
 
 # =================================
-# NORMALIZE GOOGLE SHEETS (STEP 5)
+# NORMALIZE GOOGLE SHEETS
 # =================================
-if not df_google_universal.empty and "Unidad" in df_google_universal.columns:
-    df_google_universal["Unidad"] = clean_unidad(df_google_universal["Unidad"])
 
-if not df_google_empresa.empty and "Unidad" in df_google_empresa.columns:
-    df_google_empresa["Unidad"] = clean_unidad(df_google_empresa["Unidad"])
+# UNIVERSAL → TRACTOR → Unidad
+if not df_google_universal.empty:
+    df_google_universal.columns = df_google_universal.columns.str.strip()
+
+    if "TRACTOR" in df_google_universal.columns:
+        df_google_universal["Unidad"] = clean_unidad(df_google_universal["TRACTOR"])
+
+
+# EMPRESA → Caja → Unidad
+if not df_google_empresa.empty:
+    df_google_empresa.columns = df_google_empresa.columns.str.strip()
+
+    if "Caja" in df_google_empresa.columns:
+        df_google_empresa["Unidad"] = clean_unidad(df_google_empresa["Caja"])
 
 
 # =================================
