@@ -82,7 +82,58 @@ if st.session_state.modo_reportes is None:
     st.stop()
 
 if st.session_state.modo_reportes == "consultar":
-    st.warning("Módulo de consulta aún no disponible.")
+
+    st.divider()
+    st.header("📄 Consulta de Reportes")
+
+    # =================================
+    # FILTERS
+    # =================================
+    col1, col2 = st.columns([2, 1])
+
+    companies = [
+        "SELECCIONA EMPRESA",
+        "IGLOO",
+        "LINCOLN FREIGHT",
+        "PICUS",
+        "SET FREIGHT INTERNATIONAL",
+        "SET LOGIS PLUS"
+    ]
+
+    with col1:
+        empresa_consulta = st.selectbox(
+            "Selecciona la empresa:",
+            companies,
+            key="consulta_empresa"
+        )
+
+    with col2:
+        year_options = ["Todos", 2026, 2025, 2024, 2023]
+        year_filter = st.selectbox(
+            "Filtrar por año (opcional):",
+            year_options,
+            key="consulta_year"
+        )
+
+    # =================================
+    # VALIDATION
+    # =================================
+    if empresa_consulta == "SELECCIONA EMPRESA":
+        st.warning("Selecciona una empresa para consultar.")
+        st.stop()
+
+    st.success(f"Consultando: {empresa_consulta}")
+
+    if year_filter != "Todos":
+        st.info(f"Filtro activo: Año {year_filter}")
+
+    st.divider()
+
+    # =================================
+    # PLACEHOLDER (NEXT STEP)
+    # =================================
+    st.info("Aquí se mostrarán los reportes filtrados.")
+
     st.stop()
 
 # If it's "cargar", execution continues normally
