@@ -344,10 +344,37 @@ if "modo_reportes" not in st.session_state:
 
 with col_a:
     if st.button("📄 Consultar Reportes", use_container_width=True):
+
+        keys_to_delete = [
+            "ordenes_IGLOO", "ordenes_LINCOLN_FREIGHT", "ordenes_PICUS",
+            "ordenes_SET_FREIGHT_INTERNATIONAL", "ordenes_SET_LOGIS_PLUS",
+            "ostes_IGLOO", "ostes_LINCOLN_FREIGHT", "ostes_PICUS",
+            "ostes_SET_FREIGHT_INTERNATIONAL", "ostes_SET_LOGIS_PLUS",
+            "mantenimientos_IGLOO", "mantenimientos_LINCOLN_FREIGHT",
+            "mantenimientos_PICUS", "mantenimientos_SET_FREIGHT_INTERNATIONAL",
+            "mantenimientos_SET_LOGIS_PLUS"
+        ]
+
+        for k in keys_to_delete:
+            if k in st.session_state:
+                del st.session_state[k]
+
         st.session_state.modo_reportes = "consultar"
+
 
 with col_b:
     if st.button("📤 Cargar Reportes", use_container_width=True):
+
+        keys_to_delete = [
+            "consulta_empresa",
+            "consulta_year",
+            "consulta_mes"
+        ]
+
+        for k in keys_to_delete:
+            if k in st.session_state:
+                del st.session_state[k]
+
         st.session_state.modo_reportes = "cargar"
 
 # =================================
