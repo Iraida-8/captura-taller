@@ -1212,6 +1212,38 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 .astype(str)
             )
 
+            df_ordenes["Reporte"] = (
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
+            # =============================
+            # BUILD UNIDAD LOOKUP
+            # =============================
+
+            # From ordenes (priority)
+            lookup_ordenes = df_ordenes[["Reporte", "Unidad"]].dropna()
+            lookup_ordenes = lookup_ordenes.drop_duplicates(subset=["Reporte"])
+
+            # From ostes (fallback)
+            lookup_ostes = df_ostes[["Reporte", "Unidad"]].dropna()
+            lookup_ostes = lookup_ostes.drop_duplicates(subset=["Reporte"])
+
+            # Combine both
+            df_unidad_lookup = lookup_ordenes.merge(
+                lookup_ostes,
+                on="Reporte",
+                how="outer",
+                suffixes=("_ord", "_ost")
+            )
+
+            # Resolve final Unidad
+            df_unidad_lookup["Unidad"] = df_unidad_lookup["Unidad_ord"].combine_first(
+                df_unidad_lookup["Unidad_ost"]
+            )
+
+            df_unidad_lookup = df_unidad_lookup[["Reporte", "Unidad"]]
             # =============================
             # BUILD OSTES LOOKUP (NO GROUPBY)
             # =============================
@@ -1236,6 +1268,15 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # MERGE
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
+
+            # =============================
+            # ADD UNIDAD TO MANO DE OBRA
+            # =============================
+            df_final = df_final.merge(
+                df_unidad_lookup,
+                on="Reporte",
+                how="left"
+            )
 
             # =============================
             # MAP RAZON REPARACION (FIX)
