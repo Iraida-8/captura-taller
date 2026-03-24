@@ -235,6 +235,8 @@ if st.session_state.modo_reportes == "consultar":
             key="consulta_mes"
         )
 
+        mes_filter_norm = mes_filter.lower() if mes_filter != "Todos" else "Todos"
+
     # =================================
     # VALIDATION
     # =================================
@@ -254,12 +256,13 @@ if st.session_state.modo_reportes == "consultar":
     # =================================
     if empresa_consulta == "IGLOO":
 
+        # LOAD
         df_ref = load_refacciones_igloo()
         df_ost = load_ostes_igloo()
         df_mo  = load_mano_obra_igloo()
 
         # -------------------------------
-        # Clean columns
+        # CLEAN COLUMNS
         # -------------------------------
         def clean(df):
             df.columns = df.columns.str.strip().str.lower()
@@ -270,7 +273,19 @@ if st.session_state.modo_reportes == "consultar":
         df_mo  = clean(df_mo)
 
         # -------------------------------
-        # Remove unwanted columns
+        # NORMALIZE MES
+        # -------------------------------
+        def normalize_mes(val):
+            if pd.isna(val):
+                return None
+            return str(val).strip().lower()
+
+        for df in [df_ref, df_ost, df_mo]:
+            if "mes" in df.columns:
+                df["mes"] = df["mes"].apply(normalize_mes)
+
+        # -------------------------------
+        # DROP UNUSED
         # -------------------------------
         cols_to_drop = ["id", "created_at"]
 
@@ -279,14 +294,14 @@ if st.session_state.modo_reportes == "consultar":
         df_mo  = df_mo.drop(columns=[c for c in cols_to_drop if c in df_mo.columns])
 
         # -------------------------------
-        # Ensure anio is numeric
+        # ENSURE YEAR NUMERIC
         # -------------------------------
         for df in [df_ref, df_ost, df_mo]:
             if "anio" in df.columns:
                 df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
 
         # -------------------------------
-        # YEAR FILTER
+        # FILTER YEAR
         # -------------------------------
         if year_filter != "Todos":
             df_ref = df_ref[df_ref["anio"] == year_filter]
@@ -294,15 +309,15 @@ if st.session_state.modo_reportes == "consultar":
             df_mo  = df_mo[df_mo["anio"] == year_filter]
 
         # -------------------------------
-        # MES FILTER (FIXED POSITION)
+        # FILTER MES
         # -------------------------------
-        if mes_filter != "Todos":
-            df_ref = df_ref[df_ref["mes"] == mes_filter]
-            df_ost = df_ost[df_ost["mes"] == mes_filter]
-            df_mo  = df_mo[df_mo["mes"] == mes_filter]
+        if mes_filter_norm != "Todos":
+            df_ref = df_ref[df_ref["mes"] == mes_filter_norm]
+            df_ost = df_ost[df_ost["mes"] == mes_filter_norm]
+            df_mo  = df_mo[df_mo["mes"] == mes_filter_norm]
 
         # -------------------------------
-        # 🔥 RENAME COLUMNS (ADD HERE)
+        # 🔥 RENAME (ALWAYS RUNS)
         # -------------------------------
         df_ref = df_ref.rename(columns={
             "anio": "Año",
@@ -413,8 +428,6 @@ if st.session_state.modo_reportes == "consultar":
 
         st.subheader("🚛 Mano de Obra IGLOO")
         st.dataframe(df_mo, use_container_width=True)
-
-    st.stop()
 
 # =================================
 # Company selector
@@ -549,12 +562,30 @@ with col2:
     )
 
 with col3:
-    st.subheader(f"3. Reporte de Mantenimientos ({empresa})")
-    file_mantenimientos = st.file_uploader(
-        "Sube Reporte de Mantenimientos",
-        type=["csv", "xlsx"],
-        key=key_mantenimientos
+    temp_df_mes = load_refacciones_igloo()
+
+    if not temp_df_mes.empty and "mes" in temp_df_mes.columns:
+
+        temp_df_mes["mes"] = temp_df_mes["mes"].apply(
+            lambda x: str(x).strip().lower() if pd.notna(x) else None
+        )
+
+        meses = sorted(temp_df_mes["mes"].dropna().unique())
+        meses_display = [m.capitalize() for m in meses]
+
+    else:
+        meses = []
+        meses_display = []
+
+    mes_options = ["Todos"] + meses_display
+
+    mes_filter = st.selectbox(
+        "Filtrar por mes (opcional):",
+        mes_options,
+        key="consulta_mes"
     )
+
+    mes_filter_norm = mes_filter.lower() if mes_filter != "Todos" else "Todos"
 
 st.divider()
 
