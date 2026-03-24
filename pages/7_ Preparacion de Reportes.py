@@ -403,7 +403,20 @@ if st.session_state.modo_reportes == "consultar":
         temp_df_mes = load_refacciones_igloo()
 
         if not temp_df_mes.empty and "mes" in temp_df_mes.columns:
-            meses = sorted(temp_df_mes["mes"].dropna().unique())
+
+            meses_clean = (
+                temp_df_mes["mes"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .str.lower()        # normalize
+            )
+
+            meses_unique = sorted(meses_clean.unique())
+
+            # Capitalize properly for display
+            meses = [m.capitalize() for m in meses_unique]
+
         else:
             meses = []
 
