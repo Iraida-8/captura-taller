@@ -1212,24 +1212,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 .astype(str)
             )
 
-            df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
-
-            # =============================
-            # BUILD UNIDAD SOURCES
-            # =============================
-
-            # OSTES (PRIMARY — matches mant)
-            unidad_ostes = df_ostes[["Reporte", "Unidad"]].dropna()
-            unidad_ostes = unidad_ostes.drop_duplicates(subset=["Reporte"])
-
-            # ORDENES (FALLBACK — may or may not match)
-            unidad_ordenes = df_ordenes[["Reporte", "Unidad"]].dropna()
-            unidad_ordenes = unidad_ordenes.drop_duplicates(subset=["Reporte"])
-
             # =============================
             # BUILD OSTES LOOKUP (NO GROUPBY)
             # =============================
@@ -1254,35 +1236,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # MERGE
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
-
-            # =============================
-            # ADD UNIDAD FROM OSTES
-            # =============================
-            df_final = df_final.merge(
-                unidad_ostes.rename(columns={"Unidad": "Unidad_ost"}),
-                on="Reporte",
-                how="left"
-            )
-
-            # =============================
-            # ADD UNIDAD FROM ORDENES
-            # =============================
-            df_final = df_final.merge(
-                unidad_ordenes.rename(columns={"Unidad": "Unidad_ord"}),
-                on="Reporte",
-                how="left"
-            )
-
-            # =============================
-            # RESOLVE FINAL UNIDAD
-            # =============================
-            df_final["Unidad"] = df_final["Unidad_ost"].combine_first(df_final["Unidad_ord"])
-
-            # =============================
-            # CLEANUP (STEP 6)
-            # =============================
-            df_final.drop(columns=["Unidad_ost", "Unidad_ord"], inplace=True, errors="ignore")
-            df_final["Unidad"] = df_final["Unidad"].fillna("SIN UNIDAD")
 
             # =============================
             # MAP RAZON REPARACION (FIX)
