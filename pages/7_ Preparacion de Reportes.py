@@ -57,6 +57,27 @@ st.divider()
 st.title("📊 Consulta, Preparación y Generación de Reportes")
 
 # =================================
+# LOADERS - CONSULTA IGLOO
+# =================================
+@st.cache_data
+def load_refacciones_igloo():
+    supabase = get_supabase_client()
+    res = supabase.table("refacciones_data_igloo").select("*").execute()
+    return pd.DataFrame(res.data)
+
+@st.cache_data
+def load_ostes_igloo():
+    supabase = get_supabase_client()
+    res = supabase.table("ostes_igloo").select("*").execute()
+    return pd.DataFrame(res.data)
+
+@st.cache_data
+def load_mano_obra_igloo():
+    supabase = get_supabase_client()
+    res = supabase.table("mano_obra_igloo").select("*").execute()
+    return pd.DataFrame(res.data)
+
+# =================================
 # MODE SELECTOR
 # =================================
 st.subheader("¿Qué quieres hacer?")
@@ -108,7 +129,16 @@ if st.session_state.modo_reportes == "consultar":
         )
 
     with col2:
-        year_options = ["Todos", 2026, 2025, 2024, 2023]
+        temp_df = load_refacciones_igloo()
+
+        if not temp_df.empty and "anio" in temp_df.columns:
+            temp_df["anio"] = pd.to_numeric(temp_df["anio"], errors="coerce")
+            years = sorted(temp_df["anio"].dropna().unique(), reverse=True)
+        else:
+            years = []
+
+        year_options = ["Todos"] + list(years)
+
         year_filter = st.selectbox(
             "Filtrar por año (opcional):",
             year_options,
@@ -130,13 +160,66 @@ if st.session_state.modo_reportes == "consultar":
     st.divider()
 
     # =================================
-    # PLACEHOLDER (NEXT STEP)
+    # LOAD DATA (IGLOO ONLY)
     # =================================
-    st.info("Aquí se mostrarán los reportes filtrados.")
+    if empresa_consulta == "IGLOO":
+
+        df_ref = load_refacciones_igloo()
+        df_ost = load_ostes_igloo()
+        df_mo  = load_mano_obra_igloo()
+
+        # -------------------------------
+        # Clean columns
+        # -------------------------------
+        def clean(df):
+            df.columns = df.columns.str.strip().str.lower()
+            return df
+
+        df_ref = clean(df_ref)
+        df_ost = clean(df_ost)
+        df_mo  = clean(df_mo)
+
+        # -------------------------------
+        # Remove unwanted columns
+        # -------------------------------
+        cols_to_drop = ["id", "created_at"]
+
+        df_ref = df_ref.drop(columns=[c for c in cols_to_drop if c in df_ref.columns])
+        df_ost = df_ost.drop(columns=[c for c in cols_to_drop if c in df_ost.columns])
+        df_mo  = df_mo.drop(columns=[c for c in cols_to_drop if c in df_mo.columns])
+
+        # -------------------------------
+        # Ensure anio is numeric
+        # -------------------------------
+        for df in [df_ref, df_ost, df_mo]:
+            if "anio" in df.columns:
+                df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
+
+        # -------------------------------
+        # YEAR FILTER (ONLY anio)
+        # -------------------------------
+        if year_filter != "Todos":
+            df_ref = df_ref[df_ref["anio"] == year_filter]
+            df_ost = df_ost[df_ost["anio"] == year_filter]
+            df_mo  = df_mo[df_mo["anio"] == year_filter]
+
+        # -------------------------------
+        # DISPLAY
+        # -------------------------------
+        st.subheader("🔧 Refacciones IGLOO")
+        st.dataframe(df_ref, use_container_width=True)
+
+        st.divider()
+
+        st.subheader("💰 OSTES IGLOO")
+        st.dataframe(df_ost, use_container_width=True)
+
+        st.divider()
+
+        st.subheader("🚛 Mano de Obra IGLOO")
+        st.dataframe(df_mo, use_container_width=True)
 
     st.stop()
-
-# If it's "cargar", execution continues normally
 
 # =================================
 # Company selector
@@ -240,7 +323,7 @@ def load_tc():
     except Exception as e:
         st.error(f"Error cargando TC: {e}")
         return None
-
+        
 # =================================
 # LOAD TC DATA
 # =================================
