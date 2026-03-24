@@ -562,30 +562,12 @@ with col2:
     )
 
 with col3:
-    temp_df_mes = load_refacciones_igloo()
-
-    if not temp_df_mes.empty and "mes" in temp_df_mes.columns:
-
-        temp_df_mes["mes"] = temp_df_mes["mes"].apply(
-            lambda x: str(x).strip().lower() if pd.notna(x) else None
-        )
-
-        meses = sorted(temp_df_mes["mes"].dropna().unique())
-        meses_display = [m.capitalize() for m in meses]
-
-    else:
-        meses = []
-        meses_display = []
-
-    mes_options = ["Todos"] + meses_display
-
-    mes_filter = st.selectbox(
-        "Filtrar por mes (opcional):",
-        mes_options,
-        key="consulta_mes"
+    st.subheader(f"3. Reporte de Mantenimientos ({empresa})")
+    file_mantenimientos = st.file_uploader(
+        "Sube Reporte de Mantenimientos",
+        type=["csv", "xlsx"],
+        key=key_mantenimientos
     )
-
-    mes_filter_norm = mes_filter.lower() if mes_filter != "Todos" else "Todos"
 
 st.divider()
 
