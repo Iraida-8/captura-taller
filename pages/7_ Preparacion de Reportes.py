@@ -459,173 +459,173 @@ if st.session_state.modo_reportes == "consultar":
         df_ost = load_ostes_logis()
         df_mo  = load_mano_obra_logis()
 
-        # -------------------------------
-        # CLEAN COLUMNS
-        # -------------------------------
-        def clean(df):
-            df.columns = df.columns.str.strip().str.lower()
-            return df
+    # -------------------------------
+    # CLEAN COLUMNS
+    # -------------------------------
+    def clean(df):
+        df.columns = df.columns.str.strip().str.lower()
+        return df
 
-        df_ref = clean(df_ref)
-        df_ost = clean(df_ost)
-        df_mo  = clean(df_mo)
+    df_ref = clean(df_ref)
+    df_ost = clean(df_ost)
+    df_mo  = clean(df_mo)
 
-        # -------------------------------
-        # NORMALIZE MES
-        # -------------------------------
-        def normalize_mes(val):
-            if pd.isna(val):
-                return None
-            return str(val).strip().lower()
+    # -------------------------------
+    # NORMALIZE MES
+    # -------------------------------
+    def normalize_mes(val):
+        if pd.isna(val):
+            return None
+        return str(val).strip().lower()
 
-        for df in [df_ref, df_ost, df_mo]:
-            if "mes" in df.columns:
-                df["mes"] = df["mes"].apply(normalize_mes)
+    for df in [df_ref, df_ost, df_mo]:
+        if "mes" in df.columns:
+            df["mes"] = df["mes"].apply(normalize_mes)
 
-        # -------------------------------
-        # DROP UNUSED
-        # -------------------------------
-        cols_to_drop = ["id", "created_at"]
+    # -------------------------------
+    # DROP UNUSED
+    # -------------------------------
+    cols_to_drop = ["id", "created_at"]
 
-        df_ref = df_ref.drop(columns=[c for c in cols_to_drop if c in df_ref.columns])
-        df_ost = df_ost.drop(columns=[c for c in cols_to_drop if c in df_ost.columns])
-        df_mo  = df_mo.drop(columns=[c for c in cols_to_drop if c in df_mo.columns])
+    df_ref = df_ref.drop(columns=[c for c in cols_to_drop if c in df_ref.columns])
+    df_ost = df_ost.drop(columns=[c for c in cols_to_drop if c in df_ost.columns])
+    df_mo  = df_mo.drop(columns=[c for c in cols_to_drop if c in df_mo.columns])
 
-        # -------------------------------
-        # ENSURE YEAR NUMERIC
-        # -------------------------------
-        for df in [df_ref, df_ost, df_mo]:
-            if "anio" in df.columns:
-                df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
+    # -------------------------------
+    # ENSURE YEAR NUMERIC
+    # -------------------------------
+    for df in [df_ref, df_ost, df_mo]:
+        if "anio" in df.columns:
+            df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
 
-        # -------------------------------
-        # FILTER YEAR
-        # -------------------------------
-        if year_filter != "Todos":
-            df_ref = df_ref[df_ref["anio"] == year_filter]
-            df_ost = df_ost[df_ost["anio"] == year_filter]
-            df_mo  = df_mo[df_mo["anio"] == year_filter]
+    # -------------------------------
+    # FILTER YEAR
+    # -------------------------------
+    if year_filter != "Todos":
+        df_ref = df_ref[df_ref["anio"] == year_filter]
+        df_ost = df_ost[df_ost["anio"] == year_filter]
+        df_mo  = df_mo[df_mo["anio"] == year_filter]
 
-        # -------------------------------
-        # FILTER MES
-        # -------------------------------
-        if mes_filter_norm != "Todos":
-            df_ref = df_ref[df_ref["mes"] == mes_filter_norm]
-            df_ost = df_ost[df_ost["mes"] == mes_filter_norm]
-            df_mo  = df_mo[df_mo["mes"] == mes_filter_norm]
+    # -------------------------------
+    # FILTER MES
+    # -------------------------------
+    if mes_filter_norm != "Todos":
+        df_ref = df_ref[df_ref["mes"] == mes_filter_norm]
+        df_ost = df_ost[df_ost["mes"] == mes_filter_norm]
+        df_mo  = df_mo[df_mo["mes"] == mes_filter_norm]
 
-        # -------------------------------
-        # 🔥 RENAME (ALWAYS RUNS)
-        # -------------------------------
-        df_ref = df_ref.rename(columns={
-            "anio": "Año",
-            "mes": "Mes",
-            "fecha_analisis": "Fecha Analisis",
-            "folio": "Folio",
-            "contrarecibo": "Contrarecibo",
-            "fecha_compra": "Fecha Compra",
-            "nombre_proveedor": "NombreProveedor",
-            "factura": "Factura",
-            "unidad": "Unidad",
-            "flotilla": "Flotilla",
-            "modelo": "Modelo",
-            "tipo_unidad": "Tipo De Unidad",
-            "sucursal": "Sucursal",
-            "parte": "Parte",
-            "tipo_parte": "Tipo De Parte",
-            "cantidad": "Cantidad",
-            "pu": "PU",
-            "precio_parte": "PrecioParte",
-            "precio_sin_iva": "Precio Sin IVA",
-            "tasa_iva": "Tasa IVA",
-            "iva": "IVA",
-            "tc": "TC",
-            "pu_usd": "PU USD",
-            "total_usd": "Total USD",
-            "total_correccion": "Total Correccion",
-            "moneda": "Moneda",
-            "usuario": "Usuario",
-            "reporte": "Reporte",
-            "descripcion": "Descripcion",
-            "razon_reparacion": "Razon Reparacion"
-        })
+    # -------------------------------
+    # RENAME
+    # -------------------------------
+    df_ref = df_ref.rename(columns={
+        "anio": "Año",
+        "mes": "Mes",
+        "fecha_analisis": "Fecha Analisis",
+        "folio": "Folio",
+        "contrarecibo": "Contrarecibo",
+        "fecha_compra": "Fecha Compra",
+        "nombre_proveedor": "NombreProveedor",
+        "factura": "Factura",
+        "unidad": "Unidad",
+        "flotilla": "Flotilla",
+        "modelo": "Modelo",
+        "tipo_unidad": "Tipo De Unidad",
+        "sucursal": "Sucursal",
+        "parte": "Parte",
+        "tipo_parte": "Tipo De Parte",
+        "cantidad": "Cantidad",
+        "pu": "PU",
+        "precio_parte": "PrecioParte",
+        "precio_sin_iva": "Precio Sin IVA",
+        "tasa_iva": "Tasa IVA",
+        "iva": "IVA",
+        "tc": "TC",
+        "pu_usd": "PU USD",
+        "total_usd": "Total USD",
+        "total_correccion": "Total Correccion",
+        "moneda": "Moneda",
+        "usuario": "Usuario",
+        "reporte": "Reporte",
+        "descripcion": "Descripcion",
+        "razon_reparacion": "Razon Reparacion"
+    })
 
-        df_ost = df_ost.rename(columns={
-            "anio": "Año",
-            "mes": "Mes",
-            "oste": "OSTE",
-            "fecha_analisis": "Fecha Analisis",
-            "reporte": "Reporte",
-            "acreedor": "Acreedor",
-            "fecha_factura": "Fecha Factura",
-            "fecha_oste": "Fecha OSTE",
-            "fecha_cierre": "Fecha Cierre",
-            "dias_para_cerrar_orden": "Dias para cerrar orden",
-            "dias_reparacion": "Dias Reparacion",
-            "empresa": "Empresa",
-            "sucursal": "Sucursal",
-            "observaciones": "Observaciones",
-            "status_ct": "Status CT",
-            "factura": "Factura",
-            "subtotal": "Subtotal",
-            "iva": "IVA",
-            "total_oste": "Total oste",
-            "moneda": "Moneda",
-            "tc": "TC",
-            "total_correccion": "Total Correccion",
-            "unidad": "Unidad",
-            "flotilla": "Flotilla",
-            "modelo": "Modelo",
-            "descripcion": "Descripcion",
-            "tipo_de_unidad": "Tipo De Unidad",
-            "razon_de_servicio": "Razon de servicio"
-        })
+    df_ost = df_ost.rename(columns={
+        "anio": "Año",
+        "mes": "Mes",
+        "oste": "OSTE",
+        "fecha_analisis": "Fecha Analisis",
+        "reporte": "Reporte",
+        "acreedor": "Acreedor",
+        "fecha_factura": "Fecha Factura",
+        "fecha_oste": "Fecha OSTE",
+        "fecha_cierre": "Fecha Cierre",
+        "dias_para_cerrar_orden": "Dias para cerrar orden",
+        "dias_reparacion": "Dias Reparacion",
+        "empresa": "Empresa",
+        "sucursal": "Sucursal",
+        "observaciones": "Observaciones",
+        "status_ct": "Status CT",
+        "factura": "Factura",
+        "subtotal": "Subtotal",
+        "iva": "IVA",
+        "total_oste": "Total oste",
+        "moneda": "Moneda",
+        "tc": "TC",
+        "total_correccion": "Total Correccion",
+        "unidad": "Unidad",
+        "flotilla": "Flotilla",
+        "modelo": "Modelo",
+        "descripcion": "Descripcion",
+        "tipo_de_unidad": "Tipo De Unidad",
+        "razon_de_servicio": "Razon de servicio"
+    })
 
-        df_mo = df_mo.rename(columns={
-            "anio": "Año",
-            "mes": "Mes",
-            "unidad": "Unidad",
-            "fecha_analisis": "Fecha Analisis",
-            "flotilla": "Flotilla",
-            "modelo": "Modelo",
-            "tipo_unidad": "Tipo Unidad",
-            "sucursal": "Sucursal",
-            "reporte": "Reporte",
-            "fecha_registro": "Fecha Registro",
-            "fecha_aceptado": "Fecha Aceptado",
-            "fecha_iniciada": "Fecha Iniciada",
-            "fecha_liberada": "Fecha Liberada",
-            "fecha_terminada": "Fecha Terminada",
-            "nombre_cliente": "Nombre Cliente",
-            "factura": "Factura",
-            "estatus": "Estatus",
-            "subtotal": "Sub Total",
-            "iva": "IVA",
-            "total": "Total",
-            "total_correccion": "Total Correccion",
-            "tc": "TC",
-            "total_usd": "Total USD",
-            "descripcion": "Descripcion",
-            "razon_reparacion": "Razon Reparacion",
-            "diferencia": "Diferencia",
-            "comentarios": "Comentarios"
-        })
+    df_mo = df_mo.rename(columns={
+        "anio": "Año",
+        "mes": "Mes",
+        "unidad": "Unidad",
+        "fecha_analisis": "Fecha Analisis",
+        "flotilla": "Flotilla",
+        "modelo": "Modelo",
+        "tipo_unidad": "Tipo Unidad",
+        "sucursal": "Sucursal",
+        "reporte": "Reporte",
+        "fecha_registro": "Fecha Registro",
+        "fecha_aceptado": "Fecha Aceptado",
+        "fecha_iniciada": "Fecha Iniciada",
+        "fecha_liberada": "Fecha Liberada",
+        "fecha_terminada": "Fecha Terminada",
+        "nombre_cliente": "Nombre Cliente",
+        "factura": "Factura",
+        "estatus": "Estatus",
+        "subtotal": "Sub Total",
+        "iva": "IVA",
+        "total": "Total",
+        "total_correccion": "Total Correccion",
+        "tc": "TC",
+        "total_usd": "Total USD",
+        "descripcion": "Descripcion",
+        "razon_reparacion": "Razon Reparacion",
+        "diferencia": "Diferencia",
+        "comentarios": "Comentarios"
+    })
 
-        # -------------------------------
-        # DISPLAY
-        # -------------------------------
-        st.subheader("🔧 Refacciones IGLOO")
-        st.dataframe(df_ref, use_container_width=True)
+    # -------------------------------
+    # DISPLAY
+    # -------------------------------
+    st.subheader(f"🔧 Refacciones {empresa_consulta}")
+    st.dataframe(df_ref, use_container_width=True)
 
-        st.divider()
+    st.divider()
 
-        st.subheader("💰 OSTES IGLOO")
-        st.dataframe(df_ost, use_container_width=True)
+    st.subheader(f"💰 OSTES {empresa_consulta}")
+    st.dataframe(df_ost, use_container_width=True)
 
-        st.divider()
+    st.divider()
 
-        st.subheader("🚛 Mano de Obra IGLOO")
-        st.dataframe(df_mo, use_container_width=True)
+    st.subheader(f"🚛 Mano de Obra {empresa_consulta}")
+    st.dataframe(df_mo, use_container_width=True)
 
     st.stop()
 # =================================
