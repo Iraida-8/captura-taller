@@ -223,7 +223,6 @@ if st.session_state.modo_reportes == "consultar":
         temp_df_mes = load_refacciones_igloo()
 
         if not temp_df_mes.empty and "mes" in temp_df_mes.columns:
-            temp_df_mes["mes"] = pd.to_numeric(temp_df_mes["mes"], errors="coerce")
             meses = sorted(temp_df_mes["mes"].dropna().unique())
         else:
             meses = []
@@ -285,11 +284,6 @@ if st.session_state.modo_reportes == "consultar":
         for df in [df_ref, df_ost, df_mo]:
             if "anio" in df.columns:
                 df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
-                
-        # Ensure mes is numeric
-        for df in [df_ref, df_ost, df_mo]:
-            if "mes" in df.columns:
-                df["mes"] = pd.to_numeric(df["mes"], errors="coerce")
 
         # -------------------------------
         # YEAR FILTER
