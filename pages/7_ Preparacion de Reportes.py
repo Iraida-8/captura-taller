@@ -159,8 +159,7 @@ st.subheader("¿Qué quieres hacer?")
 
 col_a, col_b = st.columns(2)
 
-if "modo_reportes" not in st.session_state:
-    st.session_state.modo_reportes = None
+st.session_state.modo_reportes = None
 
 with col_a:
     if st.button("📄 Consultar Reportes", use_container_width=True):
@@ -429,6 +428,7 @@ if st.session_state.modo_reportes == "consultar":
         st.subheader("🚛 Mano de Obra IGLOO")
         st.dataframe(df_mo, use_container_width=True)
 
+    st.stop()
 # =================================
 # Company selector
 # =================================
@@ -536,9 +536,6 @@ def load_tc():
 # LOAD TC DATA
 # =================================
 df_tc = load_tc()
-
-#st.write("TC SHAPE:", df_tc.shape)
-#st.dataframe(df_tc)
 
 # =================================
 # Uploaders
