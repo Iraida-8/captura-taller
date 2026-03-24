@@ -400,7 +400,24 @@ if st.session_state.modo_reportes == "consultar":
             key="consulta_year"
         )
     with col3:
-        temp_df_mes = load_refacciones_igloo()
+        if empresa_consulta == "IGLOO":
+            temp_df_mes = load_refacciones_igloo()
+        elif empresa_consulta == "LINCOLN FREIGHT":
+            temp_df_mes = load_refacciones_lincoln()
+        elif empresa_consulta == "PICUS":
+            temp_df_mes = load_refacciones_picus()
+        elif empresa_consulta == "SET FREIGHT INTERNATIONAL":
+            temp_df_mes = load_refacciones_setfreight()
+        elif empresa_consulta == "SET LOGIS PLUS":
+            temp_df_mes = load_refacciones_logis()
+        else:
+            temp_df_mes = pd.DataFrame()
+
+        MONTH_ORDER = {
+            "january": 1, "february": 2, "march": 3, "april": 4,
+            "may": 5, "june": 6, "july": 7, "august": 8,
+            "september": 9, "october": 10, "november": 11, "december": 12
+        }
 
         if not temp_df_mes.empty and "mes" in temp_df_mes.columns:
 
@@ -409,18 +426,22 @@ if st.session_state.modo_reportes == "consultar":
                 .dropna()
                 .astype(str)
                 .str.strip()
-                .str.lower()        # normalize
+                .str.lower()
             )
 
-            meses_unique = sorted(meses_clean.unique())
+            meses_clean = meses_clean[meses_clean.isin(MONTH_ORDER.keys())]
 
-            # Capitalize properly for display
-            meses = [m.capitalize() for m in meses_unique]
+            meses_sorted = sorted(
+                meses_clean.unique(),
+                key=lambda x: MONTH_ORDER[x]
+            )
+
+            meses = [m.capitalize() for m in meses_sorted]
 
         else:
             meses = []
 
-        mes_options = ["Todos"] + list(meses)
+        mes_options = ["Todos"] + meses
 
         mes_filter = st.selectbox(
             "Filtrar por mes (opcional):",
