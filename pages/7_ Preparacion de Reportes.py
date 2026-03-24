@@ -57,7 +57,7 @@ st.divider()
 st.title("📊 Consulta, Preparación y Generación de Reportes")
 
 # =================================
-# LOADERS - CONSULTA IGLOO
+# LOADERS
 # =================================
 @st.cache_data
 def load_refacciones_igloo():
@@ -148,6 +148,186 @@ def load_mano_obra_igloo():
         if len(data) < limit:
             break
 
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_refacciones_lincoln():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("refacciones_data_lincoln").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_ostes_lincoln():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("ostes_lincoln").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_mano_obra_lincoln():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("mano_obra_lincoln").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_refacciones_picus():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("refacciones_data_picus").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_ostes_picus():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("ostes_picus").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_mano_obra_picus():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("mano_obra_picus").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_refacciones_setfreight():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("refacciones_data_setfreight").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_ostes_setfreight():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("ostes_setfreight").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_mano_obra_setfreight():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("mano_obra_setfreight").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_refacciones_logis():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("refacciones_data_logis").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_ostes_logis():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("ostes_logis").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
+        offset += limit
+
+    return pd.DataFrame(all_data)
+
+@st.cache_data
+def load_mano_obra_logis():
+    supabase = get_supabase_client()
+    all_data, limit, offset = [], 1000, 0
+
+    while True:
+        res = supabase.table("mano_obra_logis").select("*").range(offset, offset + limit - 1).execute()
+        data = res.data
+        if not data: break
+        all_data.extend(data)
+        if len(data) < limit: break
         offset += limit
 
     return pd.DataFrame(all_data)
@@ -252,14 +432,32 @@ if st.session_state.modo_reportes == "consultar":
     st.divider()
 
     # =================================
-    # LOAD DATA (IGLOO ONLY)
+    # LOAD DATA
     # =================================
     if empresa_consulta == "IGLOO":
-
-        # LOAD
         df_ref = load_refacciones_igloo()
         df_ost = load_ostes_igloo()
         df_mo  = load_mano_obra_igloo()
+
+    elif empresa_consulta == "LINCOLN FREIGHT":
+        df_ref = load_refacciones_lincoln()
+        df_ost = load_ostes_lincoln()
+        df_mo  = load_mano_obra_lincoln()
+
+    elif empresa_consulta == "PICUS":
+        df_ref = load_refacciones_picus()
+        df_ost = load_ostes_picus()
+        df_mo  = load_mano_obra_picus()
+
+    elif empresa_consulta == "SET FREIGHT INTERNATIONAL":
+        df_ref = load_refacciones_setfreight()
+        df_ost = load_ostes_setfreight()
+        df_mo  = load_mano_obra_setfreight()
+
+    elif empresa_consulta == "SET LOGIS PLUS":
+        df_ref = load_refacciones_logis()
+        df_ost = load_ostes_logis()
+        df_mo  = load_mano_obra_logis()
 
         # -------------------------------
         # CLEAN COLUMNS
