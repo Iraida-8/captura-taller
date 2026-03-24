@@ -710,22 +710,24 @@ empresa = st.selectbox("Selecciona la empresa:", companies)
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =================================
-# LOAD GOOGLE DATA (STEP 3)
+# LOAD GOOGLE DATA (SAFE)
 # =================================
 df_google_empresa = pd.DataFrame()
 df_google_universal = pd.DataFrame()
 
-# Always load universal
-df_google_universal = load_google_sheet(SHEET_ID, UNIVERSAL_GID)
+try:
+    df_google_universal = load_google_sheet(SHEET_ID, UNIVERSAL_GID)
 
-# Load company-specific
-empresa_config = SHEETS.get(empresa)
+    empresa_config = SHEETS.get(empresa)
 
-if empresa_config and empresa_config["empresa_gid"]:
-    df_google_empresa = load_google_sheet(
-        SHEET_ID,
-        empresa_config["empresa_gid"]
-    )
+    if empresa_config and empresa_config["empresa_gid"]:
+        df_google_empresa = load_google_sheet(
+            SHEET_ID,
+            empresa_config["empresa_gid"]
+        )
+
+except Exception as e:
+    st.warning("Google Sheets no disponible (no bloquea la app)")
 
 # =================================
 # NORMALIZE GOOGLE SHEETS
