@@ -1046,23 +1046,6 @@ if file_ordenes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
-
-            df_final_ref["Unidad"] = clean_unidad(df_final_ref["Unidad"])
-
-            df_final_ref = df_final_ref.merge(
-                df_google_universal,
-                on="Unidad",
-                how="left"
-            )
-
-            if not df_google_empresa.empty:
-                df_final_ref = df_final_ref.merge(
-                    df_google_empresa,
-                    on="Unidad",
-                    how="left",
-                    suffixes=("", "_empresa")
-                )
-
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
 
             df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.date
@@ -1275,23 +1258,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # DISPLAY
             # =============================
             st.divider()
-
-            df_final_ostes["Unidad"] = clean_unidad(df_final_ostes["Unidad"])
-
-            df_final_ostes = df_final_ostes.merge(
-                df_google_universal,
-                on="Unidad",
-                how="left"
-            )
-
-            if not df_google_empresa.empty:
-                df_final_ostes = df_final_ostes.merge(
-                    df_google_empresa,
-                    on="Unidad",
-                    how="left",
-                    suffixes=("", "_empresa")
-                )
-
             st.subheader(f"💰 OSTES {empresa}")
 
             st.dataframe(
@@ -1522,23 +1488,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
-
-            df_final["Unidad"] = clean_unidad(df_final["Unidad"])
-
-            df_final = df_final.merge(
-                df_google_universal,
-                on="Unidad",
-                how="left"
-            )
-
-            if not df_google_empresa.empty:
-                df_final = df_final.merge(
-                    df_google_empresa,
-                    on="Unidad",
-                    how="left",
-                    suffixes=("", "_empresa")
-                )
-
             st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
 
             st.dataframe(
