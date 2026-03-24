@@ -47,6 +47,46 @@ def get_supabase_client():
     )
 
 # =================================
+# GOOGLE SHEETS CLIENT
+# =================================
+@st.cache_resource
+def get_gspread_client():
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+    )
+    return gspread.authorize(creds)
+
+
+# =================================
+# LOAD GOOGLE SHEET
+# =================================
+@st.cache_data
+def load_google_sheet(sheet_id, gid):
+    try:
+        client = get_gspread_client()
+        sheet = client.open_by_key(sheet_id)
+
+        worksheet = sheet.get_worksheet_by_id(int(gid))
+        data = worksheet.get_all_records()
+
+        return pd.DataFrame(data)
+
+    except Exception as e:
+        st.error(f"Error cargando Google Sheet: {e}")
+        return pd.DataFrame()
+
+# =================================
+# CLEAN UNIDAD
+# =================================
+def clean_unidad(series):
+    return (
+        series.astype(str)
+        .str.strip()
+        .str.upper()
+    )
+    
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -628,6 +668,32 @@ if st.session_state.modo_reportes == "consultar":
     st.dataframe(df_mo, use_container_width=True)
 
     st.stop()
+
+# =================================
+# GOOGLE SHEET CONFIG  ← STEP 2 GOES HERE
+# =================================
+SHEET_ID = "1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop"
+
+SHEETS = {
+    "LINCOLN FREIGHT": {
+        "empresa_gid": "459473217"
+    },
+    "IGLOO": {
+        "empresa_gid": None
+    },
+    "PICUS": {
+        "empresa_gid": None
+    },
+    "SET FREIGHT INTERNATIONAL": {
+        "empresa_gid": None
+    },
+    "SET LOGIS PLUS": {
+        "empresa_gid": None
+    }
+}
+
+UNIVERSAL_GID = "897787433"
+
 # =================================
 # Company selector
 # =================================
@@ -639,14 +705,37 @@ companies = [
     "SET FREIGHT INTERNATIONAL",
     "SET LOGIS PLUS"
 ]
-
 empresa = st.selectbox("Selecciona la empresa:", companies)
 
-if empresa == "SELECCIONA EMPRESA":
-    st.warning("Debes seleccionar una empresa para continuar.")
-    st.stop()
-
 st.success(f"Empresa seleccionada: {empresa}")
+
+# =================================
+# LOAD GOOGLE DATA (STEP 3)
+# =================================
+df_google_empresa = pd.DataFrame()
+df_google_universal = pd.DataFrame()
+
+# Always load universal
+df_google_universal = load_google_sheet(SHEET_ID, UNIVERSAL_GID)
+
+# Load company-specific
+empresa_config = SHEETS.get(empresa)
+
+if empresa_config and empresa_config["empresa_gid"]:
+    df_google_empresa = load_google_sheet(
+        SHEET_ID,
+        empresa_config["empresa_gid"]
+    )
+
+# =================================
+# NORMALIZE GOOGLE SHEETS (STEP 5)
+# =================================
+if not df_google_universal.empty and "Unidad" in df_google_universal.columns:
+    df_google_universal["Unidad"] = clean_unidad(df_google_universal["Unidad"])
+
+if not df_google_empresa.empty and "Unidad" in df_google_empresa.columns:
+    df_google_empresa["Unidad"] = clean_unidad(df_google_empresa["Unidad"])
+
 
 # =================================
 # Dynamic uploader keys
@@ -947,9 +1036,25 @@ if file_ordenes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
+
+            df_final_ref["Unidad"] = clean_unidad(df_final_ref["Unidad"])
+
+            df_final_ref = df_final_ref.merge(
+                df_google_universal,
+                on="Unidad",
+                how="left"
+            )
+
+            if not df_google_empresa.empty:
+                df_final_ref = df_final_ref.merge(
+                    df_google_empresa,
+                    on="Unidad",
+                    how="left",
+                    suffixes=("", "_empresa")
+                )
+
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
 
-            # 🔥 ADD THIS
             df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.date
 
             st.dataframe(
@@ -1029,21 +1134,17 @@ if file_ostes and file_mantenimientos and file_ordenes:
 
                 df_ordenes.columns = df_ordenes.columns.str.strip()
 
-                # 🔥 FORCE SAME TYPE
                 df_ordenes["Proveedor_key"] = pd.to_numeric(df_ordenes["Proveedor"], errors="coerce").astype("Int64")
                 df_final_ostes["Proveedor_key"] = pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce").astype("Int64")
 
-                # Clean name
                 df_ordenes["NombreProveedor"] = df_ordenes["NombreProveedor"].astype(str).str.strip()
 
-                # Lookup
                 proveedor_lookup = (
                     df_ordenes[["Proveedor_key", "NombreProveedor"]]
                     .dropna()
                     .drop_duplicates(subset=["Proveedor_key"])
                 )
 
-                # Merge
                 df_final_ostes = df_final_ostes.merge(
                     proveedor_lookup,
                     on="Proveedor_key",
@@ -1164,6 +1265,23 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # DISPLAY
             # =============================
             st.divider()
+
+            df_final_ostes["Unidad"] = clean_unidad(df_final_ostes["Unidad"])
+
+            df_final_ostes = df_final_ostes.merge(
+                df_google_universal,
+                on="Unidad",
+                how="left"
+            )
+
+            if not df_google_empresa.empty:
+                df_final_ostes = df_final_ostes.merge(
+                    df_google_empresa,
+                    on="Unidad",
+                    how="left",
+                    suffixes=("", "_empresa")
+                )
+
             st.subheader(f"💰 OSTES {empresa}")
 
             st.dataframe(
@@ -1277,16 +1395,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # RESOLVE FINAL UNIDAD
             # =============================
             df_final["Unidad"] = df_final["Unidad_ost"].combine_first(df_final["Unidad_ord"])
-
-            # =============================
-            # CLEANUP (STEP 6)
-            # =============================
             df_final.drop(columns=["Unidad_ost", "Unidad_ord"], inplace=True, errors="ignore")
             df_final["Unidad"] = df_final["Unidad"].fillna("SIN UNIDAD")
-
-            # =============================
-            # MAP RAZON REPARACION (FIX)
-            # =============================
             df_final["Razon Reparacion"] = df_final.get("Razon Servicio")
 
             # =============================
@@ -1402,6 +1512,23 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # DISPLAY
             # =============================
             st.divider()
+
+            df_final["Unidad"] = clean_unidad(df_final["Unidad"])
+
+            df_final = df_final.merge(
+                df_google_universal,
+                on="Unidad",
+                how="left"
+            )
+
+            if not df_google_empresa.empty:
+                df_final = df_final.merge(
+                    df_google_empresa,
+                    on="Unidad",
+                    how="left",
+                    suffixes=("", "_empresa")
+                )
+
             st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
 
             st.dataframe(
