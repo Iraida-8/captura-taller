@@ -1219,31 +1219,17 @@ if file_ordenes and file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # BUILD UNIDAD LOOKUP
+            # BUILD UNIDAD SOURCES
             # =============================
 
-            # From ordenes (priority)
-            lookup_ordenes = df_ordenes[["Reporte", "Unidad"]].dropna()
-            lookup_ordenes = lookup_ordenes.drop_duplicates(subset=["Reporte"])
+            # OSTES (PRIMARY — matches mant)
+            unidad_ostes = df_ostes[["Reporte", "Unidad"]].dropna()
+            unidad_ostes = unidad_ostes.drop_duplicates(subset=["Reporte"])
 
-            # From ostes (fallback)
-            lookup_ostes = df_ostes[["Reporte", "Unidad"]].dropna()
-            lookup_ostes = lookup_ostes.drop_duplicates(subset=["Reporte"])
+            # ORDENES (FALLBACK — may or may not match)
+            unidad_ordenes = df_ordenes[["Reporte", "Unidad"]].dropna()
+            unidad_ordenes = unidad_ordenes.drop_duplicates(subset=["Reporte"])
 
-            # Combine both
-            df_unidad_lookup = lookup_ordenes.merge(
-                lookup_ostes,
-                on="Reporte",
-                how="outer",
-                suffixes=("_ord", "_ost")
-            )
-
-            # Resolve final Unidad
-            df_unidad_lookup["Unidad"] = df_unidad_lookup["Unidad_ord"].combine_first(
-                df_unidad_lookup["Unidad_ost"]
-            )
-
-            df_unidad_lookup = df_unidad_lookup[["Reporte", "Unidad"]]
             # =============================
             # BUILD OSTES LOOKUP (NO GROUPBY)
             # =============================
@@ -1270,13 +1256,33 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
 
             # =============================
-            # ADD UNIDAD TO MANO DE OBRA
+            # ADD UNIDAD FROM OSTES
             # =============================
             df_final = df_final.merge(
-                df_unidad_lookup,
+                unidad_ostes.rename(columns={"Unidad": "Unidad_ost"}),
                 on="Reporte",
                 how="left"
             )
+
+            # =============================
+            # ADD UNIDAD FROM ORDENES
+            # =============================
+            df_final = df_final.merge(
+                unidad_ordenes.rename(columns={"Unidad": "Unidad_ord"}),
+                on="Reporte",
+                how="left"
+            )
+
+            # =============================
+            # RESOLVE FINAL UNIDAD
+            # =============================
+            df_final["Unidad"] = df_final["Unidad_ost"].combine_first(df_final["Unidad_ord"])
+
+            # =============================
+            # CLEANUP (STEP 6)
+            # =============================
+            df_final.drop(columns=["Unidad_ost", "Unidad_ord"], inplace=True, errors="ignore")
+            df_final["Unidad"] = df_final["Unidad"].fillna("SIN UNIDAD")
 
             # =============================
             # MAP RAZON REPARACION (FIX)
