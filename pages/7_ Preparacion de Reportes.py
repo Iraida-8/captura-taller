@@ -62,20 +62,95 @@ st.title("📊 Consulta, Preparación y Generación de Reportes")
 @st.cache_data
 def load_refacciones_igloo():
     supabase = get_supabase_client()
-    res = supabase.table("refacciones_data_igloo").select("*").execute()
-    return pd.DataFrame(res.data)
+
+    all_data = []
+    limit = 1000
+    offset = 0
+
+    while True:
+        res = (
+            supabase
+            .table("refacciones_data_igloo")
+            .select("*")
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        data = res.data
+
+        if not data:
+            break
+
+        all_data.extend(data)
+
+        if len(data) < limit:
+            break
+
+        offset += limit
+
+    return pd.DataFrame(all_data)
 
 @st.cache_data
 def load_ostes_igloo():
     supabase = get_supabase_client()
-    res = supabase.table("ostes_igloo").select("*").execute()
-    return pd.DataFrame(res.data)
+
+    all_data = []
+    limit = 1000
+    offset = 0
+
+    while True:
+        res = (
+            supabase
+            .table("ostes_igloo")
+            .select("*")
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        data = res.data
+
+        if not data:
+            break
+
+        all_data.extend(data)
+
+        if len(data) < limit:
+            break
+
+        offset += limit
+
+    return pd.DataFrame(all_data)
 
 @st.cache_data
 def load_mano_obra_igloo():
     supabase = get_supabase_client()
-    res = supabase.table("mano_obra_igloo").select("*").execute()
-    return pd.DataFrame(res.data)
+
+    all_data = []
+    limit = 1000
+    offset = 0
+
+    while True:
+        res = (
+            supabase
+            .table("mano_obra_igloo")
+            .select("*")
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        data = res.data
+
+        if not data:
+            break
+
+        all_data.extend(data)
+
+        if len(data) < limit:
+            break
+
+        offset += limit
+
+    return pd.DataFrame(all_data)
 
 # =================================
 # MODE SELECTOR
