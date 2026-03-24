@@ -758,7 +758,7 @@ with col2:
     )
 
 with col3:
-    st.subheader(f"3. Reporte de Mantenimientos ({empresa})")
+    st.subheader("3. Reporte de Mantenimientos")
     file_mantenimientos = st.file_uploader(
         "Sube Reporte de Mantenimientos",
         type=["csv", "xlsx"],
