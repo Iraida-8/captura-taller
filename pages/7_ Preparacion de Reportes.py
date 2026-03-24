@@ -159,7 +159,8 @@ st.subheader("¿Qué quieres hacer?")
 
 col_a, col_b = st.columns(2)
 
-st.session_state.modo_reportes = None
+if "modo_reportes" not in st.session_state:
+    st.session_state.modo_reportes = None
 
 with col_a:
     if st.button("📄 Consultar Reportes", use_container_width=True):
