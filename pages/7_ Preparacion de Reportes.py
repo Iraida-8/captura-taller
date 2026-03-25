@@ -1273,6 +1273,12 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 .astype(str)
             )
 
+            df_ordenes["Reporte"] = (
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
             # =============================
             # BUILD OSTES LOOKUP (NO GROUPBY)
             # =============================
@@ -1283,6 +1289,25 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 "Status",
                 "Total Pesos"
             ]].copy()
+
+            # =============================
+            # BUILD UNIDAD LOOKUP
+            # =============================
+
+            # From ORDENES (priority)
+            ordenes_unidad = df_ordenes[["Reporte", "Unidad"]].copy()
+
+            # From OSTES (fallback)
+            ostes_unidad = df_ostes[["Reporte", "Unidad"]].copy()
+
+            # Combine (ordenes first = priority)
+            unidad_lookup = pd.concat([ordenes_unidad, ostes_unidad])
+
+            # Clean values
+            unidad_lookup["Unidad"] = unidad_lookup["Unidad"].astype(str).str.strip()
+
+            # Remove duplicates (keep ordenes first)
+            unidad_lookup = unidad_lookup.drop_duplicates(subset=["Reporte"], keep="first")
 
             df_ostes_lookup.rename(columns={
                 "Empresa": "Nombre Cliente",
@@ -1297,6 +1322,11 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # MERGE
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
+
+            # =============================
+            # MERGE UNIDAD
+            # =============================
+            df_final = df_final.merge(unidad_lookup, on="Reporte", how="left")
 
             # =============================
             # MAP RAZON REPARACION (FIX)
@@ -1358,6 +1388,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Modelo"] = "N/A"
             df_final["Sucursal"] = "N/A"
             df_final["Comentarios"] = "N/A"
+            df_final["Unidad"] = df_final["Unidad"].replace(["nan", "None"], None)
 
             # =============================
             # CLEAN FORMATS
