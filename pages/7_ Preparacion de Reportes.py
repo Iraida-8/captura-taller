@@ -1211,6 +1211,34 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 on="Reporte",
                 how="left"
             )
+            
+            # =============================
+            # ACREEDOR FROM PROVEEDOR (ROLLBACK TO ORIGINAL)
+            # =============================
+
+            df_ordenes["Proveedor_key"] = pd.to_numeric(
+                df_ordenes["Proveedor"], errors="coerce"
+            ).astype("Int64")
+
+            df_final_ostes["Proveedor_key"] = pd.to_numeric(
+                df_final_ostes["Proveedor"], errors="coerce"
+            ).astype("Int64")
+
+            df_ordenes["NombreProveedor"] = df_ordenes["NombreProveedor"].astype(str).str.strip()
+
+            proveedor_lookup = (
+                df_ordenes[["Proveedor_key", "NombreProveedor"]]
+                .dropna()
+                .drop_duplicates(subset=["Proveedor_key"])
+            )
+
+            df_final_ostes = df_final_ostes.merge(
+                proveedor_lookup,
+                on="Proveedor_key",
+                how="left"
+            )
+
+            df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
 
             # =============================
             # DIRECT MAPPINGS
