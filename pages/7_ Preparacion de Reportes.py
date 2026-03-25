@@ -1034,6 +1034,45 @@ if file_ordenes and file_mantenimientos:
 
             df_final_ref = df_final_ref[final_cols_ref]
 
+            # =============================
+            # VEHICLE UNITS LOOKUP
+            # =============================
+            if "df_units_filtered" in locals() and not df_units_filtered.empty:
+
+                units_lookup = df_units_filtered[[
+                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
+                ]].copy()
+
+                # Normalize key
+                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
+                df_final_ref["Unidad"] = df_final_ref["Unidad"].astype(str).str.strip()
+
+                # Remove duplicates
+                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
+
+                df_final_ref = df_final_ref.merge(
+                    units_lookup,
+                    left_on="Unidad",
+                    right_on="unidad",
+                    how="left"
+                )
+
+                df_final_ref["Flotilla"] = df_final_ref["marca"]
+
+                if "modelo_y" in df_final_ref.columns:
+                    df_final_ref["Modelo"] = df_final_ref["modelo_y"]
+                else:
+                    df_final_ref["Modelo"] = df_final_ref["modelo"]
+
+                df_final_ref["Tipo De Unidad"] = df_final_ref["tipo_unidad"]
+                df_final_ref["Sucursal"] = df_final_ref["sucursal"]
+
+                cols_drop = ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal"]
+
+                df_final_ref = df_final_ref.drop(
+                    columns=[c for c in cols_drop if c in df_final_ref.columns]
+                )
+
             df_final_ref["Mes"] = df_final_ref["Mes"].map({
                 1: "January", 2: "February", 3: "March", 4: "April",
                 5: "May", 6: "June", 7: "July", 8: "August",
