@@ -1379,24 +1379,25 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 st.success("Datos Cargados")
 
 # =================================
-# BUILD MANO DE OBRA REPORT
+# BUILD MANO DE OBRA (CLEAN)
 # =================================
-if file_ordenes and file_ostes and file_mantenimientos:
+if file_mantenimientos:
 
-    valid_ordenes = validate_filename(file_ordenes, ["buscar", "ordenes", "sac"])
-    valid_ostes = validate_filename(file_ostes, ["ostes"])
     valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
 
-    if valid_ordenes and valid_ostes and valid_mant:
+    if valid_mant:
 
-        df_ordenes = read_file(file_ordenes)
-        df_ostes = read_file(file_ostes)
         df_mant = read_file(file_mantenimientos)
 
-        if df_ordenes is not None and df_ostes is not None and df_mant is not None:
+        if df_mant is not None:
 
             # =============================
-            # NORMALIZE KEYS (CRITICAL FIX)
+            # CLEAN
+            # =============================
+            df_mant.columns = df_mant.columns.str.strip()
+
+            # =============================
+            # NORMALIZE KEY
             # =============================
             df_mant["Reporte"] = (
                 pd.to_numeric(df_mant["# Reporte"], errors="coerce")
@@ -1404,88 +1405,21 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 .astype(str)
             )
 
-            df_ostes["Reporte"] = (
-                pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
-
-            df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
+            # =============================
+            # BASE
+            # =============================
+            df_final = df_mant.copy()
 
             # =============================
-            # BUILD OSTES LOOKUP (NO GROUPBY)
+            # DATE (FROM FECHA REGISTRO)
             # =============================
-            df_ostes_lookup = df_ostes[[
-                "Reporte",
-                "Empresa",
-                "No. Factura",
-                "Status",
-                "Total Pesos"
-            ]].copy()
+            df_final["Fecha Registro"] = pd.to_datetime(df_final["Fecha Registro"], errors="coerce")
+
+            df_final["Año"] = df_final["Fecha Registro"].dt.year
+            df_final["Mes"] = df_final["Fecha Registro"].dt.month
 
             # =============================
-            # BUILD UNIDAD LOOKUP
-            # =============================
-
-            # From ORDENES (priority)
-            ordenes_unidad = df_ordenes[["Reporte", "Unidad"]].copy()
-
-            # From OSTES (fallback)
-            ostes_unidad = df_ostes[["Reporte", "Unidad"]].copy()
-
-            # Combine (ordenes first = priority)
-            unidad_lookup = pd.concat([ordenes_unidad, ostes_unidad])
-
-            # Clean values
-            unidad_lookup["Unidad"] = unidad_lookup["Unidad"].astype(str).str.strip()
-
-            # Remove duplicates (keep ordenes first)
-            unidad_lookup = unidad_lookup.drop_duplicates(subset=["Reporte"], keep="first")
-
-            df_ostes_lookup.rename(columns={
-                "Empresa": "Nombre Cliente",
-                "No. Factura": "Factura",
-                "Status": "Estatus",
-                "Total Pesos": "Total"
-            }, inplace=True)
-
-            df_ostes_lookup = df_ostes_lookup.drop_duplicates(subset=["Reporte"])
-
-            # =============================
-            # MERGE
-            # =============================
-            df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
-
-            # MERGE UNIDAD
-            df_final = df_final.merge(
-                unidad_lookup,
-                on="Reporte",
-                how="left",
-                suffixes=("", "_lookup")
-            )
-
-            # RESOLVE UNIDAD
-            if "Unidad_lookup" in df_final.columns:
-                df_final["Unidad"] = df_final["Unidad_lookup"]
-
-            elif "Unidad" not in df_final.columns:
-                df_final["Unidad"] = None
-
-            # CLEAN UNIDAD  ← 🔥 STEP 3 HERE
-            if "Unidad" in df_final.columns:
-                df_final["Unidad"] = df_final["Unidad"].replace(["nan", "None"], None)
-
-            # =============================
-            # MAP RAZON REPARACION (FIX)
-            # =============================
-            df_final["Razon Reparacion"] = df_final.get("Razon Servicio")
-
-            # =============================
-            # DATE HANDLING
+            # FECHA ANALISIS (KEEP AS IS)
             # =============================
             df_final["Fecha Analisis"] = pd.to_datetime(
                 df_final["Fecha Liberada"],
@@ -1493,53 +1427,35 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 dayfirst=True
             )
 
-            df_final["Año"] = df_final["Fecha Analisis"].dt.year
-            df_final["Mes"] = df_final["Fecha Analisis"].dt.month
-
             # =============================
-            # FINANCIALS
+            # VEHICLE ENRICHMENT
             # =============================
-            df_final["Sub Total"] = df_final["Total"] / 1.16
-            df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
+            if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
-            # =============================
-            # TC MERGE
-            # =============================
-            df_final = df_final.dropna(subset=["Año", "Mes"])
+                units_lookup = df_units_filtered[[
+                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
+                ]].copy()
 
-            df_final["Año"] = df_final["Año"].astype(int)
-            df_final["Mes"] = df_final["Mes"].astype(int)
+                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
+                df_final["Unidad"] = df_final["Unidad"].astype(str).str.strip()
 
-            if df_tc is not None and not df_tc.empty:
+                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
 
                 df_final = df_final.merge(
-                    df_tc,
-                    left_on=["Año", "Mes"],
-                    right_on=["year", "month"],
+                    units_lookup,
+                    left_on="Unidad",
+                    right_on="unidad",
                     how="left"
                 )
 
-                df_final["TC"] = df_final["tc"]
-                df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+                df_final["Flotilla"] = df_final["marca"]
+                df_final["Modelo"] = df_final["modelo"]
+                df_final["Tipo Unidad"] = df_final["tipo_unidad"]
+                df_final["Sucursal"] = df_final["sucursal"]
 
-            else:
-                df_final["TC"] = 1
-
-            # =============================
-            # USD + CORRECTIONS
-            # =============================
-            df_final["Total USD"] = df_final["Total"] / df_final["TC"]
-            df_final["Total Correccion"] = df_final["Total"]
-            df_final["Diferencia"] = 0
-
-            # =============================
-            # STATIC FIELDS
-            # =============================
-            df_final["Flotilla"] = "N/A"
-            df_final["Modelo"] = "N/A"
-            df_final["Sucursal"] = "N/A"
-            df_final["Comentarios"] = "N/A"
-            df_final["Unidad"] = df_final["Unidad"].replace(["nan", "None"], None)
+                df_final = df_final.drop(
+                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final.columns]
+                )
 
             # =============================
             # CLEAN FORMATS
@@ -1559,16 +1475,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 if col in df_final.columns:
                     df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.date
 
-            currency_cols = [
-                "Sub Total", "IVA", "Total",
-                "Total Correccion", "TC", "Total USD"
-            ]
-
-            for col in currency_cols:
-                df_final[col] = pd.to_numeric(df_final[col], errors="coerce")
-
             # =============================
-            # FINAL COLUMNS
+            # FINAL COLUMNS (UNCHANGED ORDER)
             # =============================
             final_columns = [
                 "Año", "Mes", "Unidad", "Fecha Analisis",
@@ -1576,9 +1484,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 "Reporte", "Fecha Registro", "Fecha Aceptado",
                 "Fecha Iniciada", "Fecha Liberada", "Fecha Terminada",
                 "Nombre Cliente", "Factura", "Estatus",
-                "Sub Total", "IVA", "Total", "Total Correccion",
-                "TC", "Total USD", "Descripcion",
-                "Razon Reparacion", "Diferencia", "Comentarios"
+                "Descripcion", "Razon Servicio"
             ]
 
             for col in final_columns:
@@ -1587,7 +1493,9 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             df_final = df_final[final_columns]
 
-            # Month names
+            # =============================
+            # MONTH FORMAT
+            # =============================
             df_final["Mes"] = df_final["Mes"].map({
                 1: "January", 2: "February", 3: "March", 4: "April",
                 5: "May", 6: "June", 7: "July", 8: "August",
@@ -1602,15 +1510,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             st.dataframe(
                 df_final,
-                use_container_width=True,
-                column_config={
-                    "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
-                    "IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="$ %.4f"),
-                    "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
-                }
+                use_container_width=True
             )
+
             if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
-                    st.success("Datos Cargados")
+                st.success("Datos Cargados")
