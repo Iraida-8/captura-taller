@@ -1250,8 +1250,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # PLACEHOLDERS
             # =============================
-            df_final_ostes["Flotilla"] = "N/A"
-            df_final_ostes["Modelo"] = "N/A"
             df_final_ostes["Sucursal"] = "N/A"
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
 
@@ -1284,6 +1282,43 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     df_final_ostes[col] = None
 
             df_final_ostes = df_final_ostes[final_cols_ostes]
+
+            # =============================
+            # VEHICLE UNITS ENRICHMENT (OSTES)
+            # =============================
+            if "df_units_filtered" in locals() and not df_units_filtered.empty:
+
+                units_lookup = df_units_filtered[[
+                    "unidad", "marca", "modelo"
+                ]].copy()
+
+                # Normalize keys
+                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
+                df_final_ostes["Unidad"] = df_final_ostes["Unidad"].astype(str).str.strip()
+
+                # Remove duplicates
+                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
+
+                # MERGE
+                df_final_ostes = df_final_ostes.merge(
+                    units_lookup,
+                    left_on="Unidad",
+                    right_on="unidad",
+                    how="left"
+                )
+
+                # MAP
+                df_final_ostes["Flotilla"] = df_final_ostes["marca"]
+
+                if "modelo_y" in df_final_ostes.columns:
+                    df_final_ostes["Modelo"] = df_final_ostes["modelo_y"]
+                else:
+                    df_final_ostes["Modelo"] = df_final_ostes["modelo"]
+
+                # CLEAN
+                df_final_ostes = df_final_ostes.drop(
+                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y"] if c in df_final_ostes.columns]
+                )
 
             df_final_ostes["Mes"] = df_final_ostes["Mes"].map({
                 1: "January", 2: "February", 3: "March", 4: "April",
