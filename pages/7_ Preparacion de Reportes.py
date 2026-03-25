@@ -1211,7 +1211,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 on="Reporte",
                 how="left"
             )
-            
+
             # =============================
             # ACREEDOR FROM PROVEEDOR (ROLLBACK TO ORIGINAL)
             # =============================
@@ -1237,8 +1237,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 on="Proveedor_key",
                 how="left"
             )
-
-            df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
 
             # =============================
             # DIRECT MAPPINGS
