@@ -1130,7 +1130,7 @@ if file_ordenes and file_mantenimientos:
                 st.success("Datos Cargados")
 
 # =================================
-# BUILD OSTES (REBUILT CLEAN)
+# BUILD OSTES (FINAL FIXED)
 # =================================
 if file_ostes and file_mantenimientos and file_ordenes:
 
@@ -1153,7 +1153,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_ordenes.columns = df_ordenes.columns.str.strip()
 
             # =============================
-            # NORMALIZE KEYS (CRITICAL)
+            # NORMALIZE KEYS
             # =============================
             df_ostes["Reporte"] = (
                 pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
@@ -1174,7 +1174,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             )
 
             # =============================
-            # DATE BASE (FROM FACTURA)
+            # DATE BASE (FACTURA)
             # =============================
             df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce")
 
@@ -1182,15 +1182,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_ostes["Mes"] = df_ostes["Fecha Factura"].dt.month
 
             # =============================
-            # LOOKUPS
+            # LOOKUPS (SAC + MANT)
             # =============================
-
-            # IVA from SAC
             ordenes_lookup = df_ordenes[[
-                "Reporte", "IvaParte"
+                "Reporte", "IvaParte", "Moneda", "NombreProveedor"
             ]].drop_duplicates(subset=["Reporte"])
 
-            # Descripcion / Razon
             mant_lookup = df_mant[[
                 "Reporte", "Descripcion", "Razon Servicio"
             ]].drop_duplicates(subset=["Reporte"])
@@ -1221,6 +1218,10 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["OSTE"] = df_final_ostes["# Oste"]
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
 
+            df_final_ostes["Factura"] = df_final_ostes["No. Factura"]
+            df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
+            df_final_ostes["IVA"] = df_final_ostes["IvaParte"]
+
             # =============================
             # TIME METRICS
             # =============================
@@ -1235,14 +1236,9 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].clip(lower=0)
 
             # =============================
-            # FINANCIALS (CORRECT LOGIC)
+            # FINANCIALS
             # =============================
-
-            # Subtotal from OSTES (Total)
             df_final_ostes["Subtotal"] = df_final_ostes["Total"]
-
-            # IVA from SAC
-            df_final_ostes["IVA"] = df_final_ostes["IvaParte"]
 
             # =============================
             # TC MERGE
@@ -1276,10 +1272,9 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 if moneda == "USD":
                     return row["Subtotal"] * row["TC"]
                 else:
-                    return row["Subtotal"] * 1
+                    return row["Subtotal"]
 
             df_final_ostes["Total oste"] = df_final_ostes.apply(calc_total, axis=1)
-
             df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
 
             # =============================
@@ -1341,7 +1336,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
 
                 df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal", "IvaParte", "NombreProveedor"] if c in df_final_ostes.columns]
                 )
 
             # =============================
