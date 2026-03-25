@@ -1250,7 +1250,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # PLACEHOLDERS
             # =============================
-            df_final_ostes["Sucursal"] = "N/A"
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
 
             # =============================
@@ -1289,7 +1288,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
                 units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo"
+                    "unidad", "marca", "modelo", "sucursal"
                 ]].copy()
 
                 # Normalize keys
@@ -1315,9 +1314,11 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 else:
                     df_final_ostes["Modelo"] = df_final_ostes["modelo"]
 
+                df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
+
                 # CLEAN
                 df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y"] if c in df_final_ostes.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "sucursal"] if c in df_final_ostes.columns]
                 )
 
             df_final_ostes["Mes"] = df_final_ostes["Mes"].map({
