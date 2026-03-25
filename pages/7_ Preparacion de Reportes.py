@@ -1130,7 +1130,7 @@ if file_ordenes and file_mantenimientos:
                 st.success("Datos Cargados")
 
 # =================================
-# BUILD OSTES (FINAL FIXED)
+# BUILD OSTES (FINAL FULL VERSION)
 # =================================
 if file_ostes and file_mantenimientos and file_ordenes:
 
@@ -1146,7 +1146,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
         if df_ostes is not None and df_mant is not None and df_ordenes is not None:
 
             # =============================
-            # CLEAN COLUMNS
+            # CLEAN
             # =============================
             df_ostes.columns = df_ostes.columns.str.strip()
             df_mant.columns = df_mant.columns.str.strip()
@@ -1155,37 +1155,22 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_ostes["Reporte"] = (
-                pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
-
-            df_mant["Reporte"] = (
-                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
-
-            df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-            )
+            df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
-            # DATE BASE (FACTURA)
+            # DATE BASE
             # =============================
             df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce")
-
             df_ostes["Año"] = df_ostes["Fecha Factura"].dt.year
             df_ostes["Mes"] = df_ostes["Fecha Factura"].dt.month
 
             # =============================
-            # LOOKUPS (SAC + MANT)
+            # LOOKUPS
             # =============================
             ordenes_lookup = df_ordenes[[
-                "Reporte", "IvaParte", "Moneda", "NombreProveedor"
+                "Reporte", "IvaParte", "Moneda"
             ]].drop_duplicates(subset=["Reporte"])
 
             mant_lookup = df_mant[[
@@ -1193,43 +1178,24 @@ if file_ostes and file_mantenimientos and file_ordenes:
             ]].drop_duplicates(subset=["Reporte"])
 
             # =============================
-            # BASE
+            # BASE + MERGES
             # =============================
             df_final_ostes = df_ostes.copy()
 
-            # =============================
-            # MERGES
-            # =============================
-            df_final_ostes = df_final_ostes.merge(
-                ordenes_lookup,
-                on="Reporte",
-                how="left"
-            )
-
-            df_final_ostes = df_final_ostes.merge(
-                mant_lookup,
-                on="Reporte",
-                how="left"
-            )
+            df_final_ostes = df_final_ostes.merge(ordenes_lookup, on="Reporte", how="left")
+            df_final_ostes = df_final_ostes.merge(mant_lookup, on="Reporte", how="left")
 
             # =============================
-            # ACREEDOR FROM PROVEEDOR (ROLLBACK TO ORIGINAL)
+            # ACREEDOR (FIXED)
             # =============================
-
-            df_ordenes["Proveedor_key"] = pd.to_numeric(
-                df_ordenes["Proveedor"], errors="coerce"
-            ).astype("Int64")
-
-            df_final_ostes["Proveedor_key"] = pd.to_numeric(
-                df_final_ostes["Proveedor"], errors="coerce"
-            ).astype("Int64")
-
-            df_ordenes["NombreProveedor"] = df_ordenes["NombreProveedor"].astype(str).str.strip()
+            df_ordenes["Proveedor_key"] = pd.to_numeric(df_ordenes["Proveedor"], errors="coerce").astype("Int64")
+            df_final_ostes["Proveedor_key"] = pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce").astype("Int64")
 
             proveedor_lookup = (
                 df_ordenes[["Proveedor_key", "NombreProveedor"]]
                 .dropna()
                 .drop_duplicates(subset=["Proveedor_key"])
+                .rename(columns={"NombreProveedor": "Acreedor_lookup"})
             )
 
             df_final_ostes = df_final_ostes.merge(
@@ -1238,14 +1204,14 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 how="left"
             )
 
+            df_final_ostes["Acreedor"] = df_final_ostes["Acreedor_lookup"]
+
             # =============================
-            # DIRECT MAPPINGS
+            # DIRECT FIELDS
             # =============================
             df_final_ostes["OSTE"] = df_final_ostes["# Oste"]
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
-
             df_final_ostes["Factura"] = df_final_ostes["No. Factura"]
-            df_final_ostes["Acreedor"] = df_final_ostes["NombreProveedor"]
             df_final_ostes["IVA"] = df_final_ostes["IvaParte"]
 
             # =============================
@@ -1267,40 +1233,32 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["Subtotal"] = df_final_ostes["Total"]
 
             # =============================
-            # TC MERGE
+            # TC
             # =============================
             df_final_ostes = df_final_ostes.dropna(subset=["Año", "Mes"])
-
             df_final_ostes["Año"] = df_final_ostes["Año"].astype(int)
             df_final_ostes["Mes"] = df_final_ostes["Mes"].astype(int)
 
             if df_tc is not None and not df_tc.empty:
-
                 df_final_ostes = df_final_ostes.merge(
                     df_tc,
                     left_on=["Año", "Mes"],
                     right_on=["year", "month"],
                     how="left"
                 )
-
                 df_final_ostes["TC"] = df_final_ostes["tc"]
                 df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
-
             else:
                 df_final_ostes["TC"] = 1
 
             # =============================
-            # TOTAL OSTE (CONDITIONAL)
+            # TOTAL OSTE
             # =============================
-            def calc_total(row):
-                moneda = str(row.get("Moneda", "")).upper()
+            df_final_ostes["Total oste"] = df_final_ostes.apply(
+                lambda r: r["Subtotal"] * r["TC"] if str(r["Moneda"]).upper() == "USD" else r["Subtotal"],
+                axis=1
+            )
 
-                if moneda == "USD":
-                    return row["Subtotal"] * row["TC"]
-                else:
-                    return row["Subtotal"]
-
-            df_final_ostes["Total oste"] = df_final_ostes.apply(calc_total, axis=1)
             df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
 
             # =============================
@@ -1362,7 +1320,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
 
                 df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal", "IvaParte", "NombreProveedor"] if c in df_final_ostes.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal", "IvaParte", "Acreedor_lookup"] if c in df_final_ostes.columns]
                 )
 
             # =============================
