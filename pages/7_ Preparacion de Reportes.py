@@ -754,11 +754,6 @@ if df_units is not None and not df_units.empty and empresa_code:
 
     df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
 
-    # 🔍 DEBUG (temporary)
-    with st.expander("DEBUG: vehicle_units"):
-        st.write(f"Empresa code: {empresa_code}")
-        st.dataframe(df_units_filtered, use_container_width=True)
-
 # =================================
 # Dynamic uploader keys
 # =================================
