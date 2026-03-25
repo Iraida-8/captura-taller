@@ -1445,7 +1445,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             )
 
             if "Unidad_lookup" in df_final.columns:
-                df_final["Unidad"] = df_final["Unidad_lookup"]
+                df_final["Unidad"] = df_final["Unidad_lookup"].combine_first(df_final["Unidad"])
 
             df_final["Unidad"] = df_final["Unidad"].replace(["nan", "None"], None)
 
