@@ -332,6 +332,24 @@ def load_mano_obra_logis():
 
     return pd.DataFrame(all_data)
 
+#Load Units my dude
+@st.cache_data
+def load_vehicle_units():
+    try:
+        supabase = get_supabase_client()
+
+        response = supabase.table("vehicle_units").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando vehicle_units: {e}")
+        return pd.DataFrame()
+
 # =================================
 # MODE SELECTOR
 # =================================
@@ -703,11 +721,43 @@ companies = [
 
 empresa = st.selectbox("Selecciona la empresa:", companies)
 
+EMPRESA_MAP = {
+    "IGLOO": "IGT",
+    "LINCOLN FREIGHT": "LIN",
+    "PICUS": "PIC",
+    "SET LOGIS PLUS": "SLP",
+    "SET FREIGHT INTERNATIONAL": "SET"
+}
+
 if empresa == "SELECCIONA EMPRESA":
     st.warning("Debes seleccionar una empresa para continuar.")
     st.stop()
 
 st.success(f"Empresa seleccionada: {empresa}")
+
+# =============================
+# LOAD VEHICLE UNITS (HIDDEN)
+# =============================
+df_units = load_vehicle_units()
+
+empresa_code = EMPRESA_MAP.get(empresa)
+
+if df_units is not None and not df_units.empty and empresa_code:
+
+    df_units_filtered = df_units[df_units["empresa"] == empresa_code].copy()
+
+    # Keep only relevant columns
+    cols_keep = [
+        "empresa", "unidad", "marca", "modelo",
+        "vin", "tipo_unidad", "sucursal", "estado"
+    ]
+
+    df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
+
+    # 🔍 DEBUG (temporary)
+    with st.expander("DEBUG: vehicle_units"):
+        st.write(f"Empresa code: {empresa_code}")
+        st.dataframe(df_units_filtered, use_container_width=True)
 
 # =================================
 # Dynamic uploader keys
