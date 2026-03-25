@@ -914,7 +914,7 @@ if file_mantenimientos:
 
 
 # =================================
-# BUILD DATA REFACCIONES
+# BUILD DATA REFACCIONES (CLEAN)
 # =================================
 if file_ordenes and file_mantenimientos:
 
@@ -929,45 +929,68 @@ if file_ordenes and file_mantenimientos:
         if df_ordenes is not None and df_mant is not None:
 
             # =============================
-            # NORMALIZE KEYS
+            # NORMALIZE KEYS (CRITICAL)
             # =============================
-            df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
-            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
+            df_ordenes["Reporte"] = (
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
+            df_mant["Reporte"] = (
+                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
 
             # =============================
-            # DATE HANDLING
+            # DATE FROM SAC
             # =============================
             df_ordenes["Fecha Compra"] = pd.to_datetime(df_ordenes["Fecha"], errors="coerce")
 
             df_ordenes["Año"] = df_ordenes["Fecha Compra"].dt.year
             df_ordenes["Mes"] = df_ordenes["Fecha Compra"].dt.month
 
-            df_ordenes["Mes Nombre"] = df_ordenes["Fecha Compra"].dt.month_name()
-
             # =============================
             # JOIN MANTENIMIENTOS
             # =============================
+            mant_lookup = df_mant[[
+                "Reporte",
+                "Tipo Unidad",
+                "Descripcion",
+                "Razon Servicio",
+                "Fecha Liberada"
+            ]].drop_duplicates(subset=["Reporte"])
+
             df_final_ref = df_ordenes.merge(
-                df_mant[[
-                    "Reporte",
-                    "Tipo Unidad",
-                    "Descripcion",
-                    "Razon Servicio",
-                    "Fecha Liberada"
-                ]],
+                mant_lookup,
                 on="Reporte",
                 how="left"
             )
 
             # =============================
-            # DERIVED FIELDS
+            # FECHA ANALISIS
             # =============================
-            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Liberada"], errors="coerce")
-
-            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (1 + df_final_ref["Tasaiva"].fillna(0))
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(
+                df_final_ref["Fecha Liberada"],
+                errors="coerce"
+            )
 
             # =============================
-            # TC SAFE MERGE
+            # FINANCIALS
+            # =============================
+            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (
+                1 + df_final_ref["Tasaiva"].fillna(0)
+            )
+
+            df_final_ref["IVA"] = df_final_ref["IvaParte"]
+
+            df_final_ref["Total Correccion"] = (
+                df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
+            )
+
+            # =============================
+            # TC MERGE
             # =============================
             df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
 
@@ -995,30 +1018,20 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
-            df_final_ref["Total Correccion"] = df_final_ref["PrecioParte"]
-
             # =============================
-            # MISSING FIELDS
-            # =============================
-            df_final_ref["Flotilla"] = "N/A"
-            df_final_ref["Modelo"] = "N/A"
-            df_final_ref["Sucursal"] = "N/A"
-
-            # =============================
-            # RENAME
+            # RENAME (STRICT SAC BASE)
             # =============================
             df_final_ref.rename(columns={
                 "NombreProveedor": "Nombre Proveedor",
                 "TipoCompra": "Tipo De Parte",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Tasaiva": "Tasa IVA",
-                "IvaParte": "IVA",
                 "Descripcion": "Descripcion",
                 "Razon Servicio": "Razon Reparacion"
             }, inplace=True)
 
             # =============================
-            # SELECT FINAL COLUMNS
+            # SELECT FINAL COLUMNS (LOCK)
             # =============================
             final_cols_ref = [
                 "Año", "Mes", "Fecha Analisis",
@@ -1032,10 +1045,14 @@ if file_ordenes and file_mantenimientos:
                 "Descripcion", "Razon Reparacion"
             ]
 
+            for col in final_cols_ref:
+                if col not in df_final_ref.columns:
+                    df_final_ref[col] = None
+
             df_final_ref = df_final_ref[final_cols_ref]
 
             # =============================
-            # VEHICLE UNITS LOOKUP
+            # VEHICLE UNITS ENRICHMENT
             # =============================
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
@@ -1043,11 +1060,9 @@ if file_ordenes and file_mantenimientos:
                     "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
                 ]].copy()
 
-                # Normalize key
                 units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
                 df_final_ref["Unidad"] = df_final_ref["Unidad"].astype(str).str.strip()
 
-                # Remove duplicates
                 units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
 
                 df_final_ref = df_final_ref.merge(
@@ -1067,24 +1082,22 @@ if file_ordenes and file_mantenimientos:
                 df_final_ref["Tipo De Unidad"] = df_final_ref["tipo_unidad"]
                 df_final_ref["Sucursal"] = df_final_ref["sucursal"]
 
-                cols_drop = ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal"]
-
                 df_final_ref = df_final_ref.drop(
-                    columns=[c for c in cols_drop if c in df_final_ref.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal"] if c in df_final_ref.columns]
                 )
 
+            # =============================
+            # FORMAT
+            # =============================
             df_final_ref["Mes"] = df_final_ref["Mes"].map({
                 1: "January", 2: "February", 3: "March", 4: "April",
                 5: "May", 6: "June", 7: "July", 8: "August",
                 9: "September", 10: "October", 11: "November", 12: "December"
             })
 
-            # =============================
-            # FORMAT DISPLAY
-            # =============================
-            df_final_ref["Fecha Compra"] = df_final_ref["Fecha Compra"].dt.date
+            df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.date
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.date
 
-            # Ensure numeric
             currency_cols = [
                 "PU", "PrecioParte", "Precio Sin IVA",
                 "TC", "PU USD", "Total USD", "Total Correccion"
@@ -1098,9 +1111,6 @@ if file_ordenes and file_mantenimientos:
             # =============================
             st.divider()
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
-
-            # 🔥 ADD THIS
-            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.date
 
             st.dataframe(
                 df_final_ref,
