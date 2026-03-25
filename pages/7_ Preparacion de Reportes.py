@@ -1142,9 +1142,26 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_mant.columns = df_mant.columns.str.strip()
             df_ordenes.columns = df_ordenes.columns.str.strip()
 
-            df_ostes["Reporte"] = df_ostes["# Reporte"].astype(str).str.strip()
-            df_mant["Reporte"] = df_mant["# Reporte"].astype(str).str.strip()
-            df_ordenes["Reporte"] = df_ordenes["Reporte"].astype(str).str.strip()
+            # =============================
+            # NORMALIZE KEYS (STRICT)
+            # =============================
+            df_ostes["Reporte"] = (
+                pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
+            df_mant["Reporte"] = (
+                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
+
+            df_ordenes["Reporte"] = (
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+            )
 
             # =============================
             # BUILD LOOKUPS
