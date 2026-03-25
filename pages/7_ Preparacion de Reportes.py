@@ -1112,9 +1112,11 @@ if file_ordenes and file_mantenimientos:
             st.divider()
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
 
-            st.dataframe(
+            edited_ref = st.data_editor(
                 df_final_ref,
                 use_container_width=True,
+                num_rows="dynamic",
+                key=f"edit_ref_{empresa}",
                 column_config={
                     "PU": st.column_config.NumberColumn(format="$ %.2f"),
                     "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1125,6 +1127,9 @@ if file_ordenes and file_mantenimientos:
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
+
+            # overwrite with edited version
+            df_final_ref = edited_ref
 
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
                 st.success("Datos Cargados")
@@ -1363,9 +1368,11 @@ if file_ostes and file_mantenimientos and file_ordenes:
             st.divider()
             st.subheader(f"💰 OSTES {empresa}")
 
-            st.dataframe(
+            edited_ostes = st.data_editor(
                 df_final_ostes,
                 use_container_width=True,
+                num_rows="dynamic",
+                key=f"edit_ostes_{empresa}",
                 column_config={
                     "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1374,6 +1381,9 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
+
+            # overwrite with edited version
+            df_final_ostes = edited_ostes
 
             if st.button("📥 Cargar Datos - OSTES", use_container_width=True):
                 st.success("Datos Cargados")
@@ -1587,9 +1597,11 @@ if file_ordenes and file_ostes and file_mantenimientos:
             st.divider()
             st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
 
-            st.dataframe(
+            edited_mo = st.data_editor(
                 df_final,
                 use_container_width=True,
+                num_rows="dynamic",
+                key=f"edit_mo_{empresa}",
                 column_config={
                     "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1599,6 +1611,9 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
+
+            # overwrite dataframe with edited version
+            df_final = edited_mo
 
             if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
                 st.success("Datos Cargados")
