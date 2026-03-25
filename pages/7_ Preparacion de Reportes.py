@@ -1323,10 +1323,24 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
 
-            # =============================
             # MERGE UNIDAD
-            # =============================
-            df_final = df_final.merge(unidad_lookup, on="Reporte", how="left")
+            df_final = df_final.merge(
+                unidad_lookup,
+                on="Reporte",
+                how="left",
+                suffixes=("", "_lookup")
+            )
+
+            # RESOLVE UNIDAD
+            if "Unidad_lookup" in df_final.columns:
+                df_final["Unidad"] = df_final["Unidad_lookup"]
+
+            elif "Unidad" not in df_final.columns:
+                df_final["Unidad"] = None
+
+            # CLEAN UNIDAD  ← 🔥 STEP 3 HERE
+            if "Unidad" in df_final.columns:
+                df_final["Unidad"] = df_final["Unidad"].replace(["nan", "None"], None)
 
             # =============================
             # MAP RAZON REPARACION (FIX)
