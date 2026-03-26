@@ -304,6 +304,13 @@ if "Fecha Compra" in df_partes.columns:
 if "Fecha Analisis" in df_partes.columns:
     df_partes["Fecha Analisis"] = pd.to_datetime(df_partes["Fecha Analisis"], errors="coerce")
 
+
+#Debugging
+st.write("Rows interna BEFORE filter:", len(df))
+st.write("Rows ostes BEFORE filter:", len(df_ostes))
+st.write("Rows interna AFTER filter:", len(df))
+st.write("Rows ostes AFTER filter:", len(df_ostes))
+
 # =================================
 # HARD LOCK 2025+ FOR INTERNA & EXTERNA
 # =================================
@@ -319,10 +326,7 @@ if df.empty and df_ostes.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
-st.write("Rows interna BEFORE filter:", len(df))
-st.write("Rows ostes BEFORE filter:", len(df_ostes))
-st.write("Rows interna AFTER filter:", len(df))
-st.write("Rows ostes AFTER filter:", len(df_ostes))
+
 # =================================
 # SAFE HELPERS
 # =================================
