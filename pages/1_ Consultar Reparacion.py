@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from auth import require_login, require_access
 import streamlit.components.v1 as components
+from supabase import create_client
 
 # =================================
 # Page configuration
@@ -33,6 +34,18 @@ require_login()
 require_access("consultar_reparacion")
 
 # =================================
+# Supabase Client
+# =================================
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase()
+
+# =================================
 # HARD RESET ON PAGE LOAD
 # =================================
 
@@ -54,164 +67,143 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 st.title("📋 Consulta de Reparación")
 
-# =================================
-# EMPRESA DATA CONFIG
-# =================================
 EMPRESA_CONFIG = {
     "IGLOO TRANSPORT": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1OGYOp0ZqK7PQ93F4wdHJKEnB4oZbl5pU"
-            "/export?format=csv&gid=770635060"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "18tFOA4prD-PWhtbc35cqKXxYcyuqGOC7"
-            "/export?format=csv&gid=410297659"
-        ),
-        "ostes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1RZ1YcLQxXI0U81Vle6cXmRp0yMxuRVg4"
-            "/export?format=csv&gid=1578839108"
-        )
+        "ordenes": "mano_obra_igloo",
+        "partes": "refacciones_data_igloo",
+        "ostes": "ostes_igloo"
     },
-
     "LINCOLN FREIGHT": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1nqRT3LRixs45Wth5bXyrKSojv3uJfjbZ"
-            "/export?format=csv&gid=332111886"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1lcNr73nHrMpsqdYBNxtTQFqFmY1Ey9gp"
-            "/export?format=csv&gid=41991257"
-        ),
-        "ostes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1lZO4SVKHXfW1-IzhYXvAmJ8WC7zgg8VD"
-            "/export?format=csv&gid=1179811252"
-        )
+        "ordenes": "mano_obra_lincoln",
+        "partes": "refacciones_data_lincoln",
+        "ostes": "ostes_lincoln"
     },
-
     "PICUS": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1DSFFir8vQGzkIZdPGZKakMFygUUjA6vg"
-            "/export?format=csv&gid=1157416037"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1tzt6tYG94oVt8YwK3u9gR-DHFcuadpNN"
-            "/export?format=csv&gid=354598948"
-        ),
-        "ostes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1vedjfjpQAHA4l1iby_mZRdVayH0H4cjg"
-            "/export?format=csv&gid=1926750281"
-        )
+        "ordenes": "mano_obra_picus",
+        "partes": "refacciones_data_picus",
+        "ostes": "ostes_picus"
     },
-
-    "SET FREIGHT INTERNATIONAL": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "166RzQ6DxBiZ1c7xjMQzyPJk2uLJI_piO"
-            "/export?format=csv&gid=1292870764"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1Nqbhl8o5qaKhI4LNxreicPW5Ew8kqShS"
-            "/export?format=csv&gid=849445619"
-        ),
-        "ostes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1lshd4YaUyuZiYctys3RplStzcYpABNRj"
-            "/export?format=csv&gid=1882046877"
-        )
-    },
-
     "SET LOGIS PLUS": {
-        "ordenes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "11q580KXBn-kX5t-eHAbV0kp-kTqIQBR6"
-            "/export?format=csv&gid=663362391"
-        ),
-        "partes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1yrzwm5ixsaYNKwkZpfmFpDdvZnohFH61"
-            "/export?format=csv&gid=1837946138"
-        ),
-        "ostes": (
-            "https://docs.google.com/spreadsheets/d/"
-            "1kcemsViXwHBaCXK58SGBxjfYs-zakhki"
-            "/export?format=csv&gid=1472656211"
-        )
+        "ordenes": "mano_obra_logis",
+        "partes": "refacciones_data_logis",
+        "ostes": "ostes_logis"
+    },
+    "SET FREIGHT INTERNATIONAL": {
+        "ordenes": "mano_obra_setfreight",
+        "partes": "refacciones_data_setfreight",
+        "ostes": "ostes_setfreight"
     }
 }
 
 # =================================
 # LOADERS
 # =================================
-#Internas
 @st.cache_data(ttl=600)
-def cargar_ordenes(url):
-    if not url:
+def cargar_tabla(nombre_tabla):
+    try:
+        response = supabase.table(nombre_tabla).select("*").execute()
+
+        if not response.data:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(response.data)
+        df.columns = df.columns.str.strip()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando {nombre_tabla}: {e}")
         return pd.DataFrame()
+    
+# =================================
+# Le NORMALIZER
+# =================================
+def normalizar_columnas(df, tipo):
+    if df.empty:
+        return df
 
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
+    # -------------------------
+    # DROP SYSTEM COLUMNS
+    # -------------------------
+    df = df.drop(columns=["id", "created_at"], errors="ignore")
 
-    rename_map = {
-        "Diferencia": "DIFERENCIA",
-        "Comentarios": "COMENTARIOS",
-        "Tipo De Unidad": "Tipo Unidad",
-        "Razon de servicio": "Razon Reparacion",
-    }
+    # -------------------------
+    # RENAME MAPS
+    # -------------------------
+
+    if tipo == "interna":
+        rename_map = {
+            "unidad": "Unidad",
+            "fecha_analisis": "Fecha Analisis",
+            "flotilla": "Flotilla",
+            "modelo": "Modelo",
+            "tipo_unidad": "Tipo Unidad",
+            "sucursal": "Sucursal",
+            "reporte": "Reporte",
+            "fecha_registro": "Fecha Registro",
+            "fecha_aceptado": "Fecha Aceptado",
+            "fecha_iniciada": "Fecha Iniciada",
+            "fecha_liberada": "Fecha Liberada",
+            "fecha_terminada": "Fecha Terminada",
+            "nombre_cliente": "Nombre Cliente",
+            "factura": "Factura",
+            "estatus": "Estatus",
+            "subtotal": "Sub Total",
+            "iva": "IVA",
+            "total": "Total",
+            "total_correccion": "Total Correccion",
+            "tc": "TC",
+            "total_usd": "Total USD",
+            "descripcion": "Descripcion",
+            "razon_reparacion": "Razon Reparacion",
+            "diferencia": "DIFERENCIA",
+            "comentarios": "COMENTARIOS"
+        }
+
+    elif tipo == "ostes":
+        rename_map = {
+            "oste": "OSTE",
+            "unidad": "Unidad",
+            "flotilla": "Flotilla",
+            "modelo": "Modelo",
+            "tipo_de_unidad": "Tipo Unidad",
+            "sucursal": "Sucursal",
+            "reporte": "Reporte",
+            "acreedor": "Acreedor",
+            "factura": "Factura",
+            "status_ct": "Status CT",
+            "descripcion": "Descripcion",
+            "razon_de_servicio": "Razon Reparacion",
+            "fecha_analisis": "Fecha Analisis",
+            "fecha_factura": "Fecha Factura",
+            "fecha_oste": "Fecha OSTE",
+            "fecha_cierre": "Fecha Cierre",
+            "dias_reparacion": "Dias Reparacion",
+            "subtotal": "Subtotal",
+            "iva": "IVA",
+            "total_oste": "Total oste",
+            "tc": "TC",
+            "total_correccion": "Total Correccion",
+            "observaciones": "Observaciones"
+        }
+
+    elif tipo == "partes":
+        rename_map = {
+            "unidad": "Unidad",
+            "fecha_compra": "Fecha Compra",
+            "parte": "Parte",
+            "cantidad": "Cantidad",
+            "pu": "PU",
+            "iva": "IVA",
+            "total_correccion": "Total Correccion",
+            "pu_usd": "PU USD",
+            "total_usd": "Total USD"
+        }
+
+    else:
+        return df
 
     df = df.rename(columns=rename_map)
-
-    if "Fecha Registro" in df.columns:
-        df["Fecha Registro"] = pd.to_datetime(
-            df["Fecha Registro"],
-            errors="coerce",
-            format="mixed"
-        )
-
-    return df
-
-#Ostes
-@st.cache_data(ttl=600)
-def cargar_ostes(url):
-    if not url:
-        return pd.DataFrame()
-
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-
-    if "Fecha OSTE" in df.columns:
-        df["Fecha OSTE"] = pd.to_datetime(
-            df["Fecha OSTE"],
-            errors="coerce",
-            format="mixed"
-        )
-
-    return df
-
-#Cargar Partes
-@st.cache_data(ttl=600)
-def cargar_partes(url):
-    if not url:
-        return pd.DataFrame()
-
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-
-    if "Fecha Compra" in df.columns:
-        df["Fecha Compra"] = pd.to_datetime(
-            df["Fecha Compra"],
-            errors="coerce",
-            format="mixed"
-        )
 
     return df
 
@@ -232,9 +224,62 @@ if empresa == "Selecciona empresa":
 
 config = EMPRESA_CONFIG[empresa]
 
-df = cargar_ordenes(config["ordenes"])
-df_partes = cargar_partes(config["partes"])
-df_ostes = cargar_ostes(config["ostes"])
+df = cargar_tabla(config["ordenes"])
+df_partes = cargar_tabla(config["partes"])
+df_ostes = cargar_tabla(config["ostes"])
+
+
+# =============================
+# NORMALIZACIÓN
+# =============================
+df = normalizar_columnas(df, "interna")
+df_partes = normalizar_columnas(df_partes, "partes")
+df_ostes = normalizar_columnas(df_ostes, "ostes")
+
+# =================================
+# DATE PARSING
+# =================================
+
+# Interna
+if "Fecha Registro" in df.columns:
+    df["Fecha Registro"] = pd.to_datetime(df["Fecha Registro"], errors="coerce")
+
+if "Fecha Analisis" in df.columns:
+    df["Fecha Analisis"] = pd.to_datetime(df["Fecha Analisis"], errors="coerce")
+
+if "Fecha Aceptado" in df.columns:
+    df["Fecha Aceptado"] = pd.to_datetime(df["Fecha Aceptado"], errors="coerce")
+
+if "Fecha Iniciada" in df.columns:
+    df["Fecha Iniciada"] = pd.to_datetime(df["Fecha Iniciada"], errors="coerce")
+
+if "Fecha Liberada" in df.columns:
+    df["Fecha Liberada"] = pd.to_datetime(df["Fecha Liberada"], errors="coerce")
+
+if "Fecha Terminada" in df.columns:
+    df["Fecha Terminada"] = pd.to_datetime(df["Fecha Terminada"], errors="coerce")
+
+
+# OSTES
+if "Fecha OSTE" in df_ostes.columns:
+    df_ostes["Fecha OSTE"] = pd.to_datetime(df_ostes["Fecha OSTE"], errors="coerce")
+
+if "Fecha Factura" in df_ostes.columns:
+    df_ostes["Fecha Factura"] = pd.to_datetime(df_ostes["Fecha Factura"], errors="coerce")
+
+if "Fecha Analisis" in df_ostes.columns:
+    df_ostes["Fecha Analisis"] = pd.to_datetime(df_ostes["Fecha Analisis"], errors="coerce")
+
+if "Fecha Cierre" in df_ostes.columns:
+    df_ostes["Fecha Cierre"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce")
+
+
+# PARTES
+if "Fecha Compra" in df_partes.columns:
+    df_partes["Fecha Compra"] = pd.to_datetime(df_partes["Fecha Compra"], errors="coerce")
+
+if "Fecha Analisis" in df_partes.columns:
+    df_partes["Fecha Analisis"] = pd.to_datetime(df_partes["Fecha Analisis"], errors="coerce")
 
 # =================================
 # HARD LOCK 2025+ FOR INTERNA & EXTERNA
