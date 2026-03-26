@@ -101,12 +101,35 @@ EMPRESA_CONFIG = {
 @st.cache_data(ttl=600)
 def cargar_tabla(nombre_tabla):
     try:
-        response = supabase.table(nombre_tabla).select("*").execute()
+        all_data = []
+        chunk_size = 1000
+        offset = 0
 
-        if not response.data:
+        while True:
+            response = (
+                supabase
+                .table(nombre_tabla)
+                .select("*")
+                .range(offset, offset + chunk_size - 1)
+                .execute()
+            )
+
+            data = response.data
+
+            if not data:
+                break
+
+            all_data.extend(data)
+
+            if len(data) < chunk_size:
+                break
+
+            offset += chunk_size
+
+        if not all_data:
             return pd.DataFrame()
 
-        df = pd.DataFrame(response.data)
+        df = pd.DataFrame(all_data)
         df.columns = df.columns.str.strip()
 
         return df
@@ -296,6 +319,10 @@ if df.empty and df_ostes.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
 
+st.write("Rows interna BEFORE filter:", len(df))
+st.write("Rows ostes BEFORE filter:", len(df_ostes))
+st.write("Rows interna AFTER filter:", len(df))
+st.write("Rows ostes AFTER filter:", len(df_ostes))
 # =================================
 # SAFE HELPERS
 # =================================
