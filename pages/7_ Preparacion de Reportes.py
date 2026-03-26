@@ -696,7 +696,7 @@ if st.session_state.modo_reportes == "consultar":
     def format_dates(df):
         for col in df.columns:
             if "fecha" in col.lower():
-                df[col] = pd.to_datetime(df[col], errors="coerce").dt.strftime("%d/%m/%y"")
+                df[col] = pd.to_datetime(df[col], errors="coerce").dt.strftime("%d/%m/%y")
         return df
 
     df_ref = format_dates(df_ref)
@@ -1103,8 +1103,8 @@ if file_ordenes and file_mantenimientos:
                 9: "September", 10: "October", 11: "November", 12: "December"
             })
 
-            df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y"")
-            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.strftime("%d/%m/%y"")
+            df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y")
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.strftime("%d/%m/%y")
 
             currency_cols = [
                 "PU", "PrecioParte", "Precio Sin IVA",
@@ -1364,7 +1364,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             date_cols = ["Fecha Analisis", "Fecha Factura", "Fecha Oste", "Fecha Cierre"]
             for col in date_cols:
                 if col in df_final_ostes.columns:
-                    df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.strftime("%d/%m/%y"")
+                    df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.strftime("%d/%m/%y")
 
             for col in ["Subtotal", "IVA", "Total oste", "TC", "Total Correccion"]:
                 if col in df_final_ostes.columns:
@@ -1563,7 +1563,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             for col in date_cols:
                 if col in df_final.columns:
-                    df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.strftime("%d/%m/%y"")
+                    df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.strftime("%d/%m/%y")
 
             currency_cols = [
                 "Sub Total", "IVA", "Total",
