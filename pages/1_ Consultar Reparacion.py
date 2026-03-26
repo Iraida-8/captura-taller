@@ -306,10 +306,10 @@ if "Fecha Analisis" in df_partes.columns:
 
 
 #Debugging
-st.write("Rows interna BEFORE filter:", len(df))
-st.write("Rows ostes BEFORE filter:", len(df_ostes))
-st.write("Rows interna AFTER filter:", len(df))
-st.write("Rows ostes AFTER filter:", len(df_ostes))
+#st.write("Rows interna BEFORE filter:", len(df))
+#st.write("Rows ostes BEFORE filter:", len(df_ostes))
+#st.write("Rows interna AFTER filter:", len(df))
+#st.write("Rows ostes AFTER filter:", len(df_ostes))
 
 # =================================
 # HARD LOCK 2025+ FOR INTERNA & EXTERNA
