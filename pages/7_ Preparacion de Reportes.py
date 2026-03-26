@@ -691,6 +691,19 @@ if st.session_state.modo_reportes == "consultar":
     })
 
     # -------------------------------
+    # FORMAT DATES (GLOBAL)
+    # -------------------------------
+    def format_dates(df):
+        for col in df.columns:
+            if "fecha" in col.lower():
+                df[col] = pd.to_datetime(df[col], errors="coerce").dt.strftime("%d %m %y")
+        return df
+
+    df_ref = format_dates(df_ref)
+    df_ost = format_dates(df_ost)
+    df_mo  = format_dates(df_mo)
+    
+    # -------------------------------
     # DISPLAY
     # -------------------------------
     st.subheader(f"🔧 Refacciones {empresa_consulta}")
