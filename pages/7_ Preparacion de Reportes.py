@@ -1032,8 +1032,8 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # USD CALC (MODIFIED)
             # =============================
-            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
-            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
+            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"].astype(object)
+            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"].astype(object)
 
             # =============================
             # RENAME (STRICT SAC BASE)
