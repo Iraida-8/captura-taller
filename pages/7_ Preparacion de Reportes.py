@@ -1117,7 +1117,7 @@ if file_ordenes and file_mantenimientos:
 
             safe_cols = ["PU USD", "Total USD", "Total Correccion"]
 
-
+            df_final_ref = df_final_ref.fillna("")
             # =============================
             # DISPLAY
             # =============================
