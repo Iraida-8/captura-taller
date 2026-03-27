@@ -1126,13 +1126,8 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y")
             df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.strftime("%d/%m/%y")
 
-            currency_cols = [
-                "PU", "PrecioParte", "Precio Sin IVA",
-                "PU USD", "Total USD", "Total Correccion"
-            ]
+            safe_cols = ["PU USD", "Total USD", "Total Correccion"]
 
-            for col in currency_cols:
-                df_final_ref[col] = pd.to_numeric(df_final_ref[col], errors="coerce")
 
             # =============================
             # DISPLAY
