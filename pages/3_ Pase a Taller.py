@@ -52,6 +52,27 @@ def get_supabase():
 
 supabase = get_supabase()
 
+@st.cache_data(ttl=3600)
+def cargar_unidades_supabase(empresa_codigo):
+
+    response = (
+        supabase.table("vehicle_units")
+        .select("*")
+        .eq("empresa", empresa_codigo)
+        .eq("estado", "ACTIVO")
+        .execute()
+    )
+
+    df = pd.DataFrame(response.data)
+
+    if df.empty:
+        return df
+
+    df["unidad"] = df["unidad"].astype(str).str.strip()
+    df["tipo_unidad"] = df["tipo_unidad"].astype(str).str.upper().str.strip()
+
+    return df
+
 # =================================
 # SUPABASE TABLE MAP
 # =================================
@@ -60,6 +81,14 @@ TABLE_MAP = {
     "LINCOLN FREIGHT": "LINCOLN",
     "PICUS": "PICUS",
     "SET FREIGHT INTERNATIONAL": "SFI",
+    "SET LOGIS PLUS": "SLP"
+}
+
+EMPRESA_CODIGOS = {
+    "IGLOO TRANSPORT": "IGT",
+    "LINCOLN FREIGHT": "LIN",
+    "PICUS": "PIC",
+    "SET FREIGHT INTERNATIONAL": "SET",
     "SET LOGIS PLUS": "SLP"
 }
 
@@ -149,111 +178,6 @@ def append_pase_to_sheet(data: dict):
     except Exception as e:
         st.error(f"Supabase error: {e.args}")
         raise
-
-# =================================
-# Google Sheets configuration
-# =================================
-TRACTORES_URL = (
-    "https://docs.google.com/spreadsheets/d/"
-    "1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop"
-    "/export?format=csv&gid=897787433"
-)
-
-# =================================
-# REMOLQUES SHEETS BY COMPANY
-# =================================
-REMOLQUES_SHEETS = {
-
-    "IGLOO TRANSPORT":
-        "https://docs.google.com/spreadsheets/d/1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop/export?format=csv&gid=1273480736",
-
-    "LINCOLN FREIGHT":
-        "https://docs.google.com/spreadsheets/d/1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop/export?format=csv&gid=459473217",
-
-    "PICUS":
-        "https://docs.google.com/spreadsheets/d/1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop/export?format=csv&gid=1784212246",
-
-    "SET FREIGHT INTERNATIONAL":
-        "https://docs.google.com/spreadsheets/d/1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop/export?format=csv&gid=108462367",
-
-    "SET LOGIS PLUS":
-        "https://docs.google.com/spreadsheets/d/1tKWFDWD13fH6hwq-mCmuoahWFyaFfdop/export?format=csv&gid=820737312",
-}
-
-# =================================
-# Load catalogs
-# =================================
-@st.cache_data(ttl=3600)
-def cargar_tractores():
-
-    df = pd.read_csv(TRACTORES_URL)
-    df.columns = df.columns.str.strip()
-    df = df.fillna("")
-
-    df_normalized = pd.DataFrame()
-
-    df_normalized["TRACTOR"] = df["TRACTOR"].astype(str).str.strip()
-    df_normalized["MARCA"] = df.get("MARCA", "")
-    df_normalized["MODELO"] = pd.to_numeric(df.get("MODELO", ""), errors="coerce").astype("Int64")
-    df_normalized["SUCURSAL"] = df.get("SUCURSAL", "")
-    df_normalized["EMPRESA"] = df.get("EMPRESA", "").astype(str).str.strip()
-
-    # remove blank rows
-    df_normalized = df_normalized[df_normalized["TRACTOR"] != ""]
-
-    return df_normalized
-
-@st.cache_data(ttl=3600)
-def cargar_remolques_empresa(empresa):
-
-    url = REMOLQUES_SHEETS.get(empresa)
-
-    if not url:
-        return pd.DataFrame()
-
-    df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-    df = df.fillna("")
-
-    # --- Column detection ---
-    column_map = {}
-
-    for col in df.columns:
-        c = col.strip().upper()
-
-        if c in ["CAJA", "REMOLQUE", "UNIDAD", "NO UNIDAD", "NO. UNIDAD"]:
-            column_map["UNIDAD"] = col
-
-        elif c == "MARCA":
-            column_map["MARCA"] = col
-
-        elif c == "MODELO":
-            column_map["MODELO"] = col
-
-        elif c in ["SUCURSAL", "BASE"]:
-            column_map["SUCURSAL"] = col
-
-        elif c == "TIPO DE REMOLQUE":
-            column_map["TIPO_CAJA"] = col
-
-    # --- Create normalized columns ---
-    df_normalized = pd.DataFrame()
-
-    df_normalized["UNIDAD"] = df[column_map["UNIDAD"]] if "UNIDAD" in column_map else ""
-    df_normalized["MARCA"] = df[column_map["MARCA"]] if "MARCA" in column_map else ""
-    df_normalized["MODELO"] = (
-        pd.to_numeric(df[column_map["MODELO"]], errors="coerce").astype("Int64")
-        if "MODELO" in column_map else pd.Series(dtype="Int64")
-    )
-    df_normalized["SUCURSAL"] = df[column_map["SUCURSAL"]] if "SUCURSAL" in column_map else ""
-    df_normalized["TIPO_CAJA"] = df[column_map["TIPO_CAJA"]] if "TIPO_CAJA" in column_map else ""
-
-    df_normalized["UNIDAD"] = df_normalized["UNIDAD"].astype(str).str.strip()
-    df_normalized = df_normalized[df_normalized["UNIDAD"].str.strip() != ""]
-
-    return df_normalized
-
-tractores_df = cargar_tractores()
 
 # =================================
 # Session state
@@ -351,6 +275,18 @@ if tipo_proveedor in ["Interno", "Externo"]:
         st.info("Selecciona una empresa para continuar con la captura del pase.")
         st.stop()
 
+    empresa_codigo = EMPRESA_CODIGOS.get(empresa)
+    unidades_df = cargar_unidades_supabase(empresa_codigo)
+
+    # Split dataset
+    tractores_df = unidades_df[
+        unidades_df["tipo_unidad"] == "TRACTOR"
+    ]
+
+    remolques_df = unidades_df[
+        unidades_df["tipo_unidad"].isin(["CAJA SECA", "CAJA REFRIGERADA"])
+    ]
+
     tr1, tr2 = st.columns(2)
     with tr1:
         tipo_reporte = st.selectbox(
@@ -367,42 +303,27 @@ if tipo_proveedor in ["Interno", "Externo"]:
             ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
         )
 
-    tractores_filtrados = tractores_df[
-        tractores_df["EMPRESA"].astype(str).str.strip() == empresa
-    ]
-
-    remolques_df = cargar_remolques_empresa(empresa)
-
     operador = st.text_input("Operador")
 
     c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 2, 3])
 
     if tipo_unidad_operador == "Tractores":
+
         unidades = ["Selecciona Unidad"] + sorted(
-            tractores_filtrados["TRACTOR"]
-            .astype(str)
-            .str.strip()
-            .replace("", pd.NA)
+            tractores_df["unidad"]
             .dropna()
             .unique()
             .tolist()
         )
+
     elif tipo_unidad_operador == "Remolques":
 
-        if not remolques_df.empty:
-            lista_remolques = sorted(
-                remolques_df["UNIDAD"]
-                .astype(str)
-                .str.strip()
-                .replace("", pd.NA)
-                .dropna()
-                .unique()
-                .tolist()
-            )
-        else:
-            lista_remolques = []
-
-        unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + lista_remolques
+        unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
+            remolques_df["unidad"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
 
     else:
         unidades = ["Selecciona Unidad"]
@@ -420,8 +341,8 @@ if tipo_proveedor in ["Interno", "Externo"]:
     tipo_caja_auto = ""
 
     if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
-        fila_match = tractores_filtrados[
-            tractores_filtrados["TRACTOR"].astype(str) == str(no_unidad)
+        fila_match = tractores_df[
+            tractores_df["unidad"] == str(no_unidad)
         ]
 
         if not fila_match.empty:
@@ -454,10 +375,10 @@ if tipo_proveedor in ["Interno", "Externo"]:
             else:
                 fila = {}
 
-            marca_valor = fila.get("MARCA", "")
-            modelo_valor = fila.get("MODELO", "")
-            sucursal_valor = fila.get("SUCURSAL", "")
-            tipo_caja_auto = fila.get("TIPO_CAJA", "")
+            marca_valor = fila.get("marca", "")
+            modelo_valor = fila.get("modelo", "")
+            sucursal_valor = fila.get("sucursal", "")
+            tipo_unidad_valor = fila.get("tipo_unidad", "")
 
     with c2:
         st.text_input("Marca", value=marca_valor, disabled=True)
@@ -470,10 +391,10 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
     with c5:
 
-        opciones_caja = ["Selecciona Caja", "Caja seca", "Caja fria"]
+        opciones_caja = ["Selecciona Caja", "Caja Seca", "Caja Refrigerada"]
 
         if tipo_unidad_operador == "Remolques":
-            tipo_lower = str(tipo_caja_auto).lower()
+            tipo_lower = str(tipo_unidad_valor).lower()
 
             if "seca" in tipo_lower:
                 index_default = 1
