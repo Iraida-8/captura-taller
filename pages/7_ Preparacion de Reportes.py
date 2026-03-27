@@ -1066,7 +1066,7 @@ if file_ordenes and file_mantenimientos:
                 if col not in df_final_ref.columns:
                     df_final_ref[col] = None
 
-            df_final_ref = df_final_ref[final_cols_ref]
+            df_final_ref = df_final_ref.reindex(columns=final_cols_ref)
 
             # =============================
             # VEHICLE UNITS ENRICHMENT
