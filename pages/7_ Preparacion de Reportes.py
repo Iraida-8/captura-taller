@@ -1150,7 +1150,10 @@ if file_ordenes and file_mantenimientos:
                 }
             )
 
-            edited_ref["TC"] = df_final_ref["TC"]  # restore original precision
+            # preserve original TC column entirely
+            edited_ref = edited_ref.copy()
+            edited_ref["TC"] = df_final_ref["TC"].values
+
             df_final_ref = edited_ref
 
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
