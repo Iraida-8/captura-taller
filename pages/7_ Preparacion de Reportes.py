@@ -847,15 +847,12 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc_num"] = df["tc"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
-            df["tc_str"] = df["tc"].astype(str)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
             # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc_num"] = df["tc"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
-            df["tc_str"] = df["tc"].astype(str)                     # for display
+
 
         return df
 
@@ -1027,18 +1024,13 @@ if file_ordenes and file_mantenimientos:
                     how="left"
                 )
 
-                df_final_ref["TC"] = df_final_ref["tc_num"]      # numeric for calculations
+                df_final_ref["TC"] = df_final_ref["tc"]    # numeric for calculations
                 df_final_ref["TC_display"] = df_final_ref["tc_str"]  # optional display-safe
                 #df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
                 df_final_ref["TC"] = 1
 
-            # =============================
-            # FORCE DECIMAL (ADD HERE)
-            # =============================
-            df_final_ref["PU"] = df_final_ref["PU"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
-            df_final_ref["PrecioParte"] = df_final_ref["PrecioParte"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
 
             # =============================
             # USD CALC (MODIFIED)
