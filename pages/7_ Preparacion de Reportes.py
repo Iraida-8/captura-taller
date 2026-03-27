@@ -6,6 +6,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 from supabase import create_client
+from decimal import Decimal
 import unicodedata
 
 import io
@@ -1139,7 +1140,7 @@ if file_ordenes and file_mantenimientos:
                     "PU": st.column_config.NumberColumn(format="$ %.2f"),
                     "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
                     "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.2f"),
+                    "TC": st.column_config.NumberColumn(format="%.5f"),
                     "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1395,7 +1396,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.2f"),
+                    "TC": st.column_config.NumberColumn(format="%.5f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
@@ -1625,7 +1626,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.2f"),
+                    "TC": st.column_config.NumberColumn(format="%.5f"),
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
