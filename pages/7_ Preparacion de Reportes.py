@@ -847,13 +847,15 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(str)
+            df["tc_num"] = pd.to_numeric(df["tc"], errors="coerce")  # for math
+            df["tc_str"] = df["tc"].astype(str)                      # for display
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
             # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(str)
+            df["tc_num"] = pd.to_numeric(df["tc"], errors="coerce")  # for math
+            df["tc_str"] = df["tc"].astype(str)                      # for display
 
         return df
 
@@ -1025,8 +1027,9 @@ if file_ordenes and file_mantenimientos:
                     how="left"
                 )
 
-                df_final_ref["TC"] = df_final_ref["tc"]
-                df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+                df_final_ref["TC"] = df_final_ref["tc_num"]      # numeric for calculations
+                df_final_ref["TC_display"] = df_final_ref["tc_str"]  # optional display-safe
+                #df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
                 df_final_ref["TC"] = 1
@@ -1119,7 +1122,7 @@ if file_ordenes and file_mantenimientos:
 
             currency_cols = [
                 "PU", "PrecioParte", "Precio Sin IVA",
-                "TC", "PU USD", "Total USD", "Total Correccion"
+                "PU USD", "Total USD", "Total Correccion"
             ]
 
             for col in currency_cols:
