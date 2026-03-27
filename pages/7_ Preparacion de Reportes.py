@@ -836,13 +836,12 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(float)
+            #df["tc"] = df["tc"].astype(float)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-            # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(float)
+            #df["tc"] = df["tc"].astype(float)
 
         return df
 
