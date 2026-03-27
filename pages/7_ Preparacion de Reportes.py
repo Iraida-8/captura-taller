@@ -995,19 +995,6 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
-            # FINANCIALS
-            # =============================
-            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (
-                1 + df_final_ref["Tasaiva"].fillna(0)
-            )
-
-            df_final_ref["IVA"] = df_final_ref["IvaParte"]
-
-            df_final_ref["Total Correccion"] = (
-                df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
-            )
-
-            # =============================
             # TC MERGE
             # =============================
             df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
@@ -1029,6 +1016,18 @@ if file_ordenes and file_mantenimientos:
             else:
                 df_final_ref["TC"] = 1
 
+            # =============================
+            # FINANCIALS
+            # =============================
+            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (
+                1 + df_final_ref["Tasaiva"].fillna(0)
+            )
+
+            df_final_ref["IVA"] = df_final_ref["IvaParte"]
+
+            df_final_ref["Total Correccion"] = (
+                df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
+            )
 
             # =============================
             # USD CALC (MODIFIED)
