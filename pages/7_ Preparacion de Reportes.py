@@ -847,15 +847,15 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc_num"] = pd.to_numeric(df["tc"], errors="coerce")  # for math
-            df["tc_str"] = df["tc"].astype(str)                      # for display
+            df["tc_num"] = df["tc"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
+            df["tc_str"] = df["tc"].astype(str)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
             # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc_num"] = pd.to_numeric(df["tc"], errors="coerce")  # for math
-            df["tc_str"] = df["tc"].astype(str)                      # for display
+            df["tc_num"] = df["tc"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
+            df["tc_str"] = df["tc"].astype(str)                     # for display
 
         return df
 
@@ -1037,7 +1037,8 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # USD CALC
             # =============================
-            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
+            df_final_ref["PU USD"] = df_final_ref["PU"].astype(float) / df_final_ref["TC"].astype(float)
+            df_final_ref["Total USD"] = df_final_ref["PrecioParte"].astype(float) / df_final_ref["TC"].astype(float)
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
             # =============================
@@ -1584,7 +1585,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
             ]
 
             for col in currency_cols:
-                df_final[col] = pd.to_numeric(df_final[col], errors="coerce")
+                if col in df_final.columns:
+                    df_final[col] = pd.to_numeric(df_final[col], errors="coerce")
 
             # =============================
             # FINAL COLUMNS (UNCHANGED)
