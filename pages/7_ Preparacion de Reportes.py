@@ -1643,10 +1643,10 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     "Mano de Obra": df_final
                 })
 
-                st.download_button(
-                    label="⬇️ Descargar todo en Excel",
-                    data=excel_file,
-                    file_name=f"Reporte_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
+                #st.download_button(
+                    #label="⬇️ Descargar todo en Excel",
+                    #data=excel_file,
+                    #file_name=f"Reporte_{empresa}.xlsx",
+                    #mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    #use_container_width=True
+                #)
