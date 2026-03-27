@@ -836,12 +836,13 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            #df["tc"] = df["tc"].astype(float)
+            df["tc"] = df["tc"].astype(float)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
+            # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            #df["tc"] = df["tc"].astype(float)
+            df["tc"] = df["tc"].astype(float)
 
         return df
 
@@ -1128,7 +1129,7 @@ if file_ordenes and file_mantenimientos:
                     "PU": st.column_config.NumberColumn(format="$ %.2f"),
                     "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
                     "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.6f"),
+                    "TC": st.column_config.NumberColumn(format="%.8f"),
                     "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1384,7 +1385,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.6f"),
+                    "TC": st.column_config.NumberColumn(format="%.8f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
@@ -1614,7 +1615,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.6f"),
+                    "TC": st.column_config.NumberColumn(format="$ %.8f"),
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
