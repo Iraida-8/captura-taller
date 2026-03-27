@@ -847,13 +847,13 @@ def load_tc():
 
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(float)
+            df["tc"] = df["tc"].astype(str)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
             # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
-            df["tc"] = df["tc"].astype(float)
+            df["tc"] = df["tc"].astype(str)
 
         return df
 
@@ -1377,9 +1377,8 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 if col in df_final_ostes.columns:
                     df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.strftime("%d/%m/%y")
 
-            for col in ["Subtotal", "IVA", "Total oste", "TC", "Total Correccion"]:
-                if col in df_final_ostes.columns:
-                    df_final_ostes[col] = pd.to_numeric(df_final_ostes[col], errors="coerce")
+            for col in ["Subtotal", "IVA", "Total oste", "Total Correccion"]:
+                df_final_ostes[col] = pd.to_numeric(df_final_ostes[col], errors="coerce")
 
             # =============================
             # DISPLAY
@@ -1577,8 +1576,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     df_final[col] = pd.to_datetime(df_final[col], errors="coerce").dt.strftime("%d/%m/%y")
 
             currency_cols = [
-                "Sub Total", "IVA", "Total",
-                "Total Correccion", "TC", "Total USD"
+                "PU", "PrecioParte", "Precio Sin IVA",
+                "PU USD", "Total USD", "Total Correccion"
             ]
 
             for col in currency_cols:
