@@ -1035,10 +1035,16 @@ if file_ordenes and file_mantenimientos:
                 df_final_ref["TC"] = 1
 
             # =============================
-            # USD CALC
+            # FORCE DECIMAL (ADD HERE)
             # =============================
-            df_final_ref["PU USD"] = df_final_ref["PU"].astype(float) / df_final_ref["TC"].astype(float)
-            df_final_ref["Total USD"] = df_final_ref["PrecioParte"].astype(float) / df_final_ref["TC"].astype(float)
+            df_final_ref["PU"] = df_final_ref["PU"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
+            df_final_ref["PrecioParte"] = df_final_ref["PrecioParte"].apply(lambda x: Decimal(str(x)) if pd.notna(x) else None)
+
+            # =============================
+            # USD CALC (MODIFIED)
+            # =============================
+            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
+            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
             # =============================
             # RENAME (STRICT SAC BASE)
