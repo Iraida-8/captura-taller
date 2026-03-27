@@ -59,7 +59,6 @@ def cargar_unidades_supabase(empresa_codigo):
         supabase.table("vehicle_units")
         .select("*")
         .eq("empresa", empresa_codigo)
-        .eq("estado", "ACTIVO")
         .execute()
     )
 
@@ -349,8 +348,8 @@ if tipo_proveedor in ["Interno", "Externo"]:
             fila = fila_match.iloc[0]
         else:
             fila = {}
-        marca_valor = fila["MARCA"]
-        modelo_valor = fila["MODELO"]
+        marca_valor = fila.get("marca", "")
+        modelo_valor = fila.get("modelo", "")
         if pd.notna(modelo_valor):
             try:
                 modelo_valor = int(float(modelo_valor))
@@ -367,7 +366,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
 
         elif no_unidad != "Selecciona Unidad":
             fila_match = remolques_df[
-                remolques_df["UNIDAD"].astype(str) == str(no_unidad)
+                remolques_df["unidad"].astype(str) == str(no_unidad)
             ]
 
             if not fila_match.empty:
