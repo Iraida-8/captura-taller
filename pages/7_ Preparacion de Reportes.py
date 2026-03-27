@@ -8,6 +8,16 @@ import os
 from supabase import create_client
 import unicodedata
 
+import io
+
+def to_excel_bytes(dfs_dict):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        for sheet_name, df in dfs_dict.items():
+            df.to_excel(writer, index=False, sheet_name=sheet_name[:31])
+    output.seek(0)
+    return output
+
 # =================================
 # Page configuration
 # =================================
@@ -1625,3 +1635,25 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
             if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
                 st.success("Datos Cargados")
+                
+# =================================
+# DOWNLOAD XLS (ALL TABLES)
+# =================================
+if (
+    "df_final_ref" in locals() and
+    "df_final_ostes" in locals() and
+    "df_final" in locals()
+):
+    excel_file = to_excel_bytes({
+        "Refacciones": df_final_ref,
+        "OSTES": df_final_ostes,
+        "Mano de Obra": df_final
+    })
+
+    st.download_button(
+        label="⬇️ Descargar todo en Excel",
+        data=excel_file,
+        file_name=f"Reporte_{empresa}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
