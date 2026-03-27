@@ -1140,7 +1140,15 @@ if file_ordenes and file_mantenimientos:
                 }
             )
 
-            df_final_ref = edited_ref
+            df_final_ref = edited_ref.copy()
+            tc_backup = df_final_ref["TC"].copy()
+            # FORCE TC BACK FROM ORIGINAL (NOT EDITOR)
+            df_final_ref["TC"] = df_tc.merge(
+                df_final_ref[["Año", "Mes"]],
+                left_on=["year", "month"],
+                right_on=["Año", "Mes"],
+                how="right"
+            )["tc"].values
 
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
                 st.success("Datos Cargados")
