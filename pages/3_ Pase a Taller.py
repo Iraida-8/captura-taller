@@ -338,6 +338,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
     modelo_valor = ""
     sucursal_valor = ""
     tipo_caja_auto = ""
+    tipo_unidad_valor = ""
 
     if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
         fila_match = tractores_df[
