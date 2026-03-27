@@ -1123,7 +1123,7 @@ if file_ordenes and file_mantenimientos:
             # =============================
             st.divider()
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
-
+            df_final_ref["TC"] = df_final_ref["TC"].astype(str)
             edited_ref = st.data_editor(
                 df_final_ref,
                 use_container_width=True,
@@ -1133,7 +1133,7 @@ if file_ordenes and file_mantenimientos:
                     "PU": st.column_config.NumberColumn(format="$ %.2f"),
                     "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
                     "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
+                    "TC": st.column_config.TextColumn(),
                     "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
