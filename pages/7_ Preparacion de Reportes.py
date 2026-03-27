@@ -1039,7 +1039,6 @@ if file_ordenes and file_mantenimientos:
             # =============================
             df_final_ref["PU USD"] = df_final_ref["PU"].astype(float) / df_final_ref["TC"].astype(float)
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"].astype(float) / df_final_ref["TC"].astype(float)
-            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"]
 
             # =============================
             # RENAME (STRICT SAC BASE)
