@@ -1025,8 +1025,6 @@ if file_ordenes and file_mantenimientos:
                 )
 
                 df_final_ref["TC"] = df_final_ref["tc"]    # numeric for calculations
-                df_final_ref["TC_display"] = df_final_ref["tc_str"]  # optional display-safe
-                #df_final_ref.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
 
             else:
                 df_final_ref["TC"] = 1
@@ -1142,10 +1140,6 @@ if file_ordenes and file_mantenimientos:
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
-
-            # preserve original TC column entirely
-            edited_ref = edited_ref.copy()
-            edited_ref["TC"] = df_final_ref["TC"].values
 
             df_final_ref = edited_ref
 
