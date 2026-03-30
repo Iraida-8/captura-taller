@@ -720,15 +720,39 @@ if st.session_state.modo_reportes == "consultar":
     st.subheader(f"🔧 Refacciones {empresa_consulta}")
     st.dataframe(df_ref, use_container_width=True)
 
+    st.download_button(
+        label="⬇️ Descargar Refacciones",
+        data=to_excel_bytes({"Refacciones": df_ref}),
+        file_name=f"Refacciones_{empresa_consulta}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+
     st.divider()
 
     st.subheader(f"💰 OSTES {empresa_consulta}")
     st.dataframe(df_ost, use_container_width=True)
 
+    st.download_button(
+        label="⬇️ Descargar OSTES",
+        data=to_excel_bytes({"OSTES": df_ost}),
+        file_name=f"OSTES_{empresa_consulta}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+
     st.divider()
 
     st.subheader(f"🚛 Mano de Obra {empresa_consulta}")
     st.dataframe(df_mo, use_container_width=True)
+
+    st.download_button(
+        label="⬇️ Descargar Mano de Obra",
+        data=to_excel_bytes({"Mano_de_Obra": df_mo}),
+        file_name=f"Mano_de_Obra_{empresa_consulta}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
 
     st.stop()
 # =================================
@@ -910,6 +934,14 @@ if file_ordenes:
             with st.expander("📄 Buscar Ordenes SAC"):
                 st.dataframe(df, use_container_width=True)
 
+                st.download_button(
+                    label="⬇️ Descargar Ordenes SAC",
+                    data=to_excel_bytes({"Ordenes": df}),
+                    file_name="Ordenes_SAC.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
@@ -920,6 +952,14 @@ if file_ostes:
             with st.expander(f"📄 Reporte Ostes ({empresa})"):
                 st.dataframe(df, use_container_width=True)
 
+                st.download_button(
+                    label="⬇️ Descargar Ostes",
+                    data=to_excel_bytes({"Ostes": df}),
+                    file_name=f"Ostes_{empresa}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+
 # MANTENIMIENTOS
 if file_mantenimientos:
     if not validate_filename(file_mantenimientos, ["mantenimientos"]):
@@ -929,6 +969,14 @@ if file_mantenimientos:
         if df is not None:
             with st.expander(f"📄 Reporte de Mantenimientos ({empresa})"):
                 st.dataframe(df, use_container_width=True)
+
+                st.download_button(
+                    label="⬇️ Descargar Mantenimientos",
+                    data=to_excel_bytes({"Mantenimientos": df}),
+                    file_name=f"Mantenimientos_{empresa}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
 
 
 # =================================
@@ -1141,6 +1189,14 @@ if file_ordenes and file_mantenimientos:
             )
 
             df_final_ref = edited_ref
+
+            st.download_button(
+                label="⬇️ Descargar Refacciones Final",
+                data=to_excel_bytes({"Refacciones": df_final_ref}),
+                file_name=f"Refacciones_Final_{empresa}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
 
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
                 st.success("Datos Cargados")
@@ -1395,6 +1451,14 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # overwrite with edited version
             df_final_ostes = edited_ostes
 
+            st.download_button(
+                label="⬇️ Descargar OSTES Final",
+                data=to_excel_bytes({"OSTES": df_final_ostes}),
+                file_name=f"OSTES_Final_{empresa}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+
             if st.button("📥 Cargar Datos - OSTES", use_container_width=True):
                 st.success("Datos Cargados")
 
@@ -1626,27 +1690,13 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # overwrite dataframe with edited version
             df_final = edited_mo
 
+            st.download_button(
+                label="⬇️ Descargar Mano de Obra Final",
+                data=to_excel_bytes({"Mano_de_Obra": df_final}),
+                file_name=f"Mano_de_Obra_Final_{empresa}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+
             if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
                 st.success("Datos Cargados")
-
-            # =================================
-            # DOWNLOAD XLS (ALL TABLES)
-            # =================================
-            if (
-                "df_final_ref" in locals() and
-                "df_final_ostes" in locals() and
-                "df_final" in locals()
-            ):
-                excel_file = to_excel_bytes({
-                    "Refacciones": df_final_ref,
-                    "OSTES": df_final_ostes,
-                    "Mano de Obra": df_final
-                })
-
-                #st.download_button(
-                    #label="⬇️ Descargar todo en Excel",
-                    #data=excel_file,
-                    #file_name=f"Reporte_{empresa}.xlsx",
-                    #mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    #use_container_width=True
-                #)
