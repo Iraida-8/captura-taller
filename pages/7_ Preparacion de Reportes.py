@@ -13,9 +13,16 @@ import io
 
 def to_excel_bytes(dfs_dict):
     output = io.BytesIO()
+
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         for sheet_name, df in dfs_dict.items():
-            df.to_excel(writer, index=False, sheet_name=sheet_name[:31])
+
+            df_export = df.copy()
+
+            df_export = df_export.astype(str)
+
+            df_export.to_excel(writer, index=False, sheet_name=sheet_name[:31])
+
     output.seek(0)
     return output
 
