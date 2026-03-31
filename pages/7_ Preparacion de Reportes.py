@@ -11,6 +11,17 @@ import unicodedata
 
 import io
 
+# =================================
+# SUPABASE UPLOAD CONFIG
+# =================================
+COMPANY_DB_MAP = {
+    "IGLOO": "igloo",
+    "LINCOLN FREIGHT": "lincoln",
+    "PICUS": "picus",
+    "SET FREIGHT INTERNATIONAL": "setfreight",
+    "SET LOGIS PLUS": "logis"
+}
+
 def to_excel_bytes(dfs_dict):
     output = io.BytesIO()
 
@@ -827,6 +838,94 @@ def normalize_text(text):
     return "".join(c for c in text if not unicodedata.combining(c))
 
 # =================================
+# NORMALIZE COLUMNS FOR SUPABASE
+# =================================
+def normalize_columns_for_supabase(df):
+    df = df.copy()
+
+    def clean(col):
+        col = unicodedata.normalize("NFKD", col)
+        col = "".join(c for c in col if not unicodedata.combining(c))
+        col = col.lower().strip().replace(" ", "_")
+        return col
+
+    df.columns = [clean(c) for c in df.columns]
+
+    return df
+
+# =================================
+# REMOVE FORBIDDEN COLUMNS
+# =================================
+def clean_for_insert(df):
+    df = df.copy()
+
+    for col in ["id", "created_at"]:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
+    return df
+
+# =================================
+# CONVERT DATES TO ISO (IMPORTANT)
+# =================================
+def convert_dates_iso(df):
+    df = df.copy()
+
+    for col in df.columns:
+        if "fecha" in col.lower():
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.strftime("%Y-%m-%d")
+
+    return df
+
+# =================================
+# GET TABLE NAME
+# =================================
+def get_table_name(report_type, empresa):
+    suffix = COMPANY_DB_MAP.get(empresa)
+
+    if report_type == "refacciones":
+        return f"refacciones_data_{suffix}"
+    elif report_type == "ostes":
+        return f"ostes_{suffix}"
+    elif report_type == "mano_obra":
+        return f"mano_obra_{suffix}"
+
+# =================================
+# UPLOAD TO SUPABASE
+# =================================
+def upload_to_supabase(df, table_name):
+    try:
+        supabase = get_supabase_client()
+
+        df = normalize_columns_for_supabase(df)
+        df = clean_for_insert(df)
+        df = convert_dates_iso(df)
+
+        # replace empty strings with NULL
+        df = df.replace("", None)
+
+        def serialize_value(x):
+            if isinstance(x, Decimal):
+                return str(x)  # preserves exact precision
+            return x
+
+        records = df.applymap(serialize_value).to_dict(orient="records")
+
+        if not records:
+            st.warning(f"No hay datos para subir a {table_name}")
+            return
+
+        if "refacciones" in table_name:
+            supabase.table(table_name).insert(records).execute()
+        else:
+            supabase.table(table_name).upsert(records, on_conflict="reporte").execute()
+
+        st.success(f"✅ {len(records)} registros insertados en {table_name}")
+
+    except Exception as e:
+        st.error(f"❌ Error subiendo a Supabase: {e}")
+
+# =================================
 # Validate filename
 # =================================
 def validate_filename(file, required_words):
@@ -1206,7 +1305,10 @@ if file_ordenes and file_mantenimientos:
             )
 
             if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
-                st.success("Datos Cargados")
+
+                table_name = get_table_name("refacciones", empresa)
+
+                upload_to_supabase(df_final_ref, table_name)
 
 # =================================
 # BUILD OSTES (FROM SCRATCH - YOUR LOGIC)
@@ -1467,7 +1569,10 @@ if file_ostes and file_mantenimientos and file_ordenes:
             )
 
             if st.button("📥 Cargar Datos - OSTES", use_container_width=True):
-                st.success("Datos Cargados")
+
+                table_name = get_table_name("ostes", empresa)
+
+                upload_to_supabase(df_final_ostes, table_name)
 
 # =================================
 # BUILD MANO DE OBRA REPORT (FIXED, NOT STRIPPED)
@@ -1706,4 +1811,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             )
 
             if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
-                st.success("Datos Cargados")
+
+                table_name = get_table_name("mano_obra", empresa)
+
+                upload_to_supabase(df_final, table_name)
