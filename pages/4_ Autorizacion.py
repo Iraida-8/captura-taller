@@ -5,6 +5,12 @@ from auth import require_login, require_access
 import html
 from supabase import create_client
 
+def clean(val):
+    import pandas as pd
+    if pd.isna(val) or val is None:
+        return ""
+    return str(val).strip()
+
 # =================================
 # Page Cache and State Management
 # =================================
@@ -195,15 +201,15 @@ def registrar_cambio_log(
 
     response = supabase.table("AUDIT").insert({
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Usuario": usuario,
-        "Empresa": empresa,
-        "No. de Folio": folio,
-        "Tipo Cambio": tipo_cambio,
-        "Estado Anterior": estado_anterior or "",
-        "Estado Nuevo": estado_nuevo or "",
-        "OSTE Anterior": oste_anterior or "",
-        "OSTE Nuevo": oste_nuevo or "",
-        "Comentario": comentario
+        "Usuario": clean(usuario),
+        "Empresa": clean(empresa),
+        "No. de Folio": clean(folio),
+        "Tipo Cambio": clean(tipo_cambio),
+        "Estado Anterior": clean(estado_anterior),
+        "Estado Nuevo": clean(estado_nuevo),
+        "OSTE Anterior": clean(oste_anterior),
+        "OSTE Nuevo": clean(oste_nuevo),
+        "Comentario": clean(comentario)
     }).execute()
 
     if getattr(response, "error", None):
@@ -301,13 +307,18 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 
     for _, r in servicios_df.iterrows():
 
+        cantidad = r.get("Cantidad", 0)
+
+        if pd.isna(cantidad) or cantidad == "":
+            cantidad = 0
+
         payload = {
             "No. de Folio": folio,
             "Modifico": usuario,
             "Parte": str(r.get("Parte", "")).strip(),
             "Tipo De Parte": str(r.get("Tipo De Parte", "")).strip(),
             "Posicion": str(r.get("Posicion", "")).strip(),
-            "Cantidad": int(r.get("Cantidad", 0) or 0),
+            "Cantidad": int(float(cantidad)),
             "Fecha Mod": fecha_mod,
         }
 
@@ -1382,15 +1393,15 @@ if st.session_state.modal_reporte:
                         tipo_cambio="Cambio Estado",
                         estado_anterior=estado_actual,
                         estado_nuevo=nuevo_estado,
-                        oste_anterior=r.get("Oste", ""),
-                        oste_nuevo=r.get("Oste", "")
+                        oste_anterior=clean(r.get("Oste")),
+                        oste_nuevo=clean(r.get("Oste"))
                     )
 
                 if "interno" not in proveedor:
                     if nuevo_estado.startswith("Cerrado") and oste_val.strip():
 
-                        oste_anterior = r.get("Oste", "") or ""
-                        oste_nuevo = oste_val.strip()
+                        oste_anterior = clean(r.get("Oste"))
+                        oste_nuevo = clean(oste_val)
 
                         actualizar_oste_pase(
                             r["Empresa"],
