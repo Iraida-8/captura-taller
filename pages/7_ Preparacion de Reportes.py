@@ -395,6 +395,7 @@ def load_proveedores_iva():
     except Exception as e:
         st.error(f"Error cargando proveedores_config: {e}")
         return pd.DataFrame()
+    
 # =================================
 # MODE SELECTOR
 # =================================
@@ -821,6 +822,7 @@ st.success(f"Empresa seleccionada: {empresa}")
 # LOAD VEHICLE UNITS (HIDDEN)
 # =============================
 df_units = load_vehicle_units()
+df_prov_config = load_proveedores_iva()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
@@ -834,21 +836,6 @@ if df_units is not None and not df_units.empty and empresa_code:
         "vin", "tipo_unidad", "sucursal", "estado"
     ]
 
-    df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
-
-
-# =========================================
-# LOAD BACKGROUND DATA (HIDDEN)
-# =========================================
-df_units = load_vehicle_units()
-df_prov_config = load_proveedores_iva() # <--- Load it here
-
-empresa_code = EMPRESA_MAP.get(empresa)
-
-# Handle Vehicle Units filtering (Existing logic)
-if df_units is not None and not df_units.empty and empresa_code:
-    df_units_filtered = df_units[df_units["empresa"] == empresa_code].copy()
-    cols_keep = ["empresa", "unidad", "marca", "modelo", "vin", "tipo_unidad", "sucursal", "estado"]
     df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
 
 # =================================
