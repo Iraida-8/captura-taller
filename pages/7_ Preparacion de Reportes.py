@@ -1117,32 +1117,44 @@ if file_ordenes:
         df_sac = read_file(file_ordenes)
         
         if df_sac is not None:
-
+            # --- LÓGICA DE IVA REFORZADA ---
             if df_prov_config is not None and not df_prov_config.empty:
+                # 1. Limpieza agresiva de strings (quitar espacios, saltos de línea y pasar a mayúsculas)
+                df_prov_config['prov_match'] = df_prov_config['proveedor'].astype(str).str.strip().str.upper()
+                df_sac['prov_match'] = df_sac['NombreProveedor'].astype(str).str.strip().str.upper()
 
-                df_prov_config['prov_match'] = df_prov_config['proveedor'].str.strip().str.upper()
-                df_sac['prov_match'] = df_sac['NombreProveedor'].str.strip().str.upper()
+                # 2. Asegurar que 'iva_pct' sea numérico antes del merge
+                df_prov_config['iva_pct'] = pd.to_numeric(df_prov_config['iva_pct'], errors='coerce').fillna(0)
 
+                # 3. Realizar el merge
+                # Eliminamos 'iva_pct' si ya existía en df_sac para evitar iva_pct_x / iva_pct_y
+                if 'iva_pct' in df_sac.columns:
+                    df_sac = df_sac.drop(columns=['iva_pct'])
+                
                 df_sac = df_sac.merge(
                     df_prov_config[['prov_match', 'iva_pct']], 
                     on='prov_match', 
                     how='left'
                 )
 
-                df_sac['iva_pct'] = pd.to_numeric(df_sac['iva_pct'], errors='coerce').fillna(0)
-                
-                col_precio = 'Precio sin IVA' if 'Precio sin IVA' in df_sac.columns else 'Precio Sin IVA'
-                
-                if col_precio in df_sac.columns:
-                    df_sac[col_precio] = pd.to_numeric(df_sac[col_precio], errors='coerce').fillna(0)
-                    # Calculamos el IVA real basado en el porcentaje de la tabla
-                    df_sac['IVA'] = df_sac[col_precio] * (df_sac['iva_pct'] / 100)
-                
-                df_sac = df_sac.drop(columns=['prov_match'])
+                # 4. Llenar nulos (si un proveedor no coincide, aparecerá como NaN tras el merge)
+                df_sac['iva_pct'] = df_sac['iva_pct'].fillna(0)
 
-            with st.expander("📄 Buscar Ordenes SAC"):
-                # Aquí continúas con tu lógica de display_report_section
-                display_report_section("refacciones", df_sac, empresa)
+                # 5. Cálculo del IVA y Tasa IVA para visualización
+                # Identificar la columna de precio (SAC suele usar 'Precio Parte' o 'Precio sin IVA')
+                col_precio = next((c for c in ['Precio Parte', 'Precio sin IVA', 'Precio Sin IVA'] if c in df_sac.columns), None)
+
+                if col_precio:
+                    df_sac[col_precio] = pd.to_numeric(df_sac[col_precio], errors='coerce').fillna(0)
+                    
+                    # Actualizamos las columnas que ves en tu captura de pantalla:
+                    df_sac['IVA'] = df_sac[col_precio] * (df_sac['iva_pct'] / 100)
+                    df_sac['Tasa IVA'] = df_sac['iva_pct'] # Para que no veas "0" en la columna Tasa
+                
+                # Limpiar
+                df_sac = df_sac.drop(columns=['prov_match'])
+            
+            # --- FIN LÓGICA ---
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
