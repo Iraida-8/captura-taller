@@ -378,6 +378,24 @@ def load_vehicle_units():
         st.error(f"Error cargando vehicle_units: {e}")
         return pd.DataFrame()
 
+#Loads Proveedores Iva
+@st.cache_data
+def load_proveedores_iva():
+    try:
+        supabase = get_supabase_client()
+
+        response = supabase.table("proveedores_iva").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando proveedores_iva: {e}")
+        return pd.DataFrame()
+    
 # =================================
 # MODE SELECTOR
 # =================================
@@ -801,9 +819,10 @@ if empresa == "SELECCIONA EMPRESA":
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =============================
-# LOAD VEHICLE UNITS (HIDDEN)
+# LOAD VEHICLE UNITS & PROVEEDORES IVA(HIDDEN)
 # =============================
 df_units = load_vehicle_units()
+df_proveedores_iva = load_proveedores_iva()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
@@ -1227,18 +1246,43 @@ if file_ordenes and file_mantenimientos:
             else:
                 df_final_ref["TC"] = 1
 
+            # =================================
+            # IVA LOOKUP
+            # =================================
+            iva_lookup = {}
+
+            if df_proveedores_iva is not None and not df_proveedores_iva.empty:
+
+                df_proveedores_iva["nombre_proveedor"] = (
+                    df_proveedores_iva["nombre_proveedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                iva_lookup = df_proveedores_iva.set_index("nombre_proveedor")["iva"]
+
+                # normalize your main df
+                df_final_ref["Nombre Proveedor"] = (
+                    df_final_ref["Nombre Proveedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
             # =============================
             # FINANCIALS
             # =============================
-            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (
-                1 + df_final_ref["Tasaiva"].fillna(0)
-            )
 
-            df_final_ref["IVA"] = df_final_ref["IvaParte"]
+            # IVA from proveedores_iva
+            df_final_ref["IVA"] = df_final_ref["Nombre Proveedor"].map(iva_lookup)
+            df_final_ref["IVA"] = df_final_ref["IVA"].fillna(0)
 
-            df_final_ref["Total Correccion"] = (
-                df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
-            )
+            # Base price
+            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] - df_final_ref["IVA"]
+
+            # Total (no recalculation needed)
+            df_final_ref["Total Correccion"] = df_final_ref["PrecioParte"]
 
             # =============================
             # USD CALC (MODIFIED)
