@@ -8,7 +8,6 @@ import os
 from supabase import create_client
 from decimal import Decimal
 import unicodedata
-
 import io
 
 # =================================
@@ -866,7 +865,7 @@ def clean_for_insert(df):
     return df
 
 # =================================
-# CONVERT DATES TO ISO (IMPORTANT)
+# CONVERT DATES TO ISO
 # =================================
 def convert_dates_iso(df):
     df = df.copy()
@@ -1027,9 +1026,8 @@ with col3:
 st.divider()
 
 # =================================
-# Display tables (collapsible)
+# Display tables
 # =================================
-
 # ORDENES
 if file_ordenes:
     if not validate_filename(file_ordenes, ["buscar", "ordenes", "sac"]):
@@ -1047,7 +1045,6 @@ if file_ordenes:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
-
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
@@ -1065,7 +1062,6 @@ if file_ostes:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
-
 # MANTENIMIENTOS
 if file_mantenimientos:
     if not validate_filename(file_mantenimientos, ["mantenimientos"]):
@@ -1084,9 +1080,8 @@ if file_mantenimientos:
                     use_container_width=True
                 )
 
-
 # =================================
-# BUILD DATA REFACCIONES (CLEAN)
+# BUILD DATA REFACCIONES
 # =================================
 if file_ordenes and file_mantenimientos:
 
@@ -1101,7 +1096,7 @@ if file_ordenes and file_mantenimientos:
         if df_ordenes is not None and df_mant is not None:
 
             # =============================
-            # NORMALIZE KEYS (CRITICAL)
+            # NORMALIZE KEYS
             # =============================
             df_ordenes["Reporte"] = (
                 pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
@@ -1190,7 +1185,7 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"].astype(object)
 
             # =============================
-            # RENAME (STRICT SAC BASE)
+            # RENAME
             # =============================
             df_final_ref.rename(columns={
                 "NombreProveedor": "Nombre Proveedor",
@@ -1202,7 +1197,7 @@ if file_ordenes and file_mantenimientos:
             }, inplace=True)
 
             # =============================
-            # SELECT FINAL COLUMNS (LOCK)
+            # SELECT FINAL COLUMNS
             # =============================
             final_cols_ref = [
                 "Año", "Mes", "Fecha Analisis",
@@ -1311,7 +1306,7 @@ if file_ordenes and file_mantenimientos:
                 upload_to_supabase(df_final_ref, table_name)
 
 # =================================
-# BUILD OSTES (FROM SCRATCH - YOUR LOGIC)
+# BUILD OSTES
 # =================================
 if file_ostes and file_mantenimientos and file_ordenes:
 
@@ -1341,12 +1336,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
-            # BASE DATA (NO MERGE FIRST)
+            # BASE DATA
             # =============================
             df_final_ostes = df_ostes.copy()
 
             # =============================
-            # DATE (FROM FECHA FACTURA)
+            # DATE
             # =============================
             df_final_ostes["Fecha Factura"] = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
 
@@ -1354,14 +1349,14 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["Mes"] = df_final_ostes["Fecha Factura"].dt.month
 
             # =============================
-            # DIRECT FIELDS (OSTES ONLY)
+            # DIRECT FIELDS
             # =============================
             df_final_ostes["OSTE"] = df_final_ostes["# Oste"]
             df_final_ostes["Factura"] = df_final_ostes["No. Factura"]
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
 
             # =============================
-            # ACREEDOR (KEEP EXISTING LOGIC)
+            # ACREEDOR
             # =============================
             df_ordenes["Proveedor_key"] = pd.to_numeric(df_ordenes["Proveedor"], errors="coerce").astype("Int64")
             df_final_ostes["Proveedor_key"] = pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce").astype("Int64")
@@ -1436,7 +1431,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].clip(lower=0)
 
             # =============================
-            # FINANCIALS (YOUR RULES)
+            # FINANCIALS
             # =============================
             df_final_ostes["Subtotal"] = df_final_ostes["Total"]
 
@@ -1449,7 +1444,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     return row["Subtotal"]
 
             # =============================
-            # TC (UNCHANGED)
+            # TC
             # =============================
             df_final_ostes = df_final_ostes.dropna(subset=["Año", "Mes"])
             df_final_ostes["Año"] = df_final_ostes["Año"].astype(int)
@@ -1575,7 +1570,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 upload_to_supabase(df_final_ostes, table_name)
 
 # =================================
-# BUILD MANO DE OBRA REPORT (FIXED, NOT STRIPPED)
+# BUILD MANO DE OBRA REPORT
 # =================================
 if file_ordenes and file_ostes and file_mantenimientos:
 
@@ -1599,7 +1594,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
-            # LOOKUPS (UNCHANGED)
+            # LOOKUPS
             # =============================
             df_ostes_lookup = df_ostes[[
                 "Reporte",
@@ -1619,7 +1614,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_ostes_lookup = df_ostes_lookup.drop_duplicates(subset=["Reporte"])
 
             # =============================
-            # UNIDAD LOOKUP (UNCHANGED)
+            # UNIDAD LOOKUP
             # =============================
             ordenes_unidad = df_ordenes[["Reporte", "Unidad"]].copy()
             ostes_unidad = df_ostes[["Reporte", "Unidad"]].copy()
@@ -1629,7 +1624,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             unidad_lookup = unidad_lookup.drop_duplicates(subset=["Reporte"], keep="first")
 
             # =============================
-            # MERGE (UNCHANGED)
+            # MERGE
             # =============================
             df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
 
@@ -1651,7 +1646,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Razon Reparacion"] = df_final.get("Razon Servicio")
 
             # =============================
-            # 🔥 DATE FIX (YOUR RULE)
+            # DATE FIX
             # =============================
             df_final["Fecha Registro"] = pd.to_datetime(df_final["Fecha Registro"], errors="coerce")
 
@@ -1666,13 +1661,13 @@ if file_ordenes and file_ostes and file_mantenimientos:
             )
 
             # =============================
-            # FINANCIALS (UNCHANGED)
+            # FINANCIALS
             # =============================
             df_final["Sub Total"] = df_final["Total"] / 1.16
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
             # =============================
-            # TC (UNCHANGED)
+            # TC
             # =============================
             df_final = df_final.dropna(subset=["Año", "Mes"])
 
@@ -1696,7 +1691,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Diferencia"] = 0
 
             # =============================
-            # 🔥 VEHICLE ENRICHMENT (FIXED)
+            # VEHICLE ENRICHMENT
             # =============================
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
@@ -1726,7 +1721,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 )
 
             # =============================
-            # FORMATTING (UNCHANGED)
+            # FORMATTING
             # =============================
             df_final["Reporte"] = df_final["Reporte"].astype(str).str.replace(".0", "", regex=False)
 
@@ -1753,7 +1748,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     df_final[col] = pd.to_numeric(df_final[col], errors="coerce")
 
             # =============================
-            # FINAL COLUMNS (UNCHANGED)
+            # FINAL COLUMNS
             # =============================
             final_columns = [
                 "Año", "Mes", "Unidad", "Fecha Analisis",
@@ -1779,16 +1774,27 @@ if file_ordenes and file_ostes and file_mantenimientos:
             })
 
             # =============================
-            # DISPLAY
+            # DISPLAY & ACTIONS
             # =============================
             st.divider()
             st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
 
+            # 1. INTERCEPT: Check if a replacement file has been uploaded
+            replace_key = f"replace_mo_{empresa}"
+            if st.session_state.get(replace_key) is not None:
+                try:
+                    # We overwrite the automatically generated df_final with the uploaded Excel
+                    df_final = pd.read_excel(st.session_state[replace_key], engine="openpyxl")
+                    st.success("✅ Reporte reemplazado con archivo manual.")
+                except Exception as e:
+                    st.error(f"Error al leer el archivo de reemplazo: {e}")
+
+            # 2. THE TABLE (Shows either the auto-generated or the replaced data)
             edited_mo = st.data_editor(
                 df_final,
                 use_container_width=True,
                 num_rows="dynamic",
-                key=f"edit_mo_{empresa}",
+                key=f"edit_mo_table_{empresa}",
                 column_config={
                     "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1798,20 +1804,31 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
+            df_final = edited_mo # Ensure edits in the UI are also captured
 
-            # overwrite dataframe with edited version
-            df_final = edited_mo
+            # 3. THE THREE BUTTONS
+            col_descargar, col_cargar, col_remplazar = st.columns(3)
 
-            st.download_button(
-                label="⬇️ Descargar Mano de Obra Final",
-                data=to_excel_bytes({"Mano_de_Obra": df_final}),
-                file_name=f"Mano_de_Obra_Final_{empresa}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
+            with col_descargar:
+                st.download_button(
+                    label="⬇️ Descargar Datos",
+                    data=to_excel_bytes({"Mano_de_Obra": df_final}),
+                    file_name=f"Mano_de_Obra_{empresa}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
 
-            if st.button("📥 Cargar Datos - Mantenimientos", use_container_width=True):
+            with col_cargar:
+                if st.button("🚀 Cargar Datos", use_container_width=True, type="primary"):
+                    table_name = get_table_name("mano_obra", empresa)
+                    upload_to_supabase(df_final, table_name)
 
-                table_name = get_table_name("mano_obra", empresa)
-
-                upload_to_supabase(df_final, table_name)
+            with col_remplazar:
+                # This is the NEW "button" that takes a file
+                st.file_uploader(
+                    "Remplazar Reporte con archivo",
+                    type=["xlsx"],
+                    key=replace_key,
+                    label_visibility="collapsed"
+                )
+                st.caption("📂 **Remplazar Reporte con archivo**")
