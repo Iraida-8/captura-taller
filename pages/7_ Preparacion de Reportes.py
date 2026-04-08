@@ -890,6 +890,68 @@ def get_table_name(report_type, empresa):
         return f"mano_obra_{suffix}"
 
 # =================================
+# FRAGMENT WRAPPERS
+# =================================
+@st.fragment()
+def display_report_section(report_type, df_initial, empresa):
+    """
+    Isolates the display and buttons to prevent full-page refreshes.
+    """
+    df_to_show = df_initial
+    key_prefix = f"{report_type}_{empresa.replace(' ', '_')}"
+    
+    # Check for replacement file
+    replace_key = f"replace_{key_prefix}"
+    uploaded_file = st.session_state.get(replace_key)
+    
+    if uploaded_file is not None:
+        try:
+            df_to_show = pd.read_excel(uploaded_file, engine="openpyxl")
+            st.success(f"✅ Reporte {report_type.capitalize()} reemplazado.")
+        except Exception as e:
+            st.error(f"Error al leer reemplazo: {e}")
+
+    # Specific formatting for Refacciones
+    if report_type == "refacciones" and "TC" in df_to_show.columns:
+        df_to_show["TC"] = df_to_show["TC"].astype(str)
+
+    # Render Table
+    st.subheader(f"📊 {report_type.upper()} - {empresa}")
+    edited_df = st.data_editor(
+        df_to_show,
+        use_container_width=True,
+        num_rows="dynamic",
+        key=f"editor_{key_prefix}"
+    )
+
+    # Action Bar
+    col_desc, col_up, col_remp = st.columns(3)
+    
+    with col_desc:
+        st.download_button(
+            label="⬇️ Descargar Datos",
+            data=to_excel_bytes({report_type.capitalize(): edited_df}),
+            file_name=f"{report_type}_{empresa}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key=f"dl_{key_prefix}" # Added key to prevent download refresh
+        )
+
+    with col_up:
+        if st.button("🚀 Cargar Datos", key=f"btn_up_{key_prefix}", use_container_width=True, type="primary"):
+            t_name = get_table_name(report_type, empresa)
+            upload_to_supabase(edited_df, t_name)
+
+    with col_remp:
+        st.file_uploader(
+            "Remplazar",
+            type=["xlsx"],
+            key=replace_key,
+            label_visibility="collapsed"
+        )
+        st.caption("📂 **Remplazar Reporte con archivo**")
+
+# =================================
 # UPLOAD TO SUPABASE
 # =================================
 def upload_to_supabase(df, table_name):
@@ -1267,71 +1329,75 @@ if file_ordenes and file_mantenimientos:
             safe_cols = ["PU USD", "Total USD", "Total Correccion"]
 
             df_final_ref = df_final_ref.fillna("")
-            # =============================
+            # =================================
             # DISPLAY (REFACCIONES)
-            # =============================
-            st.divider()
-            st.subheader(f"🔧 DATA {empresa} REFACCIONES")
+            # =================================
+            @st.fragment
+            def display_refacciones_fragment(df_input, empresa_name):
+                st.divider()
+                st.subheader(f"🔧 DATA {empresa_name} REFACCIONES")
 
-            # 1. INTERCEPT: Check if a replacement file has been uploaded for Refacciones
-            replace_ref_key = f"replace_ref_{empresa}"
-            if st.session_state.get(replace_ref_key) is not None:
-                try:
-                    # Overwrite the auto-generated df_final_ref with the manual Excel
-                    df_final_ref = pd.read_excel(st.session_state[replace_ref_key], engine="openpyxl")
-                    st.success("✅ Reporte Refacciones reemplazado con archivo manual.")
-                except Exception as e:
-                    st.error(f"Error al leer el archivo de reemplazo de Refacciones: {e}")
+                # 1. Check for manual replacement file
+                replace_ref_key = f"replace_ref_{empresa_name}"
+                df_to_show = df_input
 
-            # Keep your specific formatting for TC
-            df_final_ref["TC"] = df_final_ref["TC"].astype(str)
+                if st.session_state.get(replace_ref_key) is not None:
+                    try:
+                        df_to_show = pd.read_excel(st.session_state[replace_ref_key], engine="openpyxl")
+                        st.success("✅ Reporte Refacciones reemplazado.")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
 
-            # 2. DATA EDITOR
-            edited_ref = st.data_editor(
-                df_final_ref,
-                use_container_width=True,
-                num_rows="dynamic",
-                key=f"edit_ref_table_{empresa}",
-                column_config={
-                    "PU": st.column_config.NumberColumn(format="$ %.2f"),
-                    "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.TextColumn(),
-                    "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                }
-            )
+                # Ensure TC is string for the editor
+                if "TC" in df_to_show.columns:
+                    df_to_show["TC"] = df_to_show["TC"].astype(str)
 
-            df_final_ref = edited_ref
-
-            # 3. THREE BUTTONS ACTION BAR
-            col_desc, col_up, col_remp = st.columns(3)
-
-            with col_desc:
-                st.download_button(
-                    label="⬇️ Descargar Datos",
-                    data=to_excel_bytes({"Refacciones": df_final_ref}),
-                    file_name=f"Refacciones_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                # 2. DATA EDITOR
+                edited_ref = st.data_editor(
+                    df_to_show,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=f"edit_ref_table_{empresa_name}",
+                    column_config={
+                        "PU": st.column_config.NumberColumn(format="$ %.2f"),
+                        "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Precio Sin IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                        "TC": st.column_config.TextColumn(),
+                        "PU USD": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                    }
                 )
 
-            with col_up:
-                # Using 'primary' type to highlight the main action
-                if st.button("🚀 Cargar Datos", key=f"btn_up_ref_{empresa}", use_container_width=True, type="primary"):
-                    table_name = get_table_name("refacciones", empresa)
-                    upload_to_supabase(df_final_ref, table_name)
+                # 3. ACTION BAR
+                col_desc, col_up, col_remp = st.columns(3)
 
-            with col_remp:
-                # The "Remplazar" button (File Uploader)
-                st.file_uploader(
-                    "Remplazar Reporte con archivo",
-                    type=["xlsx"],
-                    key=replace_ref_key,
-                    label_visibility="collapsed"
-                )
-                st.caption("📂 **Remplazar Reporte con archivo**")
+                with col_desc:
+                    st.download_button(
+                        label="⬇️ Descargar Datos",
+                        data=to_excel_bytes({"Refacciones": edited_ref}),
+                        file_name=f"Refacciones_{empresa_name}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key=f"dl_btn_ref_{empresa_name}" # Unique key prevents global refresh
+                    )
+
+                with col_up:
+                    if st.button("🚀 Cargar Datos", key=f"btn_up_ref_{empresa_name}", use_container_width=True, type="primary"):
+                        table_name = get_table_name("refacciones", empresa_name)
+                        upload_to_supabase(edited_ref, table_name)
+
+                with col_remp:
+                    st.file_uploader(
+                        "Remplazar Reporte con archivo",
+                        type=["xlsx"],
+                        key=replace_ref_key,
+                        label_visibility="collapsed"
+                    )
+                    st.caption("📂 **Remplazar Reporte con archivo**")
+
+            # CALL THE FUNCTION IMMEDIATELY
+            display_refacciones_fragment(df_final_ref, empresa)
 
 # =================================
 # BUILD OSTES
