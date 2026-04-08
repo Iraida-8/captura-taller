@@ -1253,14 +1253,14 @@ if file_ordenes and file_mantenimientos:
 
             if df_proveedores_iva is not None and not df_proveedores_iva.empty:
 
-                df_proveedores_iva["nombre_proveedor"] = (
-                    df_proveedores_iva["nombre_proveedor"]
+                df_proveedores_iva["proveedor"] = (
+                    df_proveedores_iva["proveedor"]
                     .astype(str)
                     .str.strip()
                     .str.upper()
                 )
 
-                iva_lookup = df_proveedores_iva.set_index("nombre_proveedor")["iva"]
+                iva_lookup = df_proveedores_iva.set_index("proveedor")["iva"]
 
                 # normalize your main df
                 df_final_ref["Nombre Proveedor"] = (
