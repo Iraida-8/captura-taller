@@ -1167,12 +1167,12 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
-            # DATE FROM SAC
+            # DATE FOR SAC
             # =============================
-            df_ordenes["Fecha Compra"] = pd.to_datetime(df_ordenes["Fecha"], errors="coerce")
+            df_ordenes["fecha_ct"] = pd.to_datetime(df_ordenes["fecha_ct"], errors="coerce")
 
-            df_ordenes["Año"] = df_ordenes["Fecha Compra"].dt.year
-            df_ordenes["Mes"] = df_ordenes["Fecha Compra"].dt.month
+            df_ordenes["Año"] = df_ordenes["fecha_ct"].dt.year
+            df_ordenes["Mes"] = df_ordenes["fecha_ct"].dt.month
 
             # =============================
             # JOIN MANTENIMIENTOS
@@ -1430,12 +1430,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes = df_ostes.copy()
 
             # =============================
-            # DATE
+            # DATE FOR OSTES
             # =============================
-            df_final_ostes["Fecha Factura"] = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
+            df_final_ostes["fecha_ct"] = pd.to_datetime(df_final_ostes["fecha_ct"], errors="coerce")
 
-            df_final_ostes["Año"] = df_final_ostes["Fecha Factura"].dt.year
-            df_final_ostes["Mes"] = df_final_ostes["Fecha Factura"].dt.month
+            df_final_ostes["Año"] = df_final_ostes["fecha_ct"].dt.year
+            df_final_ostes["Mes"] = df_final_ostes["fecha_ct"].dt.month
 
             # =============================
             # DIRECT FIELDS
@@ -1745,10 +1745,10 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # DATE FIX
             # =============================
-            df_final["Fecha Registro"] = pd.to_datetime(df_final["Fecha Registro"], errors="coerce")
+            df_final["fecha_ct"] = pd.to_datetime(df_final["fecha_ct"], errors="coerce")
 
-            df_final["Año"] = df_final["Fecha Registro"].dt.year
-            df_final["Mes"] = df_final["Fecha Registro"].dt.month
+            df_final["Año"] = df_final["fecha_ct"].dt.year
+            df_final["Mes"] = df_final["fecha_ct"].dt.month
 
             # KEEP THIS AS YOU HAD IT
             df_final["Fecha Analisis"] = pd.to_datetime(
