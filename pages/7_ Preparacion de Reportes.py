@@ -1119,13 +1119,6 @@ if file_ordenes:
             with st.expander("📄 Buscar Ordenes SAC"):
                 st.dataframe(df, use_container_width=True)
 
-                st.download_button(
-                    label="⬇️ Descargar Ordenes SAC",
-                    data=to_excel_bytes({"Ordenes": df}),
-                    file_name="Ordenes_SAC.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
@@ -1136,13 +1129,6 @@ if file_ostes:
             with st.expander(f"📄 Reporte Ostes ({empresa})"):
                 st.dataframe(df, use_container_width=True)
 
-                st.download_button(
-                    label="⬇️ Descargar Ostes",
-                    data=to_excel_bytes({"Ostes": df}),
-                    file_name=f"Ostes_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
 # MANTENIMIENTOS
 if file_mantenimientos:
     if not validate_filename(file_mantenimientos, ["mantenimientos"]):
@@ -1152,14 +1138,6 @@ if file_mantenimientos:
         if df is not None:
             with st.expander(f"📄 Reporte de Mantenimientos ({empresa})"):
                 st.dataframe(df, use_container_width=True)
-
-                st.download_button(
-                    label="⬇️ Descargar Mantenimientos",
-                    data=to_excel_bytes({"Mantenimientos": df}),
-                    file_name=f"Mantenimientos_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
 
 # =================================
 # BUILD DATA REFACCIONES
