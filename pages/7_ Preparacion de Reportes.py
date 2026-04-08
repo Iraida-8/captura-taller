@@ -378,6 +378,24 @@ def load_vehicle_units():
         st.error(f"Error cargando vehicle_units: {e}")
         return pd.DataFrame()
 
+#Loads Proveedores Iva
+@st.cache_data
+def load_proveedores_iva():
+    try:
+        supabase = get_supabase_client()
+
+        response = supabase.table("proveedores_iva").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando proveedores_iva: {e}")
+        return pd.DataFrame()
+
 # =================================
 # MODE SELECTOR
 # =================================
@@ -801,9 +819,10 @@ if empresa == "SELECCIONA EMPRESA":
 st.success(f"Empresa seleccionada: {empresa}")
 
 # =============================
-# LOAD VEHICLE UNITS (HIDDEN)
+# LOAD VEHICLE UNITS & PROVEEDORES IVA(HIDDEN)
 # =============================
 df_units = load_vehicle_units()
+df_proveedores_iva = load_proveedores_iva()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
