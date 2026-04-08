@@ -1895,62 +1895,67 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 9: "September", 10: "October", 11: "November", 12: "December"
             })
 
-            # =============================
-            # DISPLAY & ACTIONS
-            # =============================
-            st.divider()
-            st.subheader(f"🚛 Reporte Mano de Obra {empresa}")
+            # =================================
+            # DISPLAY & ACTIONS (MANO DE OBRA)
+            # =================================
+            @st.fragment
+            def display_mano_obra_fragment(df_input, empresa_name):
+                st.divider()
+                st.subheader(f"🚛 Reporte Mano de Obra {empresa_name}")
 
-            # 1. INTERCEPT: Check if a replacement file has been uploaded
-            replace_key = f"replace_mo_{empresa}"
-            if st.session_state.get(replace_key) is not None:
-                try:
-                    # We overwrite the automatically generated df_final with the uploaded Excel
-                    df_final = pd.read_excel(st.session_state[replace_key], engine="openpyxl")
-                    st.success("✅ Reporte reemplazado con archivo manual.")
-                except Exception as e:
-                    st.error(f"Error al leer el archivo de reemplazo: {e}")
+                # 1. INTERCEPT: Check for manual replacement file
+                replace_key = f"replace_mo_{empresa_name}"
+                df_to_show = df_input
 
-            # 2. THE TABLE (Shows either the auto-generated or the replaced data)
-            edited_mo = st.data_editor(
-                df_final,
-                use_container_width=True,
-                num_rows="dynamic",
-                key=f"edit_mo_table_{empresa}",
-                column_config={
-                    "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
-                    "IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
-                    "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
-                }
-            )
-            df_final = edited_mo # Ensure edits in the UI are also captured
+                if st.session_state.get(replace_key) is not None:
+                    try:
+                        df_to_show = pd.read_excel(st.session_state[replace_key], engine="openpyxl")
+                        st.success("✅ Reporte reemplazado con archivo manual.")
+                    except Exception as e:
+                        st.error(f"Error al leer el archivo de reemplazo: {e}")
 
-            # 3. THE THREE BUTTONS
-            col_descargar, col_cargar, col_remplazar = st.columns(3)
-
-            with col_descargar:
-                st.download_button(
-                    label="⬇️ Descargar Datos",
-                    data=to_excel_bytes({"Mano_de_Obra": df_final}),
-                    file_name=f"Mano_de_Obra_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                # 2. THE TABLE
+                edited_mo = st.data_editor(
+                    df_to_show,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=f"edit_mo_table_{empresa_name}",
+                    column_config={
+                        "Sub Total": st.column_config.NumberColumn(format="$ %.2f"),
+                        "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                        "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
+                        "Total USD": st.column_config.NumberColumn(format="$ %.2f"),
+                    }
                 )
 
-            with col_cargar:
-                if st.button("🚀 Cargar Datos", use_container_width=True, type="primary"):
-                    table_name = get_table_name("mano_obra", empresa)
-                    upload_to_supabase(df_final, table_name)
+                # 3. THE THREE BUTTONS
+                col_descargar, col_cargar, col_remplazar = st.columns(3)
 
-            with col_remplazar:
-                # This is the NEW "button" that takes a file
-                st.file_uploader(
-                    "Remplazar Reporte con archivo",
-                    type=["xlsx"],
-                    key=replace_key,
-                    label_visibility="collapsed"
-                )
-                st.caption("📂 **Remplazar Reporte con archivo**")
+                with col_descargar:
+                    st.download_button(
+                        label="⬇️ Descargar Datos",
+                        data=to_excel_bytes({"Mano_de_Obra": edited_mo}),
+                        file_name=f"Mano_de_Obra_{empresa_name}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key=f"dl_btn_mo_{empresa_name}" # Unique key to prevent page rebuild
+                    )
+
+                with col_cargar:
+                    if st.button("🚀 Cargar Datos", key=f"btn_up_mo_{empresa_name}", use_container_width=True, type="primary"):
+                        table_name = get_table_name("mano_obra", empresa_name)
+                        upload_to_supabase(edited_mo, table_name)
+
+                with col_remplazar:
+                    st.file_uploader(
+                        "Remplazar Reporte con archivo",
+                        type=["xlsx"],
+                        key=replace_key,
+                        label_visibility="collapsed"
+                    )
+                    st.caption("📂 **Remplazar Reporte con archivo**")
+
+            # CALL THE FUNCTION IMMEDIATELY
+            display_mano_obra_fragment(df_final, empresa)
