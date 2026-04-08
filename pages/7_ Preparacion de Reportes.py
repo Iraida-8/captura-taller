@@ -378,6 +378,23 @@ def load_vehicle_units():
         st.error(f"Error cargando vehicle_units: {e}")
         return pd.DataFrame()
 
+# Load Proveedores IVA configuration
+@st.cache_data
+def load_proveedores_iva():
+    try:
+        supabase = get_supabase_client()
+        # Query the new table you created
+        response = supabase.table("proveedores_config").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            # Normalize column names to lowercase/stripped just like other loaders
+            df.columns = df.columns.str.strip().str.lower()
+            
+        return df
+    except Exception as e:
+        st.error(f"Error cargando proveedores_config: {e}")
+        return pd.DataFrame()
 # =================================
 # MODE SELECTOR
 # =================================
@@ -817,6 +834,21 @@ if df_units is not None and not df_units.empty and empresa_code:
         "vin", "tipo_unidad", "sucursal", "estado"
     ]
 
+    df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
+
+
+# =========================================
+# LOAD BACKGROUND DATA (HIDDEN)
+# =========================================
+df_units = load_vehicle_units()
+df_prov_config = load_proveedores_iva() # <--- Load it here
+
+empresa_code = EMPRESA_MAP.get(empresa)
+
+# Handle Vehicle Units filtering (Existing logic)
+if df_units is not None and not df_units.empty and empresa_code:
+    df_units_filtered = df_units[df_units["empresa"] == empresa_code].copy()
+    cols_keep = ["empresa", "unidad", "marca", "modelo", "vin", "tipo_unidad", "sucursal", "estado"]
     df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
 
 # =================================
