@@ -1329,6 +1329,7 @@ if file_ordenes and file_mantenimientos:
             safe_cols = ["PU USD", "Total USD", "Total Correccion"]
 
             df_final_ref = df_final_ref.fillna("")
+
             # =================================
             # DISPLAY (REFACCIONES)
             # =================================
@@ -1629,63 +1630,66 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # DISPLAY (OSTES)
             # =============================
-            st.divider()
-            st.subheader(f"💰 OSTES {empresa}")
+            @st.fragment
+            def display_ostes_fragment(df_input, empresa_name):
+                st.divider()
+                st.subheader(f"💰 OSTES {empresa_name}")
 
-            # 1. INTERCEPT: Check if a replacement file has been uploaded for OSTES
-            replace_ostes_key = f"replace_ostes_{empresa}"
-            if st.session_state.get(replace_ostes_key) is not None:
-                try:
-                    # Overwrite the auto-generated df_final_ostes with the manual Excel file
-                    df_final_ostes = pd.read_excel(st.session_state[replace_ostes_key], engine="openpyxl")
-                    st.success("✅ Reporte OSTES reemplazado con archivo manual.")
-                except Exception as e:
-                    st.error(f"Error al leer el archivo de reemplazo de OSTES: {e}")
+                # 1. INTERCEPT: Check for manual replacement file
+                replace_ostes_key = f"replace_ostes_{empresa_name}"
+                df_to_show = df_input
 
-            # 2. DATA EDITOR
-            edited_ostes = st.data_editor(
-                df_final_ostes,
-                use_container_width=True,
-                num_rows="dynamic",
-                key=f"edit_ostes_table_{empresa}",
-                column_config={
-                    "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
-                    "IVA": st.column_config.NumberColumn(format="$ %.2f"),
-                    "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
-                    "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
-                    "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
-                }
-            )
-            
-            # Update dataframe with UI edits
-            df_final_ostes = edited_ostes
+                if st.session_state.get(replace_ostes_key) is not None:
+                    try:
+                        df_to_show = pd.read_excel(st.session_state[replace_ostes_key], engine="openpyxl")
+                        st.success("✅ Reporte OSTES reemplazado con archivo manual.")
+                    except Exception as e:
+                        st.error(f"Error al leer el archivo de reemplazo de OSTES: {e}")
 
-            # 3. THREE BUTTONS ACTION BAR
-            col_desc, col_up, col_remp = st.columns(3)
-
-            with col_desc:
-                st.download_button(
-                    label="⬇️ Descargar Datos",
-                    data=to_excel_bytes({"OSTES": df_final_ostes}),
-                    file_name=f"OSTES_{empresa}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                # 2. DATA EDITOR
+                edited_ostes = st.data_editor(
+                    df_to_show,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=f"edit_ostes_table_{empresa_name}",
+                    column_config={
+                        "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+                        "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
+                        "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
+                        "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                    }
                 )
 
-            with col_up:
-                if st.button("🚀 Cargar Datos", key=f"btn_up_ostes_{empresa}", use_container_width=True, type="primary"):
-                    table_name = get_table_name("ostes", empresa)
-                    upload_to_supabase(df_final_ostes, table_name)
+                # 3. THREE BUTTONS ACTION BAR
+                col_desc, col_up, col_remp = st.columns(3)
 
-            with col_remp:
-                # The "Remplazar" button (File Uploader)
-                st.file_uploader(
-                    "Remplazar Reporte con archivo",
-                    type=["xlsx"],
-                    key=replace_ostes_key,
-                    label_visibility="collapsed"
-                )
-                st.caption("📂 **Remplazar Reporte con archivo**")
+                with col_desc:
+                    st.download_button(
+                        label="⬇️ Descargar Datos",
+                        data=to_excel_bytes({"OSTES": edited_ostes}),
+                        file_name=f"OSTES_{empresa_name}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key=f"dl_btn_ostes_{empresa_name}" # Unique key for stability
+                    )
+
+                with col_up:
+                    if st.button("🚀 Cargar Datos", key=f"btn_up_ostes_{empresa_name}", use_container_width=True, type="primary"):
+                        table_name = get_table_name("ostes", empresa_name)
+                        upload_to_supabase(edited_ostes, table_name)
+
+                with col_remp:
+                    st.file_uploader(
+                        "Remplazar Reporte con archivo",
+                        type=["xlsx"],
+                        key=replace_ostes_key,
+                        label_visibility="collapsed"
+                    )
+                    st.caption("📂 **Remplazar Reporte con archivo**")
+
+            # CALL THE FUNCTION IMMEDIATELY
+            display_ostes_fragment(df_final_ostes, empresa)
 
 # =================================
 # BUILD MANO DE OBRA REPORT
