@@ -1114,18 +1114,35 @@ if file_ordenes:
     if not validate_filename(file_ordenes, ["buscar", "ordenes", "sac"]):
         st.error("El archivo debe contener: buscar + ordenes + sac en el nombre.")
     else:
-        df = read_file(file_ordenes)
-        if df is not None:
-            with st.expander("📄 Buscar Ordenes SAC"):
-                st.dataframe(df, use_container_width=True)
+        df_sac = read_file(file_ordenes)
+        
+        if df_sac is not None:
 
-                st.download_button(
-                    label="⬇️ Descargar Ordenes SAC",
-                    data=to_excel_bytes({"Ordenes": df}),
-                    file_name="Ordenes_SAC.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+            if df_prov_config is not None and not df_prov_config.empty:
+
+                df_prov_config['prov_match'] = df_prov_config['proveedor'].str.strip().str.upper()
+                df_sac['prov_match'] = df_sac['NombreProveedor'].str.strip().str.upper()
+
+                df_sac = df_sac.merge(
+                    df_prov_config[['prov_match', 'iva_pct']], 
+                    on='prov_match', 
+                    how='left'
                 )
+
+                df_sac['iva_pct'] = pd.to_numeric(df_sac['iva_pct'], errors='coerce').fillna(0)
+                
+                col_precio = 'Precio sin IVA' if 'Precio sin IVA' in df_sac.columns else 'Precio Sin IVA'
+                
+                if col_precio in df_sac.columns:
+                    df_sac[col_precio] = pd.to_numeric(df_sac[col_precio], errors='coerce').fillna(0)
+                    # Calculamos el IVA real basado en el porcentaje de la tabla
+                    df_sac['IVA'] = df_sac[col_precio] * (df_sac['iva_pct'] / 100)
+                
+                df_sac = df_sac.drop(columns=['prov_match'])
+
+            with st.expander("📄 Buscar Ordenes SAC"):
+                # Aquí continúas con tu lógica de display_report_section
+                display_report_section("refacciones", df_sac, empresa)
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
