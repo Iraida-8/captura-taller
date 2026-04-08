@@ -1260,7 +1260,7 @@ if file_ordenes and file_mantenimientos:
                     .str.upper()
                 )
 
-                iva_lookup = df_proveedores_iva.set_index("proveedor")["iva"]
+                iva_lookup = df_proveedores_iva.set_index("proveedor")["iva_pct"]
 
                 # normalize your main df
                 df_final_ref["Nombre Proveedor"] = (
