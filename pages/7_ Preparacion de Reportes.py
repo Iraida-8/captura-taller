@@ -1533,16 +1533,27 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes[col] = pd.to_numeric(df_final_ostes[col], errors="coerce")
 
             # =============================
-            # DISPLAY
+            # DISPLAY (OSTES)
             # =============================
             st.divider()
             st.subheader(f"💰 OSTES {empresa}")
 
+            # 1. INTERCEPT: Check if a replacement file has been uploaded for OSTES
+            replace_ostes_key = f"replace_ostes_{empresa}"
+            if st.session_state.get(replace_ostes_key) is not None:
+                try:
+                    # Overwrite the auto-generated df_final_ostes with the manual Excel file
+                    df_final_ostes = pd.read_excel(st.session_state[replace_ostes_key], engine="openpyxl")
+                    st.success("✅ Reporte OSTES reemplazado con archivo manual.")
+                except Exception as e:
+                    st.error(f"Error al leer el archivo de reemplazo de OSTES: {e}")
+
+            # 2. DATA EDITOR
             edited_ostes = st.data_editor(
                 df_final_ostes,
                 use_container_width=True,
                 num_rows="dynamic",
-                key=f"edit_ostes_{empresa}",
+                key=f"edit_ostes_table_{empresa}",
                 column_config={
                     "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
                     "IVA": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1551,23 +1562,36 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
                 }
             )
-
-            # overwrite with edited version
+            
+            # Update dataframe with UI edits
             df_final_ostes = edited_ostes
 
-            st.download_button(
-                label="⬇️ Descargar OSTES Final",
-                data=to_excel_bytes({"OSTES": df_final_ostes}),
-                file_name=f"OSTES_Final_{empresa}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
+            # 3. THREE BUTTONS ACTION BAR
+            col_desc, col_up, col_remp = st.columns(3)
 
-            if st.button("📥 Cargar Datos - OSTES", use_container_width=True):
+            with col_desc:
+                st.download_button(
+                    label="⬇️ Descargar Datos",
+                    data=to_excel_bytes({"OSTES": df_final_ostes}),
+                    file_name=f"OSTES_{empresa}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
 
-                table_name = get_table_name("ostes", empresa)
+            with col_up:
+                if st.button("🚀 Cargar Datos", key=f"btn_up_ostes_{empresa}", use_container_width=True, type="primary"):
+                    table_name = get_table_name("ostes", empresa)
+                    upload_to_supabase(df_final_ostes, table_name)
 
-                upload_to_supabase(df_final_ostes, table_name)
+            with col_remp:
+                # The "Remplazar" button (File Uploader)
+                st.file_uploader(
+                    "Remplazar Reporte con archivo",
+                    type=["xlsx"],
+                    key=replace_ostes_key,
+                    label_visibility="collapsed"
+                )
+                st.caption("📂 **Remplazar Reporte con archivo**")
 
 # =================================
 # BUILD MANO DE OBRA REPORT
