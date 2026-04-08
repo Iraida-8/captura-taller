@@ -378,24 +378,6 @@ def load_vehicle_units():
         st.error(f"Error cargando vehicle_units: {e}")
         return pd.DataFrame()
 
-# Load Proveedores IVA configuration
-@st.cache_data
-def load_proveedores_iva():
-    try:
-        supabase = get_supabase_client()
-        # Query the new table you created
-        response = supabase.table("proveedores_iva").select("*").execute()
-        df = pd.DataFrame(response.data)
-
-        if not df.empty:
-            # Normalize column names to lowercase/stripped just like other loaders
-            df.columns = df.columns.str.strip().str.lower()
-            
-        return df
-    except Exception as e:
-        st.error(f"Error cargando proveedores_iva: {e}")
-        return pd.DataFrame()
-    
 # =================================
 # MODE SELECTOR
 # =================================
@@ -822,7 +804,6 @@ st.success(f"Empresa seleccionada: {empresa}")
 # LOAD VEHICLE UNITS (HIDDEN)
 # =============================
 df_units = load_vehicle_units()
-df_prov_config = load_proveedores_iva()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
@@ -1114,47 +1095,18 @@ if file_ordenes:
     if not validate_filename(file_ordenes, ["buscar", "ordenes", "sac"]):
         st.error("El archivo debe contener: buscar + ordenes + sac en el nombre.")
     else:
-        df_sac = read_file(file_ordenes)
-        
-        if df_sac is not None:
-            # --- LÓGICA DE IVA REFORZADA ---
-            if df_prov_config is not None and not df_prov_config.empty:
-                # 1. Limpieza agresiva de strings (quitar espacios, saltos de línea y pasar a mayúsculas)
-                df_prov_config['prov_match'] = df_prov_config['proveedor'].astype(str).str.strip().str.upper()
-                df_sac['prov_match'] = df_sac['NombreProveedor'].astype(str).str.strip().str.upper()
+        df = read_file(file_ordenes)
+        if df is not None:
+            with st.expander("📄 Buscar Ordenes SAC"):
+                st.dataframe(df, use_container_width=True)
 
-                # 2. Asegurar que 'iva_pct' sea numérico antes del merge
-                df_prov_config['iva_pct'] = pd.to_numeric(df_prov_config['iva_pct'], errors='coerce').fillna(0)
-
-                # 3. Realizar el merge
-                # Eliminamos 'iva_pct' si ya existía en df_sac para evitar iva_pct_x / iva_pct_y
-                if 'iva_pct' in df_sac.columns:
-                    df_sac = df_sac.drop(columns=['iva_pct'])
-                
-                df_sac = df_sac.merge(
-                    df_prov_config[['prov_match', 'iva_pct']], 
-                    on='prov_match', 
-                    how='left'
+                st.download_button(
+                    label="⬇️ Descargar Ordenes SAC",
+                    data=to_excel_bytes({"Ordenes": df}),
+                    file_name="Ordenes_SAC.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
                 )
-
-                # 4. Llenar nulos (si un proveedor no coincide, aparecerá como NaN tras el merge)
-                df_sac['iva_pct'] = df_sac['iva_pct'].fillna(0)
-
-                # 5. Cálculo del IVA y Tasa IVA para visualización
-                # Identificar la columna de precio (SAC suele usar 'Precio Parte' o 'Precio sin IVA')
-                col_precio = next((c for c in ['Precio Parte', 'Precio sin IVA', 'Precio Sin IVA'] if c in df_sac.columns), None)
-
-                if col_precio:
-                    df_sac[col_precio] = pd.to_numeric(df_sac[col_precio], errors='coerce').fillna(0)
-                    
-                    # Actualizamos las columnas que ves en tu captura de pantalla:
-                    df_sac['IVA'] = df_sac[col_precio] * (df_sac['iva_pct'] / 100)
-                    df_sac['Tasa IVA'] = df_sac['iva_pct'] # Para que no veas "0" en la columna Tasa
-                
-                # Limpiar
-                df_sac = df_sac.drop(columns=['prov_match'])
-            
-            # --- FIN LÓGICA ---
 # OSTES
 if file_ostes:
     if not validate_filename(file_ostes, ["ostes"]):
