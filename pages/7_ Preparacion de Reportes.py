@@ -1448,27 +1448,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes["Status CT"] = df_final_ostes["Status"]
 
             # =============================
-            # ACREEDOR
-            # =============================
-            df_ordenes["Proveedor_key"] = pd.to_numeric(df_ordenes["Proveedor"], errors="coerce").astype("Int64")
-            df_final_ostes["Proveedor_key"] = pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce").astype("Int64")
-
-            proveedor_lookup = (
-                df_ordenes[["Proveedor_key", "NombreProveedor"]]
-                .dropna()
-                .drop_duplicates(subset=["Proveedor_key"])
-                .rename(columns={"NombreProveedor": "Acreedor_lookup"})
-            )
-
-            df_final_ostes = df_final_ostes.merge(
-                proveedor_lookup,
-                on="Proveedor_key",
-                how="left"
-            )
-
-            df_final_ostes["Acreedor"] = df_final_ostes["Acreedor_lookup"]
-
-            # =============================
             # DESCRIPCION + RAZON (FROM MANT)
             # =============================
             mant_lookup = df_mant[[
@@ -1480,6 +1459,8 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 on="Reporte",
                 how="left"
             )
+
+            df_final_ostes["Acreedor"] = df_final_ostes["Proveedor"]
 
             df_final_ostes.rename(columns={
                 "Razon Servicio": "Razon de servicio"
@@ -1604,7 +1585,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
 
                 df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal", "Acreedor_lookup"] if c in df_final_ostes.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
                 )
 
             # =============================
