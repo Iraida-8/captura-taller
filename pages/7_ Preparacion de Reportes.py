@@ -1263,8 +1263,8 @@ if file_ordenes and file_mantenimientos:
                 iva_lookup = df_proveedores_iva.set_index("proveedor")["iva_pct"]
 
                 # normalize your main df
-                df_final_ref["Nombre Proveedor"] = (
-                    df_final_ref["Nombre Proveedor"]
+                df_final_ref["NombreProveedor"] = (
+                    df_final_ref["NombreProveedor"]
                     .astype(str)
                     .str.strip()
                     .str.upper()
@@ -1275,7 +1275,7 @@ if file_ordenes and file_mantenimientos:
             # =============================
 
             # IVA from proveedores_iva
-            df_final_ref["IVA"] = df_final_ref["Nombre Proveedor"].map(iva_lookup)
+            df_final_ref["IVA"] = df_final_ref["NombreProveedor"].map(iva_lookup)
             df_final_ref["IVA"] = df_final_ref["IVA"].fillna(0)
 
             # Base price
