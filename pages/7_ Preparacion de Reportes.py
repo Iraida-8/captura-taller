@@ -1016,15 +1016,40 @@ def read_file(file):
     try:
         if file.name.endswith(".csv"):
             try:
-                return pd.read_csv(file, encoding="utf-8")
+                df = pd.read_csv(file, encoding="utf-8")
             except:
                 file.seek(0)
-                return pd.read_csv(file, encoding="latin-1")
+                df = pd.read_csv(file, encoding="latin-1")
+
         elif file.name.endswith(".xlsx"):
-            return pd.read_excel(file, engine="openpyxl")
+            df = pd.read_excel(file, engine="openpyxl")
+
         else:
             st.error("Formato no soportado. Usa CSV o XLSX.")
             return None
+
+        # =================================
+        # NORMALIZE COLUMNS HERE
+        # =================================
+        df.columns = (
+            df.columns
+            .str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+        )
+
+        # =================================
+        # FORCE fecha_ct COLUMN
+        # =================================
+        fecha_variants = ["fecha_ct", "fecha_ct_", "fecha_ct__", "fecha__ct"]
+
+        for col in df.columns:
+            col_clean = col.replace(" ", "_").lower()
+            if col_clean in ["fecha_ct", "fecha_ct_", "fecha__ct", "fecha ct"]:
+                df.rename(columns={col: "fecha_ct"}, inplace=True)
+
+        return df
+
     except Exception as e:
         st.error(f"Error al leer archivo: {e}")
         return None
