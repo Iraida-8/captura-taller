@@ -384,7 +384,7 @@ def load_proveedores_iva():
     try:
         supabase = get_supabase_client()
         # Query the new table you created
-        response = supabase.table("proveedores_config").select("*").execute()
+        response = supabase.table("proveedores_iva").select("*").execute()
         df = pd.DataFrame(response.data)
 
         if not df.empty:
@@ -393,7 +393,7 @@ def load_proveedores_iva():
             
         return df
     except Exception as e:
-        st.error(f"Error cargando proveedores_config: {e}")
+        st.error(f"Error cargando proveedores_iva: {e}")
         return pd.DataFrame()
     
 # =================================
