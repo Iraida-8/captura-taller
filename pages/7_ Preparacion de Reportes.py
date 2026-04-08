@@ -1268,16 +1268,30 @@ if file_ordenes and file_mantenimientos:
 
             df_final_ref = df_final_ref.fillna("")
             # =============================
-            # DISPLAY
+            # DISPLAY (REFACCIONES)
             # =============================
             st.divider()
             st.subheader(f"🔧 DATA {empresa} REFACCIONES")
+
+            # 1. INTERCEPT: Check if a replacement file has been uploaded for Refacciones
+            replace_ref_key = f"replace_ref_{empresa}"
+            if st.session_state.get(replace_ref_key) is not None:
+                try:
+                    # Overwrite the auto-generated df_final_ref with the manual Excel
+                    df_final_ref = pd.read_excel(st.session_state[replace_ref_key], engine="openpyxl")
+                    st.success("✅ Reporte Refacciones reemplazado con archivo manual.")
+                except Exception as e:
+                    st.error(f"Error al leer el archivo de reemplazo de Refacciones: {e}")
+
+            # Keep your specific formatting for TC
             df_final_ref["TC"] = df_final_ref["TC"].astype(str)
+
+            # 2. DATA EDITOR
             edited_ref = st.data_editor(
                 df_final_ref,
                 use_container_width=True,
                 num_rows="dynamic",
-                key=f"edit_ref_{empresa}",
+                key=f"edit_ref_table_{empresa}",
                 column_config={
                     "PU": st.column_config.NumberColumn(format="$ %.2f"),
                     "PrecioParte": st.column_config.NumberColumn(format="$ %.2f"),
@@ -1291,19 +1305,33 @@ if file_ordenes and file_mantenimientos:
 
             df_final_ref = edited_ref
 
-            st.download_button(
-                label="⬇️ Descargar Refacciones Final",
-                data=to_excel_bytes({"Refacciones": df_final_ref}),
-                file_name=f"Refacciones_Final_{empresa}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
+            # 3. THREE BUTTONS ACTION BAR
+            col_desc, col_up, col_remp = st.columns(3)
 
-            if st.button("📥 Cargar Datos - Ordenes", use_container_width=True):
+            with col_desc:
+                st.download_button(
+                    label="⬇️ Descargar Datos",
+                    data=to_excel_bytes({"Refacciones": df_final_ref}),
+                    file_name=f"Refacciones_{empresa}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
 
-                table_name = get_table_name("refacciones", empresa)
+            with col_up:
+                # Using 'primary' type to highlight the main action
+                if st.button("🚀 Cargar Datos", key=f"btn_up_ref_{empresa}", use_container_width=True, type="primary"):
+                    table_name = get_table_name("refacciones", empresa)
+                    upload_to_supabase(df_final_ref, table_name)
 
-                upload_to_supabase(df_final_ref, table_name)
+            with col_remp:
+                # The "Remplazar" button (File Uploader)
+                st.file_uploader(
+                    "Remplazar Reporte con archivo",
+                    type=["xlsx"],
+                    key=replace_ref_key,
+                    label_visibility="collapsed"
+                )
+                st.caption("📂 **Remplazar Reporte con archivo**")
 
 # =================================
 # BUILD OSTES
