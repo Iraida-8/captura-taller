@@ -1016,70 +1016,15 @@ def read_file(file):
     try:
         if file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(file, encoding="utf-8")
+                return pd.read_csv(file, encoding="utf-8")
             except:
                 file.seek(0)
-                df = pd.read_csv(file, encoding="latin-1")
+                return pd.read_csv(file, encoding="latin-1")
         elif file.name.endswith(".xlsx"):
-            df = pd.read_excel(file, engine="openpyxl")
+            return pd.read_excel(file, engine="openpyxl")
         else:
             st.error("Formato no soportado. Usa CSV o XLSX.")
             return None
-
-        # 1. Standard normalization
-        df.columns = (
-            df.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_")
-        )
-
-        # 2. FORCE "reporte" column name
-        # This looks for common variants and renames them to 'reporte'
-        # to prevent KeyErrors later in the script.
-        report_variants = {
-            "#_reporte": "reporte",
-            "no_reporte": "reporte",
-            "no._reporte": "reporte",
-            "numero_reporte": "reporte",
-            "num_reporte": "reporte",
-            "orden": "reporte"
-        }
-        df.rename(columns=report_variants, inplace=True)
-
-        # 3. FORCE fecha_ct column
-        for col in df.columns:
-            if col in ["fecha_ct_", "fecha__ct", "fecha_ct__"]:
-                df.rename(columns={col: "fecha_ct"}, inplace=True)
-
-        return df
-
-    except Exception as e:
-        st.error(f"Error al leer archivo: {e}")
-        return None
-
-        # =================================
-        # NORMALIZE COLUMNS HERE
-        # =================================
-        df.columns = (
-            df.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_")
-        )
-
-        # =================================
-        # FORCE fecha_ct COLUMN
-        # =================================
-        fecha_variants = ["fecha_ct", "fecha_ct_", "fecha_ct__", "fecha__ct"]
-
-        for col in df.columns:
-            col_clean = col.replace(" ", "_").lower()
-            if col_clean in ["fecha_ct", "fecha_ct_", "fecha__ct", "fecha ct"]:
-                df.rename(columns={col: "fecha_ct"}, inplace=True)
-
-        return df
-
     except Exception as e:
         st.error(f"Error al leer archivo: {e}")
         return None
@@ -1210,24 +1155,24 @@ if file_ordenes and file_mantenimientos:
             # NORMALIZE KEYS
             # =============================
             df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["reporte"], errors="coerce")
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
 
             df_mant["Reporte"] = (
-                pd.to_numeric(df_mant["reporte"], errors="coerce")
+                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
 
             # =============================
-            # DATE FOR SAC
+            # DATE FROM SAC
             # =============================
-            df_ordenes["fecha_ct"] = pd.to_datetime(df_ordenes["fecha_ct"], errors="coerce")
+            df_ordenes["Fecha Compra"] = pd.to_datetime(df_ordenes["Fecha"], errors="coerce")
 
-            df_ordenes["Año"] = df_ordenes["fecha_ct"].dt.year
-            df_ordenes["Mes"] = df_ordenes["fecha_ct"].dt.month
+            df_ordenes["Año"] = df_ordenes["Fecha Compra"].dt.year
+            df_ordenes["Mes"] = df_ordenes["Fecha Compra"].dt.month
 
             # =============================
             # JOIN MANTENIMIENTOS
@@ -1476,7 +1421,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # NORMALIZE KEYS
             # =============================
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
-            df_mant["Reporte"] = pd.to_numeric(df_mant["reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
@@ -1485,12 +1430,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes = df_ostes.copy()
 
             # =============================
-            # DATE FOR OSTES
+            # DATE
             # =============================
-            df_final_ostes["fecha_ct"] = pd.to_datetime(df_final_ostes["fecha_ct"], errors="coerce")
+            df_final_ostes["Fecha Factura"] = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce")
 
-            df_final_ostes["Año"] = df_final_ostes["fecha_ct"].dt.year
-            df_final_ostes["Mes"] = df_final_ostes["fecha_ct"].dt.month
+            df_final_ostes["Año"] = df_final_ostes["Fecha Factura"].dt.year
+            df_final_ostes["Mes"] = df_final_ostes["Fecha Factura"].dt.month
 
             # =============================
             # DIRECT FIELDS
@@ -1741,7 +1686,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_mant["Reporte"] = pd.to_numeric(df_mant["reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
@@ -1800,10 +1745,10 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # DATE FIX
             # =============================
-            df_final["fecha_ct"] = pd.to_datetime(df_final["fecha_ct"], errors="coerce")
+            df_final["Fecha Registro"] = pd.to_datetime(df_final["Fecha Registro"], errors="coerce")
 
-            df_final["Año"] = df_final["fecha_ct"].dt.year
-            df_final["Mes"] = df_final["fecha_ct"].dt.month
+            df_final["Año"] = df_final["Fecha Registro"].dt.year
+            df_final["Mes"] = df_final["Fecha Registro"].dt.month
 
             # KEEP THIS AS YOU HAD IT
             df_final["Fecha Analisis"] = pd.to_datetime(
