@@ -1468,9 +1468,18 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     .drop_duplicates(subset=["clave"])
                 )
 
-                # Ensure same type for matching
-                proveedores_lookup["clave"] = proveedores_lookup["clave"].astype(str).str.strip()
-                df_final_ostes["Proveedor"] = df_final_ostes["Proveedor"].astype(str).str.strip()
+                # Force both sides to clean integer-like strings
+                proveedores_lookup["clave"] = (
+                    pd.to_numeric(proveedores_lookup["clave"], errors="coerce")
+                    .astype("Int64")
+                    .astype(str)
+                )
+
+                df_final_ostes["Proveedor"] = (
+                    pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce")
+                    .astype("Int64")
+                    .astype(str)
+                )
 
                 df_final_ostes = df_final_ostes.merge(
                     proveedores_lookup,
