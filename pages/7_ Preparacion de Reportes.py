@@ -1208,7 +1208,7 @@ if file_ordenes and file_mantenimientos:
                 "Descripcion",
                 "Razon Servicio",
                 "Fecha Liberada"
-            ]].drop_duplicates(subset=["Reporte"])
+            ]].drop_duplicates(subset=["reporte"])
 
             df_final_ref = df_ordenes.merge(
                 mant_lookup,
