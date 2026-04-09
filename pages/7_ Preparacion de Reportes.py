@@ -1204,10 +1204,10 @@ if file_ordenes and file_mantenimientos:
             # =============================
             mant_lookup = df_mant[[
                 "reporte",
-                "Tipo Unidad",
-                "Descripcion",
-                "Razon Servicio",
-                "Fecha Liberada"
+                "tipo_unidad",
+                "descripcion",
+                "razon_servicio",
+                "fecha_liberada"
             ]].drop_duplicates(subset=["reporte"])
 
             df_final_ref = df_ordenes.merge(
