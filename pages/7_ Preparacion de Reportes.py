@@ -1583,7 +1583,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
             else:
                 df_final_ostes["TC"] = 1
 
-            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
+            df_final_ostes["Total Correccion"] = df_final_ostes["Subtotal"]
+
+            df_final_ostes.loc[
+                df_final_ostes["Moneda"].astype(str).str.upper() == "MXP",
+                "Total Correccion"
+            ] = df_final_ostes["Total oste"]
 
             # =============================
             # FINAL COLUMNS
