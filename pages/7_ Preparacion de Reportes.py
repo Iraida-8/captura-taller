@@ -1190,7 +1190,7 @@ if file_ordenes and file_mantenimientos:
                 on="Reporte",
                 how="left"
             )
-            
+
             # =============================
             # FECHA COMPRA (FROM SAC)
             # =============================
@@ -1227,21 +1227,24 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # FINANCIALS
             # =============================
-            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"] / (
-                1 + df_final_ref["Tasaiva"].fillna(0)
-            )
+            # Precio Sin IVA = PrecioParte (no back-calculation)
+            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"]
 
+            # IVA stays from SAC
             df_final_ref["IVA"] = df_final_ref["IvaParte"]
 
+            # Total = base + IVA
             df_final_ref["Total Correccion"] = (
                 df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
             )
 
             # =============================
-            # USD CALC (MODIFIED)
+            # USD CALC (NEW LOGIC)
             # =============================
-            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"].astype(object)
-            df_final_ref["Total USD"] = df_final_ref["PrecioParte"] / df_final_ref["TC"].astype(object)
+
+            df_final_ref["PU USD"] = df_final_ref["PU"] * df_final_ref["TC"]
+            df_final_ref["Total USD"] = df_final_ref["Precio Sin IVA"] * df_final_ref["TC"]
+
 
             # =============================
             # RENAME
