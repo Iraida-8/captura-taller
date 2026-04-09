@@ -1242,8 +1242,8 @@ if file_ordenes and file_mantenimientos:
             # USD CALC (NEW LOGIC)
             # =============================
 
-            df_final_ref["PU USD"] = df_final_ref["PU"] * df_final_ref["TC"]
-            df_final_ref["Total USD"] = df_final_ref["Precio Sin IVA"] * df_final_ref["TC"]
+            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
+            df_final_ref["Total USD"] = df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
 
 
             # =============================
