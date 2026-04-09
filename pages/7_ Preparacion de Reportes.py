@@ -1436,6 +1436,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
 
             df_final_ostes["Año"] = df_final_ostes["fecha_ct"].dt.year
             df_final_ostes["Mes"] = df_final_ostes["fecha_ct"].dt.month
+            df_final_ostes["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
             # =============================
             # DIRECT FIELDS
@@ -1556,9 +1557,9 @@ if file_ostes and file_mantenimientos and file_ordenes:
             def calc_total(row):
                 moneda = str(row.get("Moneda", "")).upper()
 
-                if moneda == "USD":
+                if moneda == "MXN":
                     return row["Subtotal"] * row["TC"]
-                else:
+                else:  # USD
                     return row["Subtotal"]
 
             # =============================
@@ -1642,7 +1643,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 9: "September", 10: "October", 11: "November", 12: "December"
             })
 
-            date_cols = ["Fecha Analisis", "Fecha Factura", "Fecha Oste", "Fecha Cierre"]
+            date_cols = ["Fecha Factura", "Fecha Oste", "Fecha Cierre"]
             for col in date_cols:
                 if col in df_final_ostes.columns:
                     df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.strftime("%d/%m/%y")
