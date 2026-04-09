@@ -1464,16 +1464,33 @@ if file_ostes and file_mantenimientos and file_ordenes:
             }, inplace=True)
 
             # =============================
-            # IVA (FROM SAC USING REPORTE)
+            # IVA (FROM PROVEEDORES_IVA USING ACREEDOR)
             # =============================
-            iva_lookup = (
-                df_ordenes[["Reporte", "IvaParte"]]
-                .dropna()
-                .drop_duplicates(subset=["Reporte"])
-                .set_index("Reporte")["IvaParte"]
-            )
+            if df_proveedores_iva is not None and not df_proveedores_iva.empty:
 
-            df_final_ostes["IVA"] = df_final_ostes["Reporte"].map(iva_lookup)
+                iva_lookup = (
+                    df_proveedores_iva[["proveedor", "iva_pct"]]
+                    .dropna(subset=["proveedor"])
+                    .drop_duplicates(subset=["proveedor"])
+                )
+
+                # Normalize for matching (avoid case/space issues)
+                iva_lookup["proveedor"] = iva_lookup["proveedor"].astype(str).str.strip().str.lower()
+                df_final_ostes["Acreedor"] = df_final_ostes["Acreedor"].astype(str).str.strip().str.lower()
+
+                df_final_ostes = df_final_ostes.merge(
+                    iva_lookup,
+                    left_on="Acreedor",
+                    right_on="proveedor",
+                    how="left"
+                )
+
+                df_final_ostes["IVA"] = df_final_ostes["iva_pct"]
+
+                df_final_ostes.drop(columns=["proveedor", "iva_pct"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["IVA"] = None
 
             # =============================
             # MONEDA (FROM SAC USING REPORTE)
