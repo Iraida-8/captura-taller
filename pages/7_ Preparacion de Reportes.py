@@ -1179,14 +1179,14 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_ordenes["reporte"] = (
-                pd.to_numeric(df_ordenes["reporte"], errors="coerce")
+            df_ordenes["Reporte"] = (
+                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
 
             df_mant["Reporte"] = (
-                pd.to_numeric(df_mant["#_reporte"], errors="coerce")
+                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
@@ -1445,9 +1445,9 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_ostes["Reporte"] = pd.to_numeric(df_ostes["#_reporte"], errors="coerce")
-            df_mant["Reporte"] = pd.to_numeric(df_mant["#_reporte"], errors="coerce")
-            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["reporte"], errors="coerce")
+            df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
             # BASE DATA
@@ -1711,9 +1711,9 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce")
-            df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce")
-            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
             # LOOKUPS
