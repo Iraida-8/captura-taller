@@ -1457,7 +1457,34 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 how="left"
             )
 
-            df_final_ostes["Acreedor"] = df_final_ostes["Proveedor"]
+            # =============================
+            # ACREEDOR (FROM PROVEEDORES_IVA USING CLAVE)
+            # =============================
+            if df_proveedores_iva is not None and not df_proveedores_iva.empty:
+
+                proveedores_lookup = (
+                    df_proveedores_iva[["clave", "proveedor"]]
+                    .dropna(subset=["clave"])
+                    .drop_duplicates(subset=["clave"])
+                )
+
+                # Ensure same type for matching
+                proveedores_lookup["clave"] = proveedores_lookup["clave"].astype(str).str.strip()
+                df_final_ostes["Proveedor"] = df_final_ostes["Proveedor"].astype(str).str.strip()
+
+                df_final_ostes = df_final_ostes.merge(
+                    proveedores_lookup,
+                    left_on="Proveedor",
+                    right_on="clave",
+                    how="left"
+                )
+
+                df_final_ostes["Acreedor"] = df_final_ostes["proveedor"]
+
+                df_final_ostes.drop(columns=["clave", "proveedor"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["Acreedor"] = df_final_ostes["Proveedor"]
 
             df_final_ostes.rename(columns={
                 "Razon Servicio": "Razon de servicio"
