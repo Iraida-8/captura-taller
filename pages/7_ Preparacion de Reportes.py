@@ -1564,7 +1564,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 moneda = str(row.get("Moneda", "")).upper()
 
                 if moneda == "MXP":
-                    return row["Subtotal"] * row["TC"]
+                    return row["Subtotal"] / row["TC"]
                 else:  # USD
                     return row["Subtotal"]
 
