@@ -1186,7 +1186,7 @@ if file_ordenes and file_mantenimientos:
             )
 
             df_mant["Reporte"] = (
-                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
+                pd.to_numeric(df_mant["reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
@@ -1446,7 +1446,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # NORMALIZE KEYS
             # =============================
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
-            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["reporte"], errors="coerce").astype("Int64").astype(str)
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
@@ -1711,7 +1711,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["reporte"], errors="coerce").astype("Int64").astype(str)
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
             df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
 
