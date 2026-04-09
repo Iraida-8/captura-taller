@@ -1020,13 +1020,43 @@ def read_file(file):
             except:
                 file.seek(0)
                 df = pd.read_csv(file, encoding="latin-1")
-
         elif file.name.endswith(".xlsx"):
             df = pd.read_excel(file, engine="openpyxl")
-
         else:
             st.error("Formato no soportado. Usa CSV o XLSX.")
             return None
+
+        # 1. Standard normalization
+        df.columns = (
+            df.columns
+            .str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+        )
+
+        # 2. FORCE "reporte" column name
+        # This looks for common variants and renames them to 'reporte'
+        # to prevent KeyErrors later in the script.
+        report_variants = {
+            "#_reporte": "reporte",
+            "no_reporte": "reporte",
+            "no._reporte": "reporte",
+            "numero_reporte": "reporte",
+            "num_reporte": "reporte",
+            "orden": "reporte"
+        }
+        df.rename(columns=report_variants, inplace=True)
+
+        # 3. FORCE fecha_ct column
+        for col in df.columns:
+            if col in ["fecha_ct_", "fecha__ct", "fecha_ct__"]:
+                df.rename(columns={col: "fecha_ct"}, inplace=True)
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error al leer archivo: {e}")
+        return None
 
         # =================================
         # NORMALIZE COLUMNS HERE
