@@ -1560,13 +1560,12 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 .str.upper()
             )
 
-            def calc_total(row):
-                moneda = str(row.get("Moneda", "")).upper()
-
-                if moneda == "MXP":
-                    return row["Subtotal"] / row["TC"]
-                else:  # USD
-                    return row["Subtotal"]
+            # =============================
+            # TOTAL OSTE
+            # =============================
+            df_final_ostes["Total oste"] = (
+                df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
+)
 
             # =============================
             # TC
