@@ -1560,10 +1560,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 .str.upper()
             )
 
-            df_final_ostes["Total oste"] = (
-                df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
-            )
-
             # =============================
             # TC
             # =============================
@@ -1582,6 +1578,17 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
             else:
                 df_final_ostes["TC"] = 1
+
+            # Default = USD case
+            df_final_ostes["Total oste"] = (
+                df_final_ostes["Subtotal"] / df_final_ostes["TC"]
+            )
+
+            # Override for MXP
+            df_final_ostes.loc[
+                df_final_ostes["Moneda"].astype(str).str.upper() == "MXP",
+                "Total oste"
+            ] = df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
 
             df_final_ostes["Total Correccion"] = df_final_ostes["Subtotal"]
 
