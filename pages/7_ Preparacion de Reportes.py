@@ -1179,14 +1179,14 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+            df_mant["#_reporte"] = (
+                pd.to_numeric(df_mant["#_reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
 
             df_mant["Reporte"] = (
-                pd.to_numeric(df_mant["# Reporte"], errors="coerce")
+                pd.to_numeric(df_mant["#_reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
@@ -1212,7 +1212,7 @@ if file_ordenes and file_mantenimientos:
 
             df_final_ref = df_ordenes.merge(
                 mant_lookup,
-                on="Reporte",
+                on="reporte",
                 how="left"
             )
 
@@ -1446,8 +1446,8 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # NORMALIZE KEYS
             # =============================
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
-            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
-            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["#_reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["#_reporte"] = pd.to_numeric(df_mant["#_reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
             # BASE DATA
@@ -1478,7 +1478,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
 
             df_final_ostes = df_final_ostes.merge(
                 mant_lookup,
-                on="Reporte",
+                on="reporte",
                 how="left"
             )
 
@@ -1711,9 +1711,9 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["#_reporte"], errors="coerce").astype("Int64").astype(str)
             df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
-            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["#_reporte"] = pd.to_numeric(df_mant["#_reporte"], errors="coerce").astype("Int64").astype(str)
 
             # =============================
             # LOOKUPS
@@ -1748,11 +1748,11 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # MERGE
             # =============================
-            df_final = df_mant.merge(df_ostes_lookup, on="Reporte", how="left")
+            df_final = df_mant.merge(df_ostes_lookup, on="reporte", how="left")
 
             df_final = df_final.merge(
                 unidad_lookup,
-                on="Reporte",
+                on="reporte",
                 how="left",
                 suffixes=("", "_lookup")
             )
