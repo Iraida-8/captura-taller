@@ -1529,18 +1529,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["IVA"] = None
 
             # =============================
-            # MONEDA (FROM SAC USING REPORTE)
-            # =============================
-            moneda_lookup = (
-                df_ordenes[["Reporte", "Moneda"]]
-                .dropna()
-                .drop_duplicates(subset=["Reporte"])
-                .set_index("Reporte")["Moneda"]
-            )
-
-            df_final_ostes["Moneda"] = df_final_ostes["Reporte"].map(moneda_lookup)
-
-            # =============================
             # TIME METRICS
             # =============================
             fecha_cierre = pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
@@ -1557,6 +1545,13 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # FINANCIALS
             # =============================
             df_final_ostes["Subtotal"] = df_final_ostes["Total"]
+
+            df_final_ostes["Moneda"] = (
+                df_final_ostes["Moneda"]
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
 
             def calc_total(row):
                 moneda = str(row.get("Moneda", "")).upper()
