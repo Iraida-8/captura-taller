@@ -1190,6 +1190,11 @@ if file_ordenes and file_mantenimientos:
                 on="Reporte",
                 how="left"
             )
+            
+            # =============================
+            # FECHA COMPRA (FROM SAC)
+            # =============================
+            df_final_ref["Fecha Compra"] = df_final_ref["Fecha"]
 
             # =============================
             # FECHA ANALISIS (FORCED = TODAY)
