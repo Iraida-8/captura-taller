@@ -1185,7 +1185,7 @@ if file_ordenes and file_mantenimientos:
                 .astype(str)
             )
 
-            df_mant["Reporte"] = (
+            df_mant["reporte"] = (
                 pd.to_numeric(df_mant["#_reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
@@ -1203,7 +1203,7 @@ if file_ordenes and file_mantenimientos:
             # JOIN MANTENIMIENTOS
             # =============================
             mant_lookup = df_mant[[
-                "Reporte",
+                "reporte",
                 "Tipo Unidad",
                 "Descripcion",
                 "Razon Servicio",
