@@ -1192,12 +1192,10 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
-            # FECHA ANALISIS
+            # FECHA ANALISIS (FORCED = TODAY)
             # =============================
-            df_final_ref["Fecha Analisis"] = pd.to_datetime(
-                df_final_ref["Fecha Liberada"],
-                errors="coerce"
-            )
+            today_str = datetime.today().strftime("%d/%m/%y")
+            df_final_ref["Fecha Analisis"] = today_str
 
             # =============================
             # TC MERGE
@@ -1318,7 +1316,7 @@ if file_ordenes and file_mantenimientos:
             })
 
             df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y")
-            df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.strftime("%d/%m/%y")
+            df_final_ref["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
             safe_cols = ["PU USD", "Total USD", "Total Correccion"]
 
