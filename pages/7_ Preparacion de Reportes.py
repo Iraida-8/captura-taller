@@ -1192,14 +1192,17 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
+            # FECHA ANALISIS
+            # =============================
+            df_final_ref["Fecha Analisis"] = pd.to_datetime(
+                df_final_ref["Fecha Liberada"],
+                errors="coerce"
+            )
+
+            # =============================
             # TC MERGE
             # =============================
             df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
-
-            # =============================
-            # FECHA ANALISIS
-            # =============================
-            df_final_ref["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
             df_final_ref["Año"] = df_final_ref["Año"].astype(int)
             df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
@@ -1268,7 +1271,6 @@ if file_ordenes and file_mantenimientos:
                 if col not in df_final_ref.columns:
                     df_final_ref[col] = None
 
-            df_final_ref["Fecha Compra"] = df_final_ref["Fecha"]
             df_final_ref = df_final_ref.reindex(columns=final_cols_ref)
 
             # =============================
@@ -1315,7 +1317,7 @@ if file_ordenes and file_mantenimientos:
                 9: "September", 10: "October", 11: "November", 12: "December"
             })
 
-            df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha"], errors="coerce").dt.strftime("%d/%m/%y")
+            df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y")
             df_final_ref["Fecha Analisis"] = pd.to_datetime(df_final_ref["Fecha Analisis"], errors="coerce").dt.strftime("%d/%m/%y")
 
             safe_cols = ["PU USD", "Total USD", "Total Correccion"]
