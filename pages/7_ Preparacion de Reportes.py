@@ -1179,9 +1179,8 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # NORMALIZE KEYS
             # =============================
-            st.write("Columnas detectadas:", df_ordenes.columns.tolist())
             df_ordenes["Reporte"] = (
-                pd.to_numeric(df_ordenes["Reporte"], errors="coerce")
+                pd.to_numeric(df_ordenes["reporte"], errors="coerce")
                 .astype("Int64")
                 .astype(str)
             )
