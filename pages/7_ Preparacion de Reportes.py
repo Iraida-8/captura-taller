@@ -1245,11 +1245,22 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
-            # USD CALC (NEW LOGIC)
+            # USD CALC
             # =============================
 
-            df_final_ref["PU USD"] = df_final_ref["PU"] / df_final_ref["TC"]
-            df_final_ref["Total USD"] = df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
+            moneda_upper = df_final_ref["Moneda"].astype(str).str.upper()
+
+            df_final_ref["PU USD"] = np.where(
+                moneda_upper == "USD",
+                df_final_ref["PU"] * 1,
+                df_final_ref["PU"] / df_final_ref["TC"]
+            )
+
+            df_final_ref["Total USD"] = np.where(
+                moneda_upper == "USD",
+                df_final_ref["Precio Sin IVA"] * 1,
+                df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
+            )
 
 
             # =============================
