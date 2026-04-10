@@ -100,65 +100,103 @@ clock_placeholder.caption(
 st.divider()
 
 # -------------------------------
-# Navigation buttons
+# Navigation (SECTIONED)
 # -------------------------------
-st.subheader("Módulos")
 
-col1, col2, col3 = st.columns(3)
+def has_access(keys):
+    return any(k in access for k in keys)
 
-# 1 Consultar Reparación
-with col1:
-    if "consultar_reparacion" in access:
-        if st.button("🔍  Consultar Reparación", use_container_width=True):
-            st.switch_page("pages/1_ Consultar Reparacion.py")
 
-# 2 Pase a Taller
-with col2:
-    if "pase_taller" in access:
-        if st.button("🏭  Pase a Taller", use_container_width=True):
-            st.switch_page("pages/3_ Pase a Taller.py")
+# =============================
+# 1. GESTION DE ORDENES DE TALLER
+# =============================
+section_ordenes = ["pase_taller", "autorizacion"]
 
-# 3 Autorización
-with col3:
-    if "autorizacion" in access:
-        if st.button("✅  Autorización", use_container_width=True):
-            st.switch_page("pages/4_ Autorizacion.py")
+if has_access(section_ordenes):
+    st.subheader("🏭 Gestión de Órdenes de Taller")
 
-col4, col5, col6 = st.columns(3)
+    col1, col2 = st.columns(2)
 
-# 4 Reporte iFuel
-with col4:
-    if "ifuel" in access:
-        if st.button("⛽  Reporte iFuel", use_container_width=True):
-            st.switch_page("pages/5_ Reporte iFuel.py")
+    with col1:
+        if "pase_taller" in access:
+            if st.button("🏭  Pase a Taller", use_container_width=True):
+                st.switch_page("pages/3_ Pase a Taller.py")
 
-# 5 Lector PDF
-with col5:
-    if "lector_pdf" in access:
-        if st.button("📄  Lector PDF", use_container_width=True):
-            st.switch_page("pages/2_ Lector PDF.py")
+    with col2:
+        if "autorizacion" in access:
+            if st.button("✅  Autorización", use_container_width=True):
+                st.switch_page("pages/4_ Autorizacion.py")
 
-# 6 Consulta Reportes
-with col6:
-    if "consulta_reportes" in access:
-        if st.button("📊  Consulta Reportes", use_container_width=True):
-            st.switch_page("pages/6_ Consulta Reportes.py")
+    st.divider()
 
-col7, col8, col9 = st.columns(3)
 
-# 7 Preparación de Reportes
-with col7:
-    if "prepara_reportes" in access:
-        if st.button("�  Preparación de Reportes", use_container_width=True):
-            st.switch_page("pages/7_ Preparacion de Reportes.py")
+# =============================
+# 2. CONSULTAS
+# =============================
+section_consultas = ["consultar_reparacion", "consulta_reportes"]
 
-col10, col11, col12 = st.columns(3)
+if has_access(section_consultas):
+    st.subheader("🔍 Consultas")
 
-# 8 Gestión de Unidades
-with col10:
-    if "gestion_unidades" in access:
-        if st.button("🚚  Gestión de Unidades", use_container_width=True):
-            st.switch_page("pages/8_ Gestion de Unidades.py")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if "consultar_reparacion" in access:
+            if st.button("🔍  Consultar Reparación", use_container_width=True):
+                st.switch_page("pages/1_ Consultar Reparacion.py")
+
+    with col2:
+        if "consulta_reportes" in access:
+            if st.button("📊  Consulta Reportes", use_container_width=True):
+                st.switch_page("pages/6_ Consulta Reportes.py")
+
+    st.divider()
+
+
+# =============================
+# 3. EXTRAS
+# =============================
+section_extras = ["ifuel", "lector_pdf"]
+
+if has_access(section_extras):
+    st.subheader("⚙️ Extras")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if "ifuel" in access:
+            if st.button("⛽  Reporte iFuel", use_container_width=True):
+                st.switch_page("pages/5_ Reporte iFuel.py")
+
+    with col2:
+        if "lector_pdf" in access:
+            if st.button("📄  Lector PDF", use_container_width=True):
+                st.switch_page("pages/2_ Lector PDF.py")
+
+    st.divider()
+
+
+# =============================
+# 4. AUDIT
+# =============================
+section_audit = ["consulta_reportes", "gestion_unidades"]
+
+if has_access(section_audit):
+    st.subheader("🧾 Audit")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if "consulta_reportes" in access:
+            if st.button("📊  Consulta Reportes", use_container_width=True):
+                st.switch_page("pages/6_ Consulta Reportes.py")
+
+    with col2:
+        if "gestion_unidades" in access:
+            if st.button("🚚  Gestión de Unidades", use_container_width=True):
+                st.switch_page("pages/8_ Gestion de Unidades.py")
+
+    st.divider()
 
 
 # -------------------------------
