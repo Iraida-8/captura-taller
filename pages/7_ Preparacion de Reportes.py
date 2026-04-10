@@ -1840,12 +1840,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["Año"] = df_final["fecha_ct"].dt.year
             df_final["Mes"] = df_final["fecha_ct"].dt.month
 
-            # KEEP THIS AS YOU HAD IT
-            df_final["Fecha Analisis"] = pd.to_datetime(
-                df_final["Fecha Liberada"],
-                errors="coerce",
-                dayfirst=True
-            )
+            # Date
+            df_final["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
             # =============================
             # FINANCIALS
