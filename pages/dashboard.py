@@ -88,7 +88,20 @@ access = user.get("access", [])
 # Header
 # -------------------------------
 st.title("📊 Dashboard")
-st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
+# -------------------------------
+# Header (WITH LOGOUT TOP RIGHT)
+# -------------------------------
+col_title, col_logout = st.columns([6, 1])
+
+with col_title:
+    st.title("📊 Dashboard")
+    st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
+
+with col_logout:
+    if st.button("Cerrar sesión", type="secondary", key="btn_logout_top"):
+        st.session_state.logged_in = False
+        st.session_state.user = None
+        st.switch_page("Home.py")
 
 # live date / time
 clock_placeholder = st.empty()
@@ -197,14 +210,3 @@ if has_access(section_audit):
                 st.switch_page("pages/8_ Gestion de Unidades.py")
 
     st.divider()
-
-
-# -------------------------------
-# Logout
-# -------------------------------
-st.divider()
-
-if st.button("Cerrar sesión", type="secondary"):
-    st.session_state.logged_in = False
-    st.session_state.user = None
-    st.switch_page("Home.py")
