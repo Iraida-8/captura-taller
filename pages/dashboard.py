@@ -87,10 +87,6 @@ access = user.get("access", [])
 # -------------------------------
 # Header
 # -------------------------------
-st.title("📊 Dashboard")
-# -------------------------------
-# Header (WITH LOGOUT TOP RIGHT)
-# -------------------------------
 col_title, col_logout = st.columns([6, 1])
 
 with col_title:
