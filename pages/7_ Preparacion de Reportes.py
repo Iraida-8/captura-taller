@@ -1609,6 +1609,11 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 "Total Correccion"
             ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
 
+            df_final_ostes.loc[
+                moneda_upper == "USD",
+                "Subtotal"
+            ] = df_final_ostes["Total Correccion"]
+
             # =============================
             # FINAL COLUMNS
             # =============================
