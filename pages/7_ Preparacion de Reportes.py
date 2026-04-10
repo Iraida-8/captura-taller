@@ -1560,7 +1560,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # FINANCIALS
             # =============================
-            df_final_ostes["Subtotal"] = df_final_ostes["Total"]
+            df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
 
             df_final_ostes["Moneda"] = (
                 df_final_ostes["Moneda"]
@@ -1609,7 +1609,14 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 "Total Correccion"
             ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
 
-            
+            # Replace Subtotal ONLY for USD (final step)
+            df_final_ostes.loc[
+                moneda_upper == "USD",
+                "Subtotal"
+            ] = df_final_ostes.loc[
+                moneda_upper == "USD",
+                "Total Correccion"
+]
 
             # =============================
             # FINAL COLUMNS
