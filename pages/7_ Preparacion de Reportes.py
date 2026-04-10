@@ -1534,7 +1534,10 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     how="left"
                 )
 
-                df_final_ostes["IVA"] = df_final_ostes["iva_pct"]
+                df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
+                df_final_ostes["iva_pct"] = pd.to_numeric(df_final_ostes["iva_pct"], errors="coerce")
+
+                df_final_ostes["IVA"] = df_final_ostes["Subtotal"] * (df_final_ostes["iva_pct"] / 100)
 
                 df_final_ostes.drop(columns=["proveedor", "iva_pct"], inplace=True, errors="ignore")
 
