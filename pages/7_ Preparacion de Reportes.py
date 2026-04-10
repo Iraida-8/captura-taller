@@ -1571,7 +1571,6 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # FINANCIALS
             # =============================
-            df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
 
             df_final_ostes["Moneda"] = (
                 df_final_ostes["Moneda"]
@@ -1600,34 +1599,31 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 df_final_ostes["TC"] = 1
 
             # =============================
-            # FINANCIALS
+            # NEW FINANCIALS (FINAL LOGIC)
             # =============================
 
-            # Total oste = Subtotal + IVA (always)
-            df_final_ostes["Total oste"] = (
+            # Total oste = direct from uploaded Total
+            df_final_ostes["Total oste"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
+
+            # Moneda normalized
+            moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
+
+            # Subtotal = Total oste - IVA
+            df_final_ostes["Subtotal"] = df_final_ostes["Total oste"] - df_final_ostes["IVA"]
+
+            # If USD → multiply subtotal by TC
+            df_final_ostes.loc[
+                moneda_upper == "USD",
+                "Subtotal"
+            ] = df_final_ostes["Subtotal"] * df_final_ostes["TC"]
+
+            # Total Correccion = Subtotal + IVA
+            df_final_ostes["Total Correccion"] = (
                 df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
             )
 
             # Normalize Moneda once
             moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
-
-            # Default = MXP ( *1 )
-            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"] * 1
-
-            # USD override
-            df_final_ostes.loc[
-                moneda_upper == "USD",
-                "Total Correccion"
-            ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
-
-            # Replace Subtotal ONLY for USD (final step)
-            df_final_ostes.loc[
-                moneda_upper == "USD",
-                "Subtotal"
-            ] = df_final_ostes.loc[
-                moneda_upper == "USD",
-                "Total Correccion"
-]
 
             # =============================
             # FINAL COLUMNS
