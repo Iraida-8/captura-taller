@@ -100,7 +100,7 @@ clock_placeholder.caption(
 st.divider()
 
 # -------------------------------
-# Navigation (SECTIONED - FIXED)
+# Navigation
 # -------------------------------
 
 def has_access(keys):
@@ -113,7 +113,7 @@ def has_access(keys):
 section_ordenes = ["pase_taller", "autorizacion"]
 
 if has_access(section_ordenes):
-    st.subheader("🏭 Gestión de Órdenes de Taller")
+    st.subheader("🏭 Gestión y Captura de Órdenes de Taller")
 
     col1, col2 = st.columns(2)
 
@@ -136,7 +136,7 @@ if has_access(section_ordenes):
 section_consultas = ["consultar_reparacion", "consulta_reportes"]
 
 if has_access(section_consultas):
-    st.subheader("🔍 Consultas")
+    st.subheader("🔍 Consultas de Reparación y Reportes")
 
     col1, col2 = st.columns(2)
 
