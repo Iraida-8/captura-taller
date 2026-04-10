@@ -152,11 +152,14 @@ with col7:
         if st.button("�  Preparación de Reportes", use_container_width=True):
             st.switch_page("pages/7_ Preparacion de Reportes.py")
 
-# 8 Preparación de Reportes
-with col7:
-    if "gestiona_unidades" in access:
-        if st.button("�  Gestion de Unidades", use_container_width=True):
+col10, col11, col12 = st.columns(3)
+
+# 8 Gestión de Unidades
+with col10:
+    if "gestion_unidades" in access:
+        if st.button("🚚  Gestión de Unidades", use_container_width=True):
             st.switch_page("pages/8_ Gestion de Unidades.py")
+
 
 # -------------------------------
 # Logout
