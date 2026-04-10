@@ -6,6 +6,7 @@ from supabase import create_client
 from decimal import Decimal
 import unicodedata
 import io
+import numpy as np
 
 # =================================
 # SUPABASE UPLOAD CONFIG
