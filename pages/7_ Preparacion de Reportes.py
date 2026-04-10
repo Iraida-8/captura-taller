@@ -1225,15 +1225,20 @@ if file_ordenes and file_mantenimientos:
                 df_final_ref["TC"] = 1
 
             # =============================
-            # FINANCIALS
+            # FINANCIALS (FIXED LOGIC)
             # =============================
-            # Precio Sin IVA = PrecioParte (no back-calculation)
-            df_final_ref["Precio Sin IVA"] = df_final_ref["PrecioParte"]
+
+            # Precio Sin IVA based on currency
+            df_final_ref["Precio Sin IVA"] = np.where(
+                df_final_ref["Moneda"] == "USD",
+                df_final_ref["PrecioParte"] * df_final_ref["TC"],
+                df_final_ref["PrecioParte"]
+            )
 
             # IVA stays from SAC
             df_final_ref["IVA"] = df_final_ref["IvaParte"]
 
-            # Total = base + IVA
+            # Total Correccion = Precio Sin IVA + IVA
             df_final_ref["Total Correccion"] = (
                 df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
             )
