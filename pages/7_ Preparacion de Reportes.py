@@ -1585,23 +1585,26 @@ if file_ostes and file_mantenimientos and file_ordenes:
             else:
                 df_final_ostes["TC"] = 1
 
-            # Default = USD case
+            # =============================
+            # FINANCIALS
+            # =============================
+
+            # Total oste = Subtotal + IVA (always)
             df_final_ostes["Total oste"] = (
-                df_final_ostes["Subtotal"] / df_final_ostes["TC"]
+                df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
             )
 
-            # Override for MXP
-            df_final_ostes.loc[
-                df_final_ostes["Moneda"].astype(str).str.upper() == "MXP",
-                "Total oste"
-            ] = df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
+            # Normalize Moneda once
+            moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
 
-            df_final_ostes["Total Correccion"] = df_final_ostes["Subtotal"]
+            # Default = MXP ( *1 )
+            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"] * 1
 
+            # USD override
             df_final_ostes.loc[
-                df_final_ostes["Moneda"].astype(str).str.upper() == "MXP",
+                moneda_upper == "USD",
                 "Total Correccion"
-            ] = df_final_ostes["Total oste"]
+            ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
 
             # =============================
             # FINAL COLUMNS
