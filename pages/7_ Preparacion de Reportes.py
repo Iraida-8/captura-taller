@@ -1646,7 +1646,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             df_final_ostes = df_final_ostes[final_cols_ostes]
 
             # =============================
-            # VEHICLE ENRICHMENT (FORCE FROM SUPABASE)
+            # VEHICLE ENRICHMENT (OSTES FIXED)
             # =============================
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
@@ -1656,27 +1656,27 @@ if file_ostes and file_mantenimientos and file_ordenes:
 
                 # Normalize keys
                 units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
-                df_final["Unidad"] = df_final["Unidad"].astype(str).str.strip()
+                df_final_ostes["Unidad"] = df_final_ostes["Unidad"].astype(str).str.strip()
 
                 # Remove duplicates
                 units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
 
                 # Merge
-                df_final = df_final.merge(
+                df_final_ostes = df_final_ostes.merge(
                     units_lookup,
                     left_on="Unidad",
                     right_on="unidad",
                     how="left"
                 )
 
-                # FORCE overwrite (this is the important part)
-                df_final["Flotilla"] = df_final["marca"]
-                df_final["Modelo"] = df_final["modelo"]
-                df_final["Tipo Unidad"] = df_final["tipo_unidad"]
+                # FORCE overwrite
+                df_final_ostes["Flotilla"] = df_final_ostes["marca"]
+                df_final_ostes["Modelo"] = df_final_ostes["modelo"]
+                df_final_ostes["Tipo De Unidad"] = df_final_ostes["tipo_unidad"]
 
                 # Cleanup
-                df_final = df_final.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad"] if c in df_final.columns]
+                df_final_ostes = df_final_ostes.drop(
+                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad"] if c in df_final_ostes.columns]
                 )
 
             # =============================
