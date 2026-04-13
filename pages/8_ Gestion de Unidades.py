@@ -201,7 +201,7 @@ if st.session_state.mode == "gestionar":
         empresa_options,
         index=0,
         key="empresa_select",
-        disabled=st.session_state.is_saving
+        disabled=False
     )
 
     if empresa_nombre == "Selecciona empresa":
@@ -222,7 +222,7 @@ if st.session_state.mode == "gestionar":
         unidad_options,
         index=0,
         key="unidad_select",
-        disabled=st.session_state.is_saving
+        disabled=False
     )
 
     if unidad_selected == "Selecciona unidad":
