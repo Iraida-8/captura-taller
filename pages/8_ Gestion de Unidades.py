@@ -43,6 +43,11 @@ st.markdown(
 require_login()
 require_access("gestion_unidades")
 
+# FORCE RESET EVERY TIME PAGE LOADS
+if st.session_state.get("_reset_gestion_page", True):
+    st.session_state.mode = None
+    st.session_state["_reset_gestion_page"] = False
+
 # =================================
 # Supabase Client
 # =================================
@@ -59,6 +64,8 @@ supabase = get_supabase()
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
+    st.session_state.mode = None
+    st.session_state["_reset_gestion_page"] = True
     st.switch_page("pages/dashboard.py")
 
 st.divider()
@@ -76,7 +83,6 @@ if st.session_state.get("success_modal"):
 
         if st.button("Aceptar", type="primary"):
             st.session_state.success_modal = None
-            st.rerun()
 
     success_modal()
 
