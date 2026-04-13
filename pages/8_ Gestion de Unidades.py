@@ -19,6 +19,12 @@ st.markdown(
     """
     <style>
     [data-testid="stSidebar"] { display: none; }
+
+    div.stButton > button {
+        height: 120px;
+        font-size: 20px;
+        font-weight: 600;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -43,7 +49,7 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
-# Load Data BEFORE buttons
+# Load Data
 # =================================
 @st.cache_data(ttl=60)
 def load_vehicle_units():
@@ -78,9 +84,9 @@ if "last_saved_unit" not in st.session_state:
 st.title("Gestionador de Unidades")
 
 # =================================
-# Buttons (FULL WIDTH)
+# Buttons (ONLY THING VISIBLE INITIALLY)
 # =================================
-col1, col2 = st.columns([1, 1], gap="large")
+col1, col2 = st.columns(2)
 
 with col1:
     if st.button("Gestionar Unidades Existentes", use_container_width=True):
@@ -90,16 +96,20 @@ with col2:
     if st.button("Crear Nuevas Unidades", use_container_width=True):
         st.session_state.mode = "crear"
 
+# STOP HERE if nothing selected
+if st.session_state.mode is None:
+    st.stop()
+
 # =================================
-# GESTIONAR EXISTENTES
+# GESTIONAR
 # =================================
 if st.session_state.mode == "gestionar":
 
     st.subheader("Gestionar Unidades")
 
-    # =================================
-    # POST-SAVE HANDLING
-    # =================================
+    # =============================
+    # POST SAVE
+    # =============================
     if st.session_state.just_saved:
 
         with st.spinner("Actualizando datos..."):
@@ -113,7 +123,7 @@ if st.session_state.mode == "gestionar":
         st.session_state.pop("empresa_select", None)
         st.session_state.pop("unidad_select", None)
 
-        st.success(
+        st.toast(
             f"Datos actualizados con éxito para la unidad {st.session_state.last_saved_unit}"
         )
 
@@ -122,12 +132,12 @@ if st.session_state.mode == "gestionar":
         st.rerun()
 
     if df_units.empty:
-        st.warning("No hay datos en la tabla vehicle_units.")
+        st.warning("No hay datos.")
         st.stop()
 
-    # =================================
+    # =============================
     # Empresa mapping
-    # =================================
+    # =============================
     empresa_map = {
         "SET": "Set Freight International",
         "LIN": "Lincoln Freight",
@@ -138,9 +148,9 @@ if st.session_state.mode == "gestionar":
 
     reverse_empresa_map = {v: k for k, v in empresa_map.items()}
 
-    # =================================
+    # =============================
     # Empresa selector
-    # =================================
+    # =============================
     empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
 
     empresa_nombre = st.selectbox(
@@ -156,20 +166,13 @@ if st.session_state.mode == "gestionar":
 
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
-    # =================================
-    # Filter unidades
-    # =================================
+    # =============================
+    # Unidad selector
+    # =============================
     df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
-    if df_filtered.empty:
-        st.warning("No hay unidades para esta empresa.")
-        st.stop()
-
-    # =================================
-    # Unidad selector
-    # =================================
-    unidades_list = sorted(df_filtered["unidad"].dropna().unique().tolist())
-    unidad_options = ["Selecciona unidad"] + unidades_list
+    unidades = sorted(df_filtered["unidad"].dropna().unique().tolist())
+    unidad_options = ["Selecciona unidad"] + unidades
 
     unidad_selected = st.selectbox(
         "Unidad",
@@ -186,10 +189,10 @@ if st.session_state.mode == "gestionar":
 
     st.divider()
 
-    # =================================
+    # =============================
     # FORM
-    # =================================
-    with st.form("form_editar_unidad"):
+    # =============================
+    with st.form("form"):
 
         col1, col2, col3 = st.columns(3)
 
@@ -204,11 +207,7 @@ if st.session_state.mode == "gestionar":
 
         with col2:
             vin = st.text_input("VIN", value=selected_row["vin"] or "")
-            tipo_unidad = st.selectbox(
-                "Tipo Unidad",
-                tipo_options,
-                index=tipo_index
-            )
+            tipo_unidad = st.selectbox("Tipo Unidad", tipo_options, index=tipo_index)
 
         with col3:
             sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
@@ -221,22 +220,19 @@ if st.session_state.mode == "gestionar":
             st.session_state.is_saving = True
             st.session_state.last_saved_unit = unidad_selected
 
-            update_data = {
-                "empresa": empresa_codigo,
-                "unidad": unidad_selected,
-                "marca": marca,
-                "modelo": modelo,
-                "vin": vin,
-                "tipo_unidad": tipo_unidad,
-                "sucursal": sucursal,
-                "estado": estado
-            }
-
             supabase.table("vehicle_units") \
-                .update(update_data) \
+                .update({
+                    "empresa": empresa_codigo,
+                    "unidad": unidad_selected,
+                    "marca": marca,
+                    "modelo": modelo,
+                    "vin": vin,
+                    "tipo_unidad": tipo_unidad,
+                    "sucursal": sucursal,
+                    "estado": estado
+                }) \
                 .eq("unidad", unidad_selected) \
                 .execute()
 
             st.session_state.just_saved = True
-
             st.rerun()
