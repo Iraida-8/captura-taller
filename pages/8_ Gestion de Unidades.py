@@ -81,49 +81,101 @@ with col2:
         st.session_state.mode = "crear"
 
 # =================================
-# GESTIONAR EXISTENTES
+# GESTIONAR EXISTENTES (FORM MODE)
 # =================================
 if st.session_state.mode == "gestionar":
 
-    st.subheader("Editar Unidades")
+    st.subheader("Gestionar Unidades")
 
     if df_units.empty:
         st.warning("No hay datos en la tabla vehicle_units.")
         st.stop()
 
-    editable_df = st.data_editor(
-        df_units,
-        use_container_width=True,
-        num_rows="dynamic",
-        key="editor_unidades"
+    # =============================
+    # Empresa mapping
+    # =============================
+    empresa_map = {
+        "SET": "Set Freight International",
+        "LIN": "Lincoln Freight",
+        "PIC": "Picus",
+        "IGT": "Igloo Transport",
+        "SLP": "Set Logis Plus"
+    }
+
+    reverse_empresa_map = {v: k for k, v in empresa_map.items()}
+
+    # =============================
+    # Select Empresa
+    # =============================
+    empresa_nombre = st.selectbox(
+        "Empresa",
+        list(empresa_map.values())
     )
 
-    # =================================
-    # Save Changes
-    # =================================
-    if st.button("Guardar Cambios"):
+    empresa_codigo = reverse_empresa_map[empresa_nombre]
 
-        updates = 0
+    # =============================
+    # Filter unidades by empresa
+    # =============================
+    df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
-        for i, row in editable_df.iterrows():
+    if df_filtered.empty:
+        st.warning("No hay unidades para esta empresa.")
+        st.stop()
 
-            original = df_units.iloc[i]
+    # =============================
+    # Select Unidad (searchable)
+    # =============================
+    unidad_selected = st.selectbox(
+        "Unidad",
+        sorted(df_filtered["unidad"].dropna().unique().tolist())
+    )
 
-            if not row.equals(original):
+    selected_row = df_filtered[df_filtered["unidad"] == unidad_selected].iloc[0]
 
-                update_data = row.to_dict()
+    st.divider()
 
-                # IMPORTANT: you need a unique identifier
-                # assuming "unidad" is unique
-                supabase.table("vehicle_units") \
-                    .update(update_data) \
-                    .eq("unidad", row["unidad"]) \
-                    .execute()
+    # =============================
+    # FORM
+    # =============================
+    with st.form("form_editar_unidad"):
 
-                updates += 1
+        col1, col2, col3 = st.columns(3)
 
-        st.success(f"{updates} registros actualizados correctamente.")
+        with col1:
+            marca = st.text_input("Marca", value=selected_row["marca"] or "")
+            modelo = st.text_input("Modelo", value=selected_row["modelo"] or "")
 
-        # refresh cache
-        st.cache_data.clear()
-        st.rerun()
+        with col2:
+            vin = st.text_input("VIN", value=selected_row["vin"] or "")
+            tipo_unidad = st.text_input("Tipo Unidad", value=selected_row["tipo_unidad"] or "")
+
+        with col3:
+            sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
+            estado = st.text_input("Estado", value=selected_row["estado"] or "")
+
+        submitted = st.form_submit_button("Guardar Cambios")
+
+        if submitted:
+
+            update_data = {
+                "empresa": empresa_codigo,
+                "unidad": unidad_selected,
+                "marca": marca,
+                "modelo": modelo,
+                "vin": vin,
+                "tipo_unidad": tipo_unidad,
+                "sucursal": sucursal,
+                "estado": estado
+            }
+
+            supabase.table("vehicle_units") \
+                .update(update_data) \
+                .eq("unidad", unidad_selected) \
+                .execute()
+
+            st.success("Unidad actualizada correctamente.")
+
+            # Refresh data
+            st.cache_data.clear()
+            st.rerun()
