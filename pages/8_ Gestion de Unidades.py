@@ -86,7 +86,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Consulta, Preparación y Generación de Reportes")
+st.title("📊 Consulta, Carga y Edición de Unidades")
 
 # =================================
 # Buttons (ONLY THING VISIBLE INITIALLY)
