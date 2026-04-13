@@ -32,6 +32,10 @@ st.markdown(
         font-size: 20px;
         font-weight: 600;
     }
+    button[kind="secondary"]:has(span:contains("Eliminar")) {
+        background-color: #ff4b4b !important;
+        color: white !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -95,6 +99,47 @@ if st.session_state.get("success_modal"):
 
     success_modal()
 
+if st.session_state.get("delete_modal"):
+
+    unidad = st.session_state.delete_modal
+
+    @st.dialog("Confirmar eliminación")
+    def delete_modal():
+
+        st.markdown(f"""
+        ¿Estás seguro que quieres eliminar la unidad **{unidad}**?
+
+        **Esta acción es irreversible.**
+        """)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("Cancelar"):
+                st.session_state.delete_modal = None
+
+        with col2:
+            if st.button("Eliminar", type="primary"):
+
+                supabase.table("vehicle_units") \
+                    .delete() \
+                    .eq("unidad", unidad) \
+                    .execute()
+
+                st.cache_data.clear()
+
+                st.session_state.delete_modal = None
+
+                # RESET PAGE
+                st.session_state.mode = None
+                st.session_state["_reset_gestion_page"] = True
+                st.session_state.pop("empresa_select", None)
+                st.session_state.pop("unidad_select", None)
+
+                st.rerun()
+
+    delete_modal()
+
 # =================================
 # Load Data
 # =================================
@@ -134,6 +179,8 @@ def load_vehicle_units():
 # =================================
 
 st.session_state.setdefault("success_modal", None)
+
+st.session_state.setdefault("delete_modal", None)
 
 if "mode" not in st.session_state:
     st.session_state.mode = None
@@ -265,7 +312,13 @@ if st.session_state.mode == "gestionar":
             sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
             estado = st.text_input("Estado", value=selected_row["estado"] or "")
 
-        submitted = st.form_submit_button("Guardar Cambios")
+        col_btn1, col_btn2 = st.columns(2)
+
+        with col_btn1:
+            submitted = st.form_submit_button("Guardar Cambios")
+
+        with col_btn2:
+            delete_clicked = st.form_submit_button("Eliminar")
 
         if submitted:
 
@@ -288,6 +341,10 @@ if st.session_state.mode == "gestionar":
             st.cache_data.clear()
 
             st.session_state.success_modal = unidad_selected
+            st.rerun()
+        
+        if delete_clicked:
+            st.session_state.delete_modal = unidad_selected
             st.rerun()
 
 # =================================
