@@ -883,13 +883,6 @@ with st.expander("📦 Resumen por Orden", expanded=False):
 
     df_s = df_s.copy()
 
-    # remove log rows
-    if "Parte" in df_s.columns:
-        df_s = df_s[
-            df_s["Parte"].notna() &
-            (df_s["Parte"].astype(str).str.strip() != "")
-        ]
-
     if df_s.empty:
         st.info("Sin servicios.")
     else:
@@ -897,22 +890,37 @@ with st.expander("📦 Resumen por Orden", expanded=False):
         # ===============================
         # AGGREGATE SERVICES
         # ===============================
+        def join_unique(series):
+            seen = set()
+            result = []
+            for v in series:
+                if pd.notna(v):
+                    s = str(v).strip()
+                    if s and s not in seen:
+                        seen.add(s)
+                        result.append(s)
+            return ", ".join(result)
+
         servicios_agg = (
             df_s
             .groupby("Folio", as_index=False)
             .agg({
-                "Parte": lambda x: ", ".join(
-                    sorted(set(str(v) for v in x if pd.notna(v)))
-                ),
+                # ===== TEXT FIELDS =====
+                "Parte": join_unique,
+                "Tipo De Parte": join_unique,
+                "Posicion": join_unique,
+
+                # ===== NUMERIC =====
+                "Cantidad": join_unique,
+
+                # ===== DATES (take latest available) =====
+                "Fecha Mod": "max",
                 "Fecha Diagnostico": "max",
                 "Fecha No Diagnosticado": "max",
                 "Fecha En Reparacion": "max",
                 "Fecha Espera Refaccion": "max",
                 "Fecha Resuelto": "max",
                 "Fecha Cancelado": "max",
-            })
-            .rename(columns={
-                "Parte": "Partes"
             })
         )
 
@@ -933,39 +941,32 @@ with st.expander("📦 Resumen por Orden", expanded=False):
         else:
             df_resumen["No. de Factura"] = None
 
-        df_resumen["Partes"] = df_resumen["Partes"].fillna("")
-
         # ===============================
         # COLUMN ORDER
         # ===============================
         columnas = [
+            # ===== COMPANY =====
             "Fecha de Captura",
             "No. de Folio",
             "Fecha de Reporte",
-            "Tipo de Proveedor",
+            "Empresa",
             "Estado",
             "Capturo",
             "No. de Factura",
             "Oste",
             "No. de Reporte",
-            "Empresa",
-            "Tipo de Reporte",
             "Tipo de Unidad",
-            "Operador",
             "No. de Unidad",
             "Marca",
             "Modelo",
-            "Sucursal",
-            "Tipo de Caja",
-            "No. de Unidad Externo",
-            "Nombre Linea Externa",
-            "Cobro",
-            "Responsable",
             "Descripcion Problema",
-            "Multa",
-            "No. de Inspeccion",
-            "Reparacion Multa",
-            "Partes",
+
+            # ===== SERVICES (AGGREGATED) =====
+            "Parte",
+            "Tipo De Parte",
+            "Posicion",
+            "Cantidad",
+            "Fecha Mod",
             "Fecha Diagnostico",
             "Fecha No Diagnosticado",
             "Fecha En Reparacion",
