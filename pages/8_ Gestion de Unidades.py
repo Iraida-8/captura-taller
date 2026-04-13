@@ -100,8 +100,29 @@ if st.session_state.get("success_modal"):
 # =================================
 @st.cache_data(ttl=60)
 def load_vehicle_units():
-    response = supabase.table("vehicle_units").select("*").execute()
-    df = pd.DataFrame(response.data)
+
+    page_size = 1000
+    start = 0
+    all_rows = []
+
+    while True:
+        response = (
+            supabase
+            .table("vehicle_units")
+            .select("*")
+            .range(start, start + page_size - 1)
+            .execute()
+        )
+
+        data = response.data
+
+        if not data:
+            break
+
+        all_rows.extend(data)
+        start += page_size
+
+    df = pd.DataFrame(all_rows)
 
     if not df.empty:
         df.columns = [col.lower() for col in df.columns]
@@ -267,4 +288,109 @@ if st.session_state.mode == "gestionar":
             st.cache_data.clear()
 
             st.session_state.success_modal = unidad_selected
+            st.rerun()
+
+# =================================
+# CREAR
+# =================================
+if st.session_state.mode == "crear":
+
+    st.subheader("Crear Nueva Unidad")
+
+    if df_units.empty:
+        st.warning("No hay datos base.")
+        st.stop()
+
+    # =============================
+    # Empresa mapping (same)
+    # =============================
+    empresa_map = {
+        "SET": "Set Freight International",
+        "LIN": "Lincoln Freight",
+        "PIC": "Picus",
+        "IGT": "Igloo Transport",
+        "SLP": "Set Logis Plus"
+    }
+
+    reverse_empresa_map = {v: k for k, v in empresa_map.items()}
+
+    empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
+
+    empresa_nombre = st.selectbox(
+        "Empresa",
+        empresa_options,
+        index=0,
+        key="empresa_crear"
+    )
+
+    if empresa_nombre == "Selecciona empresa":
+        st.stop()
+
+    empresa_codigo = reverse_empresa_map[empresa_nombre]
+
+    st.divider()
+
+    # =============================
+    # FORM (EMPTY)
+    # =============================
+    with st.form("crear_form"):
+
+        col1, col2, col3 = st.columns(3)
+
+        tipo_options = ["Selecciona tipo de unidad", "CAJA SECA", "CAJA REFRIGERADA", "TRACTOR"]
+
+        with col1:
+            unidad = st.text_input("Unidad")
+            marca = st.text_input("Marca")
+            modelo = st.text_input("Modelo")
+
+        with col2:
+            vin = st.text_input("VIN")
+            tipo_unidad = st.selectbox("Tipo Unidad", tipo_options, index=0)
+
+        with col3:
+            sucursal = st.text_input("Sucursal")
+            estado = st.text_input("Estado")
+
+        submitted = st.form_submit_button("Crear Unidad")
+
+        if submitted:
+
+            if not unidad.strip():
+                st.error("Unidad es obligatoria")
+                st.stop()
+
+            if tipo_unidad == "Selecciona tipo de unidad":
+                st.error("Selecciona tipo de unidad")
+                st.stop()
+
+            # =============================
+            # CHECK IF EXISTS
+            # =============================
+            exists = df_units[
+                (df_units["empresa"] == empresa_codigo) &
+                (df_units["unidad"].astype(str) == unidad.strip())
+            ]
+
+            if not exists.empty:
+                st.error("La unidad ya existe para esta empresa")
+                st.stop()
+
+            # =============================
+            # INSERT
+            # =============================
+            supabase.table("vehicle_units").insert({
+                "empresa": empresa_codigo,
+                "unidad": unidad.strip(),
+                "marca": marca,
+                "modelo": modelo,
+                "vin": vin,
+                "tipo_unidad": tipo_unidad,
+                "sucursal": sucursal,
+                "estado": estado
+            }).execute()
+
+            st.cache_data.clear()
+
+            st.session_state.success_modal = unidad.strip()
             st.rerun()
