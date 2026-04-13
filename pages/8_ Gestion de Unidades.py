@@ -49,6 +49,17 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+st.title("📊 Consulta, Carga y Edición de Unidades")
+
+
+# =================================
 # Load Data
 # =================================
 @st.cache_data(ttl=60)
@@ -79,18 +90,10 @@ if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
 # =================================
-# Top navigation
-# =================================
-if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
-
-st.divider()
-
-st.title("📊 Consulta, Carga y Edición de Unidades")
-
-# =================================
 # Buttons (ONLY THING VISIBLE INITIALLY)
 # =================================
+st.divider()
+
 col1, col2 = st.columns(2)
 
 with col1:
