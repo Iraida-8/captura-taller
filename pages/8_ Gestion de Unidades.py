@@ -83,6 +83,14 @@ if st.session_state.get("success_modal"):
 
         if st.button("Aceptar", type="primary"):
             st.session_state.success_modal = None
+
+            # RESET EVERYTHING
+            st.session_state.mode = None
+            st.session_state["_reset_gestion_page"] = True
+
+            st.session_state.pop("empresa_select", None)
+            st.session_state.pop("unidad_select", None)
+
             st.rerun()
 
     success_modal()
