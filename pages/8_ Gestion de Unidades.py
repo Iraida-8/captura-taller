@@ -65,10 +65,20 @@ st.divider()
 
 st.title("📊 Consulta, Carga y Edición de Unidades")
 
-if "show_toast" in st.session_state:
-    st.toast(f"Datos actualizados con éxito para la unidad {st.session_state.show_toast}")
-    del st.session_state.show_toast
+if st.session_state.get("success_modal"):
 
+    unidad = st.session_state.success_modal
+
+    @st.dialog("Actualización exitosa")
+    def success_modal():
+
+        st.markdown(f"Unidad **{unidad}** actualizada correctamente.")
+
+        if st.button("Aceptar", type="primary"):
+            st.session_state.success_modal = None
+            st.rerun()
+
+    success_modal()
 
 # =================================
 # Load Data
@@ -86,6 +96,9 @@ def load_vehicle_units():
 # =================================
 # Session state
 # =================================
+
+st.session_state.setdefault("success_modal", None)
+
 if "mode" not in st.session_state:
     st.session_state.mode = None
 
@@ -258,5 +271,5 @@ if st.session_state.mode == "gestionar":
                 .eq("unidad", unidad_selected) \
                 .execute()
 
-            st.session_state.just_saved = True
+            st.session_state.success_modal = unidad_selected
             st.rerun()
