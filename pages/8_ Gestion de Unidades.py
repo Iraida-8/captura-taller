@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar
+# Hide sidebar + style buttons
 # =================================
 st.markdown(
     """
@@ -21,8 +21,8 @@ st.markdown(
     [data-testid="stSidebar"] { display: none; }
 
     div.stButton > button {
-        height: 120px;
-        font-size: 20px;
+        height: 140px;
+        font-size: 22px;
         font-weight: 600;
     }
     </style>
@@ -79,17 +79,7 @@ if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
 # =================================
-# Top navigation
-# =================================
-if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
-
-st.divider()
-
-st.title("📊 Consulta, Carga y Edición de Unidades")
-
-# =================================
-# Buttons (ONLY THING VISIBLE INITIALLY)
+# MAIN BUTTONS (ONLY THING VISIBLE)
 # =================================
 col1, col2 = st.columns(2)
 
@@ -101,20 +91,25 @@ with col2:
     if st.button("Crear Nuevas Unidades", use_container_width=True):
         st.session_state.mode = "crear"
 
-# STOP HERE if nothing selected
+# HARD STOP → NOTHING ELSE RENDERS
 if st.session_state.mode is None:
     st.stop()
+
+# =================================
+# NOW UI STARTS (AFTER SELECTION)
+# =================================
+st.title("📊 Gestión de Unidades")
+
+if st.button("⬅ Volver"):
+    st.session_state.mode = None
+    st.rerun()
 
 # =================================
 # GESTIONAR
 # =================================
 if st.session_state.mode == "gestionar":
 
-    st.subheader("Gestionar Unidades")
-
-    # =============================
     # POST SAVE
-    # =============================
     if st.session_state.just_saved:
 
         with st.spinner("Actualizando datos..."):
@@ -140,9 +135,6 @@ if st.session_state.mode == "gestionar":
         st.warning("No hay datos.")
         st.stop()
 
-    # =============================
-    # Empresa mapping
-    # =============================
     empresa_map = {
         "SET": "Set Freight International",
         "LIN": "Lincoln Freight",
@@ -153,9 +145,6 @@ if st.session_state.mode == "gestionar":
 
     reverse_empresa_map = {v: k for k, v in empresa_map.items()}
 
-    # =============================
-    # Empresa selector
-    # =============================
     empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
 
     empresa_nombre = st.selectbox(
@@ -171,9 +160,6 @@ if st.session_state.mode == "gestionar":
 
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
-    # =============================
-    # Unidad selector
-    # =============================
     df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
     unidades = sorted(df_filtered["unidad"].dropna().unique().tolist())
@@ -194,9 +180,6 @@ if st.session_state.mode == "gestionar":
 
     st.divider()
 
-    # =============================
-    # FORM
-    # =============================
     with st.form("form"):
 
         col1, col2, col3 = st.columns(3)
