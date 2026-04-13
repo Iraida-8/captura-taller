@@ -3,7 +3,6 @@ import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
 
-#backup
 # =================================
 # Page configuration
 # =================================
@@ -662,13 +661,6 @@ if buscar:
 df_p = st.session_state.get("df_filtrado_pases", df_pases.copy())
 df_s = st.session_state.get("df_filtrado_servicios", df_services.copy())
 
-# remove service log rows (no part)
-if "Parte" in df_s.columns:
-    df_s = df_s[
-        df_s["Parte"].notna() &
-        (df_s["Parte"].astype(str).str.strip() != "")
-    ]
-
 # merge → one row per servicio
 df_detallado = df_p.merge(df_s, on="Folio", how="left")
 
@@ -825,36 +817,29 @@ else:
 
 # EXACT columns you requested
 columnas = [
-    # ===== COMPANY TAB =====
+    # ===== COMPANY =====
     "Fecha de Captura",
     "No. de Folio",
     "Fecha de Reporte",
-    "Tipo de Proveedor",
+    "Empresa",
     "Estado",
     "Capturo",
     "No. de Factura",
     "Oste",
     "No. de Reporte",
-    "Empresa",
-    "Tipo de Reporte",
     "Tipo de Unidad",
-    "Operador",
     "No. de Unidad",
     "Marca",
     "Modelo",
-    "Sucursal",
-    "Tipo de Caja",
-    "No. de Unidad Externo",
-    "Nombre Linea Externa",
-    "Cobro",
-    "Responsable",
     "Descripcion Problema",
-    "Multa",
-    "No. de Inspeccion",
-    "Reparacion Multa",
 
-    # ===== CONSOLIDATED SERVICES =====
-    "Partes",
+    # ===== SERVICES (RAW) =====
+    "Modifico",
+    "Parte",
+    "Tipo De Parte",
+    "Posicion",
+    "Cantidad",
+    "Fecha Mod",
     "Fecha Diagnostico",
     "Fecha No Diagnosticado",
     "Fecha En Reparacion",
