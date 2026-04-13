@@ -79,9 +79,14 @@ if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
 # =================================
-# Title
+# Top navigation
 # =================================
-st.title("Gestionador de Unidades")
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+st.title("📊 Consulta, Preparación y Generación de Reportes")
 
 # =================================
 # Buttons (ONLY THING VISIBLE INITIALLY)
