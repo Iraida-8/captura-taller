@@ -83,6 +83,7 @@ if st.session_state.get("success_modal"):
 
         if st.button("Aceptar", type="primary"):
             st.session_state.success_modal = None
+            st.rerun()
 
     success_modal()
 
@@ -153,27 +154,6 @@ if st.session_state.mode == "gestionar":
     # =============================
     # POST SAVE
     # =============================
-    if st.session_state.just_saved:
-
-        with st.spinner("Actualizando datos..."):
-            time.sleep(2)
-
-        st.cache_data.clear()
-
-        unidad = st.session_state.last_saved_unit
-
-        st.session_state.just_saved = False
-        st.session_state.is_saving = False
-
-        st.session_state.pop("empresa_select", None)
-        st.session_state.pop("unidad_select", None)
-
-        st.session_state.last_saved_unit = None
-
-        st.session_state.show_toast = unidad
-
-        st.rerun()
-
     if df_units.empty:
         st.warning("No hay datos.")
         st.stop()
@@ -276,6 +256,7 @@ if st.session_state.mode == "gestionar":
                 }) \
                 .eq("unidad", unidad_selected) \
                 .execute()
+            st.cache_data.clear()
 
             st.session_state.success_modal = unidad_selected
             st.rerun()
