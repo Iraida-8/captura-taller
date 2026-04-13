@@ -21,6 +21,13 @@ st.markdown(
     [data-testid="stSidebar"] { display: none; }
 
     div.stButton > button {
+        height: 40px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* ONLY big buttons */
+    .main-btn div.stButton > button {
         height: 120px;
         font-size: 20px;
         font-weight: 600;
@@ -58,6 +65,10 @@ st.divider()
 
 st.title("📊 Consulta, Carga y Edición de Unidades")
 
+if "show_toast" in st.session_state:
+    st.toast(f"Datos actualizados con éxito para la unidad {st.session_state.show_toast}")
+    del st.session_state.show_toast
+
 
 # =================================
 # Load Data
@@ -71,8 +82,6 @@ def load_vehicle_units():
         df.columns = [col.lower() for col in df.columns]
 
     return df
-
-df_units = load_vehicle_units()
 
 # =================================
 # Session state
@@ -94,6 +103,8 @@ if "last_saved_unit" not in st.session_state:
 # =================================
 st.divider()
 
+st.markdown('<div class="main-btn">', unsafe_allow_html=True)
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -104,9 +115,14 @@ with col2:
     if st.button("Crear Nuevas Unidades", use_container_width=True):
         st.session_state.mode = "crear"
 
+
 # STOP HERE if nothing selected
 if st.session_state.mode is None:
     st.stop()
+
+df_units = load_vehicle_units()
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # =================================
 # GESTIONAR
@@ -121,9 +137,11 @@ if st.session_state.mode == "gestionar":
     if st.session_state.just_saved:
 
         with st.spinner("Actualizando datos..."):
-            time.sleep(5)
+            time.sleep(2)
 
         st.cache_data.clear()
+
+        unidad = st.session_state.last_saved_unit
 
         st.session_state.just_saved = False
         st.session_state.is_saving = False
@@ -131,11 +149,9 @@ if st.session_state.mode == "gestionar":
         st.session_state.pop("empresa_select", None)
         st.session_state.pop("unidad_select", None)
 
-        st.toast(
-            f"Datos actualizados con éxito para la unidad {st.session_state.last_saved_unit}"
-        )
-
         st.session_state.last_saved_unit = None
+
+        st.session_state.show_toast = unidad
 
         st.rerun()
 
