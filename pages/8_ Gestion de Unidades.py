@@ -13,25 +13,18 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar + BUTTON CONTROL
+# Hide sidebar + FIX BUTTON SIZES
 # =================================
 st.markdown(
     """
     <style>
     [data-testid="stSidebar"] { display: none; }
 
-    /* DEFAULT buttons */
-    div.stButton > button {
+    /* ONLY make the 2 main buttons big */
+    div.stButton > button[kind="secondary"] {
         height: 120px;
         font-size: 20px;
         font-weight: 600;
-    }
-
-    /* FIRST button (Volver) SMALL */
-    div.stButton:nth-of-type(1) > button {
-        height: 40px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
     }
     </style>
     """,
@@ -87,27 +80,29 @@ if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
 # =================================
-# MAIN ENTRY (ONLY 2 BUTTONS)
+# ONLY 2 BUTTONS FIRST
 # =================================
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("Gestionar Unidades Existentes", use_container_width=True):
+    if st.button("Gestionar Unidades Existentes", use_container_width=True, type="secondary"):
         st.session_state.mode = "gestionar"
         st.rerun()
 
 with col2:
-    if st.button("Crear Nuevas Unidades", use_container_width=True):
+    if st.button("Crear Nuevas Unidades", use_container_width=True, type="secondary"):
         st.session_state.mode = "crear"
         st.rerun()
 
-# NOTHING ELSE SHOULD SHOW
+# HARD STOP → NOTHING ELSE RENDERS
 if st.session_state.mode is None:
     st.stop()
 
 # =================================
-# NAV (NOW ONLY AFTER SELECTION)
+# NOW SHOW EVERYTHING ELSE
 # =================================
+
+# SMALL back button (default size now)
 if st.button("⬅ Volver al Dashboard"):
     st.session_state.mode = None
     st.rerun()
