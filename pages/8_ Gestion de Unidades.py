@@ -32,10 +32,14 @@ st.markdown(
         font-size: 20px;
         font-weight: 600;
     }
-    button[kind="secondary"]:has(span:contains("Eliminar")) {
+
+    /* DELETE BUTTON (SECOND BUTTON IN FORM ROW) */
+    div.stForm div[data-testid="column"]:nth-child(2) div.stButton > button {
         background-color: #ff4b4b !important;
         color: white !important;
+        border: none !important;
     }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -315,10 +319,10 @@ if st.session_state.mode == "gestionar":
         col_btn1, col_btn2 = st.columns(2)
 
         with col_btn1:
-            submitted = st.form_submit_button("Guardar Cambios")
+            submitted = st.form_submit_button("Guardar Cambios", type="secondary")
 
         with col_btn2:
-            delete_clicked = st.form_submit_button("Eliminar")
+            delete_clicked = st.form_submit_button("Eliminar", type="primary")
 
         if submitted:
 
