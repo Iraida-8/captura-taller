@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
+import time
 
 # =================================
 # Page configuration
@@ -57,10 +58,19 @@ def load_vehicle_units():
 df_units = load_vehicle_units()
 
 # =================================
-# Session state for mode
+# Session state
 # =================================
 if "mode" not in st.session_state:
     st.session_state.mode = None
+
+if "is_saving" not in st.session_state:
+    st.session_state.is_saving = False
+
+if "just_saved" not in st.session_state:
+    st.session_state.just_saved = False
+
+if "last_saved_unit" not in st.session_state:
+    st.session_state.last_saved_unit = None
 
 # =================================
 # Title
@@ -68,32 +78,56 @@ if "mode" not in st.session_state:
 st.title("Gestionador de Unidades")
 
 # =================================
-# Buttons
+# Buttons (FULL WIDTH)
 # =================================
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1], gap="large")
 
 with col1:
-    if st.button("Gestionar Unidades Existentes"):
+    if st.button("Gestionar Unidades Existentes", use_container_width=True):
         st.session_state.mode = "gestionar"
 
 with col2:
-    if st.button("Crear Nuevas Unidades"):
+    if st.button("Crear Nuevas Unidades", use_container_width=True):
         st.session_state.mode = "crear"
 
 # =================================
-# GESTIONAR EXISTENTES (FORM MODE)
+# GESTIONAR EXISTENTES
 # =================================
 if st.session_state.mode == "gestionar":
 
     st.subheader("Gestionar Unidades")
 
+    # =================================
+    # POST-SAVE HANDLING
+    # =================================
+    if st.session_state.just_saved:
+
+        with st.spinner("Actualizando datos..."):
+            time.sleep(5)
+
+        st.cache_data.clear()
+
+        st.session_state.just_saved = False
+        st.session_state.is_saving = False
+
+        st.session_state.pop("empresa_select", None)
+        st.session_state.pop("unidad_select", None)
+
+        st.success(
+            f"Datos actualizados con éxito para la unidad {st.session_state.last_saved_unit}"
+        )
+
+        st.session_state.last_saved_unit = None
+
+        st.rerun()
+
     if df_units.empty:
         st.warning("No hay datos en la tabla vehicle_units.")
         st.stop()
 
-    # =============================
+    # =================================
     # Empresa mapping
-    # =============================
+    # =================================
     empresa_map = {
         "SET": "Set Freight International",
         "LIN": "Lincoln Freight",
@@ -104,70 +138,65 @@ if st.session_state.mode == "gestionar":
 
     reverse_empresa_map = {v: k for k, v in empresa_map.items()}
 
-    # =============================
-    # Empresa selector (EMPTY DEFAULT)
-    # =============================
+    # =================================
+    # Empresa selector
+    # =================================
     empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
 
     empresa_nombre = st.selectbox(
         "Empresa",
         empresa_options,
-        index=0
+        index=0,
+        key="empresa_select",
+        disabled=st.session_state.is_saving
     )
 
     if empresa_nombre == "Selecciona empresa":
-        st.info("Selecciona una empresa para continuar.")
         st.stop()
 
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
-    # =============================
+    # =================================
     # Filter unidades
-    # =============================
+    # =================================
     df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
     if df_filtered.empty:
         st.warning("No hay unidades para esta empresa.")
         st.stop()
 
-    # =============================
-    # Unidad selector (EMPTY DEFAULT)
-    # =============================
+    # =================================
+    # Unidad selector
+    # =================================
     unidades_list = sorted(df_filtered["unidad"].dropna().unique().tolist())
     unidad_options = ["Selecciona unidad"] + unidades_list
 
     unidad_selected = st.selectbox(
         "Unidad",
         unidad_options,
-        index=0
+        index=0,
+        key="unidad_select",
+        disabled=st.session_state.is_saving
     )
 
     if unidad_selected == "Selecciona unidad":
-        st.info("Selecciona una unidad para editar.")
         st.stop()
 
-    # =============================
-    # Get selected row
-    # =============================
     selected_row = df_filtered[df_filtered["unidad"] == unidad_selected].iloc[0]
 
     st.divider()
 
-    # =============================
+    # =================================
     # FORM
-    # =============================
+    # =================================
     with st.form("form_editar_unidad"):
 
         col1, col2, col3 = st.columns(3)
 
-        # Tipo Unidad options
         tipo_options = ["CAJA SECA", "CAJA REFRIGERADA", "TRACTOR"]
 
-        # Find index safely
-        try:
-            tipo_index = tipo_options.index(selected_row["tipo_unidad"])
-        except:
-            tipo_index = 0
+        tipo_db = str(selected_row["tipo_unidad"]).upper().strip()
+        tipo_index = tipo_options.index(tipo_db) if tipo_db in tipo_options else 0
 
         with col1:
             marca = st.text_input("Marca", value=selected_row["marca"] or "")
@@ -189,6 +218,9 @@ if st.session_state.mode == "gestionar":
 
         if submitted:
 
+            st.session_state.is_saving = True
+            st.session_state.last_saved_unit = unidad_selected
+
             update_data = {
                 "empresa": empresa_codigo,
                 "unidad": unidad_selected,
@@ -205,7 +237,6 @@ if st.session_state.mode == "gestionar":
                 .eq("unidad", unidad_selected) \
                 .execute()
 
-            st.success("Unidad actualizada correctamente.")
+            st.session_state.just_saved = True
 
-            st.cache_data.clear()
             st.rerun()
