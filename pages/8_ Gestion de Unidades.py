@@ -105,17 +105,24 @@ if st.session_state.mode == "gestionar":
     reverse_empresa_map = {v: k for k, v in empresa_map.items()}
 
     # =============================
-    # Select Empresa
+    # Empresa selector (EMPTY DEFAULT)
     # =============================
+    empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
+
     empresa_nombre = st.selectbox(
         "Empresa",
-        list(empresa_map.values())
+        empresa_options,
+        index=0
     )
+
+    if empresa_nombre == "Selecciona empresa":
+        st.info("Selecciona una empresa para continuar.")
+        st.stop()
 
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
     # =============================
-    # Filter unidades by empresa
+    # Filter unidades
     # =============================
     df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
@@ -124,13 +131,24 @@ if st.session_state.mode == "gestionar":
         st.stop()
 
     # =============================
-    # Select Unidad (searchable)
+    # Unidad selector (EMPTY DEFAULT)
     # =============================
+    unidades_list = sorted(df_filtered["unidad"].dropna().unique().tolist())
+    unidad_options = ["Selecciona unidad"] + unidades_list
+
     unidad_selected = st.selectbox(
         "Unidad",
-        sorted(df_filtered["unidad"].dropna().unique().tolist())
+        unidad_options,
+        index=0
     )
 
+    if unidad_selected == "Selecciona unidad":
+        st.info("Selecciona una unidad para editar.")
+        st.stop()
+
+    # =============================
+    # Get selected row
+    # =============================
     selected_row = df_filtered[df_filtered["unidad"] == unidad_selected].iloc[0]
 
     st.divider()
@@ -142,13 +160,26 @@ if st.session_state.mode == "gestionar":
 
         col1, col2, col3 = st.columns(3)
 
+        # Tipo Unidad options
+        tipo_options = ["CAJA SECA", "CAJA REFRIGERADA", "TRACTOR"]
+
+        # Find index safely
+        try:
+            tipo_index = tipo_options.index(selected_row["tipo_unidad"])
+        except:
+            tipo_index = 0
+
         with col1:
             marca = st.text_input("Marca", value=selected_row["marca"] or "")
             modelo = st.text_input("Modelo", value=selected_row["modelo"] or "")
 
         with col2:
             vin = st.text_input("VIN", value=selected_row["vin"] or "")
-            tipo_unidad = st.text_input("Tipo Unidad", value=selected_row["tipo_unidad"] or "")
+            tipo_unidad = st.selectbox(
+                "Tipo Unidad",
+                tipo_options,
+                index=tipo_index
+            )
 
         with col3:
             sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
@@ -176,6 +207,5 @@ if st.session_state.mode == "gestionar":
 
             st.success("Unidad actualizada correctamente.")
 
-            # Refresh data
             st.cache_data.clear()
             st.rerun()
