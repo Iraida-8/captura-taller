@@ -1651,7 +1651,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
                 units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo", "tipo_unidad"
+                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
                 ]].copy()
 
                 # Normalize keys
@@ -1669,14 +1669,15 @@ if file_ostes and file_mantenimientos and file_ordenes:
                     how="left"
                 )
 
-                # FORCE overwrite
+                # Overwrite fields
                 df_final_ostes["Flotilla"] = df_final_ostes["marca"]
                 df_final_ostes["Modelo"] = df_final_ostes["modelo"]
                 df_final_ostes["Tipo De Unidad"] = df_final_ostes["tipo_unidad"]
+                df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
 
                 # Cleanup
                 df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad"] if c in df_final_ostes.columns]
+                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
                 )
 
             # =============================
