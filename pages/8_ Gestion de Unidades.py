@@ -299,8 +299,10 @@ if st.session_state.mode == "gestionar":
     unidades = sorted(df_filtered["unidad"].dropna().unique().tolist())
     unidad_options = ["Selecciona unidad"] + unidades
 
+    st.markdown("### 🔧 Selección de Unidad")
+
     unidad_selected = st.selectbox(
-        "Unidad",
+        "",  # remove default label
         unidad_options,
         index=0,
         key="unidad_select",
