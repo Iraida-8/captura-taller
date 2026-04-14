@@ -476,8 +476,32 @@ if st.session_state.mode == "cargar":
 
     st.divider()
 
+    df_preview = None
+
     if uploaded_file:
         st.success(f"Archivo cargado: {uploaded_file.name}")
+
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df_preview = pd.read_csv(uploaded_file)
+            else:
+                df_preview = pd.read_excel(uploaded_file)
+
+        except Exception as e:
+            st.error(f"Error al leer el archivo: {e}")
+            df_preview = None
+
+    # ===============================
+    # PREVIEW TABLE (COLLAPSIBLE)
+    # ===============================
+    if df_preview is not None and not df_preview.empty:
+
+        with st.expander("📄 Vista previa del archivo", expanded=False):
+            st.dataframe(
+                df_preview,
+                use_container_width=True,
+                hide_index=True
+            )
 
     # Dummy button (no logic yet)
     if st.button("Cargar datos", type="primary"):
