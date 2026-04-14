@@ -301,6 +301,8 @@ if st.session_state.mode == "gestionar":
 
     st.markdown("### 🔧 Selección de Unidad")
 
+    st.caption("Selecciona unidad para editar")
+
     unidad_selected = st.selectbox(
         "",  # remove default label
         unidad_options,
