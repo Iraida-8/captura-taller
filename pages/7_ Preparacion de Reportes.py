@@ -1618,9 +1618,25 @@ if file_ostes and file_mantenimientos and file_ordenes:
             ] = df_final_ostes["Subtotal"] * df_final_ostes["TC"]
 
             # Total Correccion = Subtotal + IVA
-            df_final_ostes["Total Correccion"] = (
-                df_final_ostes["Subtotal"] + df_final_ostes["IVA"]
-            )
+            empresa_upper = empresa.upper()
+            moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
+
+            # Start from Total oste
+            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
+
+            # IGLOO / PICUS
+            if empresa_upper in ["IGLOO", "PICUS"]:
+                df_final_ostes.loc[
+                    moneda_upper == "USD",
+                    "Total Correccion"
+                ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
+
+            # LINCOLN / SET FREIGHT / LOGIS
+            else:
+                df_final_ostes.loc[
+                    moneda_upper == "MXP",
+                    "Total Correccion"
+                ] = df_final_ostes["Total oste"] / df_final_ostes["TC"]
 
             # Normalize Moneda once
             moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
