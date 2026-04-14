@@ -274,6 +274,24 @@ if st.session_state.mode == "gestionar":
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
     # =============================
+    # TABLE — UNIDADES (VISIBLE AFTER EMPRESA)
+    # =============================
+    st.divider()
+
+    st.subheader("📄 Unidades de la empresa seleccionada")
+
+    df_filtered = df_units[df_units["empresa"] == empresa_codigo]
+
+    df_display = df_filtered.drop(columns=["id", "created_at"], errors="ignore")
+
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        hide_index=True,
+        height=300
+    )
+
+    # =============================
     # Unidad selector
     # =============================
     df_filtered = df_units[df_units["empresa"] == empresa_codigo]
@@ -355,24 +373,6 @@ if st.session_state.mode == "gestionar":
             st.session_state.delete_modal = unidad_selected
             st.rerun()
         
-        # =============================
-        # TABLE — UNIDADES (BOTTOM)
-        # =============================
-        st.divider()
-
-        st.subheader("📄 Unidades de la empresa seleccionada")
-
-        df_filtered = df_units[df_units["empresa"] == empresa_codigo]
-
-        # Hide audit columns
-        df_display = df_filtered.drop(columns=["id", "created_at"], errors="ignore")
-
-        st.dataframe(
-            df_display,
-            use_container_width=True,
-            hide_index=True,
-            height=300
-        )
 
 # =================================
 # CREAR
