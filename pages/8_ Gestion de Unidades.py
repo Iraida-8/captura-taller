@@ -459,7 +459,7 @@ if st.session_state.mode == "crear":
 
             st.session_state.success_modal = unidad.strip()
             st.rerun()
-            
+
 # =================================
 # CARGAR REPORTE DE UNIDADES
 # =================================
@@ -467,4 +467,18 @@ if st.session_state.mode == "cargar":
 
     st.subheader("Cargar Reporte de Unidades")
 
-    st.write("hi")
+    st.markdown("### 📂 Carga el reporte de unidades a actualizar o crear")
+
+    uploaded_file = st.file_uploader(
+        "Selecciona un archivo (.xlsx o .csv)",
+        type=["xlsx", "csv"]
+    )
+
+    st.divider()
+
+    if uploaded_file:
+        st.success(f"Archivo cargado: {uploaded_file.name}")
+
+    # Dummy button (no logic yet)
+    if st.button("Cargar datos", type="primary"):
+        st.info("Funcionalidad aún no implementada")
