@@ -354,6 +354,22 @@ if st.session_state.mode == "gestionar":
         if delete_clicked:
             st.session_state.delete_modal = unidad_selected
             st.rerun()
+        
+        # =============================
+        # TABLE — UNIDADES (BOTTOM)
+        # =============================
+        st.divider()
+
+        st.subheader("📄 Unidades de la empresa seleccionada")
+
+        df_filtered = df_units[df_units["empresa"] == empresa_codigo]
+
+        st.dataframe(
+            df_filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=300
+        )
 
 # =================================
 # CREAR
