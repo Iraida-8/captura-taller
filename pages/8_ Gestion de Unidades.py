@@ -205,7 +205,7 @@ st.divider()
 
 st.markdown('<div class="main-btn">', unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("Gestionar Unidades Existentes", use_container_width=True):
@@ -214,6 +214,10 @@ with col1:
 with col2:
     if st.button("Crear Nuevas Unidades", use_container_width=True):
         st.session_state.mode = "crear"
+
+with col3:
+    if st.button("Cargar Reporte de Unidades", use_container_width=True):
+        st.session_state.mode = "cargar"
 
 
 # STOP HERE if nothing selected
@@ -455,3 +459,12 @@ if st.session_state.mode == "crear":
 
             st.session_state.success_modal = unidad.strip()
             st.rerun()
+            
+# =================================
+# CARGAR REPORTE DE UNIDADES
+# =================================
+if st.session_state.mode == "cargar":
+
+    st.subheader("Cargar Reporte de Unidades")
+
+    st.write("hi")
