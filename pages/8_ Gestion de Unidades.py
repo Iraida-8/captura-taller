@@ -393,20 +393,6 @@ if st.session_state.mode == "crear":
 
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
-    # =============================
-    # PREVIEW TABLE (MINIMIZED)
-    # =============================
-    #df_filtered = df_units[df_units["empresa"] == empresa_codigo]
-
-    st.markdown("##### 📄 Unidades de la empresa")
-
-    st.dataframe(
-        df_filtered,
-        use_container_width=True,
-        hide_index=True,
-        height=180  # 👈 this is what makes it "minimized"
-    )
-
     st.divider()
 
     # =============================
