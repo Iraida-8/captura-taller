@@ -364,8 +364,11 @@ if st.session_state.mode == "gestionar":
 
         df_filtered = df_units[df_units["empresa"] == empresa_codigo]
 
+        # Hide audit columns
+        df_display = df_filtered.drop(columns=["id", "created_at"], errors="ignore")
+
         st.dataframe(
-            df_filtered,
+            df_display,
             use_container_width=True,
             hide_index=True,
             height=300
