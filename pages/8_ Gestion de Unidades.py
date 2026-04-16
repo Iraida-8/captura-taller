@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
+from datetime import datetime, timezone
 import time
 
 # =================================
@@ -364,10 +365,12 @@ if st.session_state.mode == "gestionar":
                     "vin": vin,
                     "tipo_unidad": tipo_unidad,
                     "sucursal": sucursal,
-                    "estado": estado
+                    "estado": estado,
+                    "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f+00")
                 }) \
                 .eq("unidad", unidad_selected) \
                 .execute()
+            
             st.cache_data.clear()
 
             st.session_state.success_modal = unidad_selected
@@ -467,6 +470,8 @@ if st.session_state.mode == "crear":
             # =============================
             # INSERT
             # =============================
+            created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f+00")
+
             supabase.table("vehicle_units").insert({
                 "empresa": empresa_codigo,
                 "unidad": unidad.strip(),
@@ -475,7 +480,8 @@ if st.session_state.mode == "crear":
                 "vin": vin,
                 "tipo_unidad": tipo_unidad,
                 "sucursal": sucursal,
-                "estado": estado
+                "estado": estado,
+                "created_at": created_at
             }).execute()
 
             st.cache_data.clear()
