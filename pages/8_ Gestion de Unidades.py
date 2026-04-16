@@ -341,7 +341,12 @@ if st.session_state.mode == "gestionar":
 
         with col3:
             sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
-            estado = st.text_input("Estado", value=selected_row["estado"] or "")
+            estado_options = ["ACTIVA", "BAJA"]
+
+            estado_db = str(selected_row["estado"]).upper().strip()
+            estado_index = estado_options.index(estado_db) if estado_db in estado_options else 0
+
+            estado = st.selectbox("Estado", estado_options, index=estado_index)
 
         col_btn1, col_btn2 = st.columns(2)
 
