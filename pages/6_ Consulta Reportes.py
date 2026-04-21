@@ -632,8 +632,12 @@ if buscar:
 # ======================================================
 
 # use filtered data if available
-df_p = st.session_state.get("df_filtrado_pases", df_pases.copy())
-df_s = st.session_state.get("df_filtrado_servicios", df_services.copy())
+if st.session_state.get("filtros_aplicados", False):
+    df_p = st.session_state.get("df_filtrado_pases", df_pases.copy())
+    df_s = st.session_state.get("df_filtrado_servicios", df_services.copy())
+else:
+    df_p = df_pases.copy()
+    df_s = df_services.copy()
 
 # merge → one row per servicio
 df_detallado = df_p.merge(df_s, on="Folio", how="left")
