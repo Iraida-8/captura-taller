@@ -1147,7 +1147,16 @@ if st.session_state.modal_reporte:
 
         st.markdown(f"**No. de Folio:** {r.get('NoFolio', r.get('No. de Folio',''))}")
         st.markdown(f"**Empresa:** {r['Empresa']}")
-        st.markdown(f"**Fecha:** {r['Fecha']}")
+        fecha_modal = r.get("Fecha")
+        if pd.notna(fecha_modal):
+            try:
+                fecha_modal = pd.to_datetime(fecha_modal).strftime("%Y-%m-%d %H:%M")
+            except:
+                fecha_modal = str(fecha_modal)
+        else:
+            fecha_modal = "-"
+
+        st.markdown(f"**Fecha:** {fecha_modal}")
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
         st.markdown(f"**Proveedor:** {r['Proveedor']}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
