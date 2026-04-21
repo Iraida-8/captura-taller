@@ -1214,7 +1214,7 @@ if st.session_state.modal_reporte:
         if "interno" not in proveedor:
             oste_val = st.text_input(
                 "OSTE",
-                value=str(r.get("Oste", "") or "").strip(),
+                value=clean(r.get("Oste", "")),
                 disabled=es_cerrado
             )
 
