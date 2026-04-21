@@ -221,7 +221,7 @@ with tp1:
 with tp2:
     estado = st.selectbox(
         "Estado",
-        ["En Curso / Nuevo"],
+        ["Inicio / Nuevo"],
         index=0,
         disabled=True
     )
@@ -518,7 +518,7 @@ if tipo_proveedor in ["Interno", "Externo"]:
             "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "Fecha de Reporte": str(fecha_reporte),
             "Tipo de Proveedor": tipo_proveedor,
-            "Estado": "En Curso / Nuevo",
+            "Estado": "Inicio / Nuevo",
             "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
             "Oste": oste,
             "No. de Reporte": no_reporte,
