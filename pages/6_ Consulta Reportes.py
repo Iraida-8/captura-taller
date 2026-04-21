@@ -402,6 +402,30 @@ st.divider()
 # =================================
 # FILTERS
 # =================================
+if st.session_state.get("_reset_filtros_consulta", False):
+
+    st.session_state["f_folio"] = ""
+    st.session_state["f_no_reporte"] = ""
+    st.session_state["f_oste"] = ""
+    st.session_state["f_no_factura"] = ""
+
+    st.session_state["f_empresa"] = "Todas"
+    st.session_state["f_unidad"] = "Todas"
+    st.session_state["f_capturo"] = "Todos"
+    st.session_state["f_estado"] = "Todos"
+
+    st.session_state["f_fecha_proceso"] = None
+    st.session_state["f_fecha_terminado"] = None
+    st.session_state["f_fecha_cancel"] = None
+
+    st.session_state.pop("df_filtrado_pases", None)
+    st.session_state.pop("df_filtrado_servicios", None)
+
+    st.session_state["filtros_aplicados"] = False
+    st.session_state.modal_reporte = None
+
+    st.session_state["_reset_filtros_consulta"] = False
+    
 st.subheader("Filtros")
 
 # Close any open modal before running filters
@@ -506,32 +530,7 @@ with c1:
 with c2:
     if st.button("🧹 Borrar filtros", use_container_width=True):
 
-        # Reset widget values
-        st.session_state["f_folio"] = ""
-        st.session_state["f_no_reporte"] = ""
-        st.session_state["f_oste"] = ""
-        st.session_state["f_no_factura"] = ""
-
-        st.session_state["f_empresa"] = "Todas"
-        st.session_state["f_unidad"] = "Todas"
-        st.session_state["f_capturo"] = "Todos"
-        st.session_state["f_estado"] = "Todos"
-
-        # Reset date filters
-        st.session_state["f_fecha_proceso"] = None
-        st.session_state["f_fecha_terminado"] = None
-        st.session_state["f_fecha_cancel"] = None
-
-        # Reset filtered data
-        st.session_state.pop("df_filtrado_pases", None)
-        st.session_state.pop("df_filtrado_servicios", None)
-
-        # Reset filter flag
-        st.session_state["filtros_aplicados"] = False
-
-        # Close modal
-        st.session_state.modal_reporte = None
-
+        st.session_state["_reset_filtros_consulta"] = True
         st.rerun()
 
 # =================================
