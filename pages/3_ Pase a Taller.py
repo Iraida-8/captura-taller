@@ -469,10 +469,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
         if no_unidad == "REMOLQUE EXTERNO" and not (no_unidad_externo and str(no_unidad_externo).strip()):
             st.error("Debes capturar el No. de Unidad Externo.")
             st.stop()
-        
-        if not operador or not str(operador).strip():
-            st.error("Debes capturar el nombre del Operador antes de guardar.")
-            st.stop()
 
         if aplica_cobro == "Sí" and not (responsable and str(responsable).strip()):
             st.error("Debes capturar el Responsable cuando aplica cobro.")
