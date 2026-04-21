@@ -826,6 +826,9 @@ if not pases_df.empty:
                 # =====================================
                 if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
 
+                    st.session_state.modal_factura = None
+                    st.session_state.modal_factura_open = False
+
                     st.session_state.modal_reporte = r.to_dict()
 
                     df = cargar_servicios_folio(r["NoFolio"])
@@ -1072,6 +1075,7 @@ if st.button("Buscar"):
     st.session_state.buscar_trigger = True
     st.session_state.modal_reporte = None
     st.session_state.modal_factura = None
+    st.session_state.modal_factura_open = False
 
 # =================================
 # RESULTADOS
@@ -1112,6 +1116,10 @@ if st.session_state.buscar_trigger:
         with c1:
             label = "Editar" if editable else "Ver"
             if st.button(label, key=f"accion_{row['NoFolio']}"):
+
+                st.session_state.modal_factura = None
+                st.session_state.modal_factura_open = False
+
                 st.session_state.modal_reporte = row.to_dict()
 
                 df = cargar_servicios_folio(row["NoFolio"])
