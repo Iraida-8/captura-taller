@@ -1142,31 +1142,40 @@ if st.session_state.modal_reporte:
         st.divider()
         st.subheader("Información del Proveedor")
 
-        # ==========================================
-        # OSTE EDIT RULE
-        # ==========================================
-        es_cerrado = r["Estado"].startswith("Cerrado")
-        oste_actual = str(r.get("Oste", "") or "").strip()
-
-        oste_editable = (
-            es_cerrado and oste_actual == ""
-        )
+        es_cerrado = "Cerrado" in str(r.get("Estado", ""))
 
         proveedor = (r.get("Proveedor") or "").lower()
 
-        # Always visible
-        st.text_input(
-            "No. de Orden",
-            value=r.get("No. de Orden", r.get("No. de Reporte", "")),
-            disabled=True
+        # ==========================================
+        # NO. DE ORDEN (editable + no decimals)
+        # ==========================================
+        orden_actual = (
+            r.get("No. de Orden", r.get("No. de Reporte", ""))
         )
 
-        # Only externo shows OSTE
+        if pd.notna(orden_actual) and str(orden_actual).strip() != "":
+            try:
+                orden_actual = str(int(float(orden_actual)))
+            except:
+                orden_actual = str(orden_actual).strip()
+        else:
+            orden_actual = ""
+
+        orden_editada = st.text_input(
+            "No. de Orden",
+            value=orden_actual,
+            disabled=False
+        )
+
+        # ==========================================
+        # OSTE (externo only)
+        # editable until order is Cerrado
+        # ==========================================
         if "interno" not in proveedor:
             oste_val = st.text_input(
                 "OSTE",
-                value=r.get("Oste", "") or "",
-                disabled=not oste_editable
+                value=str(r.get("Oste", "") or "").strip(),
+                disabled=es_cerrado
             )
 
         # ==========================================
@@ -1332,10 +1341,7 @@ if st.session_state.modal_reporte:
 
         with c2:
 
-            mostrar_aceptar = (
-                editable_estado
-                or ("interno" not in proveedor and oste_editable)
-            )
+            mostrar_aceptar = True
 
             label_btn = "Guardar cambios" if editable_estado else "Guardar"
 
@@ -1374,7 +1380,6 @@ if st.session_state.modal_reporte:
 
                 if (
                     not editable_servicios
-                    and not oste_editable
                     and nuevo_estado == estado_actual
                 ):
                     st.session_state.modal_reporte = None
@@ -1400,7 +1405,7 @@ if st.session_state.modal_reporte:
                     )
 
                 if "interno" not in proveedor:
-                    if nuevo_estado.startswith("Cerrado") and oste_val.strip():
+                    if oste_val.strip() != clean(r.get("Oste")):
 
                         oste_anterior = clean(r.get("Oste"))
                         oste_nuevo = clean(oste_val)
