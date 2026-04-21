@@ -1195,7 +1195,7 @@ if st.session_state.modal_reporte:
         reporte_editado = st.text_input(
             "No. de Reporte",
             value=reporte_actual,
-            disabled=False
+            disabled=es_cerrado
         )
 
         # ==========================================
