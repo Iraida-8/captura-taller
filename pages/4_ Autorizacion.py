@@ -132,7 +132,7 @@ def actualizar_oste_pase(empresa, folio, oste):
 # Update No. de Orden (SUPABASE)
 # =================================
 
-def actualizar_no_orden_pase(empresa, folio, nuevo_no_orden):
+def actualizar_no_reporte_pase(empresa, folio, nuevo_no_reporte):
 
     table_map = {
         "IGLOO TRANSPORT": "IGLOO",
@@ -151,7 +151,7 @@ def actualizar_no_orden_pase(empresa, folio, nuevo_no_orden):
 
     supabase.table(table_name)\
         .update({
-            "No. de Orden": str(nuevo_no_orden).strip()
+            "No. de Reporte": str(nuevo_no_reporte).strip()
         })\
         .eq('"No. de Folio"', folio)\
         .execute()
@@ -1177,21 +1177,19 @@ if st.session_state.modal_reporte:
         # ==========================================
         # NO. DE ORDEN (editable + no decimals)
         # ==========================================
-        orden_actual = (
-            r.get("No. de Orden", r.get("No. de Reporte", ""))
-        )
+        reporte_actual = r.get("No. de Reporte", "")
 
-        if pd.notna(orden_actual) and str(orden_actual).strip() != "":
+        if pd.notna(reporte_actual) and str(reporte_actual).strip() != "":
             try:
-                orden_actual = str(int(float(orden_actual)))
+                reporte_actual = str(int(float(reporte_actual)))
             except:
-                orden_actual = str(orden_actual).strip()
+                reporte_actual = str(reporte_actual).strip()
         else:
-            orden_actual = ""
+            reporte_actual = ""
 
-        orden_editada = st.text_input(
-            "No. de Orden",
-            value=orden_actual,
+        reporte_editado = st.text_input(
+            "No. de Reporte",
+            value=reporte_actual,
             disabled=False
         )
 
@@ -1449,40 +1447,40 @@ if st.session_state.modal_reporte:
                         )
                     
                 # =================================
-                # UPDATE NO. DE ORDEN IF CHANGED
+                # UPDATE NO. DE REPORTE IF CHANGED
                 # =================================
-                orden_original = clean(
-                    r.get("No. de Orden", r.get("No. de Reporte", ""))
+                reporte_original = clean(
+                    r.get("No. de Reporte", "")
                 )
 
                 try:
-                    orden_original = str(int(float(orden_original))) if orden_original else ""
+                    reporte_original = str(int(float(reporte_original))) if reporte_original else ""
                 except:
-                    orden_original = str(orden_original).strip()
+                    reporte_original = str(reporte_original).strip()
 
-                orden_nueva = clean(orden_editada)
+                reporte_nuevo = clean(reporte_editado)
 
                 try:
-                    orden_nueva = str(int(float(orden_nueva))) if orden_nueva else ""
+                    reporte_nuevo = str(int(float(reporte_nuevo))) if reporte_nuevo else ""
                 except:
-                    orden_nueva = str(orden_nueva).strip()
+                    reporte_nuevo = str(reporte_nuevo).strip()
 
-                if orden_nueva != orden_original:
+                if reporte_nuevo != reporte_original:
 
-                    actualizar_no_orden_pase(
+                    actualizar_no_reporte_pase(
                         r["Empresa"],
                         r["NoFolio"],
-                        orden_nueva
+                        reporte_nuevo
                     )
 
                     registrar_cambio_log(
                         usuario=usuario,
                         empresa=r["Empresa"],
                         folio=r["NoFolio"],
-                        tipo_cambio="Actualización No. de Orden",
+                        tipo_cambio="Actualización No. de Reporte",
                         estado_anterior=r["Estado"],
                         estado_nuevo=r["Estado"],
-                        comentario=f"No. de Orden actualizado: {orden_original} → {orden_nueva}"
+                        comentario=f"No. de Reporte actualizado: {reporte_original} → {reporte_nuevo}"
                     )
 
                 # =====================================================
