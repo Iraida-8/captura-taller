@@ -1092,6 +1092,8 @@ if st.session_state.get("modal_reporte"):
 
             df_serv["Posicion"] = df_serv["Posicion"].apply(format_posicion)
 
+        df_fechas = df_serv.copy()
+
         # Remove log-only rows (empty Parte)
         if "Parte" in df_serv.columns:
             df_serv = df_serv[
@@ -1120,7 +1122,7 @@ if st.session_state.get("modal_reporte"):
             "Fecha Cancelado",
         ]
 
-        fechas = df_serv[fecha_cols].max() if not df_serv.empty else {}
+        fechas = df_fechas[fecha_cols].max() if not df_fechas.empty else {}
 
         for col in fecha_cols:
             value = fechas[col] if col in fechas else None
