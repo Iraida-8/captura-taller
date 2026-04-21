@@ -149,9 +149,14 @@ def actualizar_no_reporte_pase(empresa, folio, nuevo_no_reporte):
 
     supabase = get_supabase_client()
 
+    valor_final = str(nuevo_no_reporte).strip()
+
+    if valor_final == "":
+        valor_final = None
+
     supabase.table(table_name)\
         .update({
-            "No. de Reporte": str(nuevo_no_reporte).strip()
+            "No. de Reporte": valor_final
         })\
         .eq('"No. de Folio"', folio)\
         .execute()
