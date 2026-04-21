@@ -52,7 +52,8 @@ require_access("autorizacion")
 # =================================
 if st.session_state.get("_reset_autorizacion_page", True):
     st.session_state.modal_reporte = None
-    st.session_state.modal_factura = None   # ← ADD THIS
+    st.session_state.modal_factura = None
+    st.session_state.modal_factura_open = False
     st.session_state.buscar_trigger = False
     st.session_state["_reset_autorizacion_page"] = False
     
@@ -61,6 +62,8 @@ if st.session_state.get("_reset_autorizacion_page", True):
 # =================================
 if st.button("⬅ Volver al Dashboard"):
     st.session_state.modal_reporte = None
+    st.session_state.modal_factura = None
+    st.session_state.modal_factura_open = False
     st.session_state.buscar_trigger = False
     st.switch_page("pages/dashboard.py")
 
@@ -713,6 +716,7 @@ with right:
 st.session_state.setdefault("buscar_trigger", False)
 st.session_state.setdefault("modal_reporte", None)
 st.session_state.setdefault("modal_factura", None)
+st.session_state.setdefault("modal_factura_open", False)
 st.session_state.setdefault("refaccion_seleccionada", None)
 st.session_state.setdefault(
     "servicios_df",
