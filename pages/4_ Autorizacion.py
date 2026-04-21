@@ -1154,13 +1154,15 @@ if st.session_state.modal_reporte:
 
         proveedor = (r.get("Proveedor") or "").lower()
 
-        if "interno" in proveedor:
-            st.text_input(
-                "No. de Reporte",
-                value=r.get("No. de Reporte", ""),
-                disabled=True
-            )
-        else:
+        # Always visible
+        st.text_input(
+            "No. de Orden",
+            value=r.get("No. de Orden", r.get("No. de Reporte", "")),
+            disabled=True
+        )
+
+        # Only externo shows OSTE
+        if "interno" not in proveedor:
             oste_val = st.text_input(
                 "OSTE",
                 value=r.get("Oste", "") or "",
