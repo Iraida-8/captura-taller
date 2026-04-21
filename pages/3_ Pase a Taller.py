@@ -243,8 +243,7 @@ with c1:
     oste = st.text_input("OSTE", value="", disabled=True)
 with c2:
     no_reporte = st.text_input(
-        "No. de Reporte",
-        disabled=(tipo_proveedor != "Interno")
+        "No. de Reporte"
     )
 with c3:
     st.text_input(
