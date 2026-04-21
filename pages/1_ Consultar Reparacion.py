@@ -251,7 +251,6 @@ df = cargar_tabla(config["ordenes"])
 df_partes = cargar_tabla(config["partes"])
 df_ostes = cargar_tabla(config["ostes"])
 
-
 # =============================
 # NORMALIZACIÓN
 # =============================
@@ -262,7 +261,6 @@ df_ostes = normalizar_columnas(df_ostes, "ostes")
 # =================================
 # DATE PARSING
 # =================================
-
 # Interna
 if "Fecha Registro" in df.columns:
     df["Fecha Registro"] = pd.to_datetime(df["Fecha Registro"], errors="coerce")
@@ -282,7 +280,6 @@ if "Fecha Liberada" in df.columns:
 if "Fecha Terminada" in df.columns:
     df["Fecha Terminada"] = pd.to_datetime(df["Fecha Terminada"], errors="coerce")
 
-
 # OSTES
 if "Fecha OSTE" in df_ostes.columns:
     df_ostes["Fecha OSTE"] = pd.to_datetime(df_ostes["Fecha OSTE"], errors="coerce")
@@ -296,20 +293,12 @@ if "Fecha Analisis" in df_ostes.columns:
 if "Fecha Cierre" in df_ostes.columns:
     df_ostes["Fecha Cierre"] = pd.to_datetime(df_ostes["Fecha Cierre"], errors="coerce")
 
-
 # PARTES
 if "Fecha Compra" in df_partes.columns:
     df_partes["Fecha Compra"] = pd.to_datetime(df_partes["Fecha Compra"], errors="coerce")
 
 if "Fecha Analisis" in df_partes.columns:
     df_partes["Fecha Analisis"] = pd.to_datetime(df_partes["Fecha Analisis"], errors="coerce")
-
-
-#Debugging
-#st.write("Rows interna BEFORE filter:", len(df))
-#st.write("Rows ostes BEFORE filter:", len(df_ostes))
-#st.write("Rows interna AFTER filter:", len(df))
-#st.write("Rows ostes AFTER filter:", len(df_ostes))
 
 # =================================
 # HARD LOCK 2025+ FOR INTERNA & EXTERNA
@@ -325,7 +314,6 @@ if "Fecha OSTE" in df_ostes.columns:
 if df.empty and df_ostes.empty:
     st.warning("No hay datos disponibles para esta empresa.")
     st.stop()
-
 
 # =================================
 # SAFE HELPERS
@@ -533,6 +521,7 @@ else:
                 st.session_state.modal_tipo = "interna"
 
 st.divider()
+
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
 # =====================================================
@@ -614,7 +603,6 @@ st.subheader("Refacciones Recientes")
 
 if not df_partes.empty and "Unidad" in df_partes.columns:
 
-    # 🔒 Hard lock to 2025+
     LOCK_DATE = pd.Timestamp("2025-01-01")
 
     df_partes_base = df_partes[
@@ -686,7 +674,7 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
     )
 
     # -----------------------------
-    # COLUMN LOGIC (UNCHANGED)
+    # COLUMN LOGIC
     # -----------------------------
     if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
         columnas_partes = [

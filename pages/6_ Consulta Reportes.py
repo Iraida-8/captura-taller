@@ -80,7 +80,6 @@ if st.session_state.get("_reset_consulta_page", True):
     st.session_state.modal_reporte = None
     st.session_state["_reset_consulta_page"] = False
 
-
 #Modal state initialization
 st.session_state.setdefault("modal_reporte", None)
 
@@ -261,6 +260,7 @@ postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3C
 postit(k2, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
 postit(k3, "Órdenes Terminadas", completadas, porcentaje(completadas), "#D4EDDA")
 postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
+
 # =================================
 # LAST 5 CHANGES (POST ITS)
 # =================================

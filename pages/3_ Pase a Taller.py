@@ -411,7 +411,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
             disabled=tipo_unidad_operador != "Remolques"
         )
 
-
     e1, e2 = st.columns(2)
     with e1:
         no_unidad_externo = st.text_input(
@@ -499,7 +498,6 @@ if tipo_proveedor in ["Interno", "Externo"]:
             no_unidad,
             no_unidad_externo
         )
-
 
         # If duplicate AND not forcing → ask confirmation
         if folio_existente and not st.session_state.forzar_guardado:

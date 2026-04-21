@@ -423,7 +423,6 @@ with col_a:
 
         st.session_state.modo_reportes = "consultar"
 
-
 with col_b:
     if st.button("📤 Cargar Reportes", use_container_width=True):
 
@@ -984,7 +983,7 @@ def upload_to_supabase(df, table_name):
 
         def serialize_value(x):
             if isinstance(x, Decimal):
-                return str(x)  # preserves exact precision
+                return str(x)
             return x
 
         records = df.applymap(serialize_value).to_dict(orient="records")
@@ -1056,8 +1055,6 @@ def load_tc():
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-            # ✅ ADD THIS
             df["year"] = df["year"].astype(int)
             df["month"] = df["month"].astype(int)
 
@@ -1261,7 +1258,6 @@ if file_ordenes and file_mantenimientos:
                 df_final_ref["Precio Sin IVA"] * 1,
                 df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
             )
-
 
             # =============================
             # RENAME

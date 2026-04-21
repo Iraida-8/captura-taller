@@ -200,7 +200,7 @@ if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
 # =================================
-# Buttons (ONLY THING VISIBLE INITIALLY)
+# Buttons
 # =================================
 st.divider()
 
@@ -275,7 +275,7 @@ if st.session_state.mode == "gestionar":
     empresa_codigo = reverse_empresa_map[empresa_nombre]
 
     # =============================
-    # TABLE — UNIDADES (VISIBLE AFTER EMPRESA)
+    # TABLE — UNIDADES
     # =============================
     st.divider()
 
@@ -385,7 +385,6 @@ if st.session_state.mode == "gestionar":
             st.session_state.delete_modal = unidad_selected
             st.rerun()
         
-
 # =================================
 # CREAR
 # =================================
@@ -427,7 +426,7 @@ if st.session_state.mode == "crear":
     st.divider()
 
     # =============================
-    # FORM (EMPTY)
+    # FORM
     # =============================
     with st.form("crear_form"):
 
@@ -526,7 +525,7 @@ if st.session_state.mode == "cargar":
             df_preview = None
 
     # ===============================
-    # PREVIEW TABLE (COLLAPSIBLE)
+    # PREVIEW TABLE
     # ===============================
     if df_preview is not None and not df_preview.empty:
 
