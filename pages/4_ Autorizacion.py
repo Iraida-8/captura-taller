@@ -70,12 +70,9 @@ st.divider()
 # Update Estado
 # =================================
 VALID_ESTADOS = [
-    "En Curso / Nuevo",
-    "En Curso / En Diagnostico",
-    "En Curso / No Diagnosticado",
-    "En Curso / En Reparacion",
-    "En Curso / Espera de Refaccion",
-    "Cerrado / Resuelto",
+    "Inicio / Nuevo",
+    "En Curso / Proceso",
+    "Cerrado / Terminado",
     "Cerrado / Cancelado",
 ]
 
@@ -256,11 +253,8 @@ def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
     supabase = get_supabase_client()
 
     estado_fecha_map = {
-        "En Curso / En Diagnostico": "Fecha Diagnostico",
-        "En Curso / No Diagnosticado": "Fecha No Diagnosticado",
-        "En Curso / En Reparacion": "Fecha En Reparacion",
-        "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
-        "Cerrado / Resuelto": "Fecha Resuelto",
+        "En Curso / Proceso": "Fecha En Proceso",
+        "Cerrado / Terminado": "Fecha Terminado",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -328,11 +322,8 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
     fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     estado_fecha_map = {
-        "En Curso / En Diagnostico": "Fecha Diagnostico",
-        "En Curso / No Diagnosticado": "Fecha No Diagnosticado",
-        "En Curso / En Reparacion": "Fecha En Reparacion",
-        "En Curso / Espera de Refaccion": "Fecha Espera Refaccion",
-        "Cerrado / Resuelto": "Fecha Resuelto",
+        "En Curso / Proceso": "Fecha En Proceso",
+        "Cerrado / Terminado": "Fecha Terminado",
         "Cerrado / Cancelado": "Fecha Cancelado",
     }
 
@@ -540,32 +531,22 @@ def porcentaje(n):
     return round((n / total_ordenes) * 100, 1)
 
 pendientes = len(
-    pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
-)
-
-diagnosticos = len(
-    pases_df[pases_df["Estado"].isin([
-        "En Curso / En Diagnostico",
-        "En Curso / No Diagnosticado",
-    ])]
+    pases_df[pases_df["Estado"] == "Inicio / Nuevo"]
 )
 
 en_proceso = len(
-    pases_df[pases_df["Estado"].isin([
-        "En Curso / En Reparacion",
-        "En Curso / Espera de Refaccion",
-    ])]
+    pases_df[pases_df["Estado"] == "En Curso / Proceso"]
 )
 
 completadas = len(
-    pases_df[pases_df["Estado"] == "Cerrado / Resuelto"]
+    pases_df[pases_df["Estado"] == "Cerrado / Terminado"]
 )
 
 canceladas = len(
     pases_df[pases_df["Estado"] == "Cerrado / Cancelado"]
 )
 
-k1, k2, k3, k4, k5 = st.columns(5)
+k1, k2, k3, k4 = st.columns(4)
 
 def postit(col, titulo, valor, pct, color):
     with col:
@@ -588,10 +569,9 @@ def postit(col, titulo, valor, pct, color):
         )
 
 postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
-postit(k2, "Diagnósticos Activos", diagnosticos, porcentaje(diagnosticos), "#D1ECF1")
-postit(k3, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
-postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDDA")
-postit(k5, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
+postit(k2, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
+postit(k3, "Órdenes Terminadas", completadas, porcentaje(completadas), "#D4EDDA")
+postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
 
 # =================================
 # COMPANY DISTRIBUTION and LOG
@@ -617,16 +597,21 @@ with left:
             total_emp = len(df_emp)
             pct = (total_emp / total_global * 100) if total_global else 0
 
-            pendientes = len(df_emp[df_emp["Estado"] == "En Curso / Nuevo"])
-            proceso = len(df_emp[df_emp["Estado"].isin([
-                "En Curso / En Diagnostico",
-                "En Curso / No Diagnosticado",
-                "En Curso / En Reparacion",
-                "En Curso / Espera de Refaccion",
-            ])])
-            
-            completadas = len(df_emp[df_emp["Estado"] == "Cerrado / Resuelto"])
-            canceladas = len(df_emp[df_emp["Estado"] == "Cerrado / Cancelado"])
+            pendientes = len(
+                df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
+            )
+
+            proceso = len(
+                df_emp[df_emp["Estado"] == "En Curso / Proceso"]
+            )
+
+            completadas = len(
+                df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
+            )
+
+            canceladas = len(
+                df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
+            )
 
             with st.container(border=True):
 
@@ -754,13 +739,13 @@ def safe(x):
 if not pases_df.empty:
 
     top10 = (
-        pases_df[pases_df["Estado"] == "En Curso / Nuevo"]
+        pases_df[pases_df["Estado"] == "Inicio / Nuevo"]
         .sort_values("Fecha", ascending=False)
         .head(10)
     )
 
     if top10.empty:
-        st.info("No hay pases en estado Nuevo.")
+        st.info("No hay pases en estado Inicio / Nuevo.")
 
     else:
         cols = st.columns(5)
@@ -816,7 +801,7 @@ if not pases_df.empty:
                             font-weight:700;
                             color:#856404;
                         ">
-                            En Curso / Nuevo
+                            Inicio / Nuevo
                         </div>
 
                         <div style="
@@ -1069,12 +1054,9 @@ with f4:
         "Estado",
         [
             "Selecciona estado",
-            "En Curso / Nuevo",
-            "En Curso / En Diagnostico",
-            "En Curso / No Diagnosticado",
-            "En Curso / En Reparacion",
-            "En Curso / Espera de Refaccion",
-            "Cerrado / Resuelto",
+            "Inicio / Nuevo",
+            "En Curso / Proceso",
+            "Cerrado / Terminado",
             "Cerrado / Cancelado",
         ]
     )
@@ -1115,7 +1097,10 @@ if st.session_state.buscar_trigger:
     for _, row in resultados.iterrows():
         c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([1,2,2,2,2,3,2,1])
 
-        editable = row["Estado"].startswith("En Curso")
+        editable = row["Estado"] in [
+            "Inicio / Nuevo",
+            "En Curso / Proceso"
+        ]
 
         # ======================================================
         # BUTTON COLUMN
@@ -1152,7 +1137,10 @@ if st.session_state.buscar_trigger:
 if st.session_state.modal_reporte:
 
     r = st.session_state.modal_reporte
-    editable_estado = r["Estado"].startswith("En Curso")
+    editable_estado = r["Estado"] in [
+        "Inicio / Nuevo",
+        "En Curso / Proceso"
+    ]
 
     @st.dialog("Detalle del Pase de Taller")
     def modal():
@@ -1215,26 +1203,12 @@ if st.session_state.modal_reporte:
         estado_actual = r["Estado"]
 
         transiciones = {
-            "En Curso / Nuevo": [
-                "En Curso / En Diagnostico",
-                "En Curso / No Diagnosticado",
+            "Inicio / Nuevo": [
+                "En Curso / Proceso",
                 "Cerrado / Cancelado",
             ],
-            "En Curso / En Diagnostico": [
-                "En Curso / En Reparacion",
-                "En Curso / Espera de Refaccion",
-                "Cerrado / Cancelado",
-            ],
-            "En Curso / No Diagnosticado": [
-                "Cerrado / Cancelado",
-                "Cerrado / Resuelto",
-            ],
-            "En Curso / Espera de Refaccion": [
-                "En Curso / En Reparacion",
-                "Cerrado / Cancelado",
-            ],
-            "En Curso / En Reparacion": [
-                "Cerrado / Resuelto",
+            "En Curso / Proceso": [
+                "Cerrado / Terminado",
                 "Cerrado / Cancelado",
             ],
         }
@@ -1249,10 +1223,7 @@ if st.session_state.modal_reporte:
             disabled=not editable_estado
         )
 
-        editable_servicios = nuevo_estado in [
-            "En Curso / En Reparacion",
-            "En Curso / Espera de Refaccion",
-        ]
+        editable_servicios = nuevo_estado == "En Curso / Proceso"
 
         st.divider()
         st.subheader("Servicios y Refacciones")
@@ -1287,7 +1258,7 @@ if st.session_state.modal_reporte:
             # ==========================================
             # FILTER PARTES BASED ON TIPO
             # ==========================================
-            if tipo_seleccionado != "Todos":
+            if tipo_seleccionado != "Selecciona tipo":
                 catalogo_filtrado = catalogo[
                     catalogo["Tipo"] == tipo_seleccionado
                 ]
@@ -1374,7 +1345,7 @@ if st.session_state.modal_reporte:
 
             mostrar_aceptar = True
 
-            label_btn = "Guardar cambios" if editable_estado else "Guardar"
+            label_btn = "Guardar cambios" if editable_estado else "Cerrar"
 
             if mostrar_aceptar and st.button(label_btn, type="primary"):
 
