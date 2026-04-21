@@ -129,6 +129,34 @@ def actualizar_oste_pase(empresa, folio, oste):
         .execute()
 
 # =================================
+# Update No. de Orden (SUPABASE)
+# =================================
+
+def actualizar_no_orden_pase(empresa, folio, nuevo_no_orden):
+
+    table_map = {
+        "IGLOO TRANSPORT": "IGLOO",
+        "LINCOLN FREIGHT": "LINCOLN",
+        "PICUS": "PICUS",
+        "SET FREIGHT INTERNATIONAL": "SFI",
+        "SET LOGIS PLUS": "SLP",
+    }
+
+    table_name = table_map.get(empresa)
+
+    if not table_name:
+        return
+
+    supabase = get_supabase_client()
+
+    supabase.table(table_name)\
+        .update({
+            "No. de Orden": str(nuevo_no_orden).strip()
+        })\
+        .eq('"No. de Folio"', folio)\
+        .execute()
+    
+# =================================
 # Update Descripcion Problema
 # =================================
 def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
@@ -1378,13 +1406,6 @@ if st.session_state.modal_reporte:
 
                 estado_actual = r["Estado"]
 
-                if (
-                    not editable_servicios
-                    and nuevo_estado == estado_actual
-                ):
-                    st.session_state.modal_reporte = None
-                    st.rerun()
-
                 if nuevo_estado != estado_actual:
 
                     actualizar_estado_pase(
@@ -1426,6 +1447,43 @@ if st.session_state.modal_reporte:
                             oste_anterior=oste_anterior,
                             oste_nuevo=oste_nuevo
                         )
+                    
+                # =================================
+                # UPDATE NO. DE ORDEN IF CHANGED
+                # =================================
+                orden_original = clean(
+                    r.get("No. de Orden", r.get("No. de Reporte", ""))
+                )
+
+                try:
+                    orden_original = str(int(float(orden_original))) if orden_original else ""
+                except:
+                    orden_original = str(orden_original).strip()
+
+                orden_nueva = clean(orden_editada)
+
+                try:
+                    orden_nueva = str(int(float(orden_nueva))) if orden_nueva else ""
+                except:
+                    orden_nueva = str(orden_nueva).strip()
+
+                if orden_nueva != orden_original:
+
+                    actualizar_no_orden_pase(
+                        r["Empresa"],
+                        r["NoFolio"],
+                        orden_nueva
+                    )
+
+                    registrar_cambio_log(
+                        usuario=usuario,
+                        empresa=r["Empresa"],
+                        folio=r["NoFolio"],
+                        tipo_cambio="Actualización No. de Orden",
+                        estado_anterior=r["Estado"],
+                        estado_nuevo=r["Estado"],
+                        comentario=f"No. de Orden actualizado: {orden_original} → {orden_nueva}"
+                    )
 
                 # =====================================================
                 # CREATE MILESTONE ROW IF NO REAL SERVICES
