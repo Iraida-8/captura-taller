@@ -146,11 +146,8 @@ def cargar_servicios():
             "Posicion",
             "Cantidad",
             "Fecha Mod",
-            "Fecha Diagnostico",
-            "Fecha No Diagnosticado",
-            "Fecha En Reparacion",
-            "Fecha Espera Refaccion",
-            "Fecha Resuelto",
+            "Fecha En Proceso",
+            "Fecha Terminado",
             "Fecha Cancelado",
         ])
 
@@ -168,11 +165,8 @@ def cargar_servicios():
 
     date_cols = [
         "Fecha Mod",
-        "Fecha Diagnostico",
-        "Fecha No Diagnosticado",
-        "Fecha En Reparacion",
-        "Fecha Espera Refaccion",
-        "Fecha Resuelto",
+        "Fecha En Proceso",
+        "Fecha Terminado",
         "Fecha Cancelado",
     ]
 
@@ -226,32 +220,22 @@ def porcentaje(n):
     return round((n / total_ordenes) * 100, 1)
 
 pendientes = len(
-    df_pases[df_pases["Estado"] == "En Curso / Nuevo"]
-)
-
-diagnosticos = len(
-    df_pases[df_pases["Estado"].isin([
-        "En Curso / En Diagnostico",
-        "En Curso / No Diagnosticado",
-    ])]
+    df_pases[df_pases["Estado"] == "Inicio / Nuevo"]
 )
 
 en_proceso = len(
-    df_pases[df_pases["Estado"].isin([
-        "En Curso / En Reparacion",
-        "En Curso / Espera de Refaccion",
-    ])]
+    df_pases[df_pases["Estado"] == "En Curso / Proceso"]
 )
 
 completadas = len(
-    df_pases[df_pases["Estado"] == "Cerrado / Resuelto"]
+    df_pases[df_pases["Estado"] == "Cerrado / Terminado"]
 )
 
 canceladas = len(
     df_pases[df_pases["Estado"] == "Cerrado / Cancelado"]
 )
 
-k1, k2, k3, k4, k5 = st.columns(5)
+k1, k2, k3, k4 = st.columns(4)
 
 def postit(col, titulo, valor, pct, color):
     with col:
@@ -274,11 +258,9 @@ def postit(col, titulo, valor, pct, color):
         )
 
 postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
-postit(k2, "Diagnósticos Activos", diagnosticos, porcentaje(diagnosticos), "#D1ECF1")
-postit(k3, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
-postit(k4, "Órdenes Completadas", completadas, porcentaje(completadas), "#D4EDDA")
-postit(k5, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
-
+postit(k2, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
+postit(k3, "Órdenes Terminadas", completadas, porcentaje(completadas), "#D4EDDA")
+postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
 # =================================
 # LAST 5 CHANGES (POST ITS)
 # =================================
@@ -476,12 +458,9 @@ with f7:
 
 with f8:
     ESTADOS = [
-        "En Curso / Nuevo",
-        "En Curso / En Diagnostico",
-        "En Curso / No Diagnosticado",
-        "En Curso / En Reparacion",
-        "En Curso / Espera de Refaccion",
-        "Cerrado / Resuelto",
+        "Inicio / Nuevo",
+        "En Curso / Proceso",
+        "Cerrado / Terminado",
         "Cerrado / Cancelado",
     ]
 
@@ -499,24 +478,25 @@ with st.expander("📅 Filtrar por fechas", expanded=False):
     d1, d2, d3 = st.columns(3)
 
     with d1:
-        fecha_diag = st.date_input("Fecha Diagnostico", value=None, key="f_fecha_diag")
+        fecha_proceso = st.date_input(
+            "Fecha En Proceso",
+            value=None,
+            key="f_fecha_proceso"
+        )
 
     with d2:
-        fecha_no_diag = st.date_input("Fecha No Diagnosticado", value=None, key="f_fecha_no_diag")
+        fecha_terminado = st.date_input(
+            "Fecha Terminado",
+            value=None,
+            key="f_fecha_terminado"
+        )
 
     with d3:
-        fecha_reparacion = st.date_input("Fecha En Reparacion", value=None, key="f_fecha_reparacion")
-
-    d4, d5, d6 = st.columns(3)
-
-    with d4:
-        fecha_espera = st.date_input("Fecha Espera Refaccion", value=None, key="f_fecha_espera")
-
-    with d5:
-        fecha_resuelto = st.date_input("Fecha Resuelto", value=None, key="f_fecha_resuelto")
-
-    with d6:
-        fecha_cancel = st.date_input("Fecha Cancelado", value=None, key="f_fecha_cancel")
+        fecha_cancel = st.date_input(
+            "Fecha Cancelado",
+            value=None,
+            key="f_fecha_cancel"
+        )
 
 c1, c2 = st.columns([1,1])
 
@@ -538,11 +518,8 @@ with c2:
         st.session_state["f_estado"] = "Todos"
 
         # Reset date filters
-        st.session_state["f_fecha_diag"] = None
-        st.session_state["f_fecha_no_diag"] = None
-        st.session_state["f_fecha_reparacion"] = None
-        st.session_state["f_fecha_espera"] = None
-        st.session_state["f_fecha_resuelto"] = None
+        st.session_state["f_fecha_proceso"] = None
+        st.session_state["f_fecha_terminado"] = None
         st.session_state["f_fecha_cancel"] = None
 
         # Reset filtered data
@@ -612,11 +589,8 @@ if buscar:
             df = df[df[columna].dt.date == valor]
         return df
 
-    df_s = filtrar_fecha(df_s, "Fecha Diagnostico", fecha_diag)
-    df_s = filtrar_fecha(df_s, "Fecha No Diagnosticado", fecha_no_diag)
-    df_s = filtrar_fecha(df_s, "Fecha En Reparacion", fecha_reparacion)
-    df_s = filtrar_fecha(df_s, "Fecha Espera Refaccion", fecha_espera)
-    df_s = filtrar_fecha(df_s, "Fecha Resuelto", fecha_resuelto)
+    df_s = filtrar_fecha(df_s, "Fecha En Proceso", fecha_proceso)
+    df_s = filtrar_fecha(df_s, "Fecha Terminado", fecha_terminado)
     df_s = filtrar_fecha(df_s, "Fecha Cancelado", fecha_cancel)
 
     # ======================================================
@@ -624,8 +598,8 @@ if buscar:
     # ======================================================
 
     if (
-        fecha_diag or fecha_no_diag or fecha_reparacion
-        or fecha_espera or fecha_resuelto
+        fecha_proceso
+        or fecha_terminado
         or fecha_cancel
     ):
         folios_validos = df_s["Folio"].unique()
@@ -815,7 +789,6 @@ else:
     else:
         st.warning("No se encontraron órdenes con los filtros aplicados.")
 
-# EXACT columns you requested
 columnas = [
     # ===== COMPANY =====
     "Fecha de Captura",
@@ -840,11 +813,8 @@ columnas = [
     "Posicion",
     "Cantidad",
     "Fecha Mod",
-    "Fecha Diagnostico",
-    "Fecha No Diagnosticado",
-    "Fecha En Reparacion",
-    "Fecha Espera Refaccion",
-    "Fecha Resuelto",
+    "Fecha En Proceso",
+    "Fecha Terminado",
     "Fecha Cancelado",
 ]
 
@@ -915,11 +885,8 @@ with st.expander("📦 Resumen por Orden", expanded=False):
 
                 # ===== DATES (take latest available) =====
                 "Fecha Mod": "max",
-                "Fecha Diagnostico": "max",
-                "Fecha No Diagnosticado": "max",
-                "Fecha En Reparacion": "max",
-                "Fecha Espera Refaccion": "max",
-                "Fecha Resuelto": "max",
+                "Fecha En Proceso": "max",
+                "Fecha Terminado": "max",
                 "Fecha Cancelado": "max",
             })
         )
@@ -967,11 +934,8 @@ with st.expander("📦 Resumen por Orden", expanded=False):
             "Posicion",
             "Cantidad",
             "Fecha Mod",
-            "Fecha Diagnostico",
-            "Fecha No Diagnosticado",
-            "Fecha En Reparacion",
-            "Fecha Espera Refaccion",
-            "Fecha Resuelto",
+            "Fecha En Proceso",
+            "Fecha Terminado",
             "Fecha Cancelado",
         ]
 
@@ -1151,11 +1115,8 @@ if st.session_state.get("modal_reporte"):
         st.subheader("📅 Fechas Operativas")
 
         fecha_cols = [
-            "Fecha Diagnostico",
-            "Fecha No Diagnosticado",
-            "Fecha En Reparacion",
-            "Fecha Espera Refaccion",
-            "Fecha Resuelto",
+            "Fecha En Proceso",
+            "Fecha Terminado",
             "Fecha Cancelado",
         ]
 
