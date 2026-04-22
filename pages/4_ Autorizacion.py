@@ -885,6 +885,102 @@ st.session_state.setdefault(
 )
 
 # =================================
+# DISTRIBUCIÓN POR TIPO DE PARTE
+# =================================
+st.divider()
+st.subheader("Distribución por Tipo de Parte")
+
+@st.cache_data(ttl=300)
+def cargar_tipos_parte():
+
+    supabase = get_supabase_client()
+
+    page_size = 1000
+    start = 0
+    all_rows = []
+
+    while True:
+        response = (
+            supabase
+            .table("SERVICES")
+            .select('"Tipo De Parte"')
+            .range(start, start + page_size - 1)
+            .execute()
+        )
+
+        data = response.data
+
+        if not data:
+            break
+
+        all_rows.extend(data)
+        start += page_size
+
+    if not all_rows:
+        return pd.DataFrame(columns=["Tipo De Parte"])
+
+    df = pd.DataFrame(all_rows)
+
+    if "Tipo De Parte" not in df.columns:
+        return pd.DataFrame(columns=["Tipo De Parte"])
+
+    # limpiar valores inválidos
+    df["Tipo De Parte"] = (
+        df["Tipo De Parte"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+
+    # excluir vacíos, null, nan, none
+    df = df[
+        (df["Tipo De Parte"] != "")
+        & (df["Tipo De Parte"].str.lower() != "nan")
+        & (df["Tipo De Parte"].str.lower() != "none")
+        & (df["Tipo De Parte"].str.lower() != "null")
+    ]
+
+    return df
+
+
+tipos_df = cargar_tipos_parte()
+
+if tipos_df.empty:
+    st.info("No hay datos disponibles en Tipo De Parte.")
+else:
+
+    conteo_tipos = (
+        tipos_df["Tipo De Parte"]
+        .value_counts()
+        .reset_index()
+    )
+
+    conteo_tipos.columns = ["Tipo De Parte", "Cantidad"]
+
+    total_tipos = conteo_tipos["Cantidad"].sum()
+
+    for _, row in conteo_tipos.iterrows():
+
+        tipo = row["Tipo De Parte"]
+        cantidad = int(row["Cantidad"])
+        progreso = cantidad / total_tipos if total_tipos else 0
+
+        st.markdown(
+            f"""
+            <div style="
+                font-weight:600;
+                margin-bottom:4px;
+                color:#F5F5F5;
+            ">
+                {tipo} — {cantidad}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.progress(progreso)
+        
+# =================================
 # TOP 10 EN CURSO → POST ITS
 # =================================
 st.subheader("Últimos 10 Pases de Taller (Nuevos)")
