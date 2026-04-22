@@ -278,7 +278,17 @@ def show_changelog():
 # =================================
 if st.session_state.auth_view == "login":
 
-    st.title("Portal de Taller")
+    st.markdown("""
+    <h1 style="
+        text-align: center;
+        color: white;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    ">
+        Portal de Taller
+    </h1>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
