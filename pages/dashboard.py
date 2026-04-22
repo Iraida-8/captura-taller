@@ -177,7 +177,7 @@ if has_access(section_ordenes):
 
     with col2:
         if "autorizacion" in access:
-            if st.button("✅  Autorización", use_container_width=True, key="btn_autorizacion"):
+            if st.button("✅  Autorización y Gestion de Pases de Taller", use_container_width=True, key="btn_autorizacion"):
                 st.switch_page("pages/4_ Autorizacion.py")
 
     st.divider()
@@ -195,12 +195,12 @@ if has_access(section_consultas):
 
     with col1:
         if "consultar_reparacion" in access:
-            if st.button("🔍  Consultar Reparación", use_container_width=True, key="btn_consultar_reparacion"):
+            if st.button("🔍  Consultar Historial de Reparación", use_container_width=True, key="btn_consultar_reparacion"):
                 st.switch_page("pages/1_ Consultar Reparacion.py")
 
     with col2:
         if "consulta_reportes" in access:
-            if st.button("📊  Consulta Reportes", use_container_width=True, key="btn_consulta_reportes"):
+            if st.button("📊  Consulta Pases de Taller", use_container_width=True, key="btn_consulta_reportes"):
                 st.switch_page("pages/6_ Consulta Reportes.py")
 
     st.divider()
