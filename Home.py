@@ -30,7 +30,7 @@ st.markdown("""
 
 .block-container {
     max-width: 420px;
-    padding-top: 4rem;
+    padding-top: 5rem;
     padding-bottom: 3rem;
 }
 
@@ -38,7 +38,7 @@ st.markdown("""
 img {
     display: block;
     margin: auto;
-    margin-bottom: 1.8rem;
+    margin-bottom: 1.2rem;
     transform: scale(1.18);
 }
 
