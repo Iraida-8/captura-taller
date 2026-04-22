@@ -92,20 +92,26 @@ st.session_state.setdefault("auth_view", "login")
 # PASSWORD RECOVERY DETECTION
 # =================================
 
-try:
-    current_session = supabase.auth.get_session()
-except Exception:
-    current_session = None
-
 params = st.query_params
 is_recovery_mode = False
 
 if (
     params.get("type") == "recovery"
-    and current_session
-    and current_session.session
+    and params.get("token")
 ):
-    is_recovery_mode = True
+    try:
+        supabase.auth.verify_otp({
+            "type": "recovery",
+            "token": params.get("token")
+        })
+
+        is_recovery_mode = True
+
+    except Exception as e:
+        st.error(
+            "El enlace de recuperación es inválido o expiró"
+        )
+        st.stop()
 
 if is_recovery_mode:
 
@@ -252,7 +258,7 @@ if st.session_state.auth_view == "login":
     if reset_clicked:
         st.session_state.auth_view = "reset_request"
         st.rerun()
-        
+
 # =================================
 # RESET PASSWORD REQUEST VIEW
 # =================================
