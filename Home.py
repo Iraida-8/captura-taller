@@ -54,7 +54,7 @@ form[data-testid="stForm"] {
 /* Title */
 h1 {
     text-align: center !important;
-    font-size: 2.4rem !important;
+    font-size: 3.0rem !important;
     margin-bottom: 0.15rem !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
