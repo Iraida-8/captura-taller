@@ -172,7 +172,7 @@ if has_access(section_ordenes):
 
     with col1:
         if "pase_taller" in access:
-            if st.button("🏭  Pase a Taller", use_container_width=True, key="btn_pase_taller"):
+            if st.button("🏭  Generar nuevo Pase a Taller", use_container_width=True, key="btn_pase_taller"):
                 st.switch_page("pages/3_ Pase a Taller.py")
 
     with col2:
