@@ -137,7 +137,7 @@ with col_logo:
         img = Image.open(logo_path)
         st.image(
             img,
-            width=200
+            width=300
         )
 
 with col_logout:
