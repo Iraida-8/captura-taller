@@ -88,29 +88,42 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
 
 # =================================
-# HANDLE PASSWORD RECOVERY
+# PASSWORD RECOVERY DETECTION
 # =================================
+
+try:
+    current_session = supabase.auth.get_session()
+except Exception:
+    current_session = None
+
 params = st.query_params
+is_recovery_mode = False
 
-if params.get("type") == "recovery" and params.get("token"):
+if (
+    params.get("type") == "recovery"
+    and current_session
+    and current_session.session
+):
+    is_recovery_mode = True
 
-    token = params.get("token")
-
-    try:
-        supabase.auth.verify_otp({
-            "type": "recovery",
-            "token": token
-        })
-    except Exception as e:
-        st.error(f"Enlace inválido o expirado: {e}")
-        st.stop()
+if is_recovery_mode:
 
     st.title("Restablecer contraseña")
 
     with st.form("reset_password_form"):
-        new_password = st.text_input("Nueva contraseña", type="password")
-        confirm_password = st.text_input("Confirmar contraseña", type="password")
-        submit_reset = st.form_submit_button("Actualizar contraseña")
+        new_password = st.text_input(
+            "Nueva contraseña",
+            type="password"
+        )
+
+        confirm_password = st.text_input(
+            "Confirmar contraseña",
+            type="password"
+        )
+
+        submit_reset = st.form_submit_button(
+            "Actualizar contraseña"
+        )
 
     if submit_reset:
 
@@ -123,15 +136,24 @@ if params.get("type") == "recovery" and params.get("token"):
             st.stop()
 
         try:
-            supabase.auth.update_user({"password": new_password})
-            supabase.auth.sign_out()
-            st.success("Contraseña actualizada correctamente")
-            st.query_params.clear()
-            st.info("Ya puedes iniciar sesión")
-        except Exception as e:
-            st.error(f"Error actualizando contraseña: {e}")
+            supabase.auth.update_user({
+                "password": new_password
+            })
 
-        st.stop()
+            supabase.auth.sign_out()
+
+            st.success("Contraseña actualizada correctamente")
+            st.info("Ya puedes iniciar sesión")
+
+            st.query_params.clear()
+            st.rerun()
+
+        except Exception as e:
+            st.error(
+                f"Error actualizando contraseña: {str(e)}"
+            )
+
+    st.stop()
 
 # =================================
 # LOGIN VIEW
@@ -212,7 +234,7 @@ if submit:
 # =================================
 # FORGOT PASSWORD (Temporarily Disabled)
 # =================================
-ENABLE_PASSWORD_RESET = False
+ENABLE_PASSWORD_RESET = True
 
 if ENABLE_PASSWORD_RESET:
     st.markdown('<div class="small-text">¿Olvidaste tu contraseña?</div>', unsafe_allow_html=True)
