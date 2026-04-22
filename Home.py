@@ -113,55 +113,6 @@ if (
         )
         st.stop()
 
-if is_recovery_mode:
-
-    st.title("Restablecer contraseña")
-
-    with st.form("reset_password_form"):
-        new_password = st.text_input(
-            "Nueva contraseña",
-            type="password"
-        )
-
-        confirm_password = st.text_input(
-            "Confirmar contraseña",
-            type="password"
-        )
-
-        submit_reset = st.form_submit_button(
-            "Actualizar contraseña"
-        )
-
-    if submit_reset:
-
-        if new_password != confirm_password:
-            st.error("Las contraseñas no coinciden")
-            st.stop()
-
-        if len(new_password) < 6:
-            st.error("La contraseña debe tener al menos 6 caracteres")
-            st.stop()
-
-        try:
-            supabase.auth.update_user({
-                "password": new_password
-            })
-
-            supabase.auth.sign_out()
-
-            st.success("Contraseña actualizada correctamente")
-            st.info("Ya puedes iniciar sesión")
-
-            st.query_params.clear()
-            st.rerun()
-
-        except Exception as e:
-            st.error(
-                f"Error actualizando contraseña: {str(e)}"
-            )
-
-    st.stop()
-
 # =================================
 # LOGIN / RESET REQUEST VIEW
 # =================================
@@ -260,12 +211,12 @@ if st.session_state.auth_view == "login":
         st.rerun()
 
 # =================================
-# RESET PASSWORD REQUEST VIEW
+# RESET PASSWORD VIEW (OTP FLOW)
 # =================================
 
 if st.session_state.auth_view == "reset_request":
 
-    st.title("Reseteo de contraseña")
+    st.title("Restablecer contraseña")
 
     reset_email = st.text_input(
         "Correo electrónico",
@@ -273,40 +224,102 @@ if st.session_state.auth_view == "reset_request":
         key="reset_email"
     )
 
+    recovery_code = st.text_input(
+        "Código de recuperación",
+        placeholder="Ingresa el código recibido",
+        key="recovery_code"
+    )
+
+    new_password = st.text_input(
+        "Nueva contraseña",
+        type="password",
+        key="new_password_reset"
+    )
+
+    confirm_password = st.text_input(
+        "Confirmar contraseña",
+        type="password",
+        key="confirm_password_reset"
+    )
+
     col1, col2 = st.columns(2)
 
     with col1:
-        send_reset = st.button(
-            "Enviar reseteo",
+        send_code = st.button(
+            "Enviar código",
             use_container_width=True
         )
 
     with col2:
-        go_back = st.button(
+        back_btn = st.button(
             "Volver",
             use_container_width=True
         )
 
-    if send_reset:
+    if send_code:
         if not reset_email:
             st.warning("Ingresa un correo")
         else:
             try:
                 supabase.auth.reset_password_for_email(
-                    reset_email,
-                    {
-                        "redirect_to":
-                        "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
-                    }
+                    reset_email
                 )
 
                 st.success(
-                    "Correo de recuperación enviado"
+                    "Se envió el código de recuperación al correo"
                 )
 
             except Exception as e:
                 st.error(str(e))
 
-    if go_back:
+    update_clicked = st.button(
+        "Actualizar contraseña",
+        use_container_width=True
+    )
+
+    if update_clicked:
+
+        if not reset_email:
+            st.error("Falta correo")
+            st.stop()
+
+        if not recovery_code:
+            st.error("Falta código de recuperación")
+            st.stop()
+
+        if new_password != confirm_password:
+            st.error("Las contraseñas no coinciden")
+            st.stop()
+
+        if len(new_password) < 6:
+            st.error("Mínimo 6 caracteres")
+            st.stop()
+
+        try:
+            supabase.auth.verify_otp({
+                "email": reset_email,
+                "token": recovery_code,
+                "type": "recovery"
+            })
+
+            supabase.auth.update_user({
+                "password": new_password
+            })
+
+            supabase.auth.sign_out()
+
+            st.success(
+                "Contraseña actualizada correctamente"
+            )
+
+            st.session_state.auth_view = "login"
+            st.rerun()
+
+        except Exception as e:
+            st.error(
+                f"Error: {str(e)}"
+            )
+
+    if back_btn:
         st.session_state.auth_view = "login"
         st.rerun()
