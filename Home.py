@@ -61,9 +61,9 @@ div[data-testid="stFormSubmitButton"] > button {
     transition: all 0.2s ease;
 }
 
-/* INGRESAR button (blue) */
+/* INGRESAR button*/
 div[data-testid="stFormSubmitButton"] > button {
-    background-color: #1f6feb;
+    background-color: #BFA75F;
     color: white;
 }
 
