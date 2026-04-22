@@ -1020,7 +1020,7 @@ else:
                 margin-bottom:18px;
                 color:#111;
             ">
-                Distribución por Tipo de Parte
+                Distribución por Actividad
             </div>
 
             {rows_html}
