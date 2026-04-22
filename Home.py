@@ -285,9 +285,24 @@ def show_changelog():
         return
 
     for item in changelog_data:
-        st.markdown(f"### v{item['version']}")
+        version = item.get("version", "Sin versión")
+        date = item.get("date", "")
+        changes = item.get("changes", [])
 
-        for change in item["changes"]:
+        st.markdown(f"### v{version}")
+
+        if date:
+            st.markdown(
+                f"<p style='margin-top:-10px; "
+                f"margin-bottom:10px; "
+                f"color:#BFA75F; "
+                f"font-size:0.9rem;'>"
+                f"{date}"
+                f"</p>",
+                unsafe_allow_html=True
+            )
+
+        for change in changes:
             st.markdown(f"- {change}")
 
         st.markdown("---")
