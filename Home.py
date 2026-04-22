@@ -193,6 +193,7 @@ if logo_path.exists():
 if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
+    st.caption("SYS. VER 1.00.22.26")
 
     with st.form("login_form"):
 
