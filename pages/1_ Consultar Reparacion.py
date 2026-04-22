@@ -159,14 +159,8 @@ supabase = get_supabase()
 # HARD RESET ON PAGE LOAD
 # =================================
 
-if "consulta_reparacion_initialized" not in st.session_state:
-
-    # Reset modals
-    st.session_state["modal_orden"] = None
-    st.session_state["modal_tipo"] = None
-
-    # Mark as initialized to avoid loop
-    st.session_state["consulta_reparacion_initialized"] = True
+st.session_state["modal_orden"] = None
+st.session_state["modal_tipo"] = None
 
 # =================================
 # Navigation
