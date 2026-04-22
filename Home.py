@@ -60,22 +60,6 @@ h1 {
     font-weight: 700 !important;
 }
 
-/* SYS VER text centered under title */
-div[data-testid="stMarkdownContainer"] p {
-    text-align: center;
-}
-
-/* Custom sys version text */
-.sys-version {
-    text-align: center;
-    margin-top: -8px;
-    margin-bottom: 1.4rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #BFA75F;
-    letter-spacing: 0.5px;
-}
-
 /* Labels */
 label,
 .stTextInput label {
@@ -83,20 +67,18 @@ label,
     font-weight: 500;
 }
 
-/* Shared button styling */
-div.stButton > button,
+/* =================================
+   INGRESAR button (form submit)
+================================= */
 div[data-testid="stFormSubmitButton"] > button {
     width: 100%;
     padding: 0.75rem;
     border-radius: 10px;
     font-weight: 600;
+    font-size: 15px;
     border: none;
     transition: all 0.2s ease;
-    font-size: 15px;
-}
 
-/* INGRESAR button */
-div[data-testid="stFormSubmitButton"] > button {
     background-color: #BFA75F;
     color: #151F6D;
     box-shadow: 0 4px 12px rgba(191, 167, 95, 0.25);
@@ -108,8 +90,17 @@ div[data-testid="stFormSubmitButton"] > button:hover {
     transform: translateY(-1px);
 }
 
-/* RECUPERAR CONTRASEÑA button */
+/* =================================
+   Normal buttons (Recuperar contraseña)
+================================= */
 div.stButton > button {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.2s ease;
+
     background-color: transparent;
     color: #BFA75F;
     border: 1px solid #BFA75F;
@@ -119,6 +110,38 @@ div.stButton > button:hover {
     background-color: #BFA75F;
     color: #151F6D;
     transform: translateY(-1px);
+}
+
+/* =================================
+   SYS VER clickable text button
+   (use key="sys_version_btn")
+================================= */
+div.stButton > button[kind="secondary"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+    color: #BFA75F !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px;
+
+    padding: 0 !important;
+    margin-top: -8px !important;
+    margin-bottom: 1.2rem !important;
+
+    min-height: auto !important;
+    line-height: 1.2 !important;
+
+    display: flex !important;
+    justify-content: center !important;
+}
+
+div.stButton > button[kind="secondary"]:hover {
+    background: transparent !important;
+    border: none !important;
+    color: #d4bc73 !important;
+    transform: none !important;
 }
 
 /* Inputs */
@@ -245,13 +268,7 @@ if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
 
-    st.markdown("""
-    <div class="sys-version">
-        SYS. VER 1.00.22.26
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.button("Ver cambios", use_container_width=True):
+    if st.button("SYS. VER 1.00.22.26", key="sys_version_btn"):
         show_changelog()
 
     with st.form("login_form"):
