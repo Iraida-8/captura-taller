@@ -86,6 +86,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # =================================
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("user", None)
+st.session_state.setdefault("auth_view", "login")
 
 # =================================
 # PASSWORD RECOVERY DETECTION
@@ -156,8 +157,9 @@ if is_recovery_mode:
     st.stop()
 
 # =================================
-# LOGIN VIEW
+# LOGIN / RESET REQUEST VIEW
 # =================================
+
 assets_dir = Path(__file__).parent / "assets"
 logo_path = assets_dir / "pg_brand.png"
 
@@ -171,85 +173,139 @@ if logo_path.exists():
         )
     st.image(img, width="stretch")
 
-st.title("Inicio de Sesión")
 
-with st.form("login_form"):
+# =================================
+# LOGIN VIEW
+# =================================
 
-    email = st.text_input(
-        "Correo electrónico",
-        placeholder="usuario@palosgarza.com"
-    )
+if st.session_state.auth_view == "login":
 
-    password = st.text_input(
-        "Contraseña",
-        type="password"
-    )
+    st.title("Inicio de Sesión")
 
-    submit = st.form_submit_button("Ingresar")
+    with st.container():
 
-if submit:
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
-
-        if not res.user:
-            st.error("Credenciales inválidas")
-            st.stop()
-
-        user_id = res.user.id
-
-        supabase.rpc(
-            "increment_login_count",
-            {"user_id": user_id}
-        ).execute()
-
-        profile_res = (
-            supabase
-            .table("profiles")
-            .select("full_name, login_count, role, access")
-            .eq("id", user_id)
-            .maybe_single()
-            .execute()
+        email = st.text_input(
+            "Correo electrónico",
+            placeholder="usuario@palosgarza.com",
+            key="login_email"
         )
 
-        profile_data = profile_res.data if profile_res and profile_res.data else {}
+        password = st.text_input(
+            "Contraseña",
+            type="password",
+            key="login_password"
+        )
 
-        st.session_state.logged_in = True
-        st.session_state.user = {
-            "id": user_id,
-            "email": res.user.email,
-            "name": profile_data.get("full_name"),
-            "login_count": profile_data.get("login_count", 0),
-            "role": profile_data.get("role", "user"),
-            "access": profile_data.get("access", [])
-        }
+        col1, col2 = st.columns(2)
 
-        st.switch_page("pages/dashboard.py")
+        with col1:
+            login_clicked = st.button(
+                "Ingresar",
+                use_container_width=True
+            )
 
-    except Exception as e:
-        st.error(str(e))
+        with col2:
+            reset_clicked = st.button(
+                "Recuperar contraseña",
+                use_container_width=True
+            )
+
+    if login_clicked:
+        try:
+            res = supabase.auth.sign_in_with_password({
+                "email": email,
+                "password": password
+            })
+
+            if not res.user:
+                st.error("Credenciales inválidas")
+                st.stop()
+
+            user_id = res.user.id
+
+            profile_res = (
+                supabase
+                .table("profiles")
+                .select("full_name, login_count, role, access")
+                .eq("id", user_id)
+                .maybe_single()
+                .execute()
+            )
+
+            profile_data = (
+                profile_res.data
+                if profile_res and profile_res.data
+                else {}
+            )
+
+            st.session_state.logged_in = True
+            st.session_state.user = {
+                "id": user_id,
+                "email": res.user.email,
+                "name": profile_data.get("full_name"),
+                "login_count": profile_data.get("login_count", 0),
+                "role": profile_data.get("role", "user"),
+                "access": profile_data.get("access", [])
+            }
+
+            st.switch_page("pages/dashboard.py")
+
+        except Exception as e:
+            st.error(str(e))
+
+    if reset_clicked:
+        st.session_state.auth_view = "reset_request"
+        st.rerun()
+
 
 # =================================
-# FORGOT PASSWORD (Temporarily Disabled)
+# RESET PASSWORD REQUEST VIEW
 # =================================
-ENABLE_PASSWORD_RESET = True
 
-if ENABLE_PASSWORD_RESET:
-    st.markdown('<div class="small-text">¿Olvidaste tu contraseña?</div>', unsafe_allow_html=True)
+if st.session_state.auth_view == "reset_request":
 
-    if st.button("Recuperar contraseña"):
-        if not email:
-            st.warning("Ingresa tu correo primero")
+    st.title("Reseteo de contraseña")
+
+    reset_email = st.text_input(
+        "Correo electrónico",
+        placeholder="usuario@palosgarza.com",
+        key="reset_email"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        send_reset = st.button(
+            "Enviar reseteo",
+            use_container_width=True
+        )
+
+    with col2:
+        go_back = st.button(
+            "Volver",
+            use_container_width=True
+        )
+
+    if send_reset:
+        if not reset_email:
+            st.warning("Ingresa un correo")
         else:
             try:
                 supabase.auth.reset_password_for_email(
-                    email,
+                    reset_email,
                     {
-                        "redirect_to": "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
+                        "redirect_to":
+                        "https://captura-taller-cthtp8mj8fhvgu5ygugxye.streamlit.app"
                     }
                 )
-                st.success("Correo de recuperación enviado")
+
+                st.success(
+                    "Correo de recuperación enviado"
+                )
+
             except Exception as e:
-                st.error(f"No se pudo enviar el correo: {e}")
+                st.error(str(e))
+
+    if go_back:
+        st.session_state.auth_view = "login"
+        st.rerun()
