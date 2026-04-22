@@ -114,31 +114,33 @@ div.stButton > button:hover {
 
 /* =================================
    SYS VER clickable text ONLY
-   centered + no frame + no border
+   centered + no frame
 ================================= */
-div[data-testid="column"]:has(button[key="sys_version_btn"]) {
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
+    margin-top: -6px !important;
+    margin-bottom: 1.3rem !important;
 }
 
-div[data-testid="column"]:has(button[key="sys_version_btn"]) button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
     width: auto !important;
     min-width: unset !important;
-    min-height: auto !important;
-
     padding: 0 !important;
-    margin: 0 auto 1.2rem auto !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 
     color: #BFA75F !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.4px !important;
+
+    min-height: auto !important;
     line-height: 1.2 !important;
 
     display: inline-flex !important;
@@ -146,7 +148,7 @@ div[data-testid="column"]:has(button[key="sys_version_btn"]) button {
     text-align: center !important;
 }
 
-div[data-testid="column"]:has(button[key="sys_version_btn"]) button:hover {
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -278,13 +280,13 @@ if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
 
-    col1, col2, col3 = st.columns([1.2, 2, 1.2])
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
         if st.button(
             "SYS. VER 1.00.22.26",
             key="sys_version_btn",
-            use_container_width=False
+            use_container_width=True
         ):
             show_changelog()
 
@@ -307,6 +309,7 @@ if st.session_state.auth_view == "login":
             use_container_width=True
         )
 
+    # visually aligned with form
     reset_clicked = st.button(
         "Recuperar contraseña",
         use_container_width=True
