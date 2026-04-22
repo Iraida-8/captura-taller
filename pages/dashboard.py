@@ -200,7 +200,7 @@ if has_access(section_consultas):
 
     with col2:
         if "consulta_reportes" in access:
-            if st.button("📊  Consulta Pases de Taller", use_container_width=True, key="btn_consulta_reportes"):
+            if st.button("📊  Consulta de Pases de Taller", use_container_width=True, key="btn_consulta_reportes"):
                 st.switch_page("pages/6_ Consulta Reportes.py")
 
     st.divider()

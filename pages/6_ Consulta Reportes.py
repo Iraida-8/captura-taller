@@ -231,7 +231,7 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.divider()
-st.title("📊 Consulta de Reportes")
+st.title("📊 Consulta de Pases de Taller / Ordenes")
 
 # =================================
 # Load PASES (SUPABASE PAGINATED)
