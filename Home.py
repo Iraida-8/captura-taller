@@ -182,7 +182,7 @@ if st.session_state.auth_view == "login":
 
     st.title("Inicio de Sesión")
 
-    with st.container():
+    with st.form("login_form"):
 
         email = st.text_input(
             "Correo electrónico",
@@ -199,16 +199,25 @@ if st.session_state.auth_view == "login":
         col1, col2 = st.columns(2)
 
         with col1:
-            login_clicked = st.button(
+            login_clicked = st.form_submit_button(
                 "Ingresar",
                 use_container_width=True
             )
 
         with col2:
-            reset_clicked = st.button(
-                "Recuperar contraseña",
-                use_container_width=True
-            )
+            fake_space = st.empty()
+
+    # reset button OUTSIDE form
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.empty()
+
+    with col2:
+        reset_clicked = st.button(
+            "Recuperar contraseña",
+            use_container_width=True
+        )
 
     if login_clicked:
         try:
