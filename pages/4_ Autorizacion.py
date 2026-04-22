@@ -959,20 +959,23 @@ else:
 
     total_tipos = conteo_tipos["Cantidad"].sum()
 
+    import streamlit.components.v1 as components
+
     for _, row in conteo_tipos.iterrows():
 
         tipo = row["Tipo De Parte"]
         cantidad = int(row["Cantidad"])
         progreso = cantidad / total_tipos if total_tipos else 0
         porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
+        progress_width = int(progreso * 100)
 
-        st.markdown(
-            f"""
+        html = f"""
+        <div style="padding:6px;">
             <div style="
                 background:#fff7d6;
                 padding:18px;
                 border-radius:16px;
-                margin-bottom:18px;
+                margin-bottom:12px;
                 box-shadow:0 4px 10px rgba(0,0,0,0.08);
                 color:#111;
                 font-family:sans-serif;
@@ -980,7 +983,7 @@ else:
 
                 <div style="
                     font-size:1rem;
-                    font-weight:800;
+                    font-weight:900;
                     margin-bottom:6px;
                     color:#111;
                 ">
@@ -988,19 +991,33 @@ else:
                 </div>
 
                 <div style="
-                    font-size:0.9rem;
-                    margin-bottom:10px;
+                    font-size:0.85rem;
+                    margin-bottom:12px;
                     color:#111;
                 ">
                     {cantidad} registros ({porcentaje}%)
                 </div>
 
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+                <div style="
+                    width:100%;
+                    height:14px;
+                    background:#f1ead0;
+                    border-radius:999px;
+                    overflow:hidden;
+                ">
+                    <div style="
+                        width:{progress_width}%;
+                        height:100%;
+                        background:#BFA75F;
+                        border-radius:999px;
+                    "></div>
+                </div>
 
-        st.progress(progreso)
+            </div>
+        </div>
+        """
+
+        components.html(html, height=170)
 
 # =================================
 # TOP 10 EN CURSO → POST ITS
