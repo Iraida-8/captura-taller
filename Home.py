@@ -92,7 +92,7 @@ div[data-testid="stFormSubmitButton"] > button:hover {
 /* =================================
    Recuperar contraseña button ONLY
 ================================= */
-div.stButton > button {
+div.stButton > button:not([key="sys_version_btn"]) {
     width: 100%;
     padding: 0.75rem;
     border-radius: 10px;
@@ -104,7 +104,7 @@ div.stButton > button {
     border: 1px solid #BFA75F;
 }
 
-div.stButton > button:hover {
+div.stButton > button:not([key="sys_version_btn"]):hover {
     background-color: #BFA75F;
     color: #151F6D;
     transform: translateY(-1px);
