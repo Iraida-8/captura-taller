@@ -277,6 +277,11 @@ if changelog_path.exists():
 else:
     changelog_data = []
 
+latest_version = (
+    changelog_data[0].get("version", "0.00.00.00")
+    if changelog_data
+    else "0.00.00.00"
+)
 
 @st.dialog("Historial de Cambios")
 def show_changelog():
@@ -318,7 +323,8 @@ if st.session_state.auth_view == "login":
 
     with col2:
         if st.button(
-            "SYS. VER 1.00.22.26",
+            #version number, month, day, year
+            f"SYS. VER {latest_version}",
             key="sys_version_btn",
             use_container_width=True
         ):
