@@ -33,33 +33,56 @@ st.markdown("""
     padding-bottom: 3rem;
 }
 
+/* Logo */
 img {
     display: block;
     margin: auto;
-    margin-bottom: 2rem;
+    margin-bottom: 1.2rem;
     transform: scale(1.18);
 }
 
+/* Main form card */
 form[data-testid="stForm"] {
     background-color: #1B267A;
     padding: 2rem;
     border-radius: 16px;
-    box-shadow: 0 0 0 1px rgba(191, 167, 95, 0.25);
     border: 1px solid rgba(191, 167, 95, 0.18);
+    box-shadow: 0 0 0 1px rgba(191, 167, 95, 0.25);
 }
 
+/* Title */
 h1 {
-    text-align: center;
-    font-size: 1.6rem;
-    margin-bottom: 1.2rem;
-    color: #FFFFFF;
+    text-align: center !important;
+    font-size: 1.6rem !important;
+    margin-bottom: 0.2rem !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
 }
 
-label, .stTextInput label {
+/* SYS VER text centered under title */
+div[data-testid="stMarkdownContainer"] p {
+    text-align: center;
+}
+
+/* Custom sys version text */
+.sys-version {
+    text-align: center;
+    margin-top: -8px;
+    margin-bottom: 1.4rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #BFA75F;
+    letter-spacing: 0.5px;
+}
+
+/* Labels */
+label,
+.stTextInput label {
     color: #F5F5F5 !important;
     font-weight: 500;
 }
 
+/* Shared button styling */
 div.stButton > button,
 div[data-testid="stFormSubmitButton"] > button {
     width: 100%;
@@ -104,6 +127,7 @@ div[data-baseweb="input"] > div {
     border-radius: 10px !important;
 }
 
+/* Input text */
 input {
     color: white !important;
 }
