@@ -6,19 +6,5 @@
             "SYS VER centrado bajo el título",
             "Mejoras de estilo con colores corporativos"
         ]
-    },
-    {
-        "version": "1.00.22.20",
-        "changes": [
-            "Integración inicial con Supabase",
-            "Recuperación de contraseña por OTP",
-            "Validación de sesión mejorada"
-        ]
-    },
-    {
-        "version": "1.00.22.10",
-        "changes": [
-            "Primera versión estable del portal"
-        ]
     }
 ]
