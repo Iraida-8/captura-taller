@@ -111,24 +111,42 @@ access = user.get("access", [])
 # -------------------------------
 # Header
 # -------------------------------
-col_title, col_logout = st.columns([6, 1])
 
-with col_title:
+from pathlib import Path
+from PIL import Image
+
+assets_dir = Path(__file__).parent.parent / "assets"
+logo_path = assets_dir / "white_pgl.png"
+
+col_info, col_logo, col_logout = st.columns([5, 3, 1])
+
+with col_info:
     st.title("📊 Dashboard")
     st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
 
+    # live date / time
+    clock_placeholder = st.empty()
+    clock_placeholder.caption(
+        datetime.now().strftime("%A, %d %B %Y")
+    )
+
+with col_logo:
+    if logo_path.exists():
+        img = Image.open(logo_path)
+        st.image(
+            img,
+            width=220
+        )
+
 with col_logout:
-    if st.button("Cerrar sesión", type="secondary", key="btn_logout_top"):
+    if st.button(
+        "Cerrar sesión",
+        type="secondary",
+        key="btn_logout_top"
+    ):
         st.session_state.logged_in = False
         st.session_state.user = None
         st.switch_page("Home.py")
-
-# live date / time
-clock_placeholder = st.empty()
-
-clock_placeholder.caption(
-    datetime.now().strftime("%A, %d %B %Y")
-)
 
 st.divider()
 
