@@ -177,7 +177,6 @@ if logo_path.exists():
 # =================================
 # LOGIN VIEW
 # =================================
-
 if st.session_state.auth_view == "login":
 
     st.title("Inicio de Sesión")
@@ -196,28 +195,16 @@ if st.session_state.auth_view == "login":
             key="login_password"
         )
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            login_clicked = st.form_submit_button(
-                "Ingresar",
-                use_container_width=True
-            )
-
-        with col2:
-            fake_space = st.empty()
-
-    # reset button OUTSIDE form
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.empty()
-
-    with col2:
-        reset_clicked = st.button(
-            "Recuperar contraseña",
+        login_clicked = st.form_submit_button(
+            "Ingresar",
             use_container_width=True
         )
+
+    # visually aligned with form
+    reset_clicked = st.button(
+        "Recuperar contraseña",
+        use_container_width=True
+    )
 
     if login_clicked:
         try:
@@ -265,8 +252,7 @@ if st.session_state.auth_view == "login":
     if reset_clicked:
         st.session_state.auth_view = "reset_request"
         st.rerun()
-
-
+        
 # =================================
 # RESET PASSWORD REQUEST VIEW
 # =================================
