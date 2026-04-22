@@ -10,7 +10,7 @@ from PIL import Image
 require_login()
 
 st.set_page_config(
-    page_title="Dashboard",
+    page_title="Dashboard - Pase de Taller",
     layout="wide"
 )
 
@@ -121,7 +121,7 @@ logo_path = assets_dir / "white_pgl.png"
 col_info, col_logo, col_logout = st.columns([5, 3, 1])
 
 with col_info:
-    st.title("📊 Dashboard")
+    st.title("📊 Menu Principal")
     st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
 
     # live date / time
