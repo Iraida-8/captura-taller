@@ -78,7 +78,6 @@ div[data-testid="stFormSubmitButton"] > button {
     font-size: 15px;
     border: none;
     transition: all 0.2s ease;
-
     background-color: #BFA75F;
     color: #151F6D;
     box-shadow: 0 4px 12px rgba(191, 167, 95, 0.25);
@@ -100,7 +99,6 @@ div.stButton > button {
     font-weight: 600;
     font-size: 15px;
     transition: all 0.2s ease;
-
     background-color: transparent;
     color: #BFA75F;
     border: 1px solid #BFA75F;
@@ -114,7 +112,6 @@ div.stButton > button:hover {
 
 /* =================================
    SYS VER clickable text ONLY
-   centered + no frame
 ================================= */
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
     display: flex !important;
@@ -129,20 +126,16 @@ div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
     min-width: unset !important;
     padding: 0 !important;
     margin: 0 !important;
-
     background: transparent !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-
     color: #BFA75F !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.4px !important;
-
     min-height: auto !important;
     line-height: 1.2 !important;
-
     display: inline-flex !important;
     justify-content: center !important;
     text-align: center !important;
@@ -156,37 +149,50 @@ div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
     transform: none !important;
 }
 
-/* Inputs */
-div[data-baseweb="input"] {
+/* =================================
+   INPUTS — fixes password black corner
+================================= */
+
+div[data-testid="stTextInputRootElement"] {
+    background: #24338C !important;
+    border: 1px solid rgba(191, 167, 95, 0.25) !important;
     border-radius: 10px !important;
     overflow: hidden !important;
 }
 
-div[data-baseweb="input"] > div {
-    background-color: #24338C !important;
-    border: 1px solid rgba(191, 167, 95, 0.25) !important;
-    border-radius: 10px !important;
-}
-
-/* Password eye icon area */
-div[data-baseweb="input"] button {
-    background-color: #24338C !important;
+/* internal wrapper */
+div[data-testid="stTextInputRootElement"] > div {
+    background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    border-radius: 0 10px 10px 0 !important;
 }
 
-/* Input text */
-input {
+/* actual input */
+div[data-testid="stTextInputRootElement"] input {
+    background: transparent !important;
     color: white !important;
+    border: none !important;
 }
 
-/* Placeholder */
-input::placeholder {
+/* placeholder */
+div[data-testid="stTextInputRootElement"] input::placeholder {
     color: #c7c7c7 !important;
 }
 
-/* Small helper text */
+/* eye icon area */
+div[data-testid="stTextInputRootElement"] button {
+    background: #24338C !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+/* remove weird dark password background */
+[data-testid="stPasswordInput"] {
+    background: transparent !important;
+}
+
+/* helper text */
 .small-text {
     text-align: center;
     margin-top: 1rem;
