@@ -961,63 +961,75 @@ else:
 
     import streamlit.components.v1 as components
 
+    rows_html = ""
+
     for _, row in conteo_tipos.iterrows():
 
         tipo = row["Tipo De Parte"]
         cantidad = int(row["Cantidad"])
-        progreso = cantidad / total_tipos if total_tipos else 0
         porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
-        progress_width = int(progreso * 100)
+        progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
 
-        html = f"""
-        <div style="padding:6px;">
+        rows_html += f"""
+        <div style="margin-bottom:14px;">
+
             <div style="
-                background:#fff7d6;
-                padding:18px;
-                border-radius:16px;
-                margin-bottom:12px;
-                box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                display:flex;
+                justify-content:space-between;
+                font-size:0.85rem;
+                font-weight:700;
+                margin-bottom:6px;
                 color:#111;
-                font-family:sans-serif;
             ">
-
-                <div style="
-                    font-size:1rem;
-                    font-weight:900;
-                    margin-bottom:6px;
-                    color:#111;
-                ">
-                    {tipo}
-                </div>
-
-                <div style="
-                    font-size:0.85rem;
-                    margin-bottom:12px;
-                    color:#111;
-                ">
-                    {cantidad} registros ({porcentaje}%)
-                </div>
-
-                <div style="
-                    width:100%;
-                    height:14px;
-                    background:#f1ead0;
-                    border-radius:999px;
-                    overflow:hidden;
-                ">
-                    <div style="
-                        width:{progress_width}%;
-                        height:100%;
-                        background:#BFA75F;
-                        border-radius:999px;
-                    "></div>
-                </div>
-
+                <span>{tipo}</span>
+                <span>{cantidad} ({porcentaje}%)</span>
             </div>
+
+            <div style="
+                width:100%;
+                height:12px;
+                background:#f1ead0;
+                border-radius:999px;
+                overflow:hidden;
+            ">
+                <div style="
+                    width:{progress_width}%;
+                    height:100%;
+                    background:#BFA75F;
+                    border-radius:999px;
+                "></div>
+            </div>
+
         </div>
         """
 
-        components.html(html, height=170)
+    html = f"""
+    <div style="padding:6px;">
+        <div style="
+            background:#fff7d6;
+            padding:22px;
+            border-radius:16px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+            color:#111;
+            font-family:sans-serif;
+        ">
+
+            <div style="
+                font-size:1rem;
+                font-weight:900;
+                margin-bottom:18px;
+                color:#111;
+            ">
+                Distribución por Tipo de Parte
+            </div>
+
+            {rows_html}
+
+        </div>
+    </div>
+    """
+
+    components.html(html, height=420)
 
 # =================================
 # TOP 10 EN CURSO → POST ITS
