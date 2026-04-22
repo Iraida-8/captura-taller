@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
+import json
 
 # =================================
 # Page configuration
@@ -210,6 +211,32 @@ if logo_path.exists():
         )
     st.image(img, width="stretch")
 
+# =================================
+# CHANGELOG LOAD
+# =================================
+
+changelog_path = Path(__file__).parent / "Changelog.json"
+
+if changelog_path.exists():
+    with open(changelog_path, "r", encoding="utf-8") as f:
+        changelog_data = json.load(f)
+else:
+    changelog_data = []
+
+
+@st.dialog("Historial de Cambios")
+def show_changelog():
+    if not changelog_data:
+        st.info("No hay cambios registrados.")
+        return
+
+    for item in changelog_data:
+        st.markdown(f"### v{item['version']}")
+
+        for change in item["changes"]:
+            st.markdown(f"- {change}")
+
+        st.markdown("---")
 
 # =================================
 # LOGIN VIEW
@@ -223,6 +250,9 @@ if st.session_state.auth_view == "login":
         SYS. VER 1.00.22.26
     </div>
     """, unsafe_allow_html=True)
+
+    if st.button("Ver cambios", use_container_width=True):
+        show_changelog()
 
     with st.form("login_form"):
 
