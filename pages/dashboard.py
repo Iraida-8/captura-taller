@@ -131,11 +131,13 @@ with col_info:
     )
 
 with col_logo:
+    st.markdown("<div style='margin-top: 35px;'></div>", unsafe_allow_html=True)
+
     if logo_path.exists():
         img = Image.open(logo_path)
         st.image(
             img,
-            width=220
+            width=200
         )
 
 with col_logout:
