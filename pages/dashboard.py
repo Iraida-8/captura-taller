@@ -3,6 +3,7 @@ from datetime import datetime
 from auth import require_login
 from pathlib import Path
 from PIL import Image
+import json
 
 # -------------------------------
 # Security gate
@@ -108,6 +109,20 @@ st.markdown(
 user = st.session_state.user
 access = user.get("access", [])
 
+changelog_path = Path(__file__).parent.parent / "Changelog.json"
+
+if changelog_path.exists():
+    with open(changelog_path, "r", encoding="utf-8") as f:
+        changelog_data = json.load(f)
+else:
+    changelog_data = []
+
+latest_version = (
+    changelog_data[0].get("version", "0.00.00.00")
+    if changelog_data
+    else "0.00.00.00"
+)
+
 # -------------------------------
 # Header
 # -------------------------------
@@ -122,7 +137,12 @@ col_info, col_logo, col_logout = st.columns([5, 3, 1])
 
 with col_info:
     st.title("📊 Menu Principal")
-    st.caption(f"{user['name'] or user['email']}  •  {user['role']}")
+
+    st.caption(f"SYS. VER {latest_version}")
+
+    st.caption(
+        f"{user['name'] or user['email']}"
+    )
 
     # live date / time
     clock_placeholder = st.empty()
