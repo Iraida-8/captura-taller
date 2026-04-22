@@ -55,7 +55,7 @@ form[data-testid="stForm"] {
 h1 {
     text-align: center !important;
     font-size: 1.6rem !important;
-    margin-bottom: 0.15rem !important;
+    margin-bottom: 0.2rem !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
@@ -68,7 +68,7 @@ label,
 }
 
 /* =================================
-   INGRESAR button
+   INGRESAR button (form submit)
 ================================= */
 div[data-testid="stFormSubmitButton"] > button {
     width: 100%;
@@ -91,7 +91,7 @@ div[data-testid="stFormSubmitButton"] > button:hover {
 }
 
 /* =================================
-   Recuperar contraseña button ONLY
+   Normal buttons (Recuperar contraseña)
 ================================= */
 div.stButton > button {
     width: 100%;
@@ -113,45 +113,33 @@ div.stButton > button:hover {
 }
 
 /* =================================
-   SYS VER clickable text ONLY
-   centered + no frame
+   SYS VER clickable text button
+   (use key="sys_version_btn")
 ================================= */
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    margin-top: -6px !important;
-    margin-bottom: 1.3rem !important;
-}
-
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
-    width: auto !important;
-    min-width: unset !important;
-    padding: 0 !important;
-    margin: 0 !important;
-
+div.stButton > button[kind="secondary"] {
     background: transparent !important;
     border: none !important;
-    outline: none !important;
     box-shadow: none !important;
 
     color: #BFA75F !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
-    letter-spacing: 0.4px !important;
+    letter-spacing: 0.5px;
+
+    padding: 0 !important;
+    margin-top: -8px !important;
+    margin-bottom: 1.2rem !important;
 
     min-height: auto !important;
     line-height: 1.2 !important;
 
-    display: inline-flex !important;
+    display: flex !important;
     justify-content: center !important;
-    text-align: center !important;
 }
 
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
+div.stButton > button[kind="secondary"]:hover {
     background: transparent !important;
     border: none !important;
-    box-shadow: none !important;
     color: #d4bc73 !important;
     transform: none !important;
 }
@@ -280,15 +268,8 @@ if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
 
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-        if st.button(
-            "SYS. VER 1.00.22.26",
-            key="sys_version_btn",
-            use_container_width=True
-        ):
-            show_changelog()
+    if st.button("SYS. VER 1.00.22.26", key="sys_version_btn"):
+        show_changelog()
 
     with st.form("login_form"):
 
