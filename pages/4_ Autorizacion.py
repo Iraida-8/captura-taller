@@ -964,22 +964,44 @@ else:
         tipo = row["Tipo De Parte"]
         cantidad = int(row["Cantidad"])
         progreso = cantidad / total_tipos if total_tipos else 0
+        porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
 
         st.markdown(
             f"""
             <div style="
-                font-weight:600;
-                margin-bottom:4px;
-                color:#F5F5F5;
+                background:#fff7d6;
+                padding:18px;
+                border-radius:16px;
+                margin-bottom:18px;
+                box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                color:#111;
+                font-family:sans-serif;
             ">
-                {tipo} — {cantidad}
+
+                <div style="
+                    font-size:1rem;
+                    font-weight:800;
+                    margin-bottom:6px;
+                    color:#111;
+                ">
+                    {tipo}
+                </div>
+
+                <div style="
+                    font-size:0.9rem;
+                    margin-bottom:10px;
+                    color:#111;
+                ">
+                    {cantidad} registros ({porcentaje}%)
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True
         )
 
         st.progress(progreso)
-        
+
 # =================================
 # TOP 10 EN CURSO → POST ITS
 # =================================
