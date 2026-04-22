@@ -51,11 +51,36 @@ h1 {
     margin-bottom:1.2rem;
 }
 
+div.stButton > button,
+div[data-testid="stFormSubmitButton"] > button {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+/* INGRESAR button (blue) */
+div[data-testid="stFormSubmitButton"] > button {
+    background-color: #1f6feb;
+    color: white;
+}
+
+div[data-testid="stFormSubmitButton"] > button:hover {
+    background-color: #388bfd;
+    transform: translateY(-1px);
+}
+
+/* RECUPERAR CONTRASEÑA button (red) */
 div.stButton > button {
-    width:100%;
-    padding:0.75rem;
-    border-radius:10px;
-    font-weight:600;
+    background-color: #da3633;
+    color: white;
+}
+
+div.stButton > button:hover {
+    background-color: #f85149;
+    transform: translateY(-1px);
 }
 
 .small-text {
