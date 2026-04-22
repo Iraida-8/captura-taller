@@ -280,12 +280,15 @@ if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
 
-    if st.button(
-        "SYS. VER 1.00.22.26",
-        key="sys_version_btn",
-        use_container_width=False
-    ):
-        show_changelog()
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        if st.button(
+            "SYS. VER 1.00.22.26",
+            key="sys_version_btn",
+            use_container_width=True
+        ):
+            show_changelog()
 
     with st.form("login_form"):
 
