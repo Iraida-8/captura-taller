@@ -13,14 +13,145 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar completely
+# Styled CSS — Blue + Yellow Theme
 # =================================
 st.markdown(
     """
     <style>
+
+    /* Hide sidebar */
     [data-testid="stSidebar"] {
         display: none;
     }
+
+    /* Main app background */
+    .stApp {
+        background-color: #151F6D;
+    }
+
+    /* Main content spacing */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* General text */
+    h1 {
+        color: #FFFFFF;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    h2, h3 {
+        color: #BFA75F;
+        font-weight: 600;
+    }
+
+    p, label, span {
+        color: #F5F5F5 !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: rgba(191, 167, 95, 0.25);
+    }
+
+    /* Input containers */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div,
+    textarea {
+        background-color: #1B267A !important;
+        border: 1px solid rgba(191, 167, 95, 0.25) !important;
+        border-radius: 10px !important;
+        color: white !important;
+    }
+
+    /* Input text */
+    input, textarea {
+        color: white !important;
+    }
+
+    /* Placeholder */
+    input::placeholder,
+    textarea::placeholder {
+        color: #d0d0d0 !important;
+    }
+
+    /* Selectbox dropdown */
+    div[data-baseweb="select"] * {
+        color: white !important;
+    }
+
+    /* Radio buttons labels */
+    div[role="radiogroup"] label {
+        color: white !important;
+    }
+
+    /* Checkbox */
+    .stCheckbox label {
+        color: white !important;
+    }
+
+    /* Main buttons */
+    div.stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        width: 100%;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        border: none;
+        transition: all 0.2s ease;
+        font-size: 15px;
+    }
+
+    /* Primary action buttons */
+    div.stButton > button[kind="primary"],
+    button[kind="primary"] {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+        box-shadow: 0 4px 12px rgba(191, 167, 95, 0.25);
+    }
+
+    div.stButton > button[kind="primary"]:hover,
+    button[kind="primary"]:hover {
+        background-color: #d4bc73 !important;
+        color: #151F6D !important;
+        transform: translateY(-1px);
+    }
+
+    /* Secondary buttons */
+    div.stButton > button {
+        background-color: #1B267A;
+        color: white;
+        border: 1px solid rgba(191, 167, 95, 0.25);
+    }
+
+    div.stButton > button:hover {
+        border-color: #BFA75F;
+        color: #BFA75F;
+        background-color: #24338C;
+        transform: translateY(-1px);
+    }
+
+    /* Info / warning / success boxes */
+    div[data-baseweb="notification"] {
+        border-radius: 12px;
+    }
+
+    /* Back button */
+    button[kind="secondary"] {
+        background-color: transparent !important;
+        color: #BFA75F !important;
+        border: 1px solid #BFA75F !important;
+        font-weight: 600;
+    }
+
+    button[kind="secondary"]:hover {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
