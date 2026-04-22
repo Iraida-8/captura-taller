@@ -157,10 +157,23 @@ div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
 }
 
 /* Inputs */
+div[data-baseweb="input"] {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
 div[data-baseweb="input"] > div {
     background-color: #24338C !important;
     border: 1px solid rgba(191, 167, 95, 0.25) !important;
     border-radius: 10px !important;
+}
+
+/* Password eye icon area */
+div[data-baseweb="input"] button {
+    background-color: #24338C !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 10px 10px 0 !important;
 }
 
 /* Input text */
