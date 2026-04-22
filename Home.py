@@ -9,7 +9,7 @@ from PIL import Image
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Portal Taller",
+    page_title="Portal de Taller",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -136,7 +136,7 @@ if logo_path.exists():
 # =================================
 if st.session_state.auth_view == "login":
 
-    st.title("Inicio de Sesión")
+    st.title("Portal de Taller")
 
     with st.form("login_form"):
 
