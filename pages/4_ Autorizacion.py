@@ -25,7 +25,7 @@ def get_supabase_client():
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Autorización y Actualización de Reporte",
+    page_title="Autorización y Actualización de Pases de Taller",
     layout="wide"
 )
 
@@ -675,7 +675,7 @@ def cargar_refacciones():
 # =================================
 # Title
 # =================================
-st.title("📋 Autorización y Actualización de Reporte")
+st.title("📋 Autorización y Actualización de Pases de Taller")
 
 # =================================
 # KPI STRIP
