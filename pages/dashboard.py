@@ -111,16 +111,7 @@ access = user.get("access", [])
 # -------------------------------
 # Header
 # -------------------------------
-
-assets_dir = Path(__file__).parent.parent / "assets"
-logo_path = assets_dir / "white_pgl.png"
-
-col_logo, col_title, col_logout = st.columns([2, 5, 1])
-
-with col_logo:
-    if logo_path.exists():
-        img = Image.open(logo_path)
-        st.image(img, width=180)
+col_title, col_logout = st.columns([6, 1])
 
 with col_title:
     st.title("📊 Dashboard")
@@ -131,6 +122,13 @@ with col_logout:
         st.session_state.logged_in = False
         st.session_state.user = None
         st.switch_page("Home.py")
+
+# live date / time
+clock_placeholder = st.empty()
+
+clock_placeholder.caption(
+    datetime.now().strftime("%A, %d %B %Y")
+)
 
 st.divider()
 
