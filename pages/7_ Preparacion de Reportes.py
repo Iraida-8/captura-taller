@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, datetime
+from datetime import datetime
 from auth import require_login, require_access
 from supabase import create_client
 from decimal import Decimal

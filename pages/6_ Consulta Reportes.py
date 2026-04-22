@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
+import streamlit.components.v1 as components
 
 # =================================
 # Page configuration
@@ -12,7 +13,7 @@ st.set_page_config(
 )
 
 # =================================
-# CSS THEME — BLUE + YELLOW
+# CSS THEME
 # =================================
 st.markdown(
     """
@@ -406,8 +407,6 @@ postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
 # =================================
 st.divider()
 st.subheader("🕘 Últimos 5 cambios")
-
-import streamlit.components.v1 as components
 
 def safe(x):
     if pd.isna(x) or x is None:

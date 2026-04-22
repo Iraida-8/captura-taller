@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # -------------------------------
-# Hide sidebar + BIG BUTTON STYLES
+# CSS
 # -------------------------------
 st.markdown(
     """

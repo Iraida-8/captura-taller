@@ -3,7 +3,6 @@ import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
 from datetime import datetime, timezone
-import time
 
 # =================================
 # Page configuration

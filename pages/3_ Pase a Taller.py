@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # =================================
-# Styled CSS — Blue + Yellow Theme
+# Styled CSS
 # =================================
 st.markdown(
     """

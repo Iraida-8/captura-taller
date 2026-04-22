@@ -7,7 +7,7 @@ from io import BytesIO
 from auth import require_login, require_access
 
 # =================================
-# Page configuration (MUST BE FIRST)
+# Page configuration
 # =================================
 st.set_page_config(
     page_title="Fuel Solutions → Análisis y Comparativos",
