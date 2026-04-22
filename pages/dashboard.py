@@ -177,7 +177,7 @@ if has_access(section_ordenes):
 
     with col2:
         if "autorizacion" in access:
-            if st.button("✅  Autorización y Gestion de Pases de Taller", use_container_width=True, key="btn_autorizacion"):
+            if st.button("✅  Autorización y Gestión de Pases de Taller", use_container_width=True, key="btn_autorizacion"):
                 st.switch_page("pages/4_ Autorizacion.py")
 
     st.divider()
