@@ -30,12 +30,168 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar
+# CSS THEME — BLUE + YELLOW
 # =================================
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] { display: none; }
+
+    /* Hide sidebar */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+
+    /* Main background */
+    .stApp {
+        background-color: #151F6D;
+    }
+
+    /* Main container */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* Titles */
+    h1 {
+        color: #FFFFFF;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    h2, h3 {
+        color: #BFA75F;
+        font-weight: 600;
+    }
+
+    /* General text */
+    p, label, span {
+        color: #F5F5F5 !important;
+    }
+
+    /* Caption */
+    .stCaption {
+        color: #D9D9D9 !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: rgba(191, 167, 95, 0.25);
+    }
+
+    /* Inputs / Selects / TextArea */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div,
+    textarea {
+        background-color: #1B267A !important;
+        border: 1px solid rgba(191, 167, 95, 0.25) !important;
+        border-radius: 10px !important;
+        color: white !important;
+    }
+
+    input,
+    textarea {
+        color: white !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #d0d0d0 !important;
+    }
+
+    div[data-baseweb="select"] * {
+        color: white !important;
+    }
+
+    /* Buttons */
+    div.stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    /* Standard buttons */
+    div.stButton > button {
+        background-color: #1B267A;
+        color: white;
+        border: 1px solid rgba(191, 167, 95, 0.25);
+    }
+
+    div.stButton > button:hover {
+        background-color: #24338C;
+        border-color: #BFA75F;
+        color: #BFA75F;
+        transform: translateY(-1px);
+    }
+
+    /* Primary buttons */
+    button[kind="primary"] {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(191, 167, 95, 0.20);
+    }
+
+    button[kind="primary"]:hover {
+        background-color: #d4bc73 !important;
+        color: #151F6D !important;
+    }
+
+    /* Secondary navigation buttons */
+    button[kind="secondary"] {
+        background-color: transparent !important;
+        color: #BFA75F !important;
+        border: 1px solid #BFA75F !important;
+    }
+
+    button[kind="secondary"]:hover {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+    }
+
+    /* Metric cards */
+    [data-testid="metric-container"] {
+        background-color: #1B267A;
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        padding: 1rem;
+        border-radius: 14px;
+    }
+
+    /* Containers with border=True */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border: 1px solid rgba(191, 167, 95, 0.20) !important;
+        border-radius: 14px !important;
+        background-color: #1B267A;
+    }
+
+    /* Data editor + dataframe */
+    [data-testid="stDataEditor"],
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    /* Dialog modal */
+    div[role="dialog"] {
+        border-radius: 18px !important;
+        border: 1px solid rgba(191, 167, 95, 0.20) !important;
+    }
+
+    /* Notifications */
+    div[data-baseweb="notification"] {
+        border-radius: 12px;
+    }
+
+    /* Expander */
+    [data-testid="stExpander"] {
+        background-color: #1B267A;
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        border-radius: 14px;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
