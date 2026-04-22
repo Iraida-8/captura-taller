@@ -228,7 +228,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Consulta, Carga y Edición de Unidades")
+st.title("📊 Gestión, Creación y Carga de Unidades")
 
 if st.session_state.get("success_modal"):
 
