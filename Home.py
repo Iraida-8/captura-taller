@@ -92,7 +92,7 @@ div[data-testid="stFormSubmitButton"] > button:hover {
 /* =================================
    Recuperar contraseña button ONLY
 ================================= */
-div.stButton > button:not([key="sys_version_btn"]) {
+div.stButton > button {
     width: 100%;
     padding: 0.75rem;
     border-radius: 10px;
@@ -104,61 +104,41 @@ div.stButton > button:not([key="sys_version_btn"]) {
     border: 1px solid #BFA75F;
 }
 
-div.stButton > button:not([key="sys_version_btn"]):hover {
+div.stButton > button:hover {
     background-color: #BFA75F;
     color: #151F6D;
     transform: translateY(-1px);
 }
 
 /* =================================
-   SYS VER — text only, no frame
+   SYS VER clickable text ONLY
 ================================= */
-
-div[data-testid="stButton"] {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    margin-top: -8px !important;
-    margin-bottom: 1.2rem !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) > div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
+    margin-top: -6px !important;
+    margin-bottom: 1.3rem !important;
 }
 
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-
+    width: auto !important;
+    min-width: unset !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-width: unset !important;
-    min-height: unset !important;
-    width: auto !important;
-    height: auto !important;
-
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     color: #BFA75F !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.4px !important;
+    min-height: auto !important;
     line-height: 1.2 !important;
-
-    display: inline !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
