@@ -14,31 +14,180 @@ st.set_page_config(
 )
 
 # =================================
-# Hide sidebar
+# CSS THEME — BLUE + YELLOW
 # =================================
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] { display: none; }
 
-    div.stButton > button {
-        height: 40px;
-        font-size: 14px;
-        font-weight: 500;
+    /* Hide sidebar */
+    [data-testid="stSidebar"] {
+        display: none;
     }
 
-    /* ONLY big buttons */
-    .main-btn div.stButton > button {
-        height: 120px;
-        font-size: 20px;
+    /* Main app background */
+    .stApp {
+        background-color: #151F6D;
+    }
+
+    /* Main container */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* Titles */
+    h1 {
+        color: #FFFFFF;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    h2, h3 {
+        color: #BFA75F;
         font-weight: 600;
     }
 
-    /* DELETE BUTTON (SECOND BUTTON IN FORM ROW) */
-    div.stForm div[data-testid="column"]:nth-child(2) div.stButton > button {
-        background-color: #ff4b4b !important;
+    /* General text */
+    p, label, span {
+        color: #F5F5F5 !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: rgba(191, 167, 95, 0.25);
+    }
+
+    /* Standard buttons */
+    div.stButton > button {
+        height: 42px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 12px;
+        background-color: #1B267A;
+        color: white;
+        border: 1px solid rgba(191, 167, 95, 0.25);
+        transition: all 0.2s ease;
+    }
+
+    div.stButton > button:hover {
+        background-color: #24338C;
+        border-color: #BFA75F;
+        color: #BFA75F;
+        transform: translateY(-1px);
+    }
+
+    /* Main module buttons */
+    .main-btn div.stButton > button {
+        height: 120px;
+        font-size: 20px;
+        font-weight: 700;
+        border-radius: 18px;
+        background-color: #1B267A;
+        color: white;
+        border: 1px solid rgba(191, 167, 95, 0.30);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    .main-btn div.stButton > button:hover {
+        background-color: #24338C;
+        border-color: #BFA75F;
+        color: #BFA75F;
+        transform: translateY(-2px);
+    }
+
+    /* Inputs / Selects / Uploaders */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div,
+    [data-testid="stFileUploader"] {
+        background-color: #1B267A !important;
+        border: 1px solid rgba(191, 167, 95, 0.25) !important;
+        border-radius: 12px !important;
         color: white !important;
+    }
+
+    input {
+        color: white !important;
+    }
+
+    input::placeholder {
+        color: #d0d0d0 !important;
+    }
+
+    div[data-baseweb="select"] * {
+        color: white !important;
+    }
+
+    /* Dataframes */
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background-color: #1B267A;
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        border-radius: 14px;
+    }
+
+    /* Form container */
+    form[data-testid="stForm"] {
+        background-color: #1B267A;
+        padding: 2rem;
+        border-radius: 16px;
+        border: 1px solid rgba(191, 167, 95, 0.20);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+    }
+
+    /* Save button */
+    div[data-testid="stFormSubmitButton"] > button {
+        border-radius: 12px;
+        font-weight: 600;
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
         border: none !important;
+    }
+
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #d4bc73 !important;
+        color: #151F6D !important;
+    }
+
+    /* Delete button inside form */
+    div.stForm div[data-testid="column"]:nth-child(2) div.stButton > button {
+        background-color: transparent !important;
+        color: #BFA75F !important;
+        border: 1px solid #BFA75F !important;
+    }
+
+    div.stForm div[data-testid="column"]:nth-child(2) div.stButton > button:hover {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+    }
+
+    /* Secondary nav button */
+    button[kind="secondary"] {
+        background-color: transparent !important;
+        color: #BFA75F !important;
+        border: 1px solid #BFA75F !important;
+    }
+
+    button[kind="secondary"]:hover {
+        background-color: #BFA75F !important;
+        color: #151F6D !important;
+    }
+
+    /* Success / warning / info */
+    div[data-baseweb="notification"] {
+        border-radius: 12px;
+    }
+
+    /* Dialog modal */
+    div[role="dialog"] {
+        border-radius: 18px !important;
+        border: 1px solid rgba(191, 167, 95, 0.20) !important;
     }
 
     </style>
