@@ -19,7 +19,9 @@ st.set_page_config(
 # =================================
 st.markdown("""
 <style>
-[data-testid="stSidebar"] { display: none; }
+[data-testid="stSidebar"] {
+    display: none;
+}
 
 .stApp {
     background-color: #151F6D;
@@ -32,23 +34,30 @@ st.markdown("""
 }
 
 img {
-    display:block;
-    margin:auto;
-    margin-bottom:2rem;
-    transform:scale(1.18);
+    display: block;
+    margin: auto;
+    margin-bottom: 2rem;
+    transform: scale(1.18);
 }
 
 form[data-testid="stForm"] {
-    background-color:#161b22;
-    padding:2rem;
-    border-radius:16px;
-    box-shadow:0 0 0 1px rgba(255,255,255,0.06);
+    background-color: #1B267A;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 0 0 1px rgba(191, 167, 95, 0.25);
+    border: 1px solid rgba(191, 167, 95, 0.18);
 }
 
 h1 {
-    text-align:center;
-    font-size:1.6rem;
-    margin-bottom:1.2rem;
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 1.2rem;
+    color: #FFFFFF;
+}
+
+label, .stTextInput label {
+    color: #F5F5F5 !important;
+    font-weight: 500;
 }
 
 div.stButton > button,
@@ -59,35 +68,57 @@ div[data-testid="stFormSubmitButton"] > button {
     font-weight: 600;
     border: none;
     transition: all 0.2s ease;
+    font-size: 15px;
 }
 
-/* INGRESAR button*/
+/* INGRESAR button */
 div[data-testid="stFormSubmitButton"] > button {
     background-color: #BFA75F;
-    color: white;
+    color: #151F6D;
+    box-shadow: 0 4px 12px rgba(191, 167, 95, 0.25);
 }
 
 div[data-testid="stFormSubmitButton"] > button:hover {
-    background-color: #388bfd;
+    background-color: #d4bc73;
+    color: #151F6D;
     transform: translateY(-1px);
 }
 
-/* RECUPERAR CONTRASEÑA button (red) */
+/* RECUPERAR CONTRASEÑA button */
 div.stButton > button {
-    background-color: #da3633;
-    color: white;
+    background-color: transparent;
+    color: #BFA75F;
+    border: 1px solid #BFA75F;
 }
 
 div.stButton > button:hover {
-    background-color: #f85149;
+    background-color: #BFA75F;
+    color: #151F6D;
     transform: translateY(-1px);
 }
 
+/* Inputs */
+div[data-baseweb="input"] > div {
+    background-color: #24338C !important;
+    border: 1px solid rgba(191, 167, 95, 0.25) !important;
+    border-radius: 10px !important;
+}
+
+input {
+    color: white !important;
+}
+
+/* Placeholder */
+input::placeholder {
+    color: #c7c7c7 !important;
+}
+
+/* Small helper text */
 .small-text {
-    text-align:center;
-    margin-top:1rem;
-    font-size:0.85rem;
-    color:#8b949e;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #BFA75F;
 }
 </style>
 """, unsafe_allow_html=True)
