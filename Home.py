@@ -22,7 +22,7 @@ st.markdown("""
 [data-testid="stSidebar"] { display: none; }
 
 .stApp {
-    background-color: #BFA75F;
+    background-color: #151F6D;
 }
 
 .block-container {
