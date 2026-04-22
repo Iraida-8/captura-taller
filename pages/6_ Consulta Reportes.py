@@ -7,7 +7,7 @@ from auth import require_login, require_access
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Consulta de Reportes",
+    page_title="Consulta de Pases de Taller",
     layout="wide"
 )
 
