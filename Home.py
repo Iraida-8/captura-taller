@@ -55,7 +55,7 @@ form[data-testid="stForm"] {
 h1 {
     text-align: center !important;
     font-size: 1.6rem !important;
-    margin-bottom: 0.2rem !important;
+    margin-bottom: 0.15rem !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
@@ -68,7 +68,7 @@ label,
 }
 
 /* =================================
-   INGRESAR button (form submit)
+   INGRESAR button
 ================================= */
 div[data-testid="stFormSubmitButton"] > button {
     width: 100%;
@@ -114,36 +114,44 @@ div.stButton > button:hover {
 
 /* =================================
    SYS VER clickable text ONLY
-   (use key="sys_version_btn")
+   centered + no frame
 ================================= */
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
-    display: flex;
-    justify-content: center;
-    margin-top: -8px;
-    margin-bottom: 1.2rem;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-top: -6px !important;
+    margin-bottom: 1.3rem !important;
 }
 
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
     width: auto !important;
+    min-width: unset !important;
     padding: 0 !important;
     margin: 0 !important;
 
     background: transparent !important;
     border: none !important;
+    outline: none !important;
     box-shadow: none !important;
 
     color: #BFA75F !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px !important;
 
     min-height: auto !important;
     line-height: 1.2 !important;
+
+    display: inline-flex !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 
 div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
     color: #d4bc73 !important;
     transform: none !important;
 }
