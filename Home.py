@@ -91,7 +91,7 @@ div[data-testid="stFormSubmitButton"] > button:hover {
 }
 
 /* =================================
-   Normal buttons (Recuperar contraseña)
+   Recuperar contraseña button ONLY
 ================================= */
 div.stButton > button {
     width: 100%;
@@ -113,10 +113,21 @@ div.stButton > button:hover {
 }
 
 /* =================================
-   SYS VER clickable text button
+   SYS VER clickable text ONLY
    (use key="sys_version_btn")
 ================================= */
-div.stButton > button[kind="secondary"] {
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
+    display: flex;
+    justify-content: center;
+    margin-top: -8px;
+    margin-bottom: 1.2rem;
+}
+
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -126,18 +137,11 @@ div.stButton > button[kind="secondary"] {
     font-weight: 500 !important;
     letter-spacing: 0.5px;
 
-    padding: 0 !important;
-    margin-top: -8px !important;
-    margin-bottom: 1.2rem !important;
-
     min-height: auto !important;
     line-height: 1.2 !important;
-
-    display: flex !important;
-    justify-content: center !important;
 }
 
-div.stButton > button[kind="secondary"]:hover {
+div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
     background: transparent !important;
     border: none !important;
     color: #d4bc73 !important;
@@ -268,7 +272,11 @@ if st.session_state.auth_view == "login":
 
     st.title("Portal de Taller")
 
-    if st.button("SYS. VER 1.00.22.26", key="sys_version_btn"):
+    if st.button(
+        "SYS. VER 1.00.22.26",
+        key="sys_version_btn",
+        use_container_width=False
+    ):
         show_changelog()
 
     with st.form("login_form"):
