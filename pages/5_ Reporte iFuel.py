@@ -175,7 +175,7 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.divider()
-st.subheader("Reporte iFuel")
+st.title("⛽ Reporte iFuel")
 st.divider()
 
 # =================================
