@@ -38,7 +38,7 @@ st.markdown("""
 img {
     display: block;
     margin: auto;
-    margin-bottom: 1.2rem;
+    margin-bottom: 1.8rem;
     transform: scale(1.18);
 }
 
