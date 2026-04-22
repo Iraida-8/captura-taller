@@ -3,6 +3,7 @@ from datetime import datetime
 from auth import require_login
 from pathlib import Path
 from PIL import Image
+import locale
 import json
 
 # -------------------------------
@@ -147,7 +148,7 @@ with col_info:
     # live date / time
     clock_placeholder = st.empty()
     clock_placeholder.caption(
-        datetime.now().strftime("%A, %d %B %Y")
+        locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
     )
 
 with col_logo:
