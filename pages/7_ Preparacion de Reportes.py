@@ -1437,14 +1437,24 @@ if file_ordenes and file_mantenimientos:
                 )
 
                 # Normalize matching keys
+                import re
+
                 def normalize_part_text(text):
                     if pd.isna(text):
                         return ""
 
-                    text = str(text).strip().upper()
+                    text = str(text).upper().strip()
+
                     text = unicodedata.normalize("NFKD", text)
-                    text = "".join(c for c in text if not unicodedata.combining(c))
-                    return text
+                    text = "".join(
+                        c for c in text
+                        if not unicodedata.combining(c)
+                    )
+
+                    text = re.sub(r"[^\w\s/]", "", text)
+                    text = re.sub(r"\s+", " ", text)
+
+                    return text.strip()
 
 
                 parts_lookup["parte"] = parts_lookup["parte"].apply(normalize_part_text)
