@@ -1437,19 +1437,19 @@ if file_ordenes and file_mantenimientos:
                 )
 
                 # Normalize matching keys
-                parts_lookup["parte"] = (
-                    parts_lookup["parte"]
-                    .astype(str)
-                    .str.strip()
-                    .str.upper()
-                )
+                def normalize_part_text(text):
+                    if pd.isna(text):
+                        return ""
 
-                df_final_ref["Parte"] = (
-                    df_final_ref["Parte"]
-                    .astype(str)
-                    .str.strip()
-                    .str.upper()
-                )
+                    text = str(text).strip().upper()
+                    text = unicodedata.normalize("NFKD", text)
+                    text = "".join(c for c in text if not unicodedata.combining(c))
+                    return text
+
+
+                parts_lookup["parte"] = parts_lookup["parte"].apply(normalize_part_text)
+
+                df_final_ref["Parte"] = df_final_ref["Parte"].apply(normalize_part_text)
 
                 df_final_ref = df_final_ref.merge(
                     parts_lookup,
