@@ -1432,7 +1432,6 @@ if file_ordenes and file_mantenimientos:
                 parts_lookup = (
                     df_parts[["parte", "tipo"]]
                     .dropna(subset=["parte"])
-                    .drop_duplicates(subset=["parte"])
                     .copy()
                 )
 
@@ -1466,6 +1465,17 @@ if file_ordenes and file_mantenimientos:
                     left_on="Parte",
                     right_on="parte",
                     how="left"
+                )
+
+                st.write(
+                    df_final_ref[
+                        ["Parte", "parte", "tipo"]
+                    ].loc[
+                        df_final_ref["Parte"].str.contains(
+                            "VALVULA",
+                            na=False
+                        )
+                    ].head(20)
                 )
 
                 df_final_ref["Tipo De Parte"] = df_final_ref["tipo"]
