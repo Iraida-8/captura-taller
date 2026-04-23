@@ -535,8 +535,32 @@ def load_parts():
     try:
         supabase = get_supabase_client()
 
-        response = supabase.table("parts").select("*").execute()
-        df = pd.DataFrame(response.data)
+        all_data = []
+        limit = 1000
+        offset = 0
+
+        while True:
+            response = (
+                supabase
+                .table("parts")
+                .select("*")
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
+
+            data = response.data
+
+            if not data:
+                break
+
+            all_data.extend(data)
+
+            if len(data) < limit:
+                break
+
+            offset += limit
+
+        df = pd.DataFrame(all_data)
 
         if not df.empty:
             df.columns = df.columns.str.strip().str.lower()
