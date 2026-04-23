@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import date, datetime
 from auth import require_login, require_access
 from supabase import create_client
 from decimal import Decimal
@@ -215,7 +215,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Consulta, Carga, Preparación y Generación de Reportes")
+st.title("📊 Consulta, Preparación y Generación de Reportes")
 
 # =================================
 # LOADERS
