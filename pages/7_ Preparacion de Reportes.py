@@ -1666,14 +1666,38 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 )
 
                 # Normalize for matching (avoid case/space issues)
-                iva_lookup["proveedor"] = iva_lookup["proveedor"].astype(str).str.strip().str.lower()
-                df_final_ostes["Acreedor"] = df_final_ostes["Acreedor"].astype(str).str.strip().str.lower()
+                # Preserve original display value
+                df_final_ostes["Acreedor"] = (
+                    df_final_ostes["Acreedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                # Create temporary normalized key only for matching
+                df_final_ostes["acreedor_match"] = (
+                    df_final_ostes["Acreedor"]
+                    .str.lower()
+                )
+
+                iva_lookup["proveedor"] = (
+                    iva_lookup["proveedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                )
 
                 df_final_ostes = df_final_ostes.merge(
                     iva_lookup,
-                    left_on="Acreedor",
+                    left_on="acreedor_match",
                     right_on="proveedor",
                     how="left"
+                )
+
+                df_final_ostes.drop(
+                    columns=["acreedor_match"],
+                    inplace=True,
+                    errors="ignore"
                 )
 
                 df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
