@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, datetime
+from datetime import datetime
 from auth import require_login, require_access
 from supabase import create_client
 from decimal import Decimal
@@ -215,7 +215,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Consulta, Preparación y Generación de Reportes")
+st.title("📊 Consulta, Carga, Preparación y Generación de Reportes")
 
 # =================================
 # LOADERS
@@ -527,6 +527,24 @@ def load_proveedores_iva():
 
     except Exception as e:
         st.error(f"Error cargando proveedores_iva: {e}")
+        return pd.DataFrame()
+    
+#load refacciones
+@st.cache_data
+def load_parts():
+    try:
+        supabase = get_supabase_client()
+
+        response = supabase.table("parts").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando parts: {e}")
         return pd.DataFrame()
 
 # =================================
@@ -955,6 +973,7 @@ st.success(f"Empresa seleccionada: {empresa}")
 # =============================
 df_units = load_vehicle_units()
 df_proveedores_iva = load_proveedores_iva()
+df_parts = load_parts()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
@@ -1399,12 +1418,56 @@ if file_ordenes and file_mantenimientos:
             # =============================
             df_final_ref.rename(columns={
                 "NombreProveedor": "Nombre Proveedor",
-                "TipoCompra": "Tipo De Parte",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Tasaiva": "Tasa IVA",
                 "Descripcion": "Descripcion",
                 "Razon Servicio": "Razon Reparacion"
             }, inplace=True)
+
+            # =============================
+            # TIPO DE PARTE FROM SUPABASE PARTS
+            # =============================
+            if df_parts is not None and not df_parts.empty:
+
+                parts_lookup = (
+                    df_parts[["parte", "tipo"]]
+                    .dropna(subset=["parte"])
+                    .drop_duplicates(subset=["parte"])
+                    .copy()
+                )
+
+                # Normalize matching keys
+                def normalize_part_text(text):
+                    if pd.isna(text):
+                        return ""
+
+                    text = str(text).strip().upper()
+                    text = unicodedata.normalize("NFKD", text)
+                    text = "".join(c for c in text if not unicodedata.combining(c))
+                    return text
+
+
+                parts_lookup["parte"] = parts_lookup["parte"].apply(normalize_part_text)
+
+                df_final_ref["Parte"] = df_final_ref["Parte"].apply(normalize_part_text)
+
+                df_final_ref = df_final_ref.merge(
+                    parts_lookup,
+                    left_on="Parte",
+                    right_on="parte",
+                    how="left"
+                )
+
+                df_final_ref["Tipo De Parte"] = df_final_ref["tipo"]
+
+                df_final_ref.drop(
+                    columns=["parte", "tipo"],
+                    inplace=True,
+                    errors="ignore"
+                )
+
+            else:
+                df_final_ref["Tipo De Parte"] = None
 
             # =============================
             # SELECT FINAL COLUMNS
@@ -1666,14 +1729,38 @@ if file_ostes and file_mantenimientos and file_ordenes:
                 )
 
                 # Normalize for matching (avoid case/space issues)
-                iva_lookup["proveedor"] = iva_lookup["proveedor"].astype(str).str.strip().str.lower()
-                df_final_ostes["Acreedor"] = df_final_ostes["Acreedor"].astype(str).str.strip().str.lower()
+                # Preserve original display value
+                df_final_ostes["Acreedor"] = (
+                    df_final_ostes["Acreedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                # Create temporary normalized key only for matching
+                df_final_ostes["acreedor_match"] = (
+                    df_final_ostes["Acreedor"]
+                    .str.lower()
+                )
+
+                iva_lookup["proveedor"] = (
+                    iva_lookup["proveedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                )
 
                 df_final_ostes = df_final_ostes.merge(
                     iva_lookup,
-                    left_on="Acreedor",
+                    left_on="acreedor_match",
                     right_on="proveedor",
                     how="left"
+                )
+
+                df_final_ostes.drop(
+                    columns=["acreedor_match"],
+                    inplace=True,
+                    errors="ignore"
                 )
 
                 df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
