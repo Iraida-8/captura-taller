@@ -1430,15 +1430,15 @@ if file_ordenes and file_mantenimientos:
             if df_parts is not None and not df_parts.empty:
 
                 parts_lookup = (
-                    df_parts[["parts", "tipo"]]
-                    .dropna(subset=["parts"])
-                    .drop_duplicates(subset=["parts"])
+                    df_parts[["parte", "tipo"]]
+                    .dropna(subset=["parte"])
+                    .drop_duplicates(subset=["parte"])
                     .copy()
                 )
 
                 # Normalize matching keys
-                parts_lookup["parts"] = (
-                    parts_lookup["parts"]
+                parts_lookup["parte"] = (
+                    parts_lookup["parte"]
                     .astype(str)
                     .str.strip()
                     .str.upper()
@@ -1454,14 +1454,14 @@ if file_ordenes and file_mantenimientos:
                 df_final_ref = df_final_ref.merge(
                     parts_lookup,
                     left_on="Parte",
-                    right_on="parts",
+                    right_on="parte",
                     how="left"
                 )
 
                 df_final_ref["Tipo De Parte"] = df_final_ref["tipo"]
 
                 df_final_ref.drop(
-                    columns=["parts", "tipo"],
+                    columns=["parte", "tipo"],
                     inplace=True,
                     errors="ignore"
                 )
