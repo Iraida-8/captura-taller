@@ -528,6 +528,24 @@ def load_proveedores_iva():
     except Exception as e:
         st.error(f"Error cargando proveedores_iva: {e}")
         return pd.DataFrame()
+    
+#load refacciones
+@st.cache_data
+def load_parts():
+    try:
+        supabase = get_supabase_client()
+
+        response = supabase.table("parts").select("*").execute()
+        df = pd.DataFrame(response.data)
+
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+
+        return df
+
+    except Exception as e:
+        st.error(f"Error cargando parts: {e}")
+        return pd.DataFrame()
 
 # =================================
 # MODE SELECTOR
@@ -955,6 +973,7 @@ st.success(f"Empresa seleccionada: {empresa}")
 # =============================
 df_units = load_vehicle_units()
 df_proveedores_iva = load_proveedores_iva()
+df_parts = load_parts()
 
 empresa_code = EMPRESA_MAP.get(empresa)
 
@@ -1399,12 +1418,56 @@ if file_ordenes and file_mantenimientos:
             # =============================
             df_final_ref.rename(columns={
                 "NombreProveedor": "Nombre Proveedor",
-                "TipoCompra": "Tipo De Parte",
                 "Tipo Unidad": "Tipo De Unidad",
                 "Tasaiva": "Tasa IVA",
                 "Descripcion": "Descripcion",
                 "Razon Servicio": "Razon Reparacion"
             }, inplace=True)
+
+            # =============================
+            # TIPO DE PARTE FROM SUPABASE PARTS
+            # =============================
+            if df_parts is not None and not df_parts.empty:
+
+                parts_lookup = (
+                    df_parts[["parts", "tipo"]]
+                    .dropna(subset=["parts"])
+                    .drop_duplicates(subset=["parts"])
+                    .copy()
+                )
+
+                # Normalize matching keys
+                parts_lookup["parts"] = (
+                    parts_lookup["parts"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                df_final_ref["Parte"] = (
+                    df_final_ref["Parte"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                df_final_ref = df_final_ref.merge(
+                    parts_lookup,
+                    left_on="Parte",
+                    right_on="parts",
+                    how="left"
+                )
+
+                df_final_ref["Tipo De Parte"] = df_final_ref["tipo"]
+
+                df_final_ref.drop(
+                    columns=["parts", "tipo"],
+                    inplace=True,
+                    errors="ignore"
+                )
+
+            else:
+                df_final_ref["Tipo De Parte"] = None
 
             # =============================
             # SELECT FINAL COLUMNS
