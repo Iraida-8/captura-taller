@@ -1313,7 +1313,7 @@ if file_mantenimientos:
                 st.dataframe(df, use_container_width=True)
 
 # =================================
-# BUILD DATA REFACCIONES (STRICT 1:1)
+# BUILD DATA REFACCIONES
 # =================================
 if file_ordenes and file_mantenimientos:
 
@@ -1999,6 +1999,370 @@ if file_ostes and file_mantenimientos and file_ordenes:
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
                         key=f"dl_btn_ostes_{empresa_name}" # Unique key for stability
+                    )
+
+                with col_up:
+                    if st.button("🚀 Cargar Datos", key=f"btn_up_ostes_{empresa_name}", use_container_width=True, type="primary"):
+                        table_name = get_table_name("ostes", empresa_name)
+                        upload_to_supabase(edited_ostes, table_name)
+
+                with col_remp:
+                    st.file_uploader(
+                        "Remplazar Reporte con archivo",
+                        type=["xlsx"],
+                        key=replace_ostes_key,
+                        label_visibility="collapsed"
+                    )
+                    st.caption("📂 **Remplazar Reporte con archivo**")
+
+            # =================================
+# BUILD OSTES
+# =================================
+if file_ostes and file_mantenimientos and file_ordenes:
+
+    valid_ostes = validate_filename(file_ostes, ["ostes"])
+    valid_mant = validate_filename(file_mantenimientos, ["mantenimientos"])
+
+    if valid_ostes and valid_mant:
+
+        df_ostes = read_file(file_ostes)
+        df_mant = read_file(file_mantenimientos)
+        df_ordenes = read_file(file_ordenes)
+
+        if df_ostes is not None and df_mant is not None and df_ordenes is not None:
+
+            base_rows = len(df_ostes)
+
+            # =============================
+            # CLEAN
+            # =============================
+            df_ostes.columns = df_ostes.columns.str.strip()
+            df_mant.columns = df_mant.columns.str.strip()
+            df_ordenes.columns = df_ordenes.columns.str.strip()
+
+            # =============================
+            # NORMALIZE KEYS
+            # =============================
+            df_ostes["Reporte"] = pd.to_numeric(df_ostes["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_mant["Reporte"] = pd.to_numeric(df_mant["# Reporte"], errors="coerce").astype("Int64").astype(str)
+            df_ordenes["Reporte"] = pd.to_numeric(df_ordenes["Reporte"], errors="coerce").astype("Int64").astype(str)
+
+            # =============================
+            # BASE DATA
+            # =============================
+            df_final_ostes = df_ostes.copy()
+
+            # =============================
+            # DATE
+            # =============================
+            df_final_ostes["fecha_ct"] = pd.to_datetime(df_final_ostes["fecha_ct"], errors="coerce")
+
+            df_final_ostes["Año"] = df_final_ostes["fecha_ct"].dt.year
+            df_final_ostes["Mes"] = df_final_ostes["fecha_ct"].dt.month
+            df_final_ostes["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
+
+            # =============================
+            # DIRECT FIELDS
+            # =============================
+            df_final_ostes["OSTE"] = df_final_ostes["# Oste"]
+            df_final_ostes["Factura"] = df_final_ostes["No. Factura"]
+            df_final_ostes["Status CT"] = df_final_ostes["Status"]
+
+            # =============================
+            # DESCRIPCION + RAZON (FROM MANT)
+            # =============================
+            mant_lookup = df_mant[[
+                "Reporte", "Descripcion", "Razon Servicio"
+            ]].drop_duplicates(subset=["Reporte"])
+
+            df_final_ostes = df_final_ostes.merge(
+                mant_lookup,
+                on="Reporte",
+                how="left"
+            )
+
+            # =============================
+            # ACREEDOR (FROM PROVEEDORES_IVA USING CLAVE)
+            # =============================
+            if df_proveedores_iva is not None and not df_proveedores_iva.empty:
+
+                proveedores_lookup = (
+                    df_proveedores_iva[["clave", "proveedor"]]
+                    .dropna(subset=["clave"])
+                    .drop_duplicates(subset=["clave"])
+                )
+
+                proveedores_lookup["clave"] = (
+                    pd.to_numeric(proveedores_lookup["clave"], errors="coerce")
+                    .astype("Int64")
+                    .astype(str)
+                )
+
+                df_final_ostes["Proveedor"] = (
+                    pd.to_numeric(df_final_ostes["Proveedor"], errors="coerce")
+                    .astype("Int64")
+                    .astype(str)
+                )
+
+                df_final_ostes = df_final_ostes.merge(
+                    proveedores_lookup,
+                    left_on="Proveedor",
+                    right_on="clave",
+                    how="left"
+                )
+
+                df_final_ostes["Acreedor"] = df_final_ostes["proveedor"]
+
+                df_final_ostes.drop(columns=["clave", "proveedor"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["Acreedor"] = df_final_ostes["Proveedor"]
+
+            df_final_ostes.rename(columns={
+                "Razon Servicio": "Razon de servicio"
+            }, inplace=True)
+
+            # =============================
+            # IVA (FROM PROVEEDORES_IVA USING ACREEDOR)
+            # =============================
+            if df_proveedores_iva is not None and not df_proveedores_iva.empty:
+
+                iva_lookup = (
+                    df_proveedores_iva[["proveedor", "iva_pct"]]
+                    .dropna(subset=["proveedor"])
+                    .drop_duplicates(subset=["proveedor"])
+                )
+
+                df_final_ostes["Acreedor"] = (
+                    df_final_ostes["Acreedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+
+                df_final_ostes["acreedor_match"] = (
+                    df_final_ostes["Acreedor"]
+                    .str.lower()
+                )
+
+                iva_lookup["proveedor"] = (
+                    iva_lookup["proveedor"]
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                )
+
+                df_final_ostes = df_final_ostes.merge(
+                    iva_lookup,
+                    left_on="acreedor_match",
+                    right_on="proveedor",
+                    how="left"
+                )
+
+                df_final_ostes.drop(
+                    columns=["acreedor_match"],
+                    inplace=True,
+                    errors="ignore"
+                )
+
+                df_final_ostes["Subtotal"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
+                df_final_ostes["iva_pct"] = pd.to_numeric(df_final_ostes["iva_pct"], errors="coerce")
+
+                df_final_ostes["IVA"] = df_final_ostes["Subtotal"] * (df_final_ostes["iva_pct"] / 100)
+
+                df_final_ostes.drop(columns=["proveedor", "iva_pct"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["IVA"] = None
+
+            # =============================
+            # TIME METRICS
+            # =============================
+            fecha_cierre = pd.to_datetime(df_final_ostes["Fecha Cierre"], errors="coerce", dayfirst=True)
+            fecha_oste = pd.to_datetime(df_final_ostes["Fecha Oste"], errors="coerce", dayfirst=True)
+            fecha_factura = pd.to_datetime(df_final_ostes["Fecha Factura"], errors="coerce", dayfirst=True)
+
+            df_final_ostes["Dias para cerrar orden"] = (fecha_cierre - fecha_oste).dt.days
+            df_final_ostes["Dias Reparacion"] = (fecha_cierre - fecha_factura).dt.days
+
+            df_final_ostes["Dias para cerrar orden"] = df_final_ostes["Dias para cerrar orden"].clip(lower=0)
+            df_final_ostes["Dias Reparacion"] = df_final_ostes["Dias Reparacion"].clip(lower=0)
+
+            # =============================
+            # FINANCIALS
+            # =============================
+            df_final_ostes["Moneda"] = (
+                df_final_ostes["Moneda"]
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
+
+            # =============================
+            # TC (FIXED — NO ROW DROP)
+            # =============================
+            if df_tc is not None and not df_tc.empty:
+
+                df_tc_clean = (
+                    df_tc
+                    .dropna(subset=["year", "month"])
+                    .drop_duplicates(subset=["year", "month"], keep="last")
+                )
+
+                df_final_ostes = df_final_ostes.merge(
+                    df_tc_clean,
+                    left_on=["Año", "Mes"],
+                    right_on=["year", "month"],
+                    how="left"
+                )
+
+                df_final_ostes["TC"] = df_final_ostes["tc"]
+                df_final_ostes.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
+            else:
+                df_final_ostes["TC"] = 1
+
+            df_final_ostes["TC"] = df_final_ostes["TC"].fillna(1)
+
+            # =============================
+            # NEW FINANCIALS
+            # =============================
+            df_final_ostes["Total oste"] = pd.to_numeric(df_final_ostes["Total"], errors="coerce")
+
+            moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
+
+            df_final_ostes["Subtotal"] = df_final_ostes["Total oste"] - df_final_ostes["IVA"]
+
+            df_final_ostes.loc[
+                moneda_upper == "USD",
+                "Subtotal"
+            ] = df_final_ostes["Subtotal"] * df_final_ostes["TC"]
+
+            empresa_upper = empresa.upper()
+            moneda_upper = df_final_ostes["Moneda"].astype(str).str.upper()
+
+            df_final_ostes["Total Correccion"] = df_final_ostes["Total oste"]
+
+            if empresa_upper in ["IGLOO", "PICUS"]:
+                df_final_ostes.loc[
+                    moneda_upper == "USD",
+                    "Total Correccion"
+                ] = df_final_ostes["Total oste"] * df_final_ostes["TC"]
+            else:
+                df_final_ostes.loc[
+                    moneda_upper == "MXP",
+                    "Total Correccion"
+                ] = df_final_ostes["Total oste"] / df_final_ostes["TC"]
+
+            # =============================
+            # FINAL COLUMNS
+            # =============================
+            final_cols_ostes = [
+                "Año", "Mes", "OSTE", "Fecha Analisis", "Reporte",
+                "Acreedor", "Fecha Factura", "Fecha Oste", "Fecha Cierre",
+                "Dias para cerrar orden", "Dias Reparacion",
+                "Empresa", "Sucursal", "Observaciones", "Status CT",
+                "Factura", "Subtotal", "IVA", "Total oste",
+                "Moneda", "TC", "Total Correccion",
+                "Unidad", "Flotilla", "Modelo",
+                "Descripcion", "Tipo De Unidad", "Razon de servicio"
+            ]
+
+            for col in final_cols_ostes:
+                if col not in df_final_ostes.columns:
+                    df_final_ostes[col] = None
+
+            df_final_ostes = df_final_ostes[final_cols_ostes]
+
+            # =============================
+            # VEHICLE ENRICHMENT
+            # =============================
+            if "df_units_filtered" in locals() and not df_units_filtered.empty:
+
+                units_lookup = df_units_filtered[[
+                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
+                ]].copy()
+
+                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
+                df_final_ostes["Unidad"] = df_final_ostes["Unidad"].astype(str).str.strip()
+
+                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
+
+                df_final_ostes = df_final_ostes.merge(
+                    units_lookup,
+                    left_on="Unidad",
+                    right_on="unidad",
+                    how="left"
+                )
+
+                df_final_ostes["Flotilla"] = df_final_ostes["marca"]
+                df_final_ostes["Modelo"] = df_final_ostes["modelo"]
+                df_final_ostes["Tipo De Unidad"] = df_final_ostes["tipo_unidad"]
+                df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
+
+                df_final_ostes = df_final_ostes.drop(
+                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
+                )
+
+            # =============================
+            # FORMAT
+            # =============================
+            df_final_ostes["Mes"] = df_final_ostes["Mes"].map({
+                1: "January", 2: "February", 3: "March", 4: "April",
+                5: "May", 6: "June", 7: "July", 8: "August",
+                9: "September", 10: "October", 11: "November", 12: "December"
+            })
+
+            date_cols = ["Fecha Factura", "Fecha Oste", "Fecha Cierre"]
+            for col in date_cols:
+                if col in df_final_ostes.columns:
+                    df_final_ostes[col] = pd.to_datetime(df_final_ostes[col], errors="coerce").dt.strftime("%d/%m/%y")
+
+            for col in ["Subtotal", "IVA", "Total oste", "Total Correccion"]:
+                df_final_ostes[col] = pd.to_numeric(df_final_ostes[col], errors="coerce")
+
+            # =============================
+            # DISPLAY (OSTES)
+            # =============================
+            @st.fragment
+            def display_ostes_fragment(df_input, empresa_name):
+                st.divider()
+                st.subheader(f"💰 OSTES {empresa_name}")
+
+                replace_ostes_key = f"replace_ostes_{empresa_name}"
+                df_to_show = df_input
+
+                if st.session_state.get(replace_ostes_key) is not None:
+                    try:
+                        df_to_show = pd.read_excel(st.session_state[replace_ostes_key], engine="openpyxl")
+                        st.success("✅ Reporte OSTES reemplazado con archivo manual.")
+                    except Exception as e:
+                        st.error(f"Error al leer el archivo de reemplazo de OSTES: {e}")
+
+                edited_ostes = st.data_editor(
+                    df_to_show,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=f"edit_ostes_table_{empresa_name}",
+                    column_config={
+                        "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+                        "IVA": st.column_config.NumberColumn(format="$ %.2f"),
+                        "Total oste": st.column_config.NumberColumn(format="$ %.2f"),
+                        "TC": st.column_config.NumberColumn(format="%.5f", disabled=True),
+                        "Total Correccion": st.column_config.NumberColumn(format="$ %.2f"),
+                    }
+                )
+
+                col_desc, col_up, col_remp = st.columns(3)
+
+                with col_desc:
+                    st.download_button(
+                        label="⬇️ Descargar Datos",
+                        data=to_excel_bytes({"OSTES": edited_ostes}),
+                        file_name=f"OSTES_{empresa_name}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key=f"dl_btn_ostes_{empresa_name}"
                     )
 
                 with col_up:
