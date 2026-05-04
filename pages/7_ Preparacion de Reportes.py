@@ -1430,9 +1430,9 @@ if file_ordenes and file_mantenimientos:
             )
 
             df_final_ref["Total USD"] = np.where(
-                moneda_upper == "USD",
-                df_final_ref["Precio Sin IVA"],
-                df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
+                df_final_ref["TC"] != 0,
+                df_final_ref["Precio Sin IVA"] / df_final_ref["TC"],
+                df_final_ref["Precio Sin IVA"]
             )
 
             # =============================
