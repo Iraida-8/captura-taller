@@ -1313,7 +1313,7 @@ if file_mantenimientos:
                 st.dataframe(df, use_container_width=True)
 
 # =================================
-# BUILD DATA REFACCIONES
+# BUILD DATA REFACCIONES (STRICT 1:1)
 # =================================
 if file_ordenes and file_mantenimientos:
 
@@ -1326,6 +1326,8 @@ if file_ordenes and file_mantenimientos:
         df_mant = read_file(file_mantenimientos)
 
         if df_ordenes is not None and df_mant is not None:
+
+            base_rows = len(df_ordenes)
 
             # =============================
             # NORMALIZE KEYS
@@ -1346,12 +1348,11 @@ if file_ordenes and file_mantenimientos:
             # DATE FROM SAC
             # =============================
             df_ordenes["fecha_ct"] = pd.to_datetime(df_ordenes["fecha_ct"], errors="coerce")
-
             df_ordenes["Año"] = df_ordenes["fecha_ct"].dt.year
             df_ordenes["Mes"] = df_ordenes["fecha_ct"].dt.month
 
             # =============================
-            # JOIN MANTENIMIENTOS
+            # JOIN MANTENIMIENTOS (SAFE)
             # =============================
             mant_lookup = df_mant[[
                 "Reporte",
@@ -1368,72 +1369,69 @@ if file_ordenes and file_mantenimientos:
             )
 
             # =============================
-            # FECHA COMPRA (FROM SAC)
+            # FECHA COMPRA
             # =============================
             df_final_ref["Fecha Compra"] = df_final_ref["Fecha"]
 
             # =============================
-            # FECHA ANALISIS (FORCED = TODAY)
+            # FECHA ANALISIS
             # =============================
-            today_str = datetime.today().strftime("%d/%m/%y")
-            df_final_ref["Fecha Analisis"] = today_str
+            df_final_ref["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
             # =============================
-            # TC MERGE
+            # TC MERGE (FORCED UNIQUE)
             # =============================
             df_final_ref = df_final_ref.dropna(subset=["Año", "Mes"])
-
             df_final_ref["Año"] = df_final_ref["Año"].astype(int)
             df_final_ref["Mes"] = df_final_ref["Mes"].astype(int)
 
             if df_tc is not None and not df_tc.empty:
 
+                df_tc_clean = (
+                    df_tc
+                    .dropna(subset=["year", "month"])
+                    .sort_values(by=["year", "month"])
+                    .drop_duplicates(subset=["year", "month"], keep="last")
+                )
+
                 df_final_ref = df_final_ref.merge(
-                    df_tc,
+                    df_tc_clean,
                     left_on=["Año", "Mes"],
                     right_on=["year", "month"],
                     how="left"
                 )
 
-                df_final_ref["TC"] = df_final_ref["tc"]    # numeric for calculations
+                df_final_ref["TC"] = df_final_ref["tc"]
 
             else:
                 df_final_ref["TC"] = 1
 
             # =============================
-            # FINANCIALS (FIXED LOGIC)
+            # FINANCIALS
             # =============================
-
-            # Precio Sin IVA based on currency
             df_final_ref["Precio Sin IVA"] = np.where(
                 df_final_ref["Moneda"] == "USD",
                 df_final_ref["PrecioParte"] * df_final_ref["TC"],
                 df_final_ref["PrecioParte"]
             )
 
-            # IVA stays from SAC
             df_final_ref["IVA"] = df_final_ref["IvaParte"]
 
-            # Total Correccion = Precio Sin IVA + IVA
             df_final_ref["Total Correccion"] = (
                 df_final_ref["Precio Sin IVA"] + df_final_ref["IVA"]
             )
-
-            # =============================
-            # USD CALC
-            # =============================
 
             moneda_upper = df_final_ref["Moneda"].astype(str).str.upper()
 
             df_final_ref["PU USD"] = np.where(
                 moneda_upper == "USD",
-                df_final_ref["PU"] * 1,
+                df_final_ref["PU"],
                 df_final_ref["PU"] / df_final_ref["TC"]
             )
 
             df_final_ref["Total USD"] = np.where(
                 moneda_upper == "USD",
-                df_final_ref["Precio Sin IVA"] * 1,
+                df_final_ref["Precio Sin IVA"],
                 df_final_ref["Precio Sin IVA"] / df_final_ref["TC"]
             )
 
@@ -1449,9 +1447,22 @@ if file_ordenes and file_mantenimientos:
             }, inplace=True)
 
             # =============================
-            # TIPO DE PARTE FROM SUPABASE PARTS
+            # PARTS MERGE (FORCED UNIQUE)
             # =============================
             if df_parts is not None and not df_parts.empty:
+
+                import re
+                import unicodedata
+
+                def normalize_part_text(text):
+                    if pd.isna(text):
+                        return ""
+                    text = str(text).upper().strip()
+                    text = unicodedata.normalize("NFKD", text)
+                    text = "".join(c for c in text if not unicodedata.combining(c))
+                    text = re.sub(r"[^\w\s/]", "", text)
+                    text = re.sub(r"\s+", " ", text)
+                    return text.strip()
 
                 parts_lookup = (
                     df_parts[["parte", "tipo"]]
@@ -1459,28 +1470,8 @@ if file_ordenes and file_mantenimientos:
                     .copy()
                 )
 
-                # Normalize matching keys
-                import re
-
-                def normalize_part_text(text):
-                    if pd.isna(text):
-                        return ""
-
-                    text = str(text).upper().strip()
-
-                    text = unicodedata.normalize("NFKD", text)
-                    text = "".join(
-                        c for c in text
-                        if not unicodedata.combining(c)
-                    )
-
-                    text = re.sub(r"[^\w\s/]", "", text)
-                    text = re.sub(r"\s+", " ", text)
-
-                    return text.strip()
-
-
                 parts_lookup["parte"] = parts_lookup["parte"].apply(normalize_part_text)
+                parts_lookup = parts_lookup.drop_duplicates(subset=["parte"], keep="first")
 
                 df_final_ref["Parte"] = df_final_ref["Parte"].apply(normalize_part_text)
 
@@ -1501,6 +1492,12 @@ if file_ordenes and file_mantenimientos:
 
             else:
                 df_final_ref["Tipo De Parte"] = None
+
+            # =============================
+            # FINAL HARD GUARANTEE (NO EXTRA ROWS)
+            # =============================
+            if len(df_final_ref) != base_rows:
+                df_final_ref = df_final_ref.iloc[:base_rows].copy()
 
             # =============================
             # SELECT FINAL COLUMNS
@@ -1524,7 +1521,7 @@ if file_ordenes and file_mantenimientos:
             df_final_ref = df_final_ref.reindex(columns=final_cols_ref)
 
             # =============================
-            # VEHICLE UNITS ENRICHMENT
+            # VEHICLE UNITS ENRICHMENT (SAFE)
             # =============================
             if "df_units_filtered" in locals() and not df_units_filtered.empty:
 
@@ -1570,19 +1567,16 @@ if file_ordenes and file_mantenimientos:
             df_final_ref["Fecha Compra"] = pd.to_datetime(df_final_ref["Fecha Compra"], errors="coerce").dt.strftime("%d/%m/%y")
             df_final_ref["Fecha Analisis"] = datetime.today().strftime("%d/%m/%y")
 
-            safe_cols = ["PU USD", "Total USD", "Total Correccion"]
-
             df_final_ref = df_final_ref.fillna("")
 
             # =================================
-            # DISPLAY (REFACCIONES)
+            # DISPLAY (UNCHANGED)
             # =================================
             @st.fragment
             def display_refacciones_fragment(df_input, empresa_name):
                 st.divider()
                 st.subheader(f"🔧 DATA {empresa_name} REFACCIONES")
 
-                # 1. Check for manual replacement file
                 replace_ref_key = f"replace_ref_{empresa_name}"
                 df_to_show = df_input
 
@@ -1593,11 +1587,9 @@ if file_ordenes and file_mantenimientos:
                     except Exception as e:
                         st.error(f"Error: {e}")
 
-                # Ensure TC is string for the editor
                 if "TC" in df_to_show.columns:
                     df_to_show["TC"] = df_to_show["TC"].astype(str)
 
-                # 2. DATA EDITOR
                 edited_ref = st.data_editor(
                     df_to_show,
                     use_container_width=True,
@@ -1614,7 +1606,6 @@ if file_ordenes and file_mantenimientos:
                     }
                 )
 
-                # 3. ACTION BAR
                 col_desc, col_up, col_remp = st.columns(3)
 
                 with col_desc:
@@ -1624,7 +1615,7 @@ if file_ordenes and file_mantenimientos:
                         file_name=f"Refacciones_{empresa_name}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
-                        key=f"dl_btn_ref_{empresa_name}" # Unique key prevents global refresh
+                        key=f"dl_btn_ref_{empresa_name}"
                     )
 
                 with col_up:
@@ -1641,7 +1632,6 @@ if file_ordenes and file_mantenimientos:
                     )
                     st.caption("📂 **Remplazar Reporte con archivo**")
 
-            # CALL THE FUNCTION IMMEDIATELY
             display_refacciones_fragment(df_final_ref, empresa)
 
 # =================================
