@@ -2399,6 +2399,8 @@ if file_ordenes and file_ostes and file_mantenimientos:
 
         if df_ordenes is not None and df_ostes is not None and df_mant is not None:
 
+            base_rows = len(df_mant)
+
             # =============================
             # NORMALIZE KEYS
             # =============================
@@ -2476,24 +2478,31 @@ if file_ordenes and file_ostes and file_mantenimientos:
             df_final["IVA"] = df_final["Total"] - df_final["Sub Total"]
 
             # =============================
-            # TC
+            # TC (FIXED — NO ROW DROP)
             # =============================
-            df_final = df_final.dropna(subset=["Año", "Mes"])
-
-            df_final["Año"] = df_final["Año"].astype(int)
-            df_final["Mes"] = df_final["Mes"].astype(int)
-
             if df_tc is not None and not df_tc.empty:
+
+                df_tc_clean = (
+                    df_tc
+                    .dropna(subset=["year", "month"])
+                    .drop_duplicates(subset=["year", "month"], keep="last")
+                )
+
                 df_final = df_final.merge(
-                    df_tc,
+                    df_tc_clean,
                     left_on=["Año", "Mes"],
                     right_on=["year", "month"],
                     how="left"
                 )
+
                 df_final["TC"] = df_final["tc"]
                 df_final.drop(columns=["year", "month", "tc"], inplace=True, errors="ignore")
+
             else:
                 df_final["TC"] = 1
+
+            # 🔥 KEEP ALL ROWS
+            df_final["TC"] = df_final["TC"].fillna(1)
 
             df_final["Total USD"] = df_final["Total"] / df_final["TC"]
             df_final["Total Correccion"] = df_final["Total"]
@@ -2590,7 +2599,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
                 st.divider()
                 st.subheader(f"🚛 Reporte Mano de Obra {empresa_name}")
 
-                # 1. INTERCEPT: Check for manual replacement file
                 replace_key = f"replace_mo_{empresa_name}"
                 df_to_show = df_input
 
@@ -2601,7 +2609,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     except Exception as e:
                         st.error(f"Error al leer el archivo de reemplazo: {e}")
 
-                # 2. THE TABLE
                 edited_mo = st.data_editor(
                     df_to_show,
                     use_container_width=True,
@@ -2617,7 +2624,6 @@ if file_ordenes and file_ostes and file_mantenimientos:
                     }
                 )
 
-                # 3. THE THREE BUTTONS
                 col_descargar, col_cargar, col_remplazar = st.columns(3)
 
                 with col_descargar:
@@ -2627,7 +2633,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
                         file_name=f"Mano_de_Obra_{empresa_name}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
-                        key=f"dl_btn_mo_{empresa_name}" # Unique key to prevent page rebuild
+                        key=f"dl_btn_mo_{empresa_name}"
                     )
 
                 with col_cargar:
