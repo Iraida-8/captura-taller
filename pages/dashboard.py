@@ -252,12 +252,12 @@ if has_access(section_extras):
 # =============================
 # 4. AUDIT
 # =============================
-section_audit = ["prepara_reportes", "gestion_unidades"]
+section_audit = ["prepara_reportes", "gestion_unidades", "solicitud_viaticos"]
 
 if has_access(section_audit):
     st.subheader("🧾 Audit")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         if "prepara_reportes" in access:
@@ -268,5 +268,9 @@ if has_access(section_audit):
         if "gestion_unidades" in access:
             if st.button("🚚  Gestión de Unidades", use_container_width=True, key="btn_gestion_unidades"):
                 st.switch_page("pages/8_ Gestion de Unidades.py")
-
+    
+    with col3:
+        if "solicitud_viaticos" in access:
+            if st.button("🚚  Solicitud de Viaticos y Reembolsos", use_container_width=True, key="btn_viaticos"):
+                st.switch_page("pages/9_ Viaticos.py")
     st.divider()
