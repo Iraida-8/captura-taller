@@ -268,6 +268,8 @@ if has_access(section_audit):
         if "gestion_unidades" in access:
             if st.button("🚚  Gestión de Unidades", use_container_width=True, key="btn_gestion_unidades"):
                 st.switch_page("pages/8_ Gestion de Unidades.py")
+
+    col3 = st.columns(2)
     
     with col3:
         if "solicitud_viaticos" in access:
