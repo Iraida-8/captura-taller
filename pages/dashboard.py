@@ -283,7 +283,7 @@ if has_access(section_audit):
     with col3:
         if "solicitud_viaticos" in access:
             if st.button(
-                "🚚  Solicitud de Viaticos y Reembolsos",
+                "💳  Solicitud de Viáticos y Reembolsos",
                 use_container_width=True,
                 key="btn_viaticos"
             ):
