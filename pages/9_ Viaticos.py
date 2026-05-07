@@ -139,22 +139,22 @@ with tab_solicitud:
             label_visibility="collapsed"
         )
 
+        # Create a placeholder to keep the UI from jumping or changing order
+        sucursal_placeholder = st.empty()
+
         if sucursal == "OTRO":
-
-            suc_otro_texto = st.text_input(
-                "Especificar"
+            suc_otro_texto = sucursal_placeholder.text_input(
+                "Especificar",
+                key="suc_especificar_active"
             )
-
             sucursales = [suc_otro_texto] if suc_otro_texto else []
-
         else:
-
-            st.text_input(
+            sucursal_placeholder.text_input(
                 "Especificar",
                 value="",
-                disabled=True
+                disabled=True,
+                key="suc_especificar_disabled"
             )
-
             sucursales = [sucursal]
 
         st.divider()
