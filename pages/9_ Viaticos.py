@@ -179,6 +179,46 @@ st.markdown(
     }
 
     /* =========================
+        TABS
+        ========================= */
+
+        /* Container holding tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0;
+            width: 100%;
+        }
+
+        /* Each tab */
+        .stTabs [data-baseweb="tab"] {
+            flex: 1;
+            justify-content: center;
+
+            height: 70px;
+            font-size: 1.05rem;
+            font-weight: 700;
+
+            background-color: #1B267A;
+            color: #FFFFFF;
+
+            border-radius: 14px 14px 0 0;
+            border: 1px solid rgba(191, 167, 95, 0.25);
+
+            margin-right: 4px;
+        }
+
+        /* Selected tab */
+        .stTabs [aria-selected="true"] {
+            background-color: #24338C;
+            color: #BFA75F;
+            border-color: #BFA75F;
+        }
+
+        /* Hover */
+        .stTabs [data-baseweb="tab"]:hover {
+            color: #BFA75F;
+        }
+
+    /* =========================
        LOGOUT BUTTON
        ========================= */
     button[kind="secondary"] {
