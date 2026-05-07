@@ -311,26 +311,11 @@ with tab_solicitud:
 
     with col_tot:
 
-        st.markdown(
-            """
-            <div style="
-                color:white;
-                font-size:24px;
-                font-weight:bold;
-                margin-bottom:12px;
-            ">
-                (-) Anticipo para gastos de viaje entregado
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
         anticipo = st.number_input(
-            "",
+            "(-) Anticipo para gastos de viaje entregado",
             min_value=0.0,
             step=100.0,
-            key="anticipo",
-            label_visibility="collapsed"
+            key="anticipo"
         )
 
         diferencia = total_estimado - anticipo
@@ -354,9 +339,6 @@ with tab_solicitud:
                 padding:12px;
                 font-size:24px;
                 font-weight:bold;
-                min-height:58px;
-                display:flex;
-                align-items:center;
             ">
                 $ {diferencia:,.2f}
             </div>
@@ -468,12 +450,6 @@ st.markdown(
         background-color: #24338C;
         border-color: #BFA75F;
         color: #BFA75F;
-    }
-
-    div[data-testid="stNumberInput"] {
-        background: white;
-        border: 2px solid black;
-        padding: 4px;
     }
 
     /* =========================
