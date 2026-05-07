@@ -125,101 +125,146 @@ with tab_solicitud:
     # =========================
     with st.form("form_solicitud_gastos"):
 
+        st.markdown(
+            """
+            <style>
+
+            .table-header {
+                background: white;
+                color: black;
+                border: 2px solid black;
+                padding: 14px;
+                font-size: 24px;
+                font-weight: bold;
+            }
+
+            .table-cell {
+                background: white;
+                color: black;
+                border-left: 2px solid black;
+                border-right: 2px solid black;
+                border-bottom: 1px dotted black;
+                padding: 12px;
+                font-size: 18px;
+                min-height: 58px;
+                display: flex;
+                align-items: center;
+            }
+
+            .table-total {
+                background: white;
+                color: black;
+                border: 2px solid black;
+                padding: 14px;
+                font-size: 20px;
+                font-weight: bold;
+                min-height: 58px;
+                display: flex;
+                align-items: center;
+            }
+
+            .obs-header {
+                background: #9f9f9f;
+                color: black;
+                border: 2px solid black;
+                text-align: center;
+                letter-spacing: 8px;
+                font-size: 24px;
+                font-weight: bold;
+                padding: 12px;
+                margin-bottom: 0px;
+            }
+
+            div[data-testid="stNumberInput"] input {
+                text-align: left;
+                font-size: 18px;
+            }
+
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
         # =========================
-        # STYLE
-        # =========================
-        st.markdown("""
-        <style>
-
-        .tabla-gastos {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            color: black;
-            margin-bottom: 30px;
-        }
-
-        .tabla-gastos th {
-            border: 2px solid black;
-            padding: 12px;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .tabla-gastos td {
-            border-left: 2px solid black;
-            border-right: 2px solid black;
-            border-bottom: 1px dotted black;
-            padding: 12px;
-            font-size: 18px;
-        }
-
-        .tabla-total td {
-            border: 2px solid black !important;
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        .obs-header {
-            background: #9f9f9f;
-            color: black;
-            border: 2px solid black;
-            text-align: center;
-            letter-spacing: 8px;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 12px;
-            margin-bottom: 0px;
-        }
-
-        </style>
-        """, unsafe_allow_html=True)
-
-        # =========================
-        # INPUTS
+        # HEADER
         # =========================
 
-        transporte = st.number_input(
-            "Transportación Terrestre",
-            min_value=0.0,
-            step=100.0
+        col_h1, col_h2 = st.columns([7, 3], gap="small")
+
+        with col_h1:
+            st.markdown(
+                '<div class="table-header">ESTIMACION DE GASTOS DE VIAJE A INCURRIR</div>',
+                unsafe_allow_html=True
+            )
+
+        with col_h2:
+            st.markdown(
+                '<div class="table-header" style="text-align:center; justify-content:center; display:flex;">TOTAL ESTIMADO</div>',
+                unsafe_allow_html=True
+            )
+
+        # =========================
+        # ROW BUILDER
+        # =========================
+
+        def fila_gasto(nombre, key):
+
+            c1, c2 = st.columns([7, 3], gap="small")
+
+            with c1:
+                st.markdown(
+                    f'<div class="table-cell">{nombre}</div>',
+                    unsafe_allow_html=True
+                )
+
+            with c2:
+                valor = st.number_input(
+                    label=nombre,
+                    min_value=0.0,
+                    step=100.0,
+                    key=key,
+                    label_visibility="collapsed"
+                )
+
+            return valor
+
+        # =========================
+        # INPUT ROWS
+        # =========================
+
+        transporte = fila_gasto(
+            "TRANSPORTACION TERRESTRE",
+            "transporte"
         )
 
-        hospedaje = st.number_input(
-            "Hospedaje",
-            min_value=0.0,
-            step=100.0
+        hospedaje = fila_gasto(
+            "HOSPEDAJE",
+            "hospedaje"
         )
 
-        alimentos = st.number_input(
-            "Alimentos",
-            min_value=0.0,
-            step=100.0
+        alimentos = fila_gasto(
+            "ALIMENTOS",
+            "alimentos"
         )
 
-        propinas = st.number_input(
-            "Propinas",
-            min_value=0.0,
-            step=100.0
+        propinas = fila_gasto(
+            "PROPINAS",
+            "propinas"
         )
 
-        taxis = st.number_input(
-            "Taxis",
-            min_value=0.0,
-            step=100.0
+        taxis = fila_gasto(
+            "TAXIS",
+            "taxis"
         )
 
-        otros = st.number_input(
-            "Otros",
-            min_value=0.0,
-            step=100.0
+        otros = fila_gasto(
+            "OTROS (Describir)",
+            "otros"
         )
 
-        anticipo = st.number_input(
-            "(-) Anticipo para Gastos de Viaje Entregado",
-            min_value=0.0,
-            step=100.0
-        )
+        # =========================
+        # TOTALS
+        # =========================
 
         total_estimado = (
             transporte
@@ -230,121 +275,21 @@ with tab_solicitud:
             + otros
         )
 
-        diferencia = total_estimado - anticipo
+        c_total1, c_total2 = st.columns([7, 3], gap="small")
 
-        # =========================
-        # TABLE
-        # =========================
+        with c_total1:
+            st.markdown(
+                '<div class="table-total" style="justify-content:flex-end;">Importe estimado de gastos de viaje</div>',
+                unsafe_allow_html=True
+            )
 
-        tabla_html = f"""
-        <table class="tabla-gastos">
+        with c_total2:
+            st.markdown(
+                f'<div class="table-total">$ {total_estimado:,.2f}</div>',
+                unsafe_allow_html=True
+            )
 
-            <tr>
-                <th style="width:70%; text-align:left;">
-                    ESTIMACION DE GASTOS DE VIAJE A INCURRIR
-                </th>
-
-                <th style="width:30%; text-align:center;">
-                    TOTAL ESTIMADO
-                </th>
-            </tr>
-
-            <tr>
-                <td>TRANSPORTACION TERRESTRE</td>
-                <td>$ {transporte:,.2f}</td>
-            </tr>
-
-            <tr>
-                <td>HOSPEDAJE</td>
-                <td>$ {hospedaje:,.2f}</td>
-            </tr>
-
-            <tr>
-                <td>ALIMENTOS</td>
-                <td>$ {alimentos:,.2f}</td>
-            </tr>
-
-            <tr>
-                <td>PROPINAS</td>
-                <td>$ {propinas:,.2f}</td>
-            </tr>
-
-            <tr>
-                <td>TAXIS</td>
-                <td>$ {taxis:,.2f}</td>
-            </tr>
-
-            <tr>
-                <td>OTROS (Describir)</td>
-                <td>$ {otros:,.2f}</td>
-            </tr>
-
-            <tr class="tabla-total">
-                <td style="text-align:right;">
-                    Importe estimado de gastos de viaje
-                </td>
-
-                <td>
-                    $ {total_estimado:,.2f}
-                </td>
-            </tr>
-
-        </table>
-        """
-
-        st.components.v1.html(
-            f"""
-            <html>
-            <head>
-            <style>
-
-            body {{
-                margin:0;
-                padding:0;
-                background:white;
-                font-family:Arial;
-            }}
-
-            .tabla-gastos {{
-                width:100%;
-                border-collapse:collapse;
-                color:black;
-            }}
-
-            .tabla-gastos th {{
-                border:2px solid black;
-                padding:12px;
-                font-size:20px;
-                font-weight:bold;
-                text-align:left;
-            }}
-
-            .tabla-gastos td {{
-                border-left:2px solid black;
-                border-right:2px solid black;
-                border-bottom:1px dotted black;
-                padding:12px;
-                font-size:18px;
-            }}
-
-            .tabla-total td {{
-                border:2px solid black !important;
-                font-weight:bold;
-            }}
-
-            </style>
-            </head>
-
-            <body>
-
-            {tabla_html}
-
-            </body>
-            </html>
-            """,
-            height=420,
-            scrolling=False
-        )
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # =========================
         # LOWER SECTION
@@ -367,33 +312,22 @@ with tab_solicitud:
 
         with col_tot:
 
+            anticipo = st.number_input(
+                "(-) Anticipo para gastos de viaje entregado",
+                min_value=0.0,
+                step=100.0,
+                key="anticipo"
+            )
+
+            diferencia = total_estimado - anticipo
+
             st.markdown(
                 f"""
                 <div style="
-                    margin-top:20px;
-                    margin-bottom:60px;
-                    color:white;
-                    font-size:22px;
-                    font-weight:bold;
-                ">
-                    (-) Anticipo para gastos de viaje entregado
-                </div>
-
-                <div style="
-                    background:white;
-                    color:black;
-                    border:2px solid black;
-                    padding:12px;
-                    font-size:24px;
-                    margin-bottom:70px;
-                ">
-                    $ {anticipo:,.2f}
-                </div>
-
-                <div style="
                     color:white;
                     font-size:24px;
                     font-weight:bold;
+                    margin-top:40px;
                     margin-bottom:15px;
                 ">
                     Diferencia a cargo (favor)
@@ -405,6 +339,7 @@ with tab_solicitud:
                     border:2px solid black;
                     padding:12px;
                     font-size:24px;
+                    font-weight:bold;
                 ">
                     $ {diferencia:,.2f}
                 </div>
