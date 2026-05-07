@@ -40,23 +40,14 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
-    # =========================
-    # OTRO SUCURSAL (REACTIVE)
-    # =========================
-    col_otro_1, col_otro_2 = st.columns([1, 1])
+    # =================================
+    # REACTIVE "OTRO"
+    # =================================
+    if "suc_otro" not in st.session_state:
+        st.session_state.suc_otro = False
 
-    with col_otro_1:
-        suc_otro = st.checkbox(
-            "OTRO",
-            key="suc_otro_real"
-        )
-
-    with col_otro_2:
-        suc_otro_texto = st.text_input(
-            "Especificar",
-            disabled=not suc_otro,
-            key="suc_otro_texto_real"
-        )
+    if "suc_otro_texto" not in st.session_state:
+        st.session_state.suc_otro_texto = ""
 
     with st.form("form_solicitud_viaticos"):
 
@@ -158,21 +149,49 @@ with tab_solicitud:
 
         with col8:
             suc_tlaxcala = st.checkbox("TLAXCALA")
-            
+
+        # IMPORTANT:
+        # These two widgets are OUTSIDE form buffering
+        # using session_state manually
 
         with col9:
-            st.checkbox(
+
+            current_otro = st.checkbox(
                 "OTRO",
-                disabled=True
+                value=st.session_state.suc_otro,
+                key="tmp_otro_checkbox"
             )
+
+            if current_otro != st.session_state.suc_otro:
+                st.session_state.suc_otro = current_otro
+                st.rerun()
 
         with col10:
-            st.text_input(
-                "Especificar",
-                disabled=True
-            )
 
-        # Lista final de sucursales seleccionadas
+            if st.session_state.suc_otro:
+
+                suc_otro_texto = st.text_input(
+                    "Especificar",
+                    value=st.session_state.suc_otro_texto,
+                    key="tmp_otro_text"
+                )
+
+                st.session_state.suc_otro_texto = suc_otro_texto
+
+            else:
+
+                st.text_input(
+                    "Especificar",
+                    value="",
+                    disabled=True,
+                    key="tmp_otro_text_disabled"
+                )
+
+                suc_otro_texto = ""
+
+        # =========================
+        # LISTA FINAL SUCURSALES
+        # =========================
         sucursales = []
 
         if suc_nuevo_laredo:
@@ -199,7 +218,7 @@ with tab_solicitud:
         if suc_tlaxcala:
             sucursales.append("TLAXCALA")
 
-        if suc_otro and suc_otro_texto:
+        if st.session_state.suc_otro and suc_otro_texto:
             sucursales.append(suc_otro_texto)
 
         st.divider()
@@ -212,6 +231,7 @@ with tab_solicitud:
         col1, col2 = st.columns(2)
 
         with col1:
+
             transporte = st.number_input(
                 "Transportación Terrestre",
                 min_value=0.0,
