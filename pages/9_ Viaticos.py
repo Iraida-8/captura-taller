@@ -40,6 +40,24 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
+    # =========================
+    # OTRO SUCURSAL (REACTIVE)
+    # =========================
+    col_otro_1, col_otro_2 = st.columns([1, 1])
+
+    with col_otro_1:
+        suc_otro = st.checkbox(
+            "OTRO",
+            key="suc_otro_real"
+        )
+
+    with col_otro_2:
+        suc_otro_texto = st.text_input(
+            "Especificar",
+            disabled=not suc_otro,
+            key="suc_otro_texto_real"
+        )
+
     with st.form("form_solicitud_viaticos"):
 
         # =========================
@@ -140,31 +158,19 @@ with tab_solicitud:
 
         with col8:
             suc_tlaxcala = st.checkbox("TLAXCALA")
+            
 
         with col9:
-            suc_otro = st.checkbox(
+            st.checkbox(
                 "OTRO",
-                key="suc_otro"
+                disabled=True
             )
-
-            # Force rerun immediately when checkbox changes
-            if "last_suc_otro" not in st.session_state:
-                st.session_state.last_suc_otro = suc_otro
-
-            if st.session_state.last_suc_otro != suc_otro:
-                st.session_state.last_suc_otro = suc_otro
-                st.rerun()
 
         with col10:
-
-            # Always enabled
-            suc_otro_texto = st.text_input(
-                "Especificar"
+            st.text_input(
+                "Especificar",
+                disabled=True
             )
-
-            # Fake disabled appearance when OTRO not selected
-            if not suc_otro:
-                st.caption("Selecciona OTRO para utilizar este campo")
 
         # Lista final de sucursales seleccionadas
         sucursales = []
