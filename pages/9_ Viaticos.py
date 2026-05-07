@@ -40,6 +40,12 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
+    # =================================
+    # SUCURSAL STATE
+    # =================================
+    if "suc_otro" not in st.session_state:
+        st.session_state.suc_otro = False
+
     with st.form("form_solicitud_viaticos"):
 
         # =========================
@@ -142,19 +148,16 @@ with tab_solicitud:
             suc_tlaxcala = st.checkbox("TLAXCALA")
 
         with col9:
-            suc_otro = st.checkbox("OTRO")
+            suc_otro = st.checkbox(
+                "OTRO",
+                key="suc_otro"
+            )
 
         with col10:
-
-            if suc_otro:
-                suc_otro_texto = st.text_input("Especificar")
-            else:
-                st.text_input(
-                    "Especificar",
-                    value="",
-                    disabled=True
-                )
-                suc_otro_texto = ""
+            suc_otro_texto = st.text_input(
+                "Especificar",
+                disabled=not st.session_state.suc_otro
+            )
 
         # Lista final de sucursales seleccionadas
         sucursales = []
