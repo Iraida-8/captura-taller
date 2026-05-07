@@ -40,12 +40,6 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
-    # =================================
-    # SUCURSAL STATE
-    # =================================
-    if "suc_otro" not in st.session_state:
-        st.session_state.suc_otro = False
-
     with st.form("form_solicitud_viaticos"):
 
         # =========================
@@ -153,10 +147,18 @@ with tab_solicitud:
                 key="suc_otro"
             )
 
+            # Force rerun immediately when checkbox changes
+            if "last_suc_otro" not in st.session_state:
+                st.session_state.last_suc_otro = suc_otro
+
+            if st.session_state.last_suc_otro != suc_otro:
+                st.session_state.last_suc_otro = suc_otro
+                st.rerun()
+
         with col10:
             suc_otro_texto = st.text_input(
                 "Especificar",
-                disabled=not st.session_state.suc_otro
+                disabled=not suc_otro
             )
 
         # Lista final de sucursales seleccionadas
