@@ -11,6 +11,7 @@ st.set_page_config(
     page_title="Solicitud de Viaticos y Reembolsos",
     layout="wide"
 )
+
 # =================================
 # Security gates
 # =================================
@@ -40,252 +41,106 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
-    # =========================================
-    # SESSION STATE
-    # =========================================
-    if "selected_sucursal" not in st.session_state:
-        st.session_state.selected_sucursal = ""
+    # =========================
+    # PART 1: DATOS GENERALES
+    # =========================
+    # Using a container instead of a form here so the radio button can trigger the UI update
+    col1, col2 = st.columns([1, 2])
 
-    # =========================================
-    # MAIN FORM
-    # =========================================
-    with st.form("form_solicitud_viaticos"):
+    with col1:
+        fecha_solicitud = st.date_input("Fecha de Solicitud")
 
-        # =========================
-        # DATOS GENERALES
-        # =========================
-        col1, col2 = st.columns([1, 2])
+    with col2:
+        empresa_servicio = st.text_input("Nombre de la Empresa que Brinda el Servicio")
 
-        with col1:
-            fecha_solicitud = st.date_input("Fecha de Solicitud")
+    empleado = st.text_input("Nombre del Empleado que lo Solicita")
 
-        with col2:
-            empresa_servicio = st.text_input(
-                "Nombre de la Empresa que Brinda el Servicio"
-            )
+    motivo_viaje = st.text_area("Motivo del Viaje", height=90)
 
-        empleado = st.text_input(
-            "Nombre del Empleado que lo Solicita"
-        )
+    col1, col2 = st.columns(2)
+    with col1:
+        lugar_viaje = st.text_input("Lugar a Donde se Realiza el Viaje")
+    with col2:
+        periodo_viaje = st.text_input("Periodo del Viaje")
 
-        motivo_viaje = st.text_area(
-            "Motivo del Viaje",
-            height=90
-        )
+    st.divider()
 
-        col1, col2 = st.columns(2)
+    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
+    empresas = st.multiselect("", ["SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"])
 
-        with col1:
-            lugar_viaje = st.text_input(
-                "Lugar a Donde se Realiza el Viaje"
-            )
+    st.markdown("### Unidad de Negocio")
+    unidades = st.multiselect("", ["CARRIER", "LOGISTICA", "PLUS"])
 
-        with col2:
-            periodo_viaje = st.text_input(
-                "Periodo del Viaje"
-            )
+    # =========================
+    # SUCURSAL (REACTIVE SECTION)
+    # =========================
+    st.markdown("### Sucursal")
+    sucursal = st.radio(
+        "",
+        ["NUEVO LAREDO", "DALLAS", "CHICAGO", "GUADALAJARA", "MONTERREY", "QUERETARO", "LEON", "TLAXCALA", "OTRO"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
 
-        st.divider()
+    if sucursal == "OTRO":
+        suc_otro_texto = st.text_input("Especificar")
+        sucursales_final = [suc_otro_texto] if suc_otro_texto else []
+    else:
+        st.text_input("Especificar", value="", disabled=True)
+        sucursales_final = [sucursal]
 
-        # =========================
-        # EMPRESA A CARGO
-        # =========================
-        st.markdown("### Empresa a Cargo para Gastos de este Viaje")
+    st.divider()
 
-        empresas = st.multiselect(
-            "",
-            [
-                "SET FREIGHT",
-                "LINCOLN",
-                "PICUS",
-                "IGLOO",
-                "SET LOGIS PLUS"
-            ]
-        )
-
-        # =========================
-        # UNIDAD DE NEGOCIO
-        # =========================
-        st.markdown("### Unidad de Negocio")
-
-        unidades = st.multiselect(
-            "",
-            [
-                "CARRIER",
-                "LOGISTICA",
-                "PLUS"
-            ]
-        )
-
-        # =========================
-        # SUCURSAL
-        # =========================
-        st.markdown("### Sucursal")
-
-        sucursal = st.radio(
-            "",
-            [
-                "NUEVO LAREDO NO MAMES FUNCIONA PUTAMADRE",
-                "DALLAS",
-                "CHICAGO",
-                "GUADALAJARA",
-                "MONTERREY",
-                "QUERETARO",
-                "LEON",
-                "TLAXCALA",
-                "OTRO"
-            ],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-
-        # Create a placeholder to keep the UI from jumping or changing order
-        sucursal_placeholder = st.empty()
-
-        if sucursal == "OTRO":
-            suc_otro_texto = sucursal_placeholder.text_input(
-                "Especificar",
-                key="suc_especificar_active"
-            )
-            sucursales = [suc_otro_texto] if suc_otro_texto else []
-        else:
-            sucursal_placeholder.text_input(
-                "Especificar",
-                value="",
-                disabled=True,
-                key="suc_especificar_disabled"
-            )
-            sucursales = [sucursal]
-
-        st.divider()
-
-        # =========================
-        # ESTIMACION DE GASTOS
-        # =========================
+    # =========================
+    # PART 2: THE FORM (CALCULATIONS & SUBMIT)
+    # =========================
+    with st.form("form_solicitud_gastos"):
         st.markdown("## Estimación de Gastos de Viaje a Incurrir")
 
-        col1, col2 = st.columns(2)
+        col_g1, col_g2 = st.columns(2)
 
-        with col1:
+        with col_g1:
+            transporte = st.number_input("Transportación Terrestre", min_value=0.0, step=100.0)
+            hospedaje = st.number_input("Hospedaje", min_value=0.0, step=100.0)
+            alimentos = st.number_input("Alimentos", min_value=0.0, step=100.0)
+            propinas = st.number_input("Propinas", min_value=0.0, step=100.0)
+            taxis = st.number_input("Taxis", min_value=0.0, step=100.0)
+            otros = st.number_input("Otros", min_value=0.0, step=100.0)
 
-            transporte = st.number_input(
-                "Transportación Terrestre",
-                min_value=0.0,
-                step=100.0
-            )
+        total_estimado = transporte + hospedaje + alimentos + propinas + taxis + otros
 
-            hospedaje = st.number_input(
-                "Hospedaje",
-                min_value=0.0,
-                step=100.0
-            )
-
-            alimentos = st.number_input(
-                "Alimentos",
-                min_value=0.0,
-                step=100.0
-            )
-
-            propinas = st.number_input(
-                "Propinas",
-                min_value=0.0,
-                step=100.0
-            )
-
-            taxis = st.number_input(
-                "Taxis",
-                min_value=0.0,
-                step=100.0
-            )
-
-            otros = st.number_input(
-                "Otros",
-                min_value=0.0,
-                step=100.0
-            )
-
-        total_estimado = (
-            transporte
-            + hospedaje
-            + alimentos
-            + propinas
-            + taxis
-            + otros
-        )
-
-        with col2:
-
-            st.metric(
-                "Total Estimado",
-                f"${total_estimado:,.2f}"
-            )
-
-            anticipo = st.number_input(
-                "(-) Anticipo para Gastos de Viaje Entregado",
-                min_value=0.0,
-                step=100.0
-            )
-
+        with col_g2:
+            st.metric("Total Estimado", f"${total_estimado:,.2f}")
+            anticipo = st.number_input("(-) Anticipo para Gastos de Viaje Entregado", min_value=0.0, step=100.0)
             diferencia = total_estimado - anticipo
-
-            st.metric(
-                "Diferencia a Cargo (Favor)",
-                f"${diferencia:,.2f}"
-            )
+            st.metric("Diferencia a Cargo (Favor)", f"${diferencia:,.2f}")
 
         st.divider()
-
-        # =========================
-        # OBSERVACIONES
-        # =========================
-        observaciones = st.text_area(
-            "Observaciones",
-            height=150
-        )
-
+        observaciones = st.text_area("Observaciones", height=150)
         st.divider()
 
-        submitted = st.form_submit_button(
-            "💳 Enviar Solicitud",
-            use_container_width=True
-        )
+        submitted = st.form_submit_button("💳 Enviar Solicitud", use_container_width=True)
 
         if submitted:
-            st.success("Solicitud enviada correctamente.")
+            # Here you would collect all variables (from outside and inside the form) and send to Supabase
+            st.success(f"Solicitud para {sucursales_final} enviada correctamente.")
 
 # =================================
 # TAB 2 — COMPROBACION
 # =================================
 with tab_comprobacion:
-
     st.subheader("🧾 Comprobación de Gastos de Viaje")
-
     with st.form("form_comprobacion_viaticos"):
-
         col1, col2 = st.columns(2)
-
         with col1:
             folio = st.text_input("Folio")
             empleado_comp = st.text_input("Empleado")
-            fecha_comprobacion = st.date_input(
-                "Fecha de Comprobación",
-                value=date.today()
-            )
-
+            fecha_comprobacion = st.date_input("Fecha de Comprobación", value=date.today())
         with col2:
-            total_comprobado = st.number_input(
-                "Total Comprobado",
-                min_value=0.0,
-                step=100.0
-            )
+            total_comprobado = st.number_input("Total Comprobado", min_value=0.0, step=100.0)
+            obs_comp = st.text_area("Observaciones")
 
-            observaciones = st.text_area("Observaciones")
-
-        submitted_comprobacion = st.form_submit_button(
-            "🧾 Guardar Comprobación",
-            use_container_width=True
-        )
-
+        submitted_comprobacion = st.form_submit_button("🧾 Guardar Comprobación", use_container_width=True)
         if submitted_comprobacion:
             st.success("Comprobación guardada correctamente.")
 
