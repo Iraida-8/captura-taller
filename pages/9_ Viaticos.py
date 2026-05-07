@@ -1,4 +1,6 @@
 import streamlit as st
+from pathlib import Path
+from PIL import Image
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
@@ -27,11 +29,58 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
+# HEADER
+# =================================
+
+assets_dir = Path(__file__).parent / "assets"
+logo_path = assets_dir / "pg_brand.png"
+
+# =================================
+# HEADER
+# =================================
+
+col_logo, col_title, col_spacer = st.columns([1, 6, 1])
+
+with col_logo:
+
+    if logo_path.exists():
+
+        img = Image.open(logo_path)
+
+        st.image(
+            img,
+            width=95
+        )
+
+with col_title:
+
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            border:3px solid #151F6D;
+            padding:14px;
+            margin-top:18px;
+            background:white;
+            color:#151F6D;
+            font-size:38px;
+            font-weight:bold;
+            letter-spacing:1px;
+        ">
+            SOLICITUD DE VIATICOS Y REEMBOLSOS
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# =================================
 # TABS
 # =================================
 tab_solicitud, tab_comprobacion = st.tabs([
     "🧳 SOLICITUD GASTOS DE VIAJE",
-    "🧾 COMPROBACION GASTOS VIAJE"
+    "🧾 COMPROBACION GASTOS DE VIAJE"
 ])
 
 # =================================
@@ -363,20 +412,308 @@ with tab_solicitud:
 # TAB 2 — COMPROBACION
 # =================================
 with tab_comprobacion:
-    st.subheader("🧾 Comprobación de Gastos de Viaje")
-    with st.form("form_comprobacion_viaticos"):
-        col1, col2 = st.columns(2)
-        with col1:
-            folio = st.text_input("Folio")
-            empleado_comp = st.text_input("Empleado")
-            fecha_comprobacion = st.date_input("Fecha de Comprobación", value=date.today())
-        with col2:
-            total_comprobado = st.number_input("Total Comprobado", min_value=0.0, step=100.0)
-            obs_comp = st.text_area("Observaciones")
 
-        submitted_comprobacion = st.form_submit_button("🧾 Guardar Comprobación", use_container_width=True)
-        if submitted_comprobacion:
-            st.success("Comprobación guardada correctamente.")
+    st.markdown(
+        """
+        <style>
+
+        .comp-header {
+            background:white;
+            color:#151F6D;
+            border:3px solid #151F6D;
+            padding:12px;
+            text-align:center;
+            font-size:34px;
+            font-weight:bold;
+            margin-bottom:40px;
+        }
+
+        .comp-label {
+            color:white;
+            font-size:18px;
+            font-weight:bold;
+            margin-top:14px;
+        }
+
+        .comp-table-header {
+            background:white;
+            color:black;
+            border:2px solid black;
+            padding:10px;
+            font-size:18px;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .comp-table-cell {
+            background:white;
+            color:black;
+            border-left:2px solid black;
+            border-right:2px solid black;
+            border-bottom:1px dotted black;
+            padding:10px;
+            min-height:55px;
+            display:flex;
+            align-items:center;
+            font-size:17px;
+            font-weight:bold;
+        }
+
+        .comp-total-box {
+            background:white;
+            color:black;
+            border:2px solid black;
+            padding:12px;
+            font-size:22px;
+            font-weight:bold;
+            min-height:58px;
+            display:flex;
+            align-items:center;
+        }
+
+        .obs-header {
+            background:#9f9f9f;
+            color:black;
+            border:2px solid black;
+            text-align:center;
+            letter-spacing:8px;
+            font-size:24px;
+            font-weight:bold;
+            padding:12px;
+            margin-bottom:0px;
+        }
+
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="comp-header">COMPROBACION DE GASTOS DE VIAJE</div>',
+        unsafe_allow_html=True
+    )
+
+    # =========================
+    # DATOS GENERALES
+    # =========================
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">FECHA DE COMPROBACION</div>', unsafe_allow_html=True)
+
+    with c2:
+        fecha_comprobacion = st.date_input(
+            "",
+            value=date.today(),
+            label_visibility="collapsed"
+        )
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">NOMBRE DE LA COMPAÑIA</div>', unsafe_allow_html=True)
+
+    with c2:
+        empresa_comp = st.text_input(
+            "",
+            key="empresa_comp",
+            label_visibility="collapsed"
+        )
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">NOMBRE DEL EMPLEADO</div>', unsafe_allow_html=True)
+
+    with c2:
+        empleado_comp = st.text_input(
+            "",
+            key="empleado_comp",
+            label_visibility="collapsed"
+        )
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">MOTIVO DEL VIAJE</div>', unsafe_allow_html=True)
+
+    with c2:
+        motivo_comp = st.text_input(
+            "",
+            key="motivo_comp",
+            label_visibility="collapsed"
+        )
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">LUGAR A DONDE SE REALIZA EL VIAJE</div>', unsafe_allow_html=True)
+
+    with c2:
+        lugar_comp = st.text_input(
+            "",
+            key="lugar_comp",
+            label_visibility="collapsed"
+        )
+
+    c1, c2 = st.columns([1, 2])
+
+    with c1:
+        st.markdown('<div class="comp-label">PERIODO DEL VIAJE</div>', unsafe_allow_html=True)
+
+    with c2:
+        periodo_comp = st.text_input(
+            "",
+            key="periodo_comp",
+            label_visibility="collapsed"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # =========================
+    # TABLE HEADER
+    # =========================
+
+    h1, h2, h3, h4, h5 = st.columns([5, 2, 2, 2, 2])
+
+    with h1:
+        st.markdown('<div class="comp-table-header"></div>', unsafe_allow_html=True)
+
+    with h2:
+        st.markdown('<div class="comp-table-header">IMPORTE DE GASTOS CON</div>', unsafe_allow_html=True)
+
+    with h3:
+        st.markdown('<div class="comp-table-header">IMPORTE DE GASTOS SIN</div>', unsafe_allow_html=True)
+
+    with h4:
+        st.markdown('<div class="comp-table-header">IMPUESTO ACREDITABLE</div>', unsafe_allow_html=True)
+
+    with h5:
+        st.markdown('<div class="comp-table-header">TOTAL COMPROBADO</div>', unsafe_allow_html=True)
+
+    # =========================
+    # ROW BUILDER
+    # =========================
+
+    def fila_comp(nombre, key):
+
+        c1, c2, c3, c4, c5 = st.columns([5, 2, 2, 2, 2])
+
+        with c1:
+            st.markdown(
+                f'<div class="comp-table-cell">{nombre}</div>',
+                unsafe_allow_html=True
+            )
+
+        with c2:
+            con_iva = st.number_input(
+                "",
+                min_value=0.0,
+                step=100.0,
+                key=f"{key}_con",
+                label_visibility="collapsed"
+            )
+
+        with c3:
+            sin_iva = st.number_input(
+                "",
+                min_value=0.0,
+                step=100.0,
+                key=f"{key}_sin",
+                label_visibility="collapsed"
+            )
+
+        with c4:
+            impuesto = st.number_input(
+                "",
+                min_value=0.0,
+                step=100.0,
+                key=f"{key}_imp",
+                label_visibility="collapsed"
+            )
+
+        total = con_iva + sin_iva + impuesto
+
+        with c5:
+            st.markdown(
+                f'<div class="comp-total-box">$ {total:,.2f}</div>',
+                unsafe_allow_html=True
+            )
+
+        return total
+
+    total_general = 0
+
+    total_general += fila_comp("TRANSPORTACION TERRESTRE", "trans")
+    total_general += fila_comp("HOSPEDAJE", "hosp")
+    total_general += fila_comp("ALIMENTOS", "alim")
+    total_general += fila_comp("PROPINAS", "prop")
+    total_general += fila_comp("TAXIS", "taxi")
+    total_general += fila_comp("CASETAS", "case")
+    total_general += fila_comp("GASOLINA", "gaso")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # =========================
+    # LOWER SECTION
+    # =========================
+
+    col_obs, col_tot = st.columns([1.5, 1])
+
+    with col_obs:
+
+        st.markdown(
+            '<div class="obs-header">OBSERVACIONES</div>',
+            unsafe_allow_html=True
+        )
+
+        obs_comp = st.text_area(
+            "",
+            height=160,
+            label_visibility="collapsed"
+        )
+
+    with col_tot:
+
+        anticipo_comp = st.number_input(
+            "(-) Anticipo para gastos de viaje",
+            min_value=0.0,
+            step=100.0,
+            key="anticipo_comp"
+        )
+
+        diferencia_comp = total_general - anticipo_comp
+
+        st.markdown(
+            f'''
+            <div style="
+                color:white;
+                font-size:24px;
+                font-weight:bold;
+                margin-top:40px;
+                margin-bottom:15px;
+            ">
+                Diferencia a cargo (favor)
+            </div>
+
+            <div class="comp-total-box">
+                $ {diferencia_comp:,.2f}
+            </div>
+            ''',
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    submitted_comp = st.button(
+        "🧾 Guardar Comprobación",
+        use_container_width=True,
+        type="primary"
+    )
+
+    if submitted_comp:
+        st.success("Comprobación guardada correctamente.")
 
 # =================================
 # SUPABASE CONFIGURATION
