@@ -124,35 +124,248 @@ with tab_solicitud:
     # PART 2: THE FORM
     # =========================
     with st.form("form_solicitud_gastos"):
-        st.markdown("## Estimación de Gastos de Viaje a Incurrir")
 
-        col_g1, col_g2 = st.columns(2)
+        st.markdown(
+            """
+            <style>
+            .gastos-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 25px;
+                background-color: white;
+                color: black;
+            }
 
-        with col_g1:
-            transporte = st.number_input("Transportación Terrestre", min_value=0.0, step=100.0)
-            hospedaje = st.number_input("Hospedaje", min_value=0.0, step=100.0)
-            alimentos = st.number_input("Alimentos", min_value=0.0, step=100.0)
-            propinas = st.number_input("Propinas", min_value=0.0, step=100.0)
-            taxis = st.number_input("Taxis", min_value=0.0, step=100.0)
-            otros = st.number_input("Otros", min_value=0.0, step=100.0)
+            .gastos-table th {
+                border: 2px solid black;
+                padding: 10px;
+                font-size: 20px;
+                text-align: left;
+            }
 
-        total_estimado = transporte + hospedaje + alimentos + propinas + taxis + otros
+            .gastos-table td {
+                border-left: 2px solid black;
+                border-right: 2px solid black;
+                border-bottom: 1px dotted black;
+                padding: 10px;
+                font-size: 18px;
+            }
 
-        with col_g2:
-            st.metric("Total Estimado", f"${total_estimado:,.2f}")
-            anticipo = st.number_input("(-) Anticipo para Gastos de Viaje Entregado", min_value=0.0, step=100.0)
-            diferencia = total_estimado - anticipo
-            st.metric("Diferencia a Cargo (Favor)", f"${diferencia:,.2f}")
+            .gastos-total-row td {
+                border: 2px solid black !important;
+                font-weight: bold;
+                font-size: 20px;
+            }
+
+            .obs-box {
+                border: 2px solid black;
+                background-color: #9E9E9E;
+                color: black;
+                text-align: center;
+                font-size: 24px;
+                letter-spacing: 8px;
+                font-weight: bold;
+                padding: 12px;
+                margin-bottom: 0;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # =========================
+        # INPUTS
+        # =========================
+
+        transporte = st.number_input(
+            "Transportación Terrestre",
+            min_value=0.0,
+            step=100.0
+        )
+
+        hospedaje = st.number_input(
+            "Hospedaje",
+            min_value=0.0,
+            step=100.0
+        )
+
+        alimentos = st.number_input(
+            "Alimentos",
+            min_value=0.0,
+            step=100.0
+        )
+
+        propinas = st.number_input(
+            "Propinas",
+            min_value=0.0,
+            step=100.0
+        )
+
+        taxis = st.number_input(
+            "Taxis",
+            min_value=0.0,
+            step=100.0
+        )
+
+        otros = st.number_input(
+            "Otros",
+            min_value=0.0,
+            step=100.0
+        )
+
+        total_estimado = (
+            transporte
+            + hospedaje
+            + alimentos
+            + propinas
+            + taxis
+            + otros
+        )
+
+        anticipo = st.number_input(
+            "(-) Anticipo para Gastos de Viaje Entregado",
+            min_value=0.0,
+            step=100.0
+        )
+
+        diferencia = total_estimado - anticipo
+
+        # =========================
+        # VISUAL TABLE
+        # =========================
+
+        st.markdown(
+            f"""
+            <table class="gastos-table">
+                <tr>
+                    <th style="width:70%;">
+                        ESTIMACION DE GASTOS DE VIAJE A INCURRIR
+                    </th>
+                    <th style="width:30%; text-align:center;">
+                        TOTAL ESTIMADO
+                    </th>
+                </tr>
+
+                <tr>
+                    <td>TRANSPORTACION TERRESTRE</td>
+                    <td>$ {transporte:,.2f}</td>
+                </tr>
+
+                <tr>
+                    <td>HOSPEDAJE</td>
+                    <td>$ {hospedaje:,.2f}</td>
+                </tr>
+
+                <tr>
+                    <td>ALIMENTOS</td>
+                    <td>$ {alimentos:,.2f}</td>
+                </tr>
+
+                <tr>
+                    <td>PROPINAS</td>
+                    <td>$ {propinas:,.2f}</td>
+                </tr>
+
+                <tr>
+                    <td>TAXIS</td>
+                    <td>$ {taxis:,.2f}</td>
+                </tr>
+
+                <tr>
+                    <td>OTROS (Describir)</td>
+                    <td>$ {otros:,.2f}</td>
+                </tr>
+
+                <tr class="gastos-total-row">
+                    <td style="text-align:right;">
+                        Importe estimado de gastos de viaje
+                    </td>
+                    <td>$ {total_estimado:,.2f}</td>
+                </tr>
+            </table>
+            """,
+            unsafe_allow_html=True
+        )
+
+        col_obs, col_totales = st.columns([1.3, 1])
+
+        with col_obs:
+
+            st.markdown(
+                '<div class="obs-box">OBSERVACIONES</div>',
+                unsafe_allow_html=True
+            )
+
+            observaciones = st.text_area(
+                "",
+                height=170,
+                label_visibility="collapsed"
+            )
+
+        with col_totales:
+
+            st.markdown(
+                f"""
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-top:10px;
+                    margin-bottom:70px;
+                    font-size:22px;
+                    font-weight:bold;
+                    color:white;
+                ">
+                    <span>(-) Anticipo para gastos de viaje entregado</span>
+
+                    <span style="
+                        background:white;
+                        color:black;
+                        border:2px solid black;
+                        padding:10px 18px;
+                        min-width:180px;
+                        text-align:left;
+                    ">
+                        $ {anticipo:,.2f}
+                    </span>
+                </div>
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    font-size:24px;
+                    font-weight:bold;
+                    color:white;
+                ">
+                    <span>Diferencia a cargo (favor)</span>
+
+                    <span style="
+                        background:white;
+                        color:black;
+                        border:2px solid black;
+                        padding:10px 18px;
+                        min-width:180px;
+                        text-align:left;
+                    ">
+                        $ {diferencia:,.2f}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         st.divider()
-        observaciones = st.text_area("Observaciones", height=150)
-        st.divider()
 
-        submitted = st.form_submit_button("💳 Enviar Solicitud", use_container_width=True)
+        submitted = st.form_submit_button(
+            "💳 Enviar Solicitud",
+            use_container_width=True
+        )
 
         if submitted:
-            # Here you would collect all variables (from outside and inside the form) and send to Supabase
-            st.success(f"Solicitud para {sucursales_final} enviada correctamente.")
+            st.success(
+                f"Solicitud para {sucursales_final} enviada correctamente."
+            )
 
 # =================================
 # TAB 2 — COMPROBACION
