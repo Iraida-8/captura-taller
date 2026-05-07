@@ -121,7 +121,7 @@ with tab_solicitud:
     st.divider()
 
     # =========================
-    # PART 2: THE FORM (CALCULATIONS & SUBMIT)
+    # PART 2: THE FORM
     # =========================
     with st.form("form_solicitud_gastos"):
         st.markdown("## Estimación de Gastos de Viaje a Incurrir")
