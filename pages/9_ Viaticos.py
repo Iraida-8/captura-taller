@@ -125,7 +125,7 @@ with tab_solicitud:
         sucursal = st.radio(
             "",
             [
-                "NUEVO LAREDO",
+                "NUEVO LAREDO NO MAMES FUNCIONA PUTAMADRE",
                 "DALLAS",
                 "CHICAGO",
                 "GUADALAJARA",
