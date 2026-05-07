@@ -104,6 +104,23 @@ with tab_solicitud:
     st.divider()
 
     # =========================
+    # DATOS CONTABLES
+    # =========================
+    col_poliza1, col_poliza2 = st.columns(2)
+
+    with col_poliza1:
+        ref_poliza = st.text_input(
+            "REF DE POLIZA CONTABLE"
+        )
+
+    with col_poliza2:
+        ref_entrega_fondo = st.text_input(
+            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE"
+        )
+
+    st.divider()
+
+    # =========================
     # PART 2: THE FORM (CALCULATIONS & SUBMIT)
     # =========================
     with st.form("form_solicitud_gastos"):
