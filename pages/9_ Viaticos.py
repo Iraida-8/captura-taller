@@ -292,7 +292,59 @@ with tab_solicitud:
         </table>
         """
 
-        st.markdown(tabla_html, unsafe_allow_html=True)
+        st.components.v1.html(
+            f"""
+            <html>
+            <head>
+            <style>
+
+            body {{
+                margin:0;
+                padding:0;
+                background:white;
+                font-family:Arial;
+            }}
+
+            .tabla-gastos {{
+                width:100%;
+                border-collapse:collapse;
+                color:black;
+            }}
+
+            .tabla-gastos th {{
+                border:2px solid black;
+                padding:12px;
+                font-size:20px;
+                font-weight:bold;
+                text-align:left;
+            }}
+
+            .tabla-gastos td {{
+                border-left:2px solid black;
+                border-right:2px solid black;
+                border-bottom:1px dotted black;
+                padding:12px;
+                font-size:18px;
+            }}
+
+            .tabla-total td {{
+                border:2px solid black !important;
+                font-weight:bold;
+            }}
+
+            </style>
+            </head>
+
+            <body>
+
+            {tabla_html}
+
+            </body>
+            </html>
+            """,
+            height=420,
+            scrolling=False
+        )
 
         # =========================
         # LOWER SECTION
