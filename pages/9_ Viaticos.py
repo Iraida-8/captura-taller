@@ -45,7 +45,51 @@ with tab_solicitud:
     # =================================
     if "suc_otro" not in st.session_state:
         st.session_state.suc_otro = False
+            # =========================
+        # SUCURSAL
+        # =========================
+        st.markdown("### Sucursal")
 
+        col1, col2, col3, col4, col5 = st.columns(5)
+
+        with col1:
+            suc_nuevo_laredo = st.checkbox("NUEVO LAREDO")
+
+        with col2:
+            suc_dallas = st.checkbox("DALLAS")
+
+        with col3:
+            suc_chicago = st.checkbox("CHICAGO")
+
+        with col4:
+            suc_guadalajara = st.checkbox("GUADALAJARA")
+
+        with col5:
+            suc_monterrey = st.checkbox("MONTERREY")
+
+        col6, col7, col8, col9, col10 = st.columns(5)
+
+        with col6:
+            suc_queretaro = st.checkbox("QUERETARO")
+
+        with col7:
+            suc_leon = st.checkbox("LEON")
+
+        with col8:
+            suc_tlaxcala = st.checkbox("TLAXCALA")
+
+        with col9:
+            suc_otro = st.checkbox(
+                "OTRO",
+                key="suc_otro"
+            )
+
+        with col10:
+            suc_otro_texto = st.text_input(
+                "Especificar",
+                disabled=not st.session_state.suc_otro
+            )
+            
     with st.form("form_solicitud_viaticos"):
 
         # =========================
@@ -113,51 +157,6 @@ with tab_solicitud:
                 "PLUS"
             ]
         )
-
-        # =========================
-        # SUCURSAL
-        # =========================
-        st.markdown("### Sucursal")
-
-        col1, col2, col3, col4, col5 = st.columns(5)
-
-        with col1:
-            suc_nuevo_laredo = st.checkbox("NUEVO LAREDO")
-
-        with col2:
-            suc_dallas = st.checkbox("DALLAS")
-
-        with col3:
-            suc_chicago = st.checkbox("CHICAGO")
-
-        with col4:
-            suc_guadalajara = st.checkbox("GUADALAJARA")
-
-        with col5:
-            suc_monterrey = st.checkbox("MONTERREY")
-
-        col6, col7, col8, col9, col10 = st.columns(5)
-
-        with col6:
-            suc_queretaro = st.checkbox("QUERETARO")
-
-        with col7:
-            suc_leon = st.checkbox("LEON")
-
-        with col8:
-            suc_tlaxcala = st.checkbox("TLAXCALA")
-
-        with col9:
-            suc_otro = st.checkbox(
-                "OTRO",
-                key="suc_otro"
-            )
-
-        with col10:
-            suc_otro_texto = st.text_input(
-                "Especificar",
-                disabled=not st.session_state.suc_otro
-            )
 
         # Lista final de sucursales seleccionadas
         sucursales = []
