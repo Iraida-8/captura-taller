@@ -30,8 +30,8 @@ st.divider()
 # TABS
 # =================================
 tab_solicitud, tab_comprobacion = st.tabs([
-    "🧳 SOLICITUD GTOS DE VIAJE",
-    "🧾 COMPROBACION GTOS VIAJE"
+    "🧳 SOLICITUD GASTOS DE VIAJE",
+    "🧾 COMPROBACION GASTOS VIAJE"
 ])
 
 # =================================
