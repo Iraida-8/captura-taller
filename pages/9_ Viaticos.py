@@ -546,21 +546,10 @@ with tab_comprobacion:
     # DATOS CONTABLES
     # =========================
 
-    col_poliza1, col_poliza2 = st.columns(2)
-
-    with col_poliza1:
-
-        ref_poliza_comp = st.text_input(
-            "REF DE POLIZA CONTABLE",
-            key="ref_poliza_comp"
-        )
-
-    with col_poliza2:
-
-        ref_entrega_comp = st.text_input(
-            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-            key="ref_entrega_comp"
-        )
+    ref_entrega_comp = st.text_input(
+        "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
+        key="ref_entrega_comp"
+    )
 
     st.divider()
 
