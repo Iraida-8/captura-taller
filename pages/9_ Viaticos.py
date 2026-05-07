@@ -145,10 +145,16 @@ with tab_solicitud:
             suc_otro = st.checkbox("OTRO")
 
         with col10:
-            suc_otro_texto = st.text_input(
-                "Especificar",
-                disabled=not suc_otro
-            )
+
+            if suc_otro:
+                suc_otro_texto = st.text_input("Especificar")
+            else:
+                st.text_input(
+                    "Especificar",
+                    value="",
+                    disabled=True
+                )
+                suc_otro_texto = ""
 
         # Lista final de sucursales seleccionadas
         sucursales = []
