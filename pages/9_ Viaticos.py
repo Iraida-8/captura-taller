@@ -65,11 +65,23 @@ with tab_solicitud:
 
     st.divider()
 
+    # EMPRESA A CARGO
     st.markdown("### Empresa a Cargo para Gastos de este Viaje")
-    empresas = st.selectbox("", ["SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"])
+    empresa_cargo = st.selectbox(
+        "Empresa a Cargo", 
+        ["Seleccione una opción...", "SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"],
+        index=0,
+        label_visibility="collapsed"
+    )
 
+    # UNIDAD DE NEGOCIO
     st.markdown("### Unidad de Negocio")
-    unidades = st.selectbox("", ["CARRIER", "LOGISTICA", "PLUS"])
+    unidad_negocio = st.selectbox(
+        "Unidad de Negocio", 
+        ["Seleccione una opción...", "CARRIER", "LOGISTICA", "PLUS"],
+        index=0,
+        label_visibility="collapsed"
+    )
 
     # =========================
     # SUCURSAL (REACTIVE SECTION)
