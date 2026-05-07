@@ -26,6 +26,85 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
+# TABS
+# =================================
+tab_solicitud, tab_comprobacion = st.tabs([
+    "🧳 SOLICITUD GTOS DE VIAJE",
+    "🧾 COMPROBACION GTOS VIAJE"
+])
+
+# =================================
+# TAB 1 — SOLICITUD
+# =================================
+with tab_solicitud:
+
+    st.subheader("🧳 Solicitud de Gastos de Viaje")
+
+    with st.form("form_solicitud_viaticos"):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            empleado = st.text_input("Empleado")
+            departamento = st.text_input("Departamento")
+            destino = st.text_input("Destino")
+            fecha_salida = st.date_input("Fecha de Salida")
+
+        with col2:
+            empresa = st.text_input("Empresa")
+            motivo = st.text_area("Motivo del Viaje")
+            fecha_regreso = st.date_input("Fecha de Regreso")
+            monto_solicitado = st.number_input(
+                "Monto Solicitado",
+                min_value=0.0,
+                step=100.0
+            )
+
+        submitted_solicitud = st.form_submit_button(
+            "💳 Enviar Solicitud",
+            use_container_width=True
+        )
+
+        if submitted_solicitud:
+            st.success("Solicitud enviada correctamente.")
+
+# =================================
+# TAB 2 — COMPROBACION
+# =================================
+with tab_comprobacion:
+
+    st.subheader("🧾 Comprobación de Gastos de Viaje")
+
+    with st.form("form_comprobacion_viaticos"):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            folio = st.text_input("Folio")
+            empleado_comp = st.text_input("Empleado")
+            fecha_comprobacion = st.date_input(
+                "Fecha de Comprobación",
+                value=date.today()
+            )
+
+        with col2:
+            total_comprobado = st.number_input(
+                "Total Comprobado",
+                min_value=0.0,
+                step=100.0
+            )
+
+            observaciones = st.text_area("Observaciones")
+
+        submitted_comprobacion = st.form_submit_button(
+            "🧾 Guardar Comprobación",
+            use_container_width=True
+        )
+
+        if submitted_comprobacion:
+            st.success("Comprobación guardada correctamente.")
+
+# =================================
 # SUPABASE CONFIGURATION
 # =================================
 @st.cache_resource
