@@ -497,94 +497,37 @@ with tab_comprobacion:
     # DATOS GENERALES
     # =========================
 
-    c1, c2 = st.columns([1, 2])
+    col1, col2 = st.columns([1, 2])
 
-    with c1:
-        st.markdown(
-            '<div class="comp-label">FECHA DE COMPROBACION</div>',
-            unsafe_allow_html=True
-        )
-
-    with c2:
+    with col1:
         fecha_comprobacion = st.date_input(
-            "",
-            value=date.today(),
-            label_visibility="collapsed"
+            "Fecha de Comprobacion"
         )
 
-    c1, c2 = st.columns([1, 2])
-
-    with c1:
-        st.markdown(
-            '<div class="comp-label">NOMBRE DE LA COMPAÑIA</div>',
-            unsafe_allow_html=True
-        )
-
-    with c2:
+    with col2:
         empresa_comp = st.text_input(
-            "",
-            key="empresa_comp",
-            label_visibility="collapsed"
+            "Nombre de la Compañia"
         )
 
-    c1, c2 = st.columns([1, 2])
+    empleado_comp = st.text_input(
+        "Nombre del Empleado"
+    )
 
-    with c1:
-        st.markdown(
-            '<div class="comp-label">NOMBRE DEL EMPLEADO</div>',
-            unsafe_allow_html=True
-        )
+    motivo_comp = st.text_area(
+        "Motivo del Viaje",
+        height=90
+    )
 
-    with c2:
-        empleado_comp = st.text_input(
-            "",
-            key="empleado_comp",
-            label_visibility="collapsed"
-        )
+    col1, col2 = st.columns(2)
 
-    c1, c2 = st.columns([1, 2])
-
-    with c1:
-        st.markdown(
-            '<div class="comp-label">MOTIVO DEL VIAJE</div>',
-            unsafe_allow_html=True
-        )
-
-    with c2:
-        motivo_comp = st.text_input(
-            "",
-            key="motivo_comp",
-            label_visibility="collapsed"
-        )
-
-    c1, c2 = st.columns([1, 2])
-
-    with c1:
-        st.markdown(
-            '<div class="comp-label">LUGAR A DONDE SE REALIZA EL VIAJE</div>',
-            unsafe_allow_html=True
-        )
-
-    with c2:
+    with col1:
         lugar_comp = st.text_input(
-            "",
-            key="lugar_comp",
-            label_visibility="collapsed"
+            "Lugar a Donde se Realiza el Viaje"
         )
 
-    c1, c2 = st.columns([1, 2])
-
-    with c1:
-        st.markdown(
-            '<div class="comp-label">PERIODO DEL VIAJE</div>',
-            unsafe_allow_html=True
-        )
-
-    with c2:
+    with col2:
         periodo_comp = st.text_input(
-            "",
-            key="periodo_comp",
-            label_visibility="collapsed"
+            "Periodo del Viaje"
         )
 
     st.divider()
@@ -593,16 +536,19 @@ with tab_comprobacion:
     # EMPRESA A CARGO
     # =========================
 
-    st.markdown(
-        '<div class="comp-label">EMPRESA A CARGO PARA GASTOS DE ESTE VIAJE</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
 
-    empresa_cargo_comp = st.radio(
-        "",
-        ["SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"],
-        horizontal=True,
-        key="empresa_cargo_comp",
+    empresa_cargo_comp = st.selectbox(
+        "Empresa a Cargo",
+        [
+            "Seleccione una opción...",
+            "SET FREIGHT",
+            "LINCOLN",
+            "PICUS",
+            "IGLOO",
+            "SET LOGIS PLUS"
+        ],
+        index=0,
         label_visibility="collapsed"
     )
 
@@ -610,16 +556,17 @@ with tab_comprobacion:
     # UNIDAD DE NEGOCIO
     # =========================
 
-    st.markdown(
-        '<div class="comp-label">UNIDAD DE NEGOCIO</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown("### Unidad de Negocio")
 
-    unidad_negocio_comp = st.radio(
-        "",
-        ["CARRIER", "LOGISTICA", "PLUS"],
-        horizontal=True,
-        key="unidad_negocio_comp",
+    unidad_negocio_comp = st.selectbox(
+        "Unidad de Negocio",
+        [
+            "Seleccione una opción...",
+            "CARRIER",
+            "LOGISTICA",
+            "PLUS"
+        ],
+        index=0,
         label_visibility="collapsed"
     )
 
@@ -627,10 +574,7 @@ with tab_comprobacion:
     # SUCURSAL
     # =========================
 
-    st.markdown(
-        '<div class="comp-label">SUCURSAL</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown("### Sucursal")
 
     sucursal_comp = st.radio(
         "",
@@ -646,28 +590,45 @@ with tab_comprobacion:
             "OTRO"
         ],
         horizontal=True,
-        key="sucursal_comp",
         label_visibility="collapsed"
     )
 
     if sucursal_comp == "OTRO":
 
         sucursal_otro_comp = st.text_input(
-            "Especificar Sucursal",
-            key="sucursal_otro_comp"
+            "Especificar"
         )
 
     else:
 
         st.text_input(
-            "Especificar Sucursal",
+            "Especificar",
             value="",
-            disabled=True,
-            key="sucursal_otro_disabled_comp"
+            disabled=True
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider()
 
+    # =========================
+    # DATOS CONTABLES
+    # =========================
+
+    col_poliza1, col_poliza2 = st.columns(2)
+
+    with col_poliza1:
+
+        ref_poliza_comp = st.text_input(
+            "REF DE POLIZA CONTABLE"
+        )
+
+    with col_poliza2:
+
+        ref_entrega_comp = st.text_input(
+            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE"
+        )
+
+    st.divider()
+    
     # =========================
     # REF POLIZA
     # =========================
