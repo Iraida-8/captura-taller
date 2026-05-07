@@ -500,7 +500,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">FECHA DE COMPROBACION</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">FECHA DE COMPROBACION</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         fecha_comprobacion = st.date_input(
@@ -512,7 +515,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">NOMBRE DE LA COMPAÑIA</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">NOMBRE DE LA COMPAÑIA</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         empresa_comp = st.text_input(
@@ -524,7 +530,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">NOMBRE DEL EMPLEADO</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">NOMBRE DEL EMPLEADO</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         empleado_comp = st.text_input(
@@ -536,7 +545,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">MOTIVO DEL VIAJE</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">MOTIVO DEL VIAJE</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         motivo_comp = st.text_input(
@@ -548,7 +560,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">LUGAR A DONDE SE REALIZA EL VIAJE</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">LUGAR A DONDE SE REALIZA EL VIAJE</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         lugar_comp = st.text_input(
@@ -560,7 +575,10 @@ with tab_comprobacion:
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.markdown('<div class="comp-label">PERIODO DEL VIAJE</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-label">PERIODO DEL VIAJE</div>',
+            unsafe_allow_html=True
+        )
 
     with c2:
         periodo_comp = st.text_input(
@@ -568,6 +586,96 @@ with tab_comprobacion:
             key="periodo_comp",
             label_visibility="collapsed"
         )
+
+    st.divider()
+
+    # =========================
+    # EMPRESA A CARGO
+    # =========================
+
+    st.markdown(
+        '<div class="comp-label">EMPRESA A CARGO PARA GASTOS DE ESTE VIAJE</div>',
+        unsafe_allow_html=True
+    )
+
+    empresa_cargo_comp = st.radio(
+        "",
+        ["SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"],
+        horizontal=True,
+        key="empresa_cargo_comp",
+        label_visibility="collapsed"
+    )
+
+    # =========================
+    # UNIDAD DE NEGOCIO
+    # =========================
+
+    st.markdown(
+        '<div class="comp-label">UNIDAD DE NEGOCIO</div>',
+        unsafe_allow_html=True
+    )
+
+    unidad_negocio_comp = st.radio(
+        "",
+        ["CARRIER", "LOGISTICA", "PLUS"],
+        horizontal=True,
+        key="unidad_negocio_comp",
+        label_visibility="collapsed"
+    )
+
+    # =========================
+    # SUCURSAL
+    # =========================
+
+    st.markdown(
+        '<div class="comp-label">SUCURSAL</div>',
+        unsafe_allow_html=True
+    )
+
+    sucursal_comp = st.radio(
+        "",
+        [
+            "NUEVO LAREDO",
+            "DALLAS",
+            "CHICAGO",
+            "GUADALAJARA",
+            "MONTERREY",
+            "QUERETARO",
+            "LEON",
+            "TLAXCALA",
+            "OTRO"
+        ],
+        horizontal=True,
+        key="sucursal_comp",
+        label_visibility="collapsed"
+    )
+
+    if sucursal_comp == "OTRO":
+
+        sucursal_otro_comp = st.text_input(
+            "Especificar Sucursal",
+            key="sucursal_otro_comp"
+        )
+
+    else:
+
+        st.text_input(
+            "Especificar Sucursal",
+            value="",
+            disabled=True,
+            key="sucursal_otro_disabled_comp"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # =========================
+    # REF POLIZA
+    # =========================
+
+    ref_poliza_comp = st.text_input(
+        "REF DE POLIZA CONTABLE DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
+        key="ref_poliza_comp"
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -578,19 +686,34 @@ with tab_comprobacion:
     h1, h2, h3, h4, h5 = st.columns([5, 2, 2, 2, 2])
 
     with h1:
-        st.markdown('<div class="comp-table-header"></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-table-header"></div>',
+            unsafe_allow_html=True
+        )
 
     with h2:
-        st.markdown('<div class="comp-table-header">IMPORTE DE GASTOS CON</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-table-header">IMPORTE DE GASTOS CON</div>',
+            unsafe_allow_html=True
+        )
 
     with h3:
-        st.markdown('<div class="comp-table-header">IMPORTE DE GASTOS SIN</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-table-header">IMPORTE DE GASTOS SIN</div>',
+            unsafe_allow_html=True
+        )
 
     with h4:
-        st.markdown('<div class="comp-table-header">IMPUESTO ACREDITABLE</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-table-header">IMPUESTO ACREDITABLE</div>',
+            unsafe_allow_html=True
+        )
 
     with h5:
-        st.markdown('<div class="comp-table-header">TOTAL COMPROBADO</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="comp-table-header">TOTAL COMPROBADO</div>',
+            unsafe_allow_html=True
+        )
 
     # =========================
     # ROW BUILDER
@@ -676,11 +799,26 @@ with tab_comprobacion:
 
     with col_tot:
 
+        st.markdown(
+            """
+            <div style="
+                color:white;
+                font-size:22px;
+                font-weight:bold;
+                margin-bottom:12px;
+            ">
+                (-) Anticipo para gastos de viaje
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         anticipo_comp = st.number_input(
-            "(-) Anticipo para gastos de viaje",
+            "",
             min_value=0.0,
             step=100.0,
-            key="anticipo_comp"
+            key="anticipo_comp",
+            label_visibility="collapsed"
         )
 
         diferencia_comp = total_general - anticipo_comp
