@@ -413,27 +413,164 @@ with tab_solicitud:
 # =================================
 with tab_comprobacion:
 
+    st.subheader("🧾 Comprobacion de Gastos de Viaje")
+
+    # =========================
+    # DATOS GENERALES
+    # =========================
+
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        fecha_comprobacion = st.date_input(
+            "Fecha de Comprobacion",
+            key="fecha_comprobacion"
+        )
+
+    with col2:
+        empresa_comp = st.text_input(
+            "Nombre de la Compañia",
+            key="empresa_comp"
+        )
+
+    empleado_comp = st.text_input(
+        "Nombre del Empleado",
+        key="empleado_comp"
+    )
+
+    motivo_comp = st.text_area(
+        "Motivo del Viaje",
+        height=90,
+        key="motivo_comp"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        lugar_comp = st.text_input(
+            "Lugar a Donde se Realiza el Viaje",
+            key="lugar_comp"
+        )
+
+    with col2:
+        periodo_comp = st.text_input(
+            "Periodo del Viaje",
+            key="periodo_comp"
+        )
+
+    st.divider()
+
+    # =========================
+    # EMPRESA A CARGO
+    # =========================
+
+    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
+
+    empresa_cargo_comp = st.selectbox(
+        "Empresa a Cargo",
+        [
+            "Seleccione una opción...",
+            "SET FREIGHT",
+            "LINCOLN",
+            "PICUS",
+            "IGLOO",
+            "SET LOGIS PLUS"
+        ],
+        index=0,
+        key="empresa_cargo_comp",
+        label_visibility="collapsed"
+    )
+
+    # =========================
+    # UNIDAD DE NEGOCIO
+    # =========================
+
+    st.markdown("### Unidad de Negocio")
+
+    unidad_negocio_comp = st.selectbox(
+        "Unidad de Negocio",
+        [
+            "Seleccione una opción...",
+            "CARRIER",
+            "LOGISTICA",
+            "PLUS"
+        ],
+        index=0,
+        key="unidad_negocio_comp",
+        label_visibility="collapsed"
+    )
+
+    # =========================
+    # SUCURSAL
+    # =========================
+
+    st.markdown("### Sucursal")
+
+    sucursal_comp = st.radio(
+        "",
+        [
+            "NUEVO LAREDO",
+            "DALLAS",
+            "CHICAGO",
+            "GUADALAJARA",
+            "MONTERREY",
+            "QUERETARO",
+            "LEON",
+            "TLAXCALA",
+            "OTRO"
+        ],
+        horizontal=True,
+        key="sucursal_comp",
+        label_visibility="collapsed"
+    )
+
+    if sucursal_comp == "OTRO":
+
+        sucursal_otro_comp = st.text_input(
+            "Especificar",
+            key="sucursal_otro_comp"
+        )
+
+    else:
+
+        st.text_input(
+            "Especificar",
+            value="",
+            disabled=True,
+            key="sucursal_otro_disabled_comp"
+        )
+
+    st.divider()
+
+    # =========================
+    # DATOS CONTABLES
+    # =========================
+
+    col_poliza1, col_poliza2 = st.columns(2)
+
+    with col_poliza1:
+
+        ref_poliza_comp = st.text_input(
+            "REF DE POLIZA CONTABLE",
+            key="ref_poliza_comp"
+        )
+
+    with col_poliza2:
+
+        ref_entrega_comp = st.text_input(
+            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
+            key="ref_entrega_comp"
+        )
+
+    st.divider()
+
+    # =========================
+    # TABLE STYLE
+    # =========================
+
     st.markdown(
         """
         <style>
-
-        .comp-header {
-            background:white;
-            color:#151F6D;
-            border:3px solid #151F6D;
-            padding:12px;
-            text-align:center;
-            font-size:34px;
-            font-weight:bold;
-            margin-bottom:40px;
-        }
-
-        .comp-label {
-            color:white;
-            font-size:18px;
-            font-weight:bold;
-            margin-top:14px;
-        }
 
         .comp-table-header {
             background:white;
@@ -487,158 +624,6 @@ with tab_comprobacion:
         """,
         unsafe_allow_html=True
     )
-
-    st.markdown(
-        '<div class="comp-header">COMPROBACION DE GASTOS DE VIAJE</div>',
-        unsafe_allow_html=True
-    )
-
-    # =========================
-    # DATOS GENERALES
-    # =========================
-
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        fecha_comprobacion = st.date_input(
-            "Fecha de Comprobacion"
-        )
-
-    with col2:
-        empresa_comp = st.text_input(
-            "Nombre de la Compañia"
-        )
-
-    empleado_comp = st.text_input(
-        "Nombre del Empleado"
-    )
-
-    motivo_comp = st.text_area(
-        "Motivo del Viaje",
-        height=90
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        lugar_comp = st.text_input(
-            "Lugar a Donde se Realiza el Viaje"
-        )
-
-    with col2:
-        periodo_comp = st.text_input(
-            "Periodo del Viaje"
-        )
-
-    st.divider()
-
-    # =========================
-    # EMPRESA A CARGO
-    # =========================
-
-    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
-
-    empresa_cargo_comp = st.selectbox(
-        "Empresa a Cargo",
-        [
-            "Seleccione una opción...",
-            "SET FREIGHT",
-            "LINCOLN",
-            "PICUS",
-            "IGLOO",
-            "SET LOGIS PLUS"
-        ],
-        index=0,
-        label_visibility="collapsed"
-    )
-
-    # =========================
-    # UNIDAD DE NEGOCIO
-    # =========================
-
-    st.markdown("### Unidad de Negocio")
-
-    unidad_negocio_comp = st.selectbox(
-        "Unidad de Negocio",
-        [
-            "Seleccione una opción...",
-            "CARRIER",
-            "LOGISTICA",
-            "PLUS"
-        ],
-        index=0,
-        label_visibility="collapsed"
-    )
-
-    # =========================
-    # SUCURSAL
-    # =========================
-
-    st.markdown("### Sucursal")
-
-    sucursal_comp = st.radio(
-        "",
-        [
-            "NUEVO LAREDO",
-            "DALLAS",
-            "CHICAGO",
-            "GUADALAJARA",
-            "MONTERREY",
-            "QUERETARO",
-            "LEON",
-            "TLAXCALA",
-            "OTRO"
-        ],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-    if sucursal_comp == "OTRO":
-
-        sucursal_otro_comp = st.text_input(
-            "Especificar"
-        )
-
-    else:
-
-        st.text_input(
-            "Especificar",
-            value="",
-            disabled=True
-        )
-
-    st.divider()
-
-    # =========================
-    # DATOS CONTABLES
-    # =========================
-
-    col_poliza1, col_poliza2 = st.columns(2)
-
-    with col_poliza1:
-
-        ref_poliza_comp = st.text_input(
-            "REF DE POLIZA CONTABLE"
-        )
-
-    with col_poliza2:
-
-        ref_entrega_comp = st.text_input(
-            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE"
-        )
-
-    st.divider()
-    
-    # =========================
-    # REF POLIZA
-    # =========================
-
-    ref_poliza_comp = st.text_input(
-        "REF DE POLIZA CONTABLE DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-        key="ref_poliza_comp"
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
 
     # =========================
     # TABLE HEADER
@@ -729,13 +714,13 @@ with tab_comprobacion:
 
     total_general = 0
 
-    total_general += fila_comp("TRANSPORTACION TERRESTRE", "trans")
-    total_general += fila_comp("HOSPEDAJE", "hosp")
-    total_general += fila_comp("ALIMENTOS", "alim")
-    total_general += fila_comp("PROPINAS", "prop")
-    total_general += fila_comp("TAXIS", "taxi")
-    total_general += fila_comp("CASETAS", "case")
-    total_general += fila_comp("GASOLINA", "gaso")
+    total_general += fila_comp("TRANSPORTACION TERRESTRE", "comp_trans")
+    total_general += fila_comp("HOSPEDAJE", "comp_hosp")
+    total_general += fila_comp("ALIMENTOS", "comp_alim")
+    total_general += fila_comp("PROPINAS", "comp_prop")
+    total_general += fila_comp("TAXIS", "comp_taxi")
+    total_general += fila_comp("CASETAS", "comp_case")
+    total_general += fila_comp("GASOLINA", "comp_gaso")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -755,6 +740,7 @@ with tab_comprobacion:
         obs_comp = st.text_area(
             "",
             height=160,
+            key="obs_comp",
             label_visibility="collapsed"
         )
 
@@ -808,7 +794,8 @@ with tab_comprobacion:
     submitted_comp = st.button(
         "🧾 Guardar Comprobación",
         use_container_width=True,
-        type="primary"
+        type="primary",
+        key="submitted_comp"
     )
 
     if submitted_comp:
