@@ -41,119 +41,10 @@ with tab_solicitud:
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
     # =========================================
-    # SUCURSAL (ONLY ONE SELECTABLE)
+    # SESSION STATE
     # =========================================
-    st.markdown("### Sucursal")
-
     if "selected_sucursal" not in st.session_state:
-        st.session_state.selected_sucursal = None
-
-    def set_sucursal(value):
-        st.session_state.selected_sucursal = value
-
-    col1, col2, col3, col4, col5 = st.columns(5)
-
-    with col1:
-        st.checkbox(
-            "NUEVO LAREDO",
-            value=st.session_state.selected_sucursal == "NUEVO LAREDO",
-            on_change=set_sucursal,
-            args=("NUEVO LAREDO",),
-            key="chk_nuevo_laredo"
-        )
-
-    with col2:
-        st.checkbox(
-            "DALLAS",
-            value=st.session_state.selected_sucursal == "DALLAS",
-            on_change=set_sucursal,
-            args=("DALLAS",),
-            key="chk_dallas"
-        )
-
-    with col3:
-        st.checkbox(
-            "CHICAGO",
-            value=st.session_state.selected_sucursal == "CHICAGO",
-            on_change=set_sucursal,
-            args=("CHICAGO",),
-            key="chk_chicago"
-        )
-
-    with col4:
-        st.checkbox(
-            "GUADALAJARA",
-            value=st.session_state.selected_sucursal == "GUADALAJARA",
-            on_change=set_sucursal,
-            args=("GUADALAJARA",),
-            key="chk_guadalajara"
-        )
-
-    with col5:
-        st.checkbox(
-            "MONTERREY",
-            value=st.session_state.selected_sucursal == "MONTERREY",
-            on_change=set_sucursal,
-            args=("MONTERREY",),
-            key="chk_monterrey"
-        )
-
-    col6, col7, col8, col9, col10 = st.columns(5)
-
-    with col6:
-        st.checkbox(
-            "QUERETARO",
-            value=st.session_state.selected_sucursal == "QUERETARO",
-            on_change=set_sucursal,
-            args=("QUERETARO",),
-            key="chk_queretaro"
-        )
-
-    with col7:
-        st.checkbox(
-            "LEON",
-            value=st.session_state.selected_sucursal == "LEON",
-            on_change=set_sucursal,
-            args=("LEON",),
-            key="chk_leon"
-        )
-
-    with col8:
-        st.checkbox(
-            "TLAXCALA",
-            value=st.session_state.selected_sucursal == "TLAXCALA",
-            on_change=set_sucursal,
-            args=("TLAXCALA",),
-            key="chk_tlaxcala"
-        )
-
-    with col9:
-        st.checkbox(
-            "OTRO",
-            value=st.session_state.selected_sucursal == "OTRO",
-            on_change=set_sucursal,
-            args=("OTRO",),
-            key="chk_otro"
-        )
-
-    with col10:
-        suc_otro_texto = st.text_input(
-            "Especificar",
-            disabled=st.session_state.selected_sucursal != "OTRO",
-            key="sucursal_otro_text"
-        )
-
-    # =========================================
-    # SUCURSAL FINAL
-    # =========================================
-    if st.session_state.selected_sucursal == "OTRO":
-        sucursales = [suc_otro_texto] if suc_otro_texto else []
-    else:
-        sucursales = (
-            [st.session_state.selected_sucursal]
-            if st.session_state.selected_sucursal
-            else []
-        )
+        st.session_state.selected_sucursal = ""
 
     # =========================================
     # MAIN FORM
@@ -225,6 +116,46 @@ with tab_solicitud:
                 "PLUS"
             ]
         )
+
+        # =========================
+        # SUCURSAL
+        # =========================
+        st.markdown("### Sucursal")
+
+        sucursal = st.radio(
+            "",
+            [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "QUERETARO",
+                "LEON",
+                "TLAXCALA",
+                "OTRO"
+            ],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+
+        if sucursal == "OTRO":
+
+            suc_otro_texto = st.text_input(
+                "Especificar"
+            )
+
+            sucursales = [suc_otro_texto] if suc_otro_texto else []
+
+        else:
+
+            st.text_input(
+                "Especificar",
+                value="",
+                disabled=True
+            )
+
+            sucursales = [sucursal]
 
         st.divider()
 
