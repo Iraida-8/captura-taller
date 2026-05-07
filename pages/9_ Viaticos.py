@@ -38,34 +38,193 @@ tab_solicitud, tab_comprobacion = st.tabs([
 # =================================
 with tab_solicitud:
 
-    st.subheader("🧳 Solicitud de Gastos de Viaje")
+    st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
     with st.form("form_solicitud_viaticos"):
+
+        # =========================
+        # DATOS GENERALES
+        # =========================
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            fecha_solicitud = st.date_input("Fecha de Solicitud")
+
+        with col2:
+            empresa_servicio = st.text_input(
+                "Nombre de la Empresa que Brinda el Servicio"
+            )
+
+        empleado = st.text_input(
+            "Nombre del Empleado que lo Solicita"
+        )
+
+        motivo_viaje = st.text_area(
+            "Motivo del Viaje",
+            height=90
+        )
 
         col1, col2 = st.columns(2)
 
         with col1:
-            empleado = st.text_input("Empleado")
-            departamento = st.text_input("Departamento")
-            destino = st.text_input("Destino")
-            fecha_salida = st.date_input("Fecha de Salida")
+            lugar_viaje = st.text_input(
+                "Lugar a Donde se Realiza el Viaje"
+            )
 
         with col2:
-            empresa = st.text_input("Empresa")
-            motivo = st.text_area("Motivo del Viaje")
-            fecha_regreso = st.date_input("Fecha de Regreso")
-            monto_solicitado = st.number_input(
-                "Monto Solicitado",
+            periodo_viaje = st.text_input(
+                "Periodo del Viaje"
+            )
+
+        st.divider()
+
+        # =========================
+        # EMPRESA A CARGO
+        # =========================
+        st.markdown("### Empresa a Cargo para Gastos de este Viaje")
+
+        empresas = st.multiselect(
+            "",
+            [
+                "SET FREIGHT",
+                "LINCOLN",
+                "PICUS",
+                "IGLOO",
+                "SET LOGIS PLUS"
+            ]
+        )
+
+        # =========================
+        # UNIDAD DE NEGOCIO
+        # =========================
+        st.markdown("### Unidad de Negocio")
+
+        unidades = st.multiselect(
+            "",
+            [
+                "CARRIER",
+                "LOGISTICA",
+                "PLUS"
+            ]
+        )
+
+        # =========================
+        # SUCURSAL
+        # =========================
+        st.markdown("### Sucursal")
+
+        sucursal = st.multiselect(
+            "",
+            [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "QUERETARO",
+                "LEON",
+                "TLAXCALA",
+                "OTRO"
+            ]
+        )
+
+        poliza = st.text_input(
+            "Ref de Póliza Contable de Entrega del Fondo para Gastos de este Viaje"
+        )
+
+        st.divider()
+
+        # =========================
+        # ESTIMACION DE GASTOS
+        # =========================
+        st.markdown("## Estimación de Gastos de Viaje a Incurrir")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            transporte = st.number_input(
+                "Transportación Terrestre",
                 min_value=0.0,
                 step=100.0
             )
 
-        submitted_solicitud = st.form_submit_button(
+            hospedaje = st.number_input(
+                "Hospedaje",
+                min_value=0.0,
+                step=100.0
+            )
+
+            alimentos = st.number_input(
+                "Alimentos",
+                min_value=0.0,
+                step=100.0
+            )
+
+            propinas = st.number_input(
+                "Propinas",
+                min_value=0.0,
+                step=100.0
+            )
+
+            taxis = st.number_input(
+                "Taxis",
+                min_value=0.0,
+                step=100.0
+            )
+
+            otros = st.number_input(
+                "Otros",
+                min_value=0.0,
+                step=100.0
+            )
+
+        total_estimado = (
+            transporte
+            + hospedaje
+            + alimentos
+            + propinas
+            + taxis
+            + otros
+        )
+
+        with col2:
+
+            st.metric(
+                "Total Estimado",
+                f"${total_estimado:,.2f}"
+            )
+
+            anticipo = st.number_input(
+                "(-) Anticipo para Gastos de Viaje Entregado",
+                min_value=0.0,
+                step=100.0
+            )
+
+            diferencia = total_estimado - anticipo
+
+            st.metric(
+                "Diferencia a Cargo (Favor)",
+                f"${diferencia:,.2f}"
+            )
+
+        st.divider()
+
+        # =========================
+        # OBSERVACIONES
+        # =========================
+        observaciones = st.text_area(
+            "Observaciones",
+            height=150
+        )
+
+        st.divider()
+
+        submitted = st.form_submit_button(
             "💳 Enviar Solicitud",
             use_container_width=True
         )
 
-        if submitted_solicitud:
+        if submitted:
             st.success("Solicitud enviada correctamente.")
 
 # =================================
