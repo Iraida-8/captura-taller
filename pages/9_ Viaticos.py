@@ -156,10 +156,15 @@ with tab_solicitud:
                 st.rerun()
 
         with col10:
+
+            # Always enabled
             suc_otro_texto = st.text_input(
-                "Especificar",
-                disabled=not suc_otro
+                "Especificar"
             )
+
+            # Fake disabled appearance when OTRO not selected
+            if not suc_otro:
+                st.caption("Selecciona OTRO para utilizar este campo")
 
         # Lista final de sucursales seleccionadas
         sucursales = []
