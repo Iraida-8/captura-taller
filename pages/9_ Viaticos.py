@@ -548,13 +548,7 @@ with tab_comprobacion:
     # USER DATA
     # =================================
 
-    user = st.session_state.user
-
-    nombre_usuario_comp = (
-        user.get("name")
-        or user.get("email")
-        or ""
-    )
+    nombre_usuario_comp = nombre_usuario
 
     # =================================
     # INFORMACION GENERAL
