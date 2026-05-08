@@ -168,31 +168,33 @@ def render_kpi(title, value, emoji):
 
     st.markdown(
         f"""
-        <div style="
+        <div style='
             background:white;
             border-left:6px solid #BFA75F;
             border-radius:18px;
             padding:20px;
             height:140px;
             box-shadow:0 4px 12px rgba(0,0,0,0.12);
-        ">
-            <div style="
+        '>
+
+            <div style='
                 color:#6B7280;
                 font-size:18px;
                 margin-bottom:15px;
                 font-weight:600;
-            ">
+            '>
                 {emoji} {title}
             </div>
 
-            <div style="
+            <div style='
                 color:#151F6D;
                 font-size:54px;
                 font-weight:800;
                 line-height:1;
-            ">
+            '>
                 {value}
             </div>
+
         </div>
         """,
         unsafe_allow_html=True
