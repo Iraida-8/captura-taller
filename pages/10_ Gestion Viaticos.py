@@ -160,32 +160,51 @@ def render_kpi_card(
     title,
     value,
     emoji,
-    border_color
+    border_color,
+    bg_color
 ):
 
-    with st.container(border=True):
+    st.markdown(
+        f"""
+        <div style='
+            background:{bg_color};
+            border:1px solid rgba(255,255,255,0.08);
+            border-left:6px solid {border_color};
+            border-radius:18px;
 
-        st.markdown(
-            f"""
-            ### {emoji} {title}
-            """,
-            unsafe_allow_html=False
-        )
+            min-height:170px;
+            max-height:170px;
 
-        st.markdown(
-            f"""
+            padding:22px;
+
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
+
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+        '>
+
             <div style='
-                color:{border_color};
+                color:white;
+                font-size:20px;
+                font-weight:700;
+            '>
+                {emoji} {title}
+            </div>
+
+            <div style='
+                color:white;
                 font-size:58px;
                 font-weight:800;
                 line-height:1;
-                margin-top:10px;
             '>
                 {value}
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 with kpi1:
 
@@ -193,7 +212,8 @@ with kpi1:
         "Total",
         total_registros,
         "📊",
-        "#BFA75F"
+        "#BFA75F",
+        "#24338C"
     )
 
 with kpi2:
@@ -202,7 +222,8 @@ with kpi2:
         "Pendientes",
         pendientes,
         "⏳",
-        "#F59E0B"
+        "#F59E0B",
+        "#7C4A03"
     )
 
 with kpi3:
@@ -211,7 +232,8 @@ with kpi3:
         "Autorizadas",
         autorizadas,
         "✅",
-        "#10B981"
+        "#10B981",
+        "#065F46"
     )
 
 with kpi4:
@@ -220,7 +242,8 @@ with kpi4:
         "Verificando",
         verificando,
         "🔎",
-        "#38BDF8"
+        "#38BDF8",
+        "#0C4A6E"
     )
 
 with kpi5:
@@ -229,7 +252,8 @@ with kpi5:
         "Rechazadas",
         rechazadas,
         "❌",
-        "#EF4444"
+        "#EF4444",
+        "#7F1D1D"
     )
 
 st.markdown("<br><br>", unsafe_allow_html=True)
