@@ -166,36 +166,31 @@ def render_kpi_card(
 
     st.markdown(
         f"""
-        <div style='
+        <style>
+        .metric-container {{
             background:{bg_color};
             border-left:6px solid {border_color};
+            padding:18px;
             border-radius:18px;
-            padding:20px;
-            height:170px;
-            display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-        '>
-
-            <div style='
-                color:white;
-                font-size:20px;
-                font-weight:700;
-            '>
-                {emoji} {title}
-            </div>
-
-            <div style='
-                color:white;
-                font-size:54px;
-                font-weight:800;
-                line-height:1;
-            '>
-                {value}
-            </div>
-
-        </div>
+            min-height:170px;
+        }}
+        </style>
         """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<div class='metric-container'>",
+        unsafe_allow_html=True
+    )
+
+    st.metric(
+        label=f"{emoji} {title}",
+        value=value
+    )
+
+    st.markdown(
+        "</div>",
         unsafe_allow_html=True
     )
 
@@ -335,6 +330,23 @@ st.markdown(
     /* Text */
     p, label, span {
         color: #F5F5F5;
+    }
+
+    div[data-testid="stMetric"] {
+        background: transparent !important;
+        border: none !important;
+        text-align: center;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        justify-content: center;
+    }
+
+    div[data-testid="stMetricValue"] {
+        justify-content: center;
+        font-size: 3.4rem;
+        font-weight: 800;
+        color: white;
     }
     </style>
     """,
