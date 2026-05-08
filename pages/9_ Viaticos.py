@@ -509,45 +509,11 @@ with tab_solicitud:
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            st.markdown(
-                f"""
-                <div style="
-                    background:#1B267A;
-                    padding:35px;
-                    border-radius:18px;
-                    border:3px solid #BFA75F;
-                    text-align:center;
-                ">
+            st.markdown("### 📄 FOLIO DE SOLICITUD")
 
-                    <div style="
-                        font-size:22px;
-                        font-weight:700;
-                        color:#BFA75F;
-                        margin-bottom:25px;
-                    ">
-                        FOLIO DE SOLICITUD
-                    </div>
-
-                    <div style="
-                        background:#111827;
-                        border-radius:14px;
-                        padding:30px;
-                    ">
-
-                        <span style="
-                            font-size:54px;
-                            font-weight:900;
-                            letter-spacing:4px;
-                            color:white;
-                        ">
-                            {folio_solicitud}
-                        </span>
-
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.code(
+                folio_solicitud,
+                language=None
             )
 
             st.markdown("<br>", unsafe_allow_html=True)
