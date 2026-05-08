@@ -546,18 +546,37 @@ with tab_comprobacion:
 
         st.markdown("## 📋 Informacion General")
 
+        empresas_lista = [
+            "Seleccione una opción...",
+            "SET FREIGHT",
+            "LINCOLN",
+            "PICUS",
+            "IGLOO",
+            "SET LOGIS PLUS"
+        ]
+
+        unidades_lista = [
+            "Seleccione una opción...",
+            "CARRIER",
+            "LOGISTICA",
+            "PLUS"
+        ]
+
+        sucursales_lista = [
+            "NUEVO LAREDO",
+            "DALLAS",
+            "CHICAGO",
+            "GUADALAJARA",
+            "MONTERREY",
+            "QUERETARO",
+            "LEON",
+            "TLAXCALA",
+            "OTRO"
+        ]
+
         col1, col2 = st.columns(2)
 
         with col1:
-
-            empresas_lista = [
-                "Seleccione una opción...",
-                "SET FREIGHT",
-                "LINCOLN",
-                "PICUS",
-                "IGLOO",
-                "SET LOGIS PLUS"
-            ]
 
             empresa_servicio_comp = st.selectbox(
                 "Empresa que Brinda el Servicio",
@@ -586,7 +605,12 @@ with tab_comprobacion:
 
         motivo_viaje_comp = st.text_area(
             "Motivo del Viaje",
+            value=solicitud_data.get(
+                "motivo_viaje",
+                ""
+            ),
             height=100,
+            disabled=True,
             key=f"motivo_viaje_comp_{COMP_VERSION}"
         )
 
@@ -596,7 +620,12 @@ with tab_comprobacion:
 
             fecha_solicitud_comp = st.date_input(
                 "Fecha de Solicitud",
-                value=date.today(),
+                value=pd.to_datetime(
+                    solicitud_data.get(
+                        "fecha_solicitud",
+                        date.today()
+                    )
+                ).date(),
                 disabled=True,
                 key=f"fecha_solicitud_comp_{COMP_VERSION}"
             )
@@ -605,7 +634,13 @@ with tab_comprobacion:
 
             fecha_inicio_comp = st.date_input(
                 "Fecha de Inicio",
-                value=date.today(),
+                value=pd.to_datetime(
+                    solicitud_data.get(
+                        "fecha_inicio",
+                        date.today()
+                    )
+                ).date(),
+                disabled=True,
                 key=f"fecha_inicio_comp_{COMP_VERSION}"
             )
 
@@ -613,7 +648,13 @@ with tab_comprobacion:
 
             fecha_fin_comp = st.date_input(
                 "Fecha de Fin",
-                value=date.today() + pd.Timedelta(days=1),
+                value=pd.to_datetime(
+                    solicitud_data.get(
+                        "fecha_fin",
+                        date.today()
+                    )
+                ).date(),
+                disabled=True,
                 key=f"fecha_fin_comp_{COMP_VERSION}"
             )
 
@@ -623,15 +664,14 @@ with tab_comprobacion:
 
             empresa_cargo_comp = st.selectbox(
                 "Empresa a Cargo para Gastos de este Viaje",
-                [
-                    "Seleccione una opción...",
-                    "SET FREIGHT",
-                    "LINCOLN",
-                    "PICUS",
-                    "IGLOO",
-                    "SET LOGIS PLUS"
-                ],
-                index=0,
+                empresas_lista,
+                index=empresas_lista.index(
+                    solicitud_data.get(
+                        "empresa_cargo_gastos",
+                        "Seleccione una opción..."
+                    )
+                ),
+                disabled=True,
                 key=f"empresa_cargo_comp_{COMP_VERSION}"
             )
 
@@ -639,32 +679,33 @@ with tab_comprobacion:
 
             unidad_negocio_comp = st.selectbox(
                 "Unidad de Negocio",
-                [
-                    "Seleccione una opción...",
-                    "CARRIER",
-                    "LOGISTICA",
-                    "PLUS"
-                ],
-                index=0,
+                unidades_lista,
+                index=unidades_lista.index(
+                    solicitud_data.get(
+                        "unidad_negocio",
+                        "Seleccione una opción..."
+                    )
+                ),
+                disabled=True,
                 key=f"unidad_negocio_comp_{COMP_VERSION}"
             )
 
         st.markdown("### Sucursal")
 
+        sucursal_actual = solicitud_data.get(
+            "sucursal",
+            "NUEVO LAREDO"
+        )
+
+        if sucursal_actual not in sucursales_lista:
+            sucursal_actual = "OTRO"
+
         sucursal_comp = st.radio(
             "",
-            [
-                "NUEVO LAREDO",
-                "DALLAS",
-                "CHICAGO",
-                "GUADALAJARA",
-                "MONTERREY",
-                "QUERETARO",
-                "LEON",
-                "TLAXCALA",
-                "OTRO"
-            ],
+            sucursales_lista,
+            index=sucursales_lista.index(sucursal_actual),
             horizontal=True,
+            disabled=True,
             label_visibility="collapsed",
             key=f"sucursal_comp_{COMP_VERSION}"
         )
@@ -673,13 +714,12 @@ with tab_comprobacion:
 
             suc_otro_texto_comp = st.text_input(
                 "Especificar",
+                value=solicitud_data.get(
+                    "sucursal_especificar",
+                    ""
+                ),
+                disabled=True,
                 key=f"suc_otro_texto_comp_{COMP_VERSION}"
-            )
-
-            sucursales_final_comp = (
-                [suc_otro_texto_comp]
-                if suc_otro_texto_comp
-                else []
             )
 
         else:
@@ -690,8 +730,6 @@ with tab_comprobacion:
                 disabled=True,
                 key=f"suc_otro_disabled_comp_{COMP_VERSION}"
             )
-
-            sucursales_final_comp = [sucursal_comp]
 
 
     # =========================
