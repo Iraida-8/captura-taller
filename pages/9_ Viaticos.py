@@ -253,26 +253,6 @@ with tab_solicitud:
 
             sucursales_final = [sucursal]
 
-    st.divider()
-
-    col_poliza1, col_poliza2 = st.columns(2)
-
-    with col_poliza1:
-
-        ref_poliza = st.text_input(
-            "REF DE POLIZA CONTABLE",
-            key=f"ref_poliza_{FORM_VERSION}"
-        )
-
-    with col_poliza2:
-
-        ref_entrega_fondo = st.text_input(
-            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-            key=f"ref_entrega_fondo_{FORM_VERSION}"
-        )
-
-    st.divider()
-
     with st.container(border=True):
 
         st.markdown("## 💰 Estimacion de Gastos de Viaje a Incurrir")
@@ -466,10 +446,6 @@ with tab_solicitud:
             "sucursal": sucursal,
 
             "sucursal_especificar": sucursal_especificar,
-
-            "ref_poliza_contable": ref_poliza,
-
-            "ref_entrega_fondo": ref_entrega_fondo,
 
             "conceptos": st.session_state[conceptos_key],
 
