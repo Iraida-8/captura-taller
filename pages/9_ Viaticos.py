@@ -297,10 +297,6 @@ with tab_solicitud:
     st.divider()
 
     # =========================
-    # PART 2: THE FORM
-    # =========================
-
-    # =========================
     # ESTIMACION DE GASTOS
     # =========================
 
@@ -458,37 +454,6 @@ with tab_solicitud:
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
-
-        # =========================
-        # ANTICIPO
-        # =========================
-
-        anticipo = st.number_input(
-            "(-) Anticipo para gastos de viaje entregado",
-            min_value=0.0,
-            step=100.0,
-            key="anticipo"
-        )
-
-        diferencia = total_estimado - anticipo
-
-        st.markdown(
-            f"""
-            <div style="
-                background:white;
-                color:black;
-                border:2px solid black;
-                padding:14px;
-                font-size:24px;
-                font-weight:bold;
-                text-align:right;
-                margin-top:15px;
-            ">
-                DIFERENCIA A CARGO (FAVOR): $ {diferencia:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
     submitted = st.button(
         "💳 Enviar Solicitud",
