@@ -295,8 +295,11 @@ with tab_solicitud:
                     "ALIMENTOS",
                     "PROPINAS",
                     "TAXIS",
+                    "CASETAS",
+                    "GASOLINA",
                     "OTROS"
                 ],
+                
                 key=f"tipo_gasto_{FORM_VERSION}"
             )
 
