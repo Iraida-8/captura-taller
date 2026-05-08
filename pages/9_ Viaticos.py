@@ -339,8 +339,7 @@ with tab_solicitud:
         with col2:
 
             descripcion_otros = st.text_input(
-                "Describir (Otros)",
-                disabled=tipo_gasto != "OTROS",
+                "Describir",
                 key=f"descripcion_otros_{FORM_VERSION}"
             )
 
@@ -359,10 +358,7 @@ with tab_solicitud:
             key=f"btn_agregar_concepto_{FORM_VERSION}"
         ):
 
-            descripcion_final = ""
-
-            if tipo_gasto == "OTROS":
-                descripcion_final = descripcion_otros
+            descripcion_final = descripcion_otros
 
             if tipo_gasto != "Selecciona un tipo" and monto_estimado > 0:
 
