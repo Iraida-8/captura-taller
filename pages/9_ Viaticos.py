@@ -827,77 +827,51 @@ with tab_comprobacion:
         # TOTAL ROW
         # =========================
 
-        anticipo_viaje = st.number_input(
-            "(-) Anticipo para gastos de viaje",
-            min_value=0.0,
-            step=100.0,
-            key="anticipo_viaje"
-        )
+        anticipo_viaje = 0.0
+
+        col1, col2, col3 = st.columns(3)
+
+        # =================================
+        # TOTAL COMPROBADO
+        # =================================
+
+        with col1:
+
+            st.text_input(
+                "TOTAL COMPROBADO",
+                value=f"$ {total_general:,.2f}",
+                disabled=True,
+                key="total_comprobado_display"
+            )
+
+        # =================================
+        # ANTICIPO VIAJE
+        # =================================
+
+        with col2:
+
+            anticipo_viaje = st.number_input(
+                "(-) Anticipo para gastos de viaje",
+                min_value=0.0,
+                step=100.0,
+                key="anticipo_viaje"
+            )
+
+        # =================================
+        # DIFERENCIA
+        # =================================
 
         diferencia_cargo = (
             anticipo_viaje - total_general
         )
 
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-
-            st.markdown(
-                f"""
-                <div style="
-                    background:white;
-                    color:black;
-                    border:2px solid black;
-                    padding:14px;
-                    font-size:20px;
-                    font-weight:bold;
-                    text-align:center;
-                ">
-                    TOTAL COMPROBADO<br>
-                    $ {total_general:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        with col2:
-
-            st.markdown(
-                f"""
-                <div style="
-                    background:white;
-                    color:black;
-                    border:2px solid black;
-                    padding:14px;
-                    font-size:20px;
-                    font-weight:bold;
-                    text-align:center;
-                ">
-                    (-) ANTICIPO PARA GASTOS DE VIAJE<br>
-                    $ {anticipo_viaje:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
         with col3:
 
-            st.markdown(
-                f"""
-                <div style="
-                    background:white;
-                    color:black;
-                    border:2px solid black;
-                    padding:14px;
-                    font-size:20px;
-                    font-weight:bold;
-                    text-align:center;
-                ">
-                    DIFERENCIA A CARGO (FAVOR)<br>
-                    $ {diferencia_cargo:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.text_input(
+                "DIFERENCIA A CARGO (FAVOR)",
+                value=f"$ {diferencia_cargo:,.2f}",
+                disabled=True,
+                key="diferencia_cargo_display"
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
