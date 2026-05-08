@@ -172,39 +172,29 @@ def render_kpi_card(
     border_color
 ):
 
-    st.markdown(
-        f"""
-        <div style="
-            background:white;
-            border-left:7px solid {border_color};
-            border-radius:18px;
-            padding:24px;
-            height:145px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.12);
-        ">
+    with st.container(border=True):
 
-            <div style="
-                color:#6B7280;
-                font-size:20px;
-                font-weight:600;
-                margin-bottom:14px;
-            ">
-                {emoji} {title}
-            </div>
+        st.markdown(
+            f"""
+            ### {emoji} {title}
+            """,
+            unsafe_allow_html=False
+        )
 
-            <div style="
-                color:#151F6D;
-                font-size:56px;
+        st.markdown(
+            f"""
+            <div style='
+                color:{border_color};
+                font-size:58px;
                 font-weight:800;
                 line-height:1;
-            ">
+                margin-top:10px;
+            '>
                 {value}
             </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+            """,
+            unsafe_allow_html=True
+        )
 
 with kpi1:
 
