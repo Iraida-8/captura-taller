@@ -72,22 +72,7 @@ st.divider()
 # HEADER
 # =================================
 
-st.markdown(
-    """
-    <div style="
-        text-align:center;
-        margin-top:10px;
-        margin-bottom:25px;
-        color:white;
-        font-size:42px;
-        font-weight:800;
-        letter-spacing:1px;
-    ">
-        SOLICITUD DE VIATICOS Y REEMBOLSOS
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.title("💳  Solicitud de Viáticos y Reembolso")
 
 # =================================
 # TABS
