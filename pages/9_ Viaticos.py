@@ -472,7 +472,9 @@ with tab_solicitud:
 
             "total_estimado": float(total_estimado),
 
-            "observaciones": observaciones
+            "observaciones": observaciones,
+
+            "estatus": "Pendiente"
 
         }).execute()
 
@@ -1052,7 +1054,10 @@ with tab_comprobacion:
                 float(diferencia_cargo),
 
             "observaciones":
-                observaciones_comp
+                observaciones_comp,
+
+            "estatus":
+                "Pendiente"
 
         }).execute()
 

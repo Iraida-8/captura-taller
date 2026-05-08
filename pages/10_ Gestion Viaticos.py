@@ -83,20 +83,6 @@ df_solicitudes = cargar_solicitudes()
 df_comprobaciones = cargar_comprobaciones()
 
 # =================================
-# DEFAULT STATUS
-# =================================
-
-if not df_solicitudes.empty:
-
-    if "status" not in df_solicitudes.columns:
-        df_solicitudes["status"] = "PENDIENTE"
-
-if not df_comprobaciones.empty:
-
-    if "status" not in df_comprobaciones.columns:
-        df_comprobaciones["status"] = "VERIFICANDO"
-
-# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -108,36 +94,75 @@ st.divider()
 # KPI VALUES
 # =================================
 
+# Normalize estatus columns
+if not df_solicitudes.empty:
+
+    if "estatus" not in df_solicitudes.columns:
+        df_solicitudes["estatus"] = "Pendiente"
+
+    df_solicitudes["estatus"] = (
+        df_solicitudes["estatus"]
+        .fillna("Pendiente")
+        .astype(str)
+        .str.strip()
+    )
+
+if not df_comprobaciones.empty:
+
+    if "estatus" not in df_comprobaciones.columns:
+        df_comprobaciones["estatus"] = "Pendiente"
+
+    df_comprobaciones["estatus"] = (
+        df_comprobaciones["estatus"]
+        .fillna("Pendiente")
+        .astype(str)
+        .str.strip()
+    )
+
+# Total records
 total_registros = (
     len(df_solicitudes) +
     len(df_comprobaciones)
 )
 
-pendientes = 0
-autorizados = 0
-verificando = 0
+# Merge both estatus columns
+estatus_total = pd.concat(
+    [
+        df_solicitudes["estatus"]
+        if not df_solicitudes.empty
+        else pd.Series(dtype=str),
 
-if not df_solicitudes.empty:
+        df_comprobaciones["estatus"]
+        if not df_comprobaciones.empty
+        else pd.Series(dtype=str)
+    ],
+    ignore_index=True
+)
 
-    pendientes = len(
-        df_solicitudes[
-            df_solicitudes["status"] == "PENDIENTE"
-        ]
-    )
+# KPI counts
+pendientes = len(
+    estatus_total[
+        estatus_total == "Pendiente"
+    ]
+)
 
-    autorizados = len(
-        df_solicitudes[
-            df_solicitudes["status"] == "AUTORIZADO"
-        ]
-    )
+autorizados = len(
+    estatus_total[
+        estatus_total == "Autorizada"
+    ]
+)
 
-if not df_comprobaciones.empty:
+verificando = len(
+    estatus_total[
+        estatus_total == "Verificando"
+    ]
+)
 
-    verificando = len(
-        df_comprobaciones[
-            df_comprobaciones["status"] == "VERIFICANDO"
-        ]
-    )
+rechazados = len(
+    estatus_total[
+        estatus_total == "Rechazada"
+    ]
+)
 
 # =================================
 # HEADER
@@ -236,7 +261,7 @@ with kpi5:
 
     render_kpi_card(
         "Rechazadas",
-        0,
+        rechazados,
         "❌",
         "#EF4444"
     )
