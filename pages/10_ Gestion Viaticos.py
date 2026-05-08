@@ -157,92 +157,93 @@ st.markdown("<br>", unsafe_allow_html=True)
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 
 def render_kpi_card(
+    container,
     title,
     value,
     emoji,
-    border_color,
-    bg_color
+    bg_color,
+    border_color
 ):
 
-    st.markdown(
-        f"""
-        <style>
-        .metric-container {{
-            background:{bg_color};
-            border-left:6px solid {border_color};
-            padding:18px;
-            border-radius:18px;
-            min-height:170px;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    with container:
 
-    st.markdown(
-        "<div class='metric-container'>",
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            f"""
+            <div style="
+                background:{bg_color};
+                border-left:6px solid {border_color};
+                border-radius:18px;
+                padding:20px;
+                height:170px;
+                display:flex;
+                flex-direction:column;
+                justify-content:space-between;
+            ">
+                <div style="
+                    color:white;
+                    font-size:20px;
+                    font-weight:700;
+                ">
+                    {emoji} {title}
+                </div>
 
-    st.metric(
-        label=f"{emoji} {title}",
-        value=value
-    )
+                <div style="
+                    color:white;
+                    font-size:56px;
+                    font-weight:800;
+                    line-height:1;
+                ">
+                    {value}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True
-    )
+render_kpi_card(
+    kpi1,
+    "Total",
+    total_registros,
+    "📊",
+    "#24338C",
+    "#BFA75F"
+)
 
-with kpi1:
+render_kpi_card(
+    kpi2,
+    "Pendientes",
+    pendientes,
+    "⏳",
+    "#7C4A03",
+    "#F59E0B"
+)
 
-    render_kpi_card(
-        "Total",
-        total_registros,
-        "📊",
-        "#BFA75F",
-        "#24338C"
-    )
+render_kpi_card(
+    kpi3,
+    "Autorizadas",
+    autorizadas,
+    "✅",
+    "#065F46",
+    "#10B981"
+)
 
-with kpi2:
+render_kpi_card(
+    kpi4,
+    "Verificando",
+    verificando,
+    "🔎",
+    "#0C4A6E",
+    "#38BDF8"
+)
 
-    render_kpi_card(
-        "Pendientes",
-        pendientes,
-        "⏳",
-        "#F59E0B",
-        "#7C4A03"
-    )
-
-with kpi3:
-
-    render_kpi_card(
-        "Autorizadas",
-        autorizadas,
-        "✅",
-        "#10B981",
-        "#065F46"
-    )
-
-with kpi4:
-
-    render_kpi_card(
-        "Verificando",
-        verificando,
-        "🔎",
-        "#38BDF8",
-        "#0C4A6E"
-    )
-
-with kpi5:
-
-    render_kpi_card(
-        "Rechazadas",
-        rechazadas,
-        "❌",
-        "#EF4444",
-        "#7F1D1D"
-    )
+render_kpi_card(
+    kpi5,
+    "Rechazadas",
+    rechazadas,
+    "❌",
+    "#7F1D1D",
+    "#EF4444"
+)
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
