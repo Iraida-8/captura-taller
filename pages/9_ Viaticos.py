@@ -42,6 +42,18 @@ if "solicitud_form_version" not in st.session_state:
 FORM_VERSION = st.session_state.solicitud_form_version
 
 # =================================
+# GLOBAL USER DATA
+# =================================
+
+user = st.session_state.user
+
+nombre_usuario = (
+    user.get("name")
+    or user.get("email")
+    or ""
+)
+
+# =================================
 # FORM RESET
 # =================================
 
@@ -127,18 +139,6 @@ FORM_VERSION = st.session_state.solicitud_form_version
 with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
-
-    # =================================
-    # USER DATA
-    # =================================
-
-    user = st.session_state.user
-
-    nombre_usuario = (
-        user.get("name")
-        or user.get("email")
-        or ""
-    )
 
     # =================================
     # INFORMACION GENERAL
@@ -545,12 +545,6 @@ with tab_comprobacion:
     st.subheader("🧾 Comprobacion de Gastos de Viaje")
 
     # =================================
-    # USER DATA
-    # =================================
-
-    nombre_usuario_comp = nombre_usuario
-
-    # =================================
     # INFORMACION GENERAL
     # =================================
 
@@ -575,7 +569,7 @@ with tab_comprobacion:
 
             empleado_comp = st.text_input(
                 "Nombre del Empleado que Solicita",
-                value=nombre_usuario_comp,
+                value=nombre_usuario,
                 disabled=True,
                 key="empleado_comp"
             )
