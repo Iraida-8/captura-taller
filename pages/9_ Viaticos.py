@@ -544,130 +544,183 @@ with tab_comprobacion:
 
     st.subheader("🧾 Comprobacion de Gastos de Viaje")
 
-    # =========================
-    # DATOS GENERALES
-    # =========================
+    # =================================
+    # USER DATA
+    # =================================
 
-    col1, col2 = st.columns([1, 2])
+    user = st.session_state.user
 
-    with col1:
-        fecha_comprobacion = st.date_input(
-            "Fecha de Comprobacion",
-            key="fecha_comprobacion"
-        )
-
-    with col2:
-        empresa_comp = st.text_input(
-            "Nombre de la Compañia",
-            key="empresa_comp"
-        )
-
-    empleado_comp = st.text_input(
-        "Nombre del Empleado",
-        key="empleado_comp"
+    nombre_usuario_comp = (
+        user.get("name")
+        or user.get("email")
+        or ""
     )
 
-    motivo_comp = st.text_area(
-        "Motivo del Viaje",
-        height=90,
-        key="motivo_comp"
-    )
+    # =================================
+    # INFORMACION GENERAL
+    # =================================
 
-    col1, col2 = st.columns(2)
+    with st.container(border=True):
 
-    with col1:
-        lugar_comp = st.text_input(
-            "Lugar a Donde se Realiza el Viaje",
-            key="lugar_comp"
+        st.markdown("## 📋 Informacion General")
+
+        # =========================
+        # ROW 1
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            empresa_comp = st.text_input(
+                "Nombre de la Compañia",
+                key="empresa_comp"
+            )
+
+        with col2:
+
+            empleado_comp = st.text_input(
+                "Nombre del Empleado que Solicita",
+                value=nombre_usuario_comp,
+                disabled=True,
+                key="empleado_comp"
+            )
+
+        # =========================
+        # ROW 2
+        # =========================
+
+        motivo_comp = st.text_area(
+            "Motivo del Viaje",
+            height=100,
+            key="motivo_comp"
         )
 
-    with col2:
-        periodo_comp = st.text_input(
-            "Periodo del Viaje",
-            key="periodo_comp"
+        # =========================
+        # ROW 3
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            lugar_comp = st.text_input(
+                "Lugar a Donde se Realiza el Viaje",
+                key="lugar_comp"
+            )
+
+        with col2:
+
+            periodo_comp = st.text_input(
+                "Periodo del Viaje",
+                key="periodo_comp"
+            )
+
+        # =========================
+        # ROW 4
+        # =========================
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            fecha_comprobacion = st.date_input(
+                "Fecha de Solicitud",
+                value=date.today(),
+                key="fecha_comprobacion"
+            )
+
+        with col2:
+
+            fecha_inicio_comp = st.date_input(
+                "Fecha de Inicio",
+                value=date.today(),
+                key="fecha_inicio_comp"
+            )
+
+        with col3:
+
+            fecha_fin_comp = st.date_input(
+                "Fecha de Fin",
+                value=date.today() + pd.Timedelta(days=1),
+                key="fecha_fin_comp"
+            )
+
+        # =========================
+        # ROW 5
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            empresa_cargo_comp = st.selectbox(
+                "Empresa a Cargo para Gastos de este Viaje",
+                [
+                    "Seleccione una opción...",
+                    "SET FREIGHT",
+                    "LINCOLN",
+                    "PICUS",
+                    "IGLOO",
+                    "SET LOGIS PLUS"
+                ],
+                index=0,
+                key="empresa_cargo_comp"
+            )
+
+        with col2:
+
+            unidad_negocio_comp = st.selectbox(
+                "Unidad de Negocio",
+                [
+                    "Seleccione una opción...",
+                    "CARRIER",
+                    "LOGISTICA",
+                    "PLUS"
+                ],
+                index=0,
+                key="unidad_negocio_comp"
+            )
+
+        # =========================
+        # ROW 6
+        # =========================
+
+        st.markdown("### Sucursal")
+
+        sucursal_comp = st.radio(
+            "",
+            [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "QUERETARO",
+                "LEON",
+                "TLAXCALA",
+                "OTRO"
+            ],
+            horizontal=True,
+            key="sucursal_comp",
+            label_visibility="collapsed"
         )
 
-    st.divider()
+        if sucursal_comp == "OTRO":
 
-    # =========================
-    # EMPRESA A CARGO
-    # =========================
+            sucursal_otro_comp = st.text_input(
+                "Especificar",
+                key="sucursal_otro_comp"
+            )
 
-    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
+        else:
 
-    empresa_cargo_comp = st.selectbox(
-        "Empresa a Cargo",
-        [
-            "Seleccione una opción...",
-            "SET FREIGHT",
-            "LINCOLN",
-            "PICUS",
-            "IGLOO",
-            "SET LOGIS PLUS"
-        ],
-        index=0,
-        key="empresa_cargo_comp",
-        label_visibility="collapsed"
-    )
-
-    # =========================
-    # UNIDAD DE NEGOCIO
-    # =========================
-
-    st.markdown("### Unidad de Negocio")
-
-    unidad_negocio_comp = st.selectbox(
-        "Unidad de Negocio",
-        [
-            "Seleccione una opción...",
-            "CARRIER",
-            "LOGISTICA",
-            "PLUS"
-        ],
-        index=0,
-        key="unidad_negocio_comp",
-        label_visibility="collapsed"
-    )
-
-    # =========================
-    # SUCURSAL
-    # =========================
-
-    st.markdown("### Sucursal")
-
-    sucursal_comp = st.radio(
-        "",
-        [
-            "NUEVO LAREDO",
-            "DALLAS",
-            "CHICAGO",
-            "GUADALAJARA",
-            "MONTERREY",
-            "QUERETARO",
-            "LEON",
-            "TLAXCALA",
-            "OTRO"
-        ],
-        horizontal=True,
-        key="sucursal_comp",
-        label_visibility="collapsed"
-    )
-
-    if sucursal_comp == "OTRO":
-
-        sucursal_otro_comp = st.text_input(
-            "Especificar",
-            key="sucursal_otro_comp"
-        )
-
-    else:
-
-        st.text_input(
-            "Especificar",
-            value="",
-            disabled=True,
-            key="sucursal_otro_disabled_comp"
-        )
+            st.text_input(
+                "Especificar",
+                value="",
+                disabled=True,
+                key="sucursal_otro_disabled_comp"
+            )
 
     st.divider()
 
