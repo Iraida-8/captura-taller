@@ -179,7 +179,6 @@ st.divider()
 def has_access(keys):
     return any(k in access for k in keys)
 
-
 # =============================
 # 1. GENERACION DE PASES Y SOLICITUDES
 # =============================
@@ -209,7 +208,6 @@ if has_access(section_generacion):
                 st.switch_page("pages/9_ Viaticos.py")
 
     st.divider()
-
 
 # =============================
 # 2. GESTION DE ORDENES Y PASES
@@ -241,7 +239,6 @@ if has_access(section_gestion):
 
     st.divider()
 
-
 # =============================
 # 3. CONSULTAS
 # =============================
@@ -263,7 +260,6 @@ if has_access(section_consultas):
                 st.switch_page("pages/6_ Consulta Reportes.py")
 
     st.divider()
-
 
 # =============================
 # 4. EXTRAS

@@ -75,10 +75,6 @@ st.divider()
 assets_dir = Path(__file__).parent / "assets"
 logo_path = assets_dir / "pg_brand.png"
 
-# =================================
-# HEADER
-# =================================
-
 col_logo, col_title, col_spacer = st.columns([1, 6, 1])
 
 with col_logo:
