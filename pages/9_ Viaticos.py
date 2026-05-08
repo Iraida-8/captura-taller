@@ -742,7 +742,7 @@ with tab_comprobacion:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col4, col5, col6 = st.columns([1, 1, 1.4])
+        col4, col5, col6 = st.columns([1, 1.2, 1.4])
 
         with col4:
 
@@ -753,16 +753,36 @@ with tab_comprobacion:
 
         with col5:
 
-            iva_porcentaje = st.selectbox(
-                "IVA %",
-                [
-                    8,
-                    12,
-                    16
-                ],
-                disabled=not aplica_iva,
-                key="iva_porcentaje"
-            )
+            iva_inline_col1, iva_inline_col2 = st.columns([0.55, 1])
+
+            with iva_inline_col1:
+
+                st.markdown(
+                    """
+                    <div style="
+                        padding-top:8px;
+                        font-weight:600;
+                        color:white;
+                    ">
+                        IVA %
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            with iva_inline_col2:
+
+                iva_porcentaje = st.selectbox(
+                    "",
+                    [
+                        8,
+                        12,
+                        16
+                    ],
+                    disabled=not aplica_iva,
+                    key="iva_porcentaje",
+                    label_visibility="collapsed"
+                )
 
         with col6:
 
