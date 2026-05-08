@@ -574,6 +574,8 @@ with tab_comprobacion:
             "OTRO"
         ]
 
+        dynamic_key = f"{COMP_VERSION}_{folio_seleccionado}"
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -588,7 +590,7 @@ with tab_comprobacion:
                     )
                 ),
                 disabled=True,
-                key=f"empresa_servicio_comp_{COMP_VERSION}"
+                key=f"empresa_servicio_comp_{dynamic_key}"
             )
 
         with col2:
@@ -600,7 +602,7 @@ with tab_comprobacion:
                     ""
                 ),
                 disabled=True,
-                key=f"empleado_comp_{COMP_VERSION}"
+                key=f"empleado_comp_{dynamic_key}"
             )
 
         motivo_viaje_comp = st.text_area(
@@ -611,7 +613,7 @@ with tab_comprobacion:
             ),
             height=100,
             disabled=True,
-            key=f"motivo_viaje_comp_{COMP_VERSION}"
+            key=f"motivo_viaje_comp_{dynamic_key}"
         )
 
         col1, col2, col3 = st.columns(3)
@@ -627,7 +629,7 @@ with tab_comprobacion:
                     )
                 ).date(),
                 disabled=True,
-                key=f"fecha_solicitud_comp_{COMP_VERSION}"
+                key=f"fecha_solicitud_comp_{dynamic_key}"
             )
 
         with col2:
@@ -641,7 +643,7 @@ with tab_comprobacion:
                     )
                 ).date(),
                 disabled=True,
-                key=f"fecha_inicio_comp_{COMP_VERSION}"
+                key=f"fecha_inicio_comp_{dynamic_key}"
             )
 
         with col3:
@@ -655,7 +657,7 @@ with tab_comprobacion:
                     )
                 ).date(),
                 disabled=True,
-                key=f"fecha_fin_comp_{COMP_VERSION}"
+                key=f"fecha_fin_comp_{dynamic_key}"
             )
 
         col1, col2 = st.columns(2)
@@ -672,7 +674,7 @@ with tab_comprobacion:
                     )
                 ),
                 disabled=True,
-                key=f"empresa_cargo_comp_{COMP_VERSION}"
+                key=f"empresa_cargo_comp_{dynamic_key}"
             )
 
         with col2:
@@ -687,7 +689,7 @@ with tab_comprobacion:
                     )
                 ),
                 disabled=True,
-                key=f"unidad_negocio_comp_{COMP_VERSION}"
+                key=f"unidad_negocio_comp_{dynamic_key}"
             )
 
         st.markdown("### Sucursal")
@@ -707,7 +709,7 @@ with tab_comprobacion:
             horizontal=True,
             disabled=True,
             label_visibility="collapsed",
-            key=f"sucursal_comp_{COMP_VERSION}"
+            key=f"sucursal_comp_{dynamic_key}"
         )
 
         if sucursal_comp == "OTRO":
@@ -719,7 +721,7 @@ with tab_comprobacion:
                     ""
                 ),
                 disabled=True,
-                key=f"suc_otro_texto_comp_{COMP_VERSION}"
+                key=f"suc_otro_texto_comp_{dynamic_key}"
             )
 
         else:
@@ -728,9 +730,8 @@ with tab_comprobacion:
                 "Especificar",
                 value="",
                 disabled=True,
-                key=f"suc_otro_disabled_comp_{COMP_VERSION}"
+                key=f"suc_otro_disabled_comp_{dynamic_key}"
             )
-
 
     # =========================
     # IMPORTE DE GASTOS
