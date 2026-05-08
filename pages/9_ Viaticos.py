@@ -526,15 +526,9 @@ for row in solicitudes:
 
     folio = row["folio_solicitud"]
 
-    if folio in folios_ya_utilizados:
+    if folio not in folios_ya_utilizados:
 
-        display = f"{folio} — ACTUALIZADO"
-
-    else:
-
-        display = folio
-
-    folios_solicitud.append(display)
+        folios_solicitud.append(folio)
 
 with tab_comprobacion:
 
@@ -1028,14 +1022,6 @@ with tab_comprobacion:
     )
 
     if submitted_comp:
-
-        if folio_real in folios_ya_utilizados:
-
-            st.error(
-                "Este folio ya fue actualizado."
-            )
-
-            st.stop()
 
         if folio_seleccionado == "Selecciona folio":
 
