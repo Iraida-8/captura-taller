@@ -555,8 +555,17 @@ with tab_comprobacion:
 
         with col1:
 
-            empresa_comp = st.text_input(
+            empresa_comp = st.selectbox(
                 "Nombre de la Compañia",
+                [
+                    "Seleccione una opción...",
+                    "SET FREIGHT",
+                    "LINCOLN",
+                    "PICUS",
+                    "IGLOO",
+                    "SET LOGIS PLUS"
+                ],
+                index=0,
                 key="empresa_comp"
             )
 
