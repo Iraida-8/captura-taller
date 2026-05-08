@@ -455,6 +455,8 @@ with tab_solicitud:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+    st.divider()
+
     submitted = st.button(
         "💳 Enviar Solicitud",
         use_container_width=True,
@@ -462,9 +464,91 @@ with tab_solicitud:
     )
 
     if submitted:
-        st.success(
-            f"Solicitud para {sucursales_final} enviada correctamente."
+
+        # =========================
+        # PREFIX MAP
+        # =========================
+
+        prefijos_sucursal = {
+            "NUEVO LAREDO": "NL",
+            "DALLAS": "DL",
+            "CHICAGO": "CH",
+            "GUADALAJARA": "GD",
+            "MONTERREY": "MT",
+            "QUERETARO": "QT",
+            "LEON": "LN",
+            "TLAXCALA": "TL",
+            "OTRO": "OT"
+        }
+
+        prefijo = prefijos_sucursal.get(
+            sucursal,
+            "OT"
         )
+
+        # =========================
+        # TEMP FOLIO GENERATOR
+        # =========================
+
+        consecutivo = 1
+
+        folio_solicitud = (
+            f"{prefijo}-{consecutivo:06d}"
+        )
+
+        # =========================
+        # SUCCESS POPUP
+        # =========================
+
+        @st.dialog("✅ Solicitud Enviada")
+        def mostrar_confirmacion():
+
+            st.success(
+                "Solicitud enviada correctamente."
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#151F6D;
+                    color:white;
+                    padding:35px;
+                    border-radius:18px;
+                    text-align:center;
+                    border:3px solid #BFA75F;
+                ">
+                    <div style="
+                        font-size:22px;
+                        font-weight:bold;
+                        margin-bottom:15px;
+                        color:#BFA75F;
+                    ">
+                        FOLIO DE SOLICITUD
+                    </div>
+
+                    <div style="
+                        font-size:54px;
+                        font-weight:900;
+                        letter-spacing:4px;
+                    ">
+                        {folio_solicitud}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            if st.button(
+                "Cerrar",
+                use_container_width=True
+            ):
+                st.rerun()
+
+        mostrar_confirmacion()
 
 # =================================
 # TAB 2 — COMPROBACION
