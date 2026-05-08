@@ -522,7 +522,20 @@ with tab_solicitud:
                 "Cerrar",
                 use_container_width=True
             ):
-                st.rerun()
+
+                # clear form state
+                keys_to_clear = [
+                    "conceptos_gastos",
+                    "tipo_gasto",
+                    "descripcion_otros",
+                    "monto_estimado"
+                ]
+
+                for k in keys_to_clear:
+                    if k in st.session_state:
+                        del st.session_state[k]
+
+                st.switch_page("pages/9_ Viaticos.py")
 
         mostrar_confirmacion()
 
