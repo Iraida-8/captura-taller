@@ -740,6 +740,35 @@ with tab_comprobacion:
                 key="gasto_sin_comp"
             )
 
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col4, col5 = st.columns(2)
+
+        with col4:
+
+            aplica_iva = st.checkbox(
+                "Aplica IVA",
+                key="aplica_iva"
+            )
+
+            iva_porcentaje = st.selectbox(
+                "IVA %",
+                [
+                    8,
+                    12,
+                    16
+                ],
+                disabled=not aplica_iva,
+                key="iva_porcentaje"
+            )
+
+        with col5:
+
+            aplica_retencion = st.checkbox(
+                "Aplica Retención ISR",
+                key="aplica_retencion"
+            )
+
         # =========================
         # ADD BUTTON
         # =========================
@@ -754,10 +783,50 @@ with tab_comprobacion:
                 tipo_gasto_comp != "Selecciona un tipo"
             ):
 
-                impuesto_acreditable = 0
-                total_comprobado = (
+                # =========================
+                # BASE TOTAL
+                # =========================
+
+                base_total = (
                     gasto_con_comp +
-                    gasto_sin_comp +
+                    gasto_sin_comp
+                )
+
+                # =========================
+                # IMPUESTO ACREDITABLE
+                # =========================
+
+                impuesto_acreditable = 0
+
+                if (
+                    gasto_con_comp > 0
+                    and aplica_iva
+                ):
+
+                    impuesto_acreditable = (
+                        gasto_con_comp *
+                        (iva_porcentaje / 100)
+                    )
+
+                # =========================
+                # RETENCION ISR
+                # =========================
+
+                if (
+                    gasto_con_comp > 0
+                    and aplica_retencion
+                ):
+
+                    impuesto_acreditable -= (
+                        gasto_con_comp * 0.0125
+                    )
+
+                # =========================
+                # TOTAL
+                # =========================
+
+                total_comprobado = (
+                    base_total +
                     impuesto_acreditable
                 )
 
