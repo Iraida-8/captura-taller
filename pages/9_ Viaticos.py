@@ -300,192 +300,168 @@ with tab_solicitud:
     # PART 2: THE FORM
     # =========================
 
-    st.markdown(
-        """
-        <style>
-
-        .table-header {
-            background: white;
-            color: black;
-            border: 2px solid black;
-            padding: 14px;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .table-cell {
-            background: white;
-            color: black;
-            border-left: 2px solid black;
-            border-right: 2px solid black;
-            border-bottom: 1px dotted black;
-            padding: 12px;
-            font-size: 18px;
-            min-height: 58px;
-            display: flex;
-            align-items: center;
-        }
-
-        .table-total {
-            background: white;
-            color: black;
-            border: 2px solid black;
-            padding: 14px;
-            font-size: 20px;
-            font-weight: bold;
-            min-height: 58px;
-            display: flex;
-            align-items: center;
-        }
-
-        .obs-header {
-            background: #9f9f9f;
-            color: black;
-            border: 2px solid black;
-            text-align: center;
-            letter-spacing: 8px;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 12px;
-            margin-bottom: 0px;
-        }
-
-        div[data-testid="stNumberInput"] input {
-            text-align: left;
-            font-size: 18px;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
     # =========================
-    # HEADER
+    # ESTIMACION DE GASTOS
     # =========================
 
-    col_h1, col_h2 = st.columns([7, 3], gap="small")
+    with st.container(border=True):
 
-    with col_h1:
-        st.markdown(
-            '<div class="table-header">ESTIMACION DE GASTOS DE VIAJE A INCURRIR</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown("## 💰 Estimacion de Gastos de Viaje a Incurrir")
 
-    with col_h2:
-        st.markdown(
-            '<div class="table-header" style="text-align:center; justify-content:center; display:flex;">TOTAL ESTIMADO</div>',
-            unsafe_allow_html=True
-        )
+        # =========================
+        # SESSION STATE
+        # =========================
 
-    # =========================
-    # ROW BUILDER
-    # =========================
+        if "conceptos_gastos" not in st.session_state:
+            st.session_state.conceptos_gastos = []
 
-    def fila_gasto(nombre, key):
+        # =========================
+        # INPUTS
+        # =========================
 
-        c1, c2 = st.columns([7, 3], gap="small")
+        col1, col2, col3 = st.columns([2, 3, 2])
 
-        with c1:
-            st.markdown(
-                f'<div class="table-cell">{nombre}</div>',
-                unsafe_allow_html=True
+        with col1:
+
+            tipo_gasto = st.selectbox(
+                "Tipo",
+                [
+                    "Selecciona un tipo",
+                    "TRANSPORTACION TERRESTRE",
+                    "HOSPEDAJE",
+                    "ALIMENTOS",
+                    "PROPINAS",
+                    "TAXIS",
+                    "OTROS"
+                ],
+                key="tipo_gasto"
             )
 
-        with c2:
-            valor = st.number_input(
-                label=nombre,
+        with col2:
+
+            descripcion_otros = st.text_input(
+                "Describir (Otros)",
+                disabled=tipo_gasto != "OTROS",
+                key="descripcion_otros"
+            )
+
+        with col3:
+
+            monto_estimado = st.number_input(
+                "Monto Estimado",
                 min_value=0.0,
                 step=100.0,
-                key=key,
-                label_visibility="collapsed"
+                key="monto_estimado"
             )
 
-        return valor
+        # =========================
+        # ADD BUTTON
+        # =========================
 
-    # =========================
-    # INPUT ROWS
-    # =========================
+        if st.button(
+            "➕ Agregar Concepto",
+            use_container_width=True
+        ):
 
-    transporte = fila_gasto(
-        "TRANSPORTACION TERRESTRE",
-        "transporte"
-    )
+            descripcion_final = ""
 
-    hospedaje = fila_gasto(
-        "HOSPEDAJE",
-        "hospedaje"
-    )
+            if tipo_gasto == "OTROS":
+                descripcion_final = descripcion_otros
 
-    alimentos = fila_gasto(
-        "ALIMENTOS",
-        "alimentos"
-    )
+            if tipo_gasto == "Selecciona un tipo":
 
-    propinas = fila_gasto(
-        "PROPINAS",
-        "propinas"
-    )
+                st.warning("Selecciona un tipo.")
 
-    taxis = fila_gasto(
-        "TAXIS",
-        "taxis"
-    )
+            elif monto_estimado <= 0:
 
-    otros = fila_gasto(
-        "OTROS (Describir)",
-        "otros"
-    )
+                st.warning("Ingresa un monto válido.")
 
-    # =========================
-    # TOTALS
-    # =========================
+            else:
 
-    total_estimado = (
-        transporte
-        + hospedaje
-        + alimentos
-        + propinas
-        + taxis
-        + otros
-    )
+                st.session_state.conceptos_gastos.append({
+                    "Tipo": tipo_gasto,
+                    "Descripcion": descripcion_final,
+                    "Monto": monto_estimado
+                })
 
-    c_total1, c_total2 = st.columns([7, 3], gap="small")
+                st.success("Concepto agregado correctamente.")
 
-    with c_total1:
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        if st.session_state.conceptos_gastos:
+
+            df_conceptos = pd.DataFrame(
+                st.session_state.conceptos_gastos
+            )
+
+            df_display = df_conceptos.copy()
+
+            df_display["Monto"] = df_display["Monto"].apply(
+                lambda x: f"$ {x:,.2f}"
+            )
+
+            st.dataframe(
+                df_display,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            total_estimado = (
+                df_conceptos["Monto"]
+                .sum()
+            )
+
+        else:
+
+            st.info(
+                "No hay conceptos agregados."
+            )
+
+            total_estimado = 0
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # =========================
+        # TOTAL
+        # =========================
+
         st.markdown(
-            '<div class="table-total" style="justify-content:flex-end;">Importe estimado de gastos de viaje</div>',
+            f"""
+            <div style="
+                background:white;
+                color:black;
+                border:2px solid black;
+                padding:14px;
+                font-size:24px;
+                font-weight:bold;
+                text-align:right;
+            ">
+                TOTAL ESTIMADO: $ {total_estimado:,.2f}
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-    with c_total2:
-        st.markdown(
-            f'<div class="table-total">$ {total_estimado:,.2f}</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # =========================
-    # LOWER SECTION
-    # =========================
-
-    col_obs, col_tot = st.columns([1.2, 1])
-
-    with col_obs:
-
-        st.markdown(
-            '<div class="obs-header">OBSERVACIONES</div>',
-            unsafe_allow_html=True
-        )
+        # =========================
+        # OBSERVACIONES
+        # =========================
 
         observaciones = st.text_area(
-            "",
-            height=170,
-            label_visibility="collapsed"
+            "Observaciones",
+            height=150
         )
 
-    with col_tot:
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # =========================
+        # ANTICIPO
+        # =========================
 
         anticipo = st.number_input(
             "(-) Anticipo para gastos de viaje entregado",
@@ -499,30 +475,20 @@ with tab_solicitud:
         st.markdown(
             f"""
             <div style="
-                color:white;
-                font-size:24px;
-                font-weight:bold;
-                margin-top:40px;
-                margin-bottom:15px;
-            ">
-                Diferencia a cargo (favor)
-            </div>
-
-            <div style="
                 background:white;
                 color:black;
                 border:2px solid black;
-                padding:12px;
+                padding:14px;
                 font-size:24px;
                 font-weight:bold;
+                text-align:right;
+                margin-top:15px;
             ">
-                $ {diferencia:,.2f}
+                DIFERENCIA A CARGO (FAVOR): $ {diferencia:,.2f}
             </div>
             """,
             unsafe_allow_html=True
         )
-
-    st.divider()
 
     submitted = st.button(
         "💳 Enviar Solicitud",
