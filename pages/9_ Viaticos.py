@@ -492,7 +492,7 @@ with tab_solicitud:
         mostrar_confirmacion()
 
 # =================================
-# TAB 2 — COMPROBACION
+# TAB 2 — COMPROBACION.
 # =================================
 with tab_comprobacion:
 
