@@ -753,7 +753,7 @@ with tab_comprobacion:
 
         with col5:
 
-            iva_inline_col1, iva_inline_col2 = st.columns([0.32, 1])
+            iva_inline_col1, iva_inline_col2 = st.columns([0.18, 1])
 
             with iva_inline_col1:
 
