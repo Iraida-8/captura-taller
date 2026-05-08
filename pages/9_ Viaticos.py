@@ -299,7 +299,7 @@ with tab_solicitud:
                     "GASOLINA",
                     "OTROS"
                 ],
-                
+
                 key=f"tipo_gasto_{FORM_VERSION}"
             )
 
@@ -732,7 +732,8 @@ with tab_comprobacion:
                     "PROPINAS",
                     "TAXIS",
                     "CASETAS",
-                    "GASOLINA"
+                    "GASOLINA",
+                    "OTROS"
                 ],
                 key=f"tipo_gasto_comp_{COMP_VERSION}"
             )
