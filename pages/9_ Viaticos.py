@@ -72,44 +72,22 @@ st.divider()
 # HEADER
 # =================================
 
-assets_dir = Path(__file__).parent / "assets"
-logo_path = assets_dir / "pg_brand.png"
-
-col_logo, col_title, col_spacer = st.columns([1, 6, 1])
-
-with col_logo:
-
-    if logo_path.exists():
-
-        img = Image.open(logo_path)
-
-        st.image(
-            img,
-            width=95
-        )
-
-with col_title:
-
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            border:3px solid #151F6D;
-            padding:14px;
-            margin-top:18px;
-            background:white;
-            color:#151F6D;
-            font-size:38px;
-            font-weight:bold;
-            letter-spacing:1px;
-        ">
-            SOLICITUD DE VIATICOS Y REEMBOLSOS
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        margin-top:10px;
+        margin-bottom:25px;
+        color:white;
+        font-size:42px;
+        font-weight:800;
+        letter-spacing:1px;
+    ">
+        SOLICITUD DE VIATICOS Y REEMBOLSOS
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # =================================
 # TABS
