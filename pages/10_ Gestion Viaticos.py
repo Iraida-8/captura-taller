@@ -163,7 +163,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # KPI CARDS
 # =================================
 
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 
 def render_kpi_card(
     title,
@@ -217,7 +217,7 @@ with kpi2:
 with kpi3:
 
     render_kpi_card(
-        "Autorizados",
+        "Autorizadas",
         autorizados,
         "✅",
         "#10B981"
@@ -230,6 +230,15 @@ with kpi4:
         verificando,
         "🔎",
         "#38BDF8"
+    )
+
+with kpi5:
+
+    render_kpi_card(
+        "Rechazadas",
+        0,
+        "❌",
+        "#EF4444"
     )
 
 st.markdown("<br><br>", unsafe_allow_html=True)
