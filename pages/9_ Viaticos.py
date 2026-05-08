@@ -633,46 +633,6 @@ with tab_comprobacion:
 
             sucursales_final_comp = [sucursal_comp]
 
-        # =========================
-        # ROW 6
-        # =========================
-
-        st.markdown("### Sucursal")
-
-        sucursal_comp = st.radio(
-            "",
-            [
-                "NUEVO LAREDO",
-                "DALLAS",
-                "CHICAGO",
-                "GUADALAJARA",
-                "MONTERREY",
-                "QUERETARO",
-                "LEON",
-                "TLAXCALA",
-                "OTRO"
-            ],
-            horizontal=True,
-            key=f"sucursal_comp_{COMP_VERSION}",
-            label_visibility="collapsed"
-        )
-
-        if sucursal_comp == "OTRO":
-
-            sucursal_otro_comp = st.text_input(
-                "Especificar",
-                key=f"sucursal_otro_comp_{COMP_VERSION}"
-            )
-
-        else:
-
-            st.text_input(
-                "Especificar",
-                value="",
-                disabled=True,
-                key=f"sucursal_otro_disabled_comp_{COMP_VERSION}"
-            )
-
     st.divider()
 
     # =========================
