@@ -160,79 +160,58 @@ st.markdown(
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =================================
-# KPI CARDS
+# KPI STRIP
 # =================================
 
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+st.markdown("### Resumen General")
 
-def render_kpi_card(
-    title,
-    value,
-    emoji,
-    border_color
-):
+k1, k2, k3, k4, k5 = st.columns(5)
 
-    with st.container(border=True):
+def postit(col, titulo, valor, color):
+
+    with col:
 
         st.markdown(
             f"""
-            ### {emoji} {title}
-            """,
-            unsafe_allow_html=False
-        )
+            <div style="
+                background:{color};
+                padding:18px;
+                border-radius:14px;
+                text-align:center;
+                box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                color:#111;
+                min-height:140px;
+            ">
+                <div style="
+                    font-size:0.9rem;
+                    font-weight:700;
+                ">
+                    {titulo}
+                </div>
 
-        st.markdown(
-            f"""
-            <div style='
-                color:{border_color};
-                font-size:58px;
-                font-weight:800;
-                line-height:1;
-                margin-top:10px;
-            '>
-                {value}
+                <div style="
+                    font-size:2.3rem;
+                    font-weight:900;
+                    margin-top:10px;
+                ">
+                    {valor}
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-with kpi1:
+postit(k1, "Total", total_registros, "#E2E3FF")
 
-    render_kpi_card(
-        "Total",
-        total_registros,
-        "📊",
-        "#BFA75F"
-    )
+postit(k2, "Pendientes", pendientes, "#FFF3CD")
 
-with kpi2:
+postit(k3, "Verificando", verificando, "#D1ECF1")
 
-    render_kpi_card(
-        "Pendientes",
-        pendientes,
-        "⏳",
-        "#F59E0B"
-    )
+postit(k4, "Autorizadas", autorizados, "#D4EDDA")
 
-with kpi3:
+postit(k5, "Rechazadas", 0, "#F8D7DA")
 
-    render_kpi_card(
-        "Autorizados",
-        autorizados,
-        "✅",
-        "#10B981"
-    )
-
-with kpi4:
-
-    render_kpi_card(
-        "Verificando",
-        verificando,
-        "🔎",
-        "#38BDF8"
-    )
-
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
 # -------------------------------
 # CSS
