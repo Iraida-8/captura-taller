@@ -123,8 +123,8 @@ st.markdown(
         padding-bottom: 3rem;
     }
 
-    /* Text */
-    h1, h2, h3, p, span, label {
+    /* Headers ONLY */
+    h1, h2, h3 {
         color: white;
     }
 
