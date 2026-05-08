@@ -40,139 +40,91 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-# =================================
-# CSS THEME — BLUE + YELLOW
-# =================================
+# -------------------------------
+# CSS
+# -------------------------------
 st.markdown(
     """
     <style>
-
     /* Hide sidebar */
     [data-testid="stSidebar"] {
         display: none;
     }
 
-    /* Main background */
+    /* App background */
     .stApp {
         background-color: #151F6D;
     }
 
-    /* Main container */
+    /* Give page breathing room */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 3rem;
     }
 
-    /* Titles */
+    /* =========================
+       HEADER STYLE
+       ========================= */
     h1 {
+        font-size: 1.9rem;
+        margin-bottom: 0.2rem;
         color: #FFFFFF;
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
     }
 
     h2, h3 {
+        margin-top: 0.5rem;
         color: #BFA75F;
-        font-weight: 600;
     }
 
-    /* General text */
-    p, label, span {
-        color: #F5F5F5 !important;
-    }
-
-    /* Caption text */
-    .stCaption {
-        color: #D9D9D9 !important;
-    }
-
-    /* Divider */
-    hr {
-        border-color: rgba(191, 167, 95, 0.25);
-    }
-
-    /* File uploader */
-    [data-testid="stFileUploader"] {
-        background-color: #1B267A;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        border-radius: 14px;
-        padding: 1rem;
-    }
-
-    /* Checkbox labels */
-    .stCheckbox label {
-        color: #FFFFFF !important;
-    }
-
-    /* Buttons */
-    div.stButton > button,
-    div[data-testid="stDownloadButton"] > button {
-        border-radius: 12px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        border: none;
-    }
-
-    /* Standard buttons */
+    /* =========================
+       BIG MODULE BUTTONS
+       ========================= */
     div.stButton > button {
+        height: 95px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        border-radius: 16px;
+        padding: 1.2rem;
+        white-space: normal;
+
         background-color: #1B267A;
-        color: white;
+        color: #FFFFFF;
         border: 1px solid rgba(191, 167, 95, 0.25);
-        height: 42px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        transition: all 0.2s ease-in-out;
     }
 
+    /* Hover */
     div.stButton > button:hover {
+        transform: translateY(-2px);
         background-color: #24338C;
         border-color: #BFA75F;
         color: #BFA75F;
-        transform: translateY(-1px);
     }
 
-    /* Download button */
-    div[data-testid="stDownloadButton"] > button {
-        background-color: #BFA75F;
-        color: #151F6D;
-        box-shadow: 0 4px 12px rgba(191, 167, 95, 0.20);
-    }
-
-    div[data-testid="stDownloadButton"] > button:hover {
-        background-color: #d4bc73;
-        color: #151F6D;
-        transform: translateY(-1px);
-    }
-
-    /* Secondary nav button */
+    /* =========================
+       LOGOUT BUTTON
+       ========================= */
     button[kind="secondary"] {
-        background-color: transparent !important;
-        color: #BFA75F !important;
-        border: 1px solid #BFA75F !important;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 12px;
+        background-color: transparent;
+        color: #BFA75F;
+        border: 1px solid #BFA75F;
+        font-weight: 600;
     }
 
     button[kind="secondary"]:hover {
-        background-color: #BFA75F !important;
-        color: #151F6D !important;
+        background-color: #BFA75F;
+        color: #151F6D;
     }
 
-    /* Dataframes */
-    [data-testid="stDataFrame"] {
-        border: 1px solid rgba(191, 167, 95, 0.20);
-        border-radius: 12px;
-        overflow: hidden;
+    /* Text */
+    p, label, span {
+        color: #F5F5F5;
     }
-
-    /* Success / warning / info messages */
-    div[data-baseweb="notification"] {
-        border-radius: 12px;
-    }
-
-    /* Metric containers if used later */
-    [data-testid="metric-container"] {
-        background-color: #1B267A;
-        border: 1px solid rgba(191, 167, 95, 0.20);
-        padding: 1rem;
-        border-radius: 14px;
-    }
-
     </style>
     """,
     unsafe_allow_html=True
