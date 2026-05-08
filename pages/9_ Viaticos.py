@@ -106,21 +106,13 @@ with tab_solicitud:
     # USER DATA
     # =================================
 
-    user_email = st.session_state.get("user_email", "")
+    user = st.session_state.user
 
-    perfil_response = (
-        supabase
-        .table("profiles")
-        .select("full_name")
-        .eq("email", user_email)
-        .limit(1)
-        .execute()
+    nombre_usuario = (
+        user.get("name")
+        or user.get("email")
+        or ""
     )
-
-    nombre_usuario = ""
-
-    if perfil_response.data:
-        nombre_usuario = perfil_response.data[0].get("full_name", "")
 
     # =================================
     # INFORMACION GENERAL
