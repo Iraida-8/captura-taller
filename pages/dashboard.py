@@ -181,14 +181,14 @@ def has_access(keys):
 
 
 # =============================
-# 1. GESTION DE ORDENES DE TALLER
+# 1. GENERACION DE PASES Y SOLICITUDES
 # =============================
-section_ordenes = ["pase_taller", "autorizacion", "solicitud_viaticos"]
+section_generacion = ["pase_taller", "solicitud_viaticos"]
 
-if has_access(section_ordenes):
-    st.subheader("🏭 Gestión y Captura de Órdenes de Taller")
+if has_access(section_generacion):
+    st.subheader("🏭 Generación de Pases y Solicitudes")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if "pase_taller" in access:
@@ -200,15 +200,6 @@ if has_access(section_ordenes):
                 st.switch_page("pages/3_ Pase a Taller.py")
 
     with col2:
-        if "autorizacion" in access:
-            if st.button(
-                "✅  Autorización y Gestión de Pases de Taller",
-                use_container_width=True,
-                key="btn_autorizacion"
-            ):
-                st.switch_page("pages/4_ Autorizacion.py")
-
-    with col3:
         if "solicitud_viaticos" in access:
             if st.button(
                 "💳  Solicitud de Viáticos y Reembolsos",
@@ -221,7 +212,38 @@ if has_access(section_ordenes):
 
 
 # =============================
-# 2. CONSULTAS
+# 2. GESTION DE ORDENES Y PASES
+# =============================
+section_gestion = ["autorizacion", "gestion_viaticos"]
+
+if has_access(section_gestion):
+    st.subheader("📋 Gestión de Órdenes y Pases")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if "autorizacion" in access:
+            if st.button(
+                "✅  Autorización y Gestión de Pases de Taller",
+                use_container_width=True,
+                key="btn_autorizacion"
+            ):
+                st.switch_page("pages/4_ Autorizacion.py")
+
+    with col2:
+        if "gestion_viaticos" in access:
+            if st.button(
+                "💼  Gestión de Viáticos",
+                use_container_width=True,
+                key="btn_gestion_viaticos"
+            ):
+                st.switch_page("pages/10_ Gestion Viaticos.py")
+
+    st.divider()
+
+
+# =============================
+# 3. CONSULTAS
 # =============================
 section_consultas = ["consultar_reparacion", "consulta_reportes"]
 
@@ -244,7 +266,7 @@ if has_access(section_consultas):
 
 
 # =============================
-# 3. EXTRAS
+# 4. EXTRAS
 # =============================
 section_extras = ["ifuel", "lector_pdf"]
 
@@ -266,7 +288,7 @@ if has_access(section_extras):
     st.divider()
 
 # =============================
-# 4. AUDIT
+# 5. AUDIT
 # =============================
 section_audit = ["prepara_reportes", "gestion_unidades"]
 
