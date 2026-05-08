@@ -166,45 +166,41 @@ def render_kpi_card(
 
     st.markdown(
         f"""
-        <div style='
-            background:{bg_color};
-            border:1px solid rgba(255,255,255,0.08);
-            border-left:6px solid {border_color};
-            border-radius:18px;
-
-            min-height:170px;
-            max-height:170px;
-
-            padding:22px;
-
-            display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-
-            box-shadow:0 4px 12px rgba(0,0,0,0.15);
-        '>
-
-            <div style='
-                color:white;
-                font-size:20px;
-                font-weight:700;
-            '>
-                {emoji} {title}
-            </div>
-
-            <div style='
-                color:white;
-                font-size:58px;
-                font-weight:800;
-                line-height:1;
-            '>
-                {value}
-            </div>
-
-        </div>
+        <style>
+        .kpi-card-{title} {{
+            background: {bg_color};
+            border-left: 6px solid {border_color};
+            border-radius: 18px;
+            padding: 22px;
+            height: 170px;
+        }}
+        </style>
         """,
         unsafe_allow_html=True
     )
+
+    with st.container(border=False):
+
+        st.markdown(
+            f"""
+            <div class="kpi-card-{title}">
+                <div style="font-size:20px;font-weight:700;color:white;">
+                    {emoji} {title}
+                </div>
+
+                <div style="
+                    margin-top:30px;
+                    font-size:58px;
+                    font-weight:800;
+                    color:white;
+                    line-height:1;
+                ">
+                    {value}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 with kpi1:
 
