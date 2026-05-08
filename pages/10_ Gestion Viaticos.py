@@ -172,14 +172,14 @@ def render_kpi(title, value, emoji):
             background:white;
             border-left:6px solid #BFA75F;
             border-radius:18px;
-            padding:24px;
-            height:150px;
+            padding:20px;
+            height:140px;
             box-shadow:0 4px 12px rgba(0,0,0,0.12);
         ">
             <div style="
                 color:#6B7280;
-                font-size:20px;
-                margin-bottom:10px;
+                font-size:18px;
+                margin-bottom:15px;
                 font-weight:600;
             ">
                 {emoji} {title}
@@ -189,6 +189,7 @@ def render_kpi(title, value, emoji):
                 color:#151F6D;
                 font-size:54px;
                 font-weight:800;
+                line-height:1;
             ">
                 {value}
             </div>
