@@ -827,40 +827,7 @@ with tab_comprobacion:
         # TOTAL ROW
         # =========================
 
-        anticipo_viaje = 0.0
-
         col1, col2, col3 = st.columns(3)
-
-        # =================================
-        # TOTAL COMPROBADO
-        # =================================
-
-        with col1:
-
-            st.markdown("#### TOTAL COMPROBADO")
-
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:#262730;
-                    color:white;
-                    border-radius:10px;
-                    padding:0.65rem 1rem;
-                    border:1px solid rgba(250,250,250,0.2);
-                    font-size:16px;
-                    min-height:42px;
-                    display:flex;
-                    align-items:center;
-                ">
-                    $ {total_general:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        # =================================
-        # ANTICIPO VIAJE
-        # =================================
 
         with col2:
 
@@ -871,35 +838,26 @@ with tab_comprobacion:
                 key="anticipo_viaje"
             )
 
-        # =================================
-        # DIFERENCIA
-        # =================================
-
         diferencia_cargo = (
             anticipo_viaje - total_general
         )
 
+        with col1:
+
+            st.text_input(
+                "TOTAL COMPROBADO",
+                value=f"$ {total_general:,.2f}",
+                disabled=True,
+                key=f"total_comprobado_{total_general}"
+            )
+
         with col3:
 
-            st.markdown("#### DIFERENCIA A CARGO (FAVOR)")
-
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:#262730;
-                    color:white;
-                    border-radius:10px;
-                    padding:0.65rem 1rem;
-                    border:1px solid rgba(250,250,250,0.2);
-                    font-size:16px;
-                    min-height:42px;
-                    display:flex;
-                    align-items:center;
-                ">
-                    $ {diferencia_cargo:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.text_input(
+                "DIFERENCIA A CARGO (FAVOR)",
+                value=f"$ {diferencia_cargo:,.2f}",
+                disabled=True,
+                key=f"diferencia_cargo_{diferencia_cargo}"
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
