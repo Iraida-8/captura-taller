@@ -560,7 +560,15 @@ for row in solicitudes:
 
     folio = row["folio_solicitud"]
 
-    if folio not in folios_ya_utilizados:
+    estatus = row.get(
+        "estatus",
+        ""
+    )
+
+    if (
+        folio not in folios_ya_utilizados
+        and estatus == "Aprobado"
+    ):
 
         folios_solicitud.append(folio)
 
