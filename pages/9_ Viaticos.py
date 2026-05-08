@@ -742,7 +742,7 @@ with tab_comprobacion:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col4, col5 = st.columns(2)
+        col4, col5, col6 = st.columns([1, 1, 1.4])
 
         with col4:
 
@@ -750,6 +750,8 @@ with tab_comprobacion:
                 "Aplica IVA",
                 key="aplica_iva"
             )
+
+        with col5:
 
             iva_porcentaje = st.selectbox(
                 "IVA %",
@@ -762,7 +764,7 @@ with tab_comprobacion:
                 key="iva_porcentaje"
             )
 
-        with col5:
+        with col6:
 
             aplica_retencion = st.checkbox(
                 "Aplica Retención ISR",
