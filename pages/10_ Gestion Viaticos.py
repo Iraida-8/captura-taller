@@ -332,23 +332,6 @@ st.markdown(
     p, label, span {
         color: #F5F5F5;
     }
-
-    div[data-testid="stMetric"] {
-        background: transparent !important;
-        border: none !important;
-        text-align: center;
-    }
-
-    div[data-testid="stMetricLabel"] {
-        justify-content: center;
-    }
-
-    div[data-testid="stMetricValue"] {
-        justify-content: center;
-        font-size: 3.4rem;
-        font-weight: 800;
-        color: white;
-    }
     </style>
     """,
     unsafe_allow_html=True
