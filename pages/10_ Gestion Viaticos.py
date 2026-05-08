@@ -104,6 +104,146 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
+# =================================
+# KPI VALUES
+# =================================
+
+total_registros = (
+    len(df_solicitudes) +
+    len(df_comprobaciones)
+)
+
+pendientes = 0
+autorizados = 0
+verificando = 0
+
+if not df_solicitudes.empty:
+
+    pendientes = len(
+        df_solicitudes[
+            df_solicitudes["status"] == "PENDIENTE"
+        ]
+    )
+
+    autorizados = len(
+        df_solicitudes[
+            df_solicitudes["status"] == "AUTORIZADO"
+        ]
+    )
+
+if not df_comprobaciones.empty:
+
+    verificando = len(
+        df_comprobaciones[
+            df_comprobaciones["status"] == "VERIFICANDO"
+        ]
+    )
+
+# =================================
+# HEADER
+# =================================
+
+st.markdown(
+    """
+    <div style="
+        font-size:48px;
+        font-weight:800;
+        color:white;
+        margin-bottom:10px;
+    ">
+        ⚙ Gestión de Viáticos
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# =================================
+# KPI CARDS
+# =================================
+
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+
+def render_kpi_card(
+    title,
+    value,
+    emoji,
+    border_color
+):
+
+    st.markdown(
+        f"""
+        <div style="
+            background:white;
+            border-left:7px solid {border_color};
+            border-radius:18px;
+            padding:24px;
+            height:145px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.12);
+        ">
+
+            <div style="
+                color:#6B7280;
+                font-size:20px;
+                font-weight:600;
+                margin-bottom:14px;
+            ">
+                {emoji} {title}
+            </div>
+
+            <div style="
+                color:#151F6D;
+                font-size:56px;
+                font-weight:800;
+                line-height:1;
+            ">
+                {value}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with kpi1:
+
+    render_kpi_card(
+        "Total",
+        total_registros,
+        "📊",
+        "#BFA75F"
+    )
+
+with kpi2:
+
+    render_kpi_card(
+        "Pendientes",
+        pendientes,
+        "⏳",
+        "#F59E0B"
+    )
+
+with kpi3:
+
+    render_kpi_card(
+        "Autorizados",
+        autorizados,
+        "✅",
+        "#10B981"
+    )
+
+with kpi4:
+
+    render_kpi_card(
+        "Verificando",
+        verificando,
+        "🔎",
+        "#38BDF8"
+    )
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 # -------------------------------
 # CSS
 # -------------------------------
