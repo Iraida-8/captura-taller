@@ -483,8 +483,30 @@ with tab_solicitud:
         mostrar_confirmacion()
 
 # =================================
-# TAB 2 — COMPROBACION.
+# TAB 2 — COMPROBACION
 # =================================
+
+# =================================
+# LOAD SOLICITUDES
+# =================================
+
+solicitudes_data = (
+    supabase
+    .table("solicitud_viaje")
+    .select("*")
+    .order("folio_solicitud")
+    .execute()
+)
+
+solicitudes = solicitudes_data.data if solicitudes_data.data else []
+
+folios_solicitud = [
+    "Selecciona folio"
+] + [
+    row["folio_solicitud"]
+    for row in solicitudes
+]
+
 with tab_comprobacion:
 
     st.subheader("🧾 Comprobacion de Gastos de Viaje")
@@ -495,9 +517,11 @@ with tab_comprobacion:
     # DATOS CONTABLES
     # =========================
 
-    ref_entrega_comp = st.text_input(
+    folio_seleccionado = st.selectbox(
         "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-        key=f"ref_entrega_comp_{COMP_VERSION}"
+        folios_solicitud,
+        index=0,
+        key=f"folio_seleccionado_{COMP_VERSION}"
     )
 
     st.divider()
