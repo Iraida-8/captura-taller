@@ -837,11 +837,25 @@ with tab_comprobacion:
 
         with col1:
 
-            st.text_input(
-                "TOTAL COMPROBADO",
-                value=f"$ {total_general:,.2f}",
-                disabled=True,
-                key="total_comprobado_display"
+            st.markdown("#### TOTAL COMPROBADO")
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:#262730;
+                    color:white;
+                    border-radius:10px;
+                    padding:0.65rem 1rem;
+                    border:1px solid rgba(250,250,250,0.2);
+                    font-size:16px;
+                    min-height:42px;
+                    display:flex;
+                    align-items:center;
+                ">
+                    $ {total_general:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
         # =================================
@@ -867,11 +881,25 @@ with tab_comprobacion:
 
         with col3:
 
-            st.text_input(
-                "DIFERENCIA A CARGO (FAVOR)",
-                value=f"$ {diferencia_cargo:,.2f}",
-                disabled=True,
-                key="diferencia_cargo_display"
+            st.markdown("#### DIFERENCIA A CARGO (FAVOR)")
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:#262730;
+                    color:white;
+                    border-radius:10px;
+                    padding:0.65rem 1rem;
+                    border:1px solid rgba(250,250,250,0.2);
+                    font-size:16px;
+                    min-height:42px;
+                    display:flex;
+                    align-items:center;
+                ">
+                    $ {diferencia_cargo:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
