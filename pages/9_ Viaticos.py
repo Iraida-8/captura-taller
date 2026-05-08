@@ -489,6 +489,19 @@ with tab_comprobacion:
 
     st.subheader("🧾 Comprobacion de Gastos de Viaje")
 
+    st.divider()
+
+    # =========================
+    # DATOS CONTABLES
+    # =========================
+
+    ref_entrega_comp = st.text_input(
+        "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
+        key=f"ref_entrega_comp_{COMP_VERSION}"
+    )
+
+    st.divider()
+
     # =================================
     # INFORMACION GENERAL
     # =================================
@@ -633,18 +646,6 @@ with tab_comprobacion:
 
             sucursales_final_comp = [sucursal_comp]
 
-    st.divider()
-
-    # =========================
-    # DATOS CONTABLES
-    # =========================
-
-    ref_entrega_comp = st.text_input(
-        "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-        key=f"ref_entrega_comp_{COMP_VERSION}"
-    )
-
-    st.divider()
 
     # =========================
     # IMPORTE DE GASTOS
