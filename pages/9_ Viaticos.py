@@ -21,6 +21,18 @@ require_login()
 require_access("solicitud_viaticos")
 
 # =================================
+# SUPABASE CONFIGURATION
+# =================================
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase()
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -912,18 +924,6 @@ with tab_comprobacion:
 
     if submitted_comp:
         st.success("Comprobación guardada correctamente.")
-
-# =================================
-# SUPABASE CONFIGURATION
-# =================================
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_SERVICE_KEY"]
-    )
-
-supabase = get_supabase()
 
 # -------------------------------
 # CSS
