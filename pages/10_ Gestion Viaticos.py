@@ -176,7 +176,7 @@ def render_kpi_card(
 
         st.markdown(
             f"""
-            ### {emoji} {title}
+            #### {emoji} {title}
             """,
             unsafe_allow_html=False
         )
