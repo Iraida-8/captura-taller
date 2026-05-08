@@ -332,16 +332,22 @@ with tab_solicitud:
             df_display.insert(0, "Eliminar", False)
 
             edited_df = st.data_editor(
-                df_display,
-                use_container_width=True,
-                hide_index=True,
-                disabled=[
-                    "Tipo",
-                    "Descripcion",
-                    "Monto"
-                ],
-                key=f"editor_solicitud_{FORM_VERSION}"
-            )
+            df_display,
+            use_container_width=True,
+            hide_index=True,
+            disabled=[
+                "Tipo",
+                "Descripcion",
+                "Monto"
+            ],
+            column_config={
+                "Eliminar": st.column_config.CheckboxColumn(
+                    "Eliminar",
+                    width="small"
+                )
+            },
+            key=f"editor_solicitud_{FORM_VERSION}"
+        )
 
             if st.button(
                 "🗑️ Eliminar Filas Seleccionadas",
@@ -994,6 +1000,12 @@ with tab_comprobacion:
                     "Impuesto Acreditable",
                     "Total Comprobado"
                 ],
+                column_config={
+                    "Eliminar": st.column_config.CheckboxColumn(
+                        "Eliminar",
+                        width="small"
+                    )
+                },
                 key=f"editor_comp_{COMP_VERSION}"
             )
 
