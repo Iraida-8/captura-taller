@@ -163,8 +163,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 # KPI STRIP
 # =================================
 
-st.markdown("### Resumen General")
-
 k1, k2, k3, k4, k5 = st.columns(5)
 
 def postit(col, titulo, valor, color):
@@ -180,20 +178,12 @@ def postit(col, titulo, valor, color):
                 text-align:center;
                 box-shadow:0 4px 10px rgba(0,0,0,0.08);
                 color:#111;
-                min-height:140px;
             ">
-                <div style="
-                    font-size:0.9rem;
-                    font-weight:700;
-                ">
+                <div style="font-size:0.9rem; font-weight:700;">
                     {titulo}
                 </div>
 
-                <div style="
-                    font-size:2.3rem;
-                    font-weight:900;
-                    margin-top:10px;
-                ">
+                <div style="font-size:2rem; font-weight:900; margin-top:6px;">
                     {valor}
                 </div>
             </div>
@@ -201,15 +191,15 @@ def postit(col, titulo, valor, color):
             unsafe_allow_html=True
         )
 
-postit(k1, "Total", total_registros, "#E2E3FF")
+postit(k1, "Total", total_registros, "#24338C")
 
-postit(k2, "Pendientes", pendientes, "#FFF3CD")
+postit(k2, "Pendientes", pendientes, "#7C4A03")
 
-postit(k3, "Verificando", verificando, "#D1ECF1")
+postit(k3, "Verificando", verificando, "#0C4A6E")
 
-postit(k4, "Autorizadas", autorizados, "#D4EDDA")
+postit(k4, "Autorizadas", autorizados, "#065F46")
 
-postit(k5, "Rechazadas", 0, "#F8D7DA")
+postit(k5, "Rechazadas", 0, "#7F1D1D")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
