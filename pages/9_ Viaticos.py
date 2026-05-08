@@ -524,6 +524,18 @@ with tab_comprobacion:
         key=f"folio_seleccionado_{COMP_VERSION}"
     )
 
+    solicitud_data = {}
+
+    if folio_seleccionado != "Selecciona folio":
+
+        solicitud_data = next(
+            (
+                row for row in solicitudes
+                if row["folio_solicitud"] == folio_seleccionado
+            ),
+            {}
+        )
+
     st.divider()
 
     # =================================
@@ -538,17 +550,25 @@ with tab_comprobacion:
 
         with col1:
 
+            empresas_lista = [
+                "Seleccione una opción...",
+                "SET FREIGHT",
+                "LINCOLN",
+                "PICUS",
+                "IGLOO",
+                "SET LOGIS PLUS"
+            ]
+
             empresa_servicio_comp = st.selectbox(
                 "Empresa que Brinda el Servicio",
-                [
-                    "Seleccione una opción...",
-                    "SET FREIGHT",
-                    "LINCOLN",
-                    "PICUS",
-                    "IGLOO",
-                    "SET LOGIS PLUS"
-                ],
-                index=0,
+                empresas_lista,
+                index=empresas_lista.index(
+                    solicitud_data.get(
+                        "empresa_brinda_servicio",
+                        "Seleccione una opción..."
+                    )
+                ),
+                disabled=True,
                 key=f"empresa_servicio_comp_{COMP_VERSION}"
             )
 
@@ -556,7 +576,10 @@ with tab_comprobacion:
 
             empleado_comp = st.text_input(
                 "Nombre del Empleado que Solicita",
-                value=nombre_usuario,
+                value=solicitud_data.get(
+                    "nombre_empleado_solicita",
+                    ""
+                ),
                 disabled=True,
                 key=f"empleado_comp_{COMP_VERSION}"
             )
