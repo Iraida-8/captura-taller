@@ -113,31 +113,22 @@ total_registros = (
     len(df_comprobaciones)
 )
 
-pendientes = 0
-autorizados = 0
-verificando = 0
+# =================================
+# TEMP COUNTS
+# =================================
 
-if not df_solicitudes.empty:
+# For now:
+# - solicitudes = pendientes
+# - comprobaciones = verificando
+# - autorizadas/rechazadas = future workflow
 
-    pendientes = len(
-        df_solicitudes[
-            df_solicitudes["status"] == "PENDIENTE"
-        ]
-    )
+pendientes = len(df_solicitudes)
 
-    autorizados = len(
-        df_solicitudes[
-            df_solicitudes["status"] == "AUTORIZADO"
-        ]
-    )
+verificando = len(df_comprobaciones)
 
-if not df_comprobaciones.empty:
+autorizadas = 0
 
-    verificando = len(
-        df_comprobaciones[
-            df_comprobaciones["status"] == "VERIFICANDO"
-        ]
-    )
+rechazadas = 0
 
 # =================================
 # HEADER
