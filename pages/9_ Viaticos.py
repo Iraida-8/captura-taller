@@ -497,16 +497,12 @@ with tab_comprobacion:
 
         st.markdown("## 📋 Informacion General")
 
-        # =========================
-        # ROW 1
-        # =========================
-
         col1, col2 = st.columns(2)
 
         with col1:
 
-            empresa_comp = st.selectbox(
-                "Nombre de la Compañia",
+            empresa_servicio_comp = st.selectbox(
+                "Empresa que Brinda el Servicio",
                 [
                     "Seleccione una opción...",
                     "SET FREIGHT",
@@ -516,7 +512,7 @@ with tab_comprobacion:
                     "SET LOGIS PLUS"
                 ],
                 index=0,
-                key=f"empresa_comp_{COMP_VERSION}"
+                key=f"empresa_servicio_comp_{COMP_VERSION}"
             )
 
         with col2:
@@ -528,48 +524,21 @@ with tab_comprobacion:
                 key=f"empleado_comp_{COMP_VERSION}"
             )
 
-        # =========================
-        # ROW 2
-        # =========================
-
-        motivo_comp = st.text_area(
+        motivo_viaje_comp = st.text_area(
             "Motivo del Viaje",
             height=100,
-            key=f"motivo_comp_{COMP_VERSION}"
+            key=f"motivo_viaje_comp_{COMP_VERSION}"
         )
-
-        # =========================
-        # ROW 3
-        # =========================
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            lugar_comp = st.text_input(
-                "Lugar a Donde se Realiza el Viaje",
-                key=f"lugar_comp_{COMP_VERSION}"
-            )
-
-        with col2:
-
-            periodo_comp = st.text_input(
-                "Periodo del Viaje",
-                key=f"periodo_comp_{COMP_VERSION}"
-            )
-
-        # =========================
-        # ROW 4
-        # =========================
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
 
-            fecha_comprobacion = st.date_input(
+            fecha_solicitud_comp = st.date_input(
                 "Fecha de Solicitud",
                 value=date.today(),
-                key=f"fecha_comprobacion_{COMP_VERSION}"
+                disabled=True,
+                key=f"fecha_solicitud_comp_{COMP_VERSION}"
             )
 
         with col2:
@@ -587,10 +556,6 @@ with tab_comprobacion:
                 value=date.today() + pd.Timedelta(days=1),
                 key=f"fecha_fin_comp_{COMP_VERSION}"
             )
-
-        # =========================
-        # ROW 5
-        # =========================
 
         col1, col2 = st.columns(2)
 
@@ -623,6 +588,50 @@ with tab_comprobacion:
                 index=0,
                 key=f"unidad_negocio_comp_{COMP_VERSION}"
             )
+
+        st.markdown("### Sucursal")
+
+        sucursal_comp = st.radio(
+            "",
+            [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "QUERETARO",
+                "LEON",
+                "TLAXCALA",
+                "OTRO"
+            ],
+            horizontal=True,
+            label_visibility="collapsed",
+            key=f"sucursal_comp_{COMP_VERSION}"
+        )
+
+        if sucursal_comp == "OTRO":
+
+            suc_otro_texto_comp = st.text_input(
+                "Especificar",
+                key=f"suc_otro_texto_comp_{COMP_VERSION}"
+            )
+
+            sucursales_final_comp = (
+                [suc_otro_texto_comp]
+                if suc_otro_texto_comp
+                else []
+            )
+
+        else:
+
+            st.text_input(
+                "Especificar",
+                value="",
+                disabled=True,
+                key=f"suc_otro_disabled_comp_{COMP_VERSION}"
+            )
+
+            sucursales_final_comp = [sucursal_comp]
 
         # =========================
         # ROW 6
