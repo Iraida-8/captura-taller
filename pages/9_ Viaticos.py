@@ -500,12 +500,41 @@ solicitudes_data = (
 
 solicitudes = solicitudes_data.data if solicitudes_data.data else []
 
-folios_solicitud = [
-    "Selecciona folio"
-] + [
-    row["folio_solicitud"]
-    for row in solicitudes
-]
+# =================================
+# LOAD COMPROBACIONES EXISTENTES
+# =================================
+
+comprobaciones_data = (
+    supabase
+    .table("comprobacion_viaje")
+    .select("folio_solicitud")
+    .execute()
+)
+
+folios_ya_utilizados = set()
+
+if comprobaciones_data.data:
+
+    folios_ya_utilizados = {
+        row["folio_solicitud"]
+        for row in comprobaciones_data.data
+    }
+
+folios_solicitud = ["Selecciona folio"]
+
+for row in solicitudes:
+
+    folio = row["folio_solicitud"]
+
+    if folio in folios_ya_utilizados:
+
+        display = f"{folio} — ACTUALIZADO"
+
+    else:
+
+        display = folio
+
+    folios_solicitud.append(display)
 
 with tab_comprobacion:
 
@@ -526,12 +555,14 @@ with tab_comprobacion:
 
     solicitud_data = {}
 
-    if folio_seleccionado != "Selecciona folio":
+    folio_real = folio_seleccionado.split(" — ")[0]
+
+    if folio_real != "Selecciona folio":
 
         solicitud_data = next(
             (
                 row for row in solicitudes
-                if row["folio_solicitud"] == folio_seleccionado
+                if row["folio_solicitud"] == folio_real
             ),
             {}
         )
@@ -998,6 +1029,14 @@ with tab_comprobacion:
 
     if submitted_comp:
 
+        if folio_real in folios_ya_utilizados:
+
+            st.error(
+                "Este folio ya fue actualizado."
+            )
+
+            st.stop()
+
         if folio_seleccionado == "Selecciona folio":
 
             st.error(
@@ -1053,7 +1092,7 @@ with tab_comprobacion:
                     observaciones_comp,
 
                 "estatus":
-                    "Pendiente"
+                    "Actualizado"
 
             }).execute()
 
