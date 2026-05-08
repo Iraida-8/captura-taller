@@ -694,32 +694,36 @@ with tab_comprobacion:
 
         st.markdown("### Sucursal")
 
-        sucursal_actual = solicitud_data.get(
+        sucursal_db = solicitud_data.get(
             "sucursal",
             "NUEVO LAREDO"
         )
 
-        if sucursal_actual not in sucursales_lista:
-            sucursal_actual = "OTRO"
+        sucursal_especificar_db = solicitud_data.get(
+            "sucursal_especificar",
+            ""
+        )
+
+        if sucursal_db not in sucursales_lista:
+            sucursal_db = "OTRO"
+
+        radio_index = sucursales_lista.index(sucursal_db)
 
         sucursal_comp = st.radio(
             "",
             sucursales_lista,
-            index=sucursales_lista.index(sucursal_actual),
+            index=radio_index,
             horizontal=True,
             disabled=True,
             label_visibility="collapsed",
             key=f"sucursal_comp_{dynamic_key}"
         )
 
-        if sucursal_comp == "OTRO":
+        if sucursal_db == "OTRO":
 
-            suc_otro_texto_comp = st.text_input(
+            st.text_input(
                 "Especificar",
-                value=solicitud_data.get(
-                    "sucursal_especificar",
-                    ""
-                ),
+                value=sucursal_especificar_db,
                 disabled=True,
                 key=f"suc_otro_texto_comp_{dynamic_key}"
             )
