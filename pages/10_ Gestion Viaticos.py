@@ -328,6 +328,12 @@ st.markdown(
     p, label, span {
         color: #F5F5F5;
     }
+
+    /* KPI cards fixed height */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        min-height: 190px;
+        max-height: 190px;
+    }
     </style>
     """,
     unsafe_allow_html=True
