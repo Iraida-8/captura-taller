@@ -33,6 +33,13 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# FORM RESET
+# =================================
+
+if "reset_form_viaticos" not in st.session_state:
+    st.session_state.reset_form_viaticos = 0
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -90,7 +97,8 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =================================
 # TABS
 # =================================
-tab_solicitud, tab_comprobacion = st.tabs([
+tab_solicitud, tab_comprobacion = st.tabs(
+[
     "🧳 SOLICITUD GASTOS DE VIAJE",
     "🧾 COMPROBACION GASTOS DE VIAJE"
 ])
@@ -523,19 +531,21 @@ with tab_solicitud:
                 use_container_width=True
             ):
 
-                # clear form state
-                keys_to_clear = [
-                    "conceptos_gastos",
-                    "tipo_gasto",
-                    "descripcion_otros",
-                    "monto_estimado"
+                # wipe ALL widget state except auth/session
+                protected_keys = [
+                    "logged_in",
+                    "user"
                 ]
 
-                for k in keys_to_clear:
-                    if k in st.session_state:
-                        del st.session_state[k]
+                keys_to_delete = [
+                    k for k in st.session_state.keys()
+                    if k not in protected_keys
+                ]
 
-                st.switch_page("pages/9_ Viaticos.py")
+                for k in keys_to_delete:
+                    del st.session_state[k]
+
+                st.rerun()
 
         mostrar_confirmacion()
 
