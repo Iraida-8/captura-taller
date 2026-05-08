@@ -1057,19 +1057,19 @@ with tab_comprobacion:
 
             }).execute()
 
-            @st.dialog("✅ Comprobación Enviada")
+            @st.dialog("✅ Comprobación Actualizada")
             def mostrar_confirmacion_comp():
 
                 st.success(
-                    "Comprobación enviada correctamente."
+                    "Folio actualizado exitosamente."
                 )
 
                 st.markdown(
-                    "### 📄 FOLIO DE COMPROBACIÓN"
+                    "### 📄 FOLIO ACTUALIZADO"
                 )
 
                 st.code(
-                    folio_comprobacion,
+                    folio_seleccionado,
                     language=None
                 )
 
