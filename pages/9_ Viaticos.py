@@ -511,42 +511,42 @@ with tab_solicitud:
 
             st.markdown(
                 f"""
-            <div style="
-                background:#1B267A;
-                padding:35px;
-                border-radius:18px;
-                border:3px solid #BFA75F;
-                text-align:center;
-            ">
-
                 <div style="
-                    font-size:22px;
-                    font-weight:700;
-                    color:#BFA75F;
-                    margin-bottom:25px;
-                ">
-                    FOLIO DE SOLICITUD
-                </div>
-
-                <div style="
-                    background:#111827;
-                    border-radius:14px;
-                    padding:30px;
+                    background:#1B267A;
+                    padding:35px;
+                    border-radius:18px;
+                    border:3px solid #BFA75F;
+                    text-align:center;
                 ">
 
-                    <span style="
-                        font-size:54px;
-                        font-weight:900;
-                        letter-spacing:4px;
-                        color:white;
+                    <div style="
+                        font-size:22px;
+                        font-weight:700;
+                        color:#BFA75F;
+                        margin-bottom:25px;
                     ">
-                        {folio_solicitud}
-                    </span>
+                        FOLIO DE SOLICITUD
+                    </div>
+
+                    <div style="
+                        background:#111827;
+                        border-radius:14px;
+                        padding:30px;
+                    ">
+
+                        <span style="
+                            font-size:54px;
+                            font-weight:900;
+                            letter-spacing:4px;
+                            color:white;
+                        ">
+                            {folio_solicitud}
+                        </span>
+
+                    </div>
 
                 </div>
-
-            </div>
-            """,
+                """,
                 unsafe_allow_html=True
             )
 
