@@ -492,7 +492,7 @@ with tab_solicitud:
         mostrar_confirmacion()
 
 # =================================
-# TAB 2 — COMPROBACION.
+# TAB 2 — COMPROBACION
 # =================================
 with tab_comprobacion:
 
@@ -699,86 +699,175 @@ with tab_comprobacion:
         if gastos_comp_key not in st.session_state:
             st.session_state[gastos_comp_key] = []
 
-        # =========================
-        # INPUTS
-        # =========================
+            # =========================
+            # INPUTS
+            # =========================
 
-        col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
 
-        with col1:
+            with col1:
 
-            tipo_gasto_comp = st.selectbox(
-                "Tipo",
-                [
-                    "Selecciona un tipo",
-                    "TRANSPORTACION TERRESTRE",
-                    "HOSPEDAJE",
-                    "ALIMENTOS",
-                    "PROPINAS",
-                    "TAXIS",
-                    "CASETAS",
-                    "GASOLINA"
-                ],
-                key="tipo_gasto_comp"
-            )
-
-        with col2:
-
-            gasto_con_comp = st.number_input(
-                "Gastos con Comprobante",
-                min_value=0.0,
-                step=100.0,
-                key="gasto_con_comp"
-            )
-
-        with col3:
-
-            gasto_sin_comp = st.number_input(
-                "Gastos sin Comprobante",
-                min_value=0.0,
-                step=100.0,
-                key="gasto_sin_comp"
-            )
-
-        # =========================
-        # ADD BUTTON
-        # =========================
-
-        if st.button(
-            "➕ Agregar Concepto",
-            use_container_width=True,
-            key="btn_agregar_comp"
-        ):
-
-            if (
-                tipo_gasto_comp != "Selecciona un tipo"
-            ):
-
-                impuesto_acreditable = 0
-                total_comprobado = (
-                    gasto_con_comp +
-                    gasto_sin_comp +
-                    impuesto_acreditable
+                tipo_gasto_comp = st.selectbox(
+                    "Tipo",
+                    [
+                        "Selecciona un tipo",
+                        "TRANSPORTACION TERRESTRE",
+                        "HOSPEDAJE",
+                        "ALIMENTOS",
+                        "PROPINAS",
+                        "TAXIS",
+                        "CASETAS",
+                        "GASOLINA"
+                    ],
+                    key="tipo_gasto_comp"
                 )
 
-                st.session_state[gastos_comp_key].append({
+            with col2:
 
-                    "Tipo": tipo_gasto_comp,
+                monto_gasto = st.number_input(
+                    "Monto",
+                    min_value=0.0,
+                    step=100.0,
+                    key="monto_gasto"
+                )
 
-                    "Gastos con Comprobante":
-                        gasto_con_comp,
+            with col3:
 
-                    "Gastos sin Comprobante":
-                        gasto_sin_comp,
+                tiene_comprobante = st.checkbox(
+                    "Tiene Comprobante",
+                    key="tiene_comprobante"
+                )
 
-                    "Impuesto Acreditable":
-                        impuesto_acreditable,
+            st.markdown("<br>", unsafe_allow_html=True)
 
-                    "Total Comprobado":
-                        total_comprobado
-                })
+            col4, col5 = st.columns(2)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+            with col4:
+
+                aplica_iva = st.checkbox(
+                    "Aplica IVA",
+                    key="aplica_iva"
+                )
+
+                iva_porcentaje = st.selectbox(
+                    "IVA %",
+                    [
+                        8,
+                        12,
+                        16
+                    ],
+                    disabled=not aplica_iva,
+                    key="iva_porcentaje"
+                )
+
+            with col5:
+
+                aplica_retencion = st.checkbox(
+                    "Aplica Retención ISR",
+                    key="aplica_retencion"
+                )
+
+            # =========================
+            # ADD BUTTON
+            # =========================
+
+            if st.button(
+                "➕ Agregar Concepto",
+                use_container_width=True,
+                key="btn_agregar_comp"
+            ):
+
+                if (
+                    tipo_gasto_comp != "Selecciona un tipo"
+                    and monto_gasto > 0
+                ):
+
+                    # =========================
+                    # COMPROBANTE SPLIT
+                    # =========================
+
+                    gastos_con_comp = 0
+                    gastos_sin_comp = 0
+
+                    if tiene_comprobante:
+                        gastos_con_comp = monto_gasto
+                    else:
+                        gastos_sin_comp = monto_gasto
+
+                    # =========================
+                    # IVA
+                    # =========================
+
+                    impuesto_acreditable = 0
+
+                    if tiene_comprobante and aplica_iva:
+
+                        impuesto_acreditable = (
+                            monto_gasto *
+                            (iva_porcentaje / 100)
+                        )
+
+                    # =========================
+                    # RETENCION ISR
+                    # =========================
+
+                    if (
+                        tiene_comprobante
+                        and aplica_retencion
+                    ):
+
+                        retencion_isr = (
+                            monto_gasto * 0.0125
+                        )
+
+                        impuesto_acreditable -= (
+                            retencion_isr
+                        )
+
+                    # =========================
+                    # TOTAL
+                    # =========================
+
+                    total_comprobado = (
+                        monto_gasto +
+                        impuesto_acreditable
+                    )
+
+                    # =========================
+                    # SAVE ROW
+                    # =========================
+
+                    st.session_state[gastos_comp_key].append({
+
+                        "Tipo":
+                            tipo_gasto_comp,
+
+                        "Gastos con Comprobante":
+                            gastos_con_comp,
+
+                        "Gastos sin Comprobante":
+                            gastos_sin_comp,
+
+                        "IVA %":
+                            (
+                                iva_porcentaje
+                                if aplica_iva
+                                else 0
+                            ),
+
+                        "Retención ISR":
+                            (
+                                "Sí"
+                                if aplica_retencion
+                                else "No"
+                            ),
+
+                        "Impuesto Acreditable":
+                            impuesto_acreditable,
+
+                        "Total Comprobado":
+                            total_comprobado
+                    })
 
         # =========================
         # TABLE
