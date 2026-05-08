@@ -414,7 +414,7 @@ with tab_solicitud:
         consecutivo = len(existing.data) + 1
 
         folio_solicitud = (
-            f"{prefijo}-{consecutivo:06d}"
+            f"{prefijo}-{consecutivo:06d}-SGV"
         )
 
         # =================================
@@ -973,7 +973,162 @@ with tab_comprobacion:
     )
 
     if submitted_comp:
-        st.success("Comprobación guardada correctamente.")
+
+        # =================================
+        # PREFIJOS
+        # =================================
+
+        prefijos_sucursal = {
+            "NUEVO LAREDO": "NL",
+            "DALLAS": "DL",
+            "CHICAGO": "CH",
+            "GUADALAJARA": "GD",
+            "MONTERREY": "MT",
+            "QUERETARO": "QT",
+            "LEON": "LN",
+            "TLAXCALA": "TL",
+            "OTRO": "OT"
+        }
+
+        prefijo = prefijos_sucursal.get(
+            sucursal_comp,
+            "OT"
+        )
+
+        # =================================
+        # GENERAR FOLIO
+        # =================================
+
+        existing = (
+            supabase
+            .table("comprobacion_viaje")
+            .select("id")
+            .execute()
+        )
+
+        consecutivo = len(existing.data) + 1
+
+        folio_comprobacion = (
+            f"{prefijo}-{consecutivo:06d}-CGV"
+        )
+
+        # =================================
+        # SUCURSAL ESPECIFICAR
+        # =================================
+
+        sucursal_especificar_comp = ""
+
+        if sucursal_comp == "OTRO":
+            sucursal_especificar_comp = (
+                sucursal_otro_comp
+            )
+
+        # =================================
+        # INSERTAR EN SUPABASE
+        # =================================
+
+        supabase.table(
+            "comprobacion_viaje"
+        ).insert({
+
+            "folio_comprobacion":
+                folio_comprobacion,
+
+            "nombre_compania":
+                empresa_comp,
+
+            "nombre_empleado_solicita":
+                empleado_comp,
+
+            "motivo_viaje":
+                motivo_comp,
+
+            "lugar_viaje":
+                lugar_comp,
+
+            "periodo_viaje":
+                periodo_comp,
+
+            "fecha_solicitud":
+                str(fecha_comprobacion),
+
+            "fecha_inicio":
+                str(fecha_inicio_comp),
+
+            "fecha_fin":
+                str(fecha_fin_comp),
+
+            "empresa_cargo_gastos":
+                empresa_cargo_comp,
+
+            "unidad_negocio":
+                unidad_negocio_comp,
+
+            "sucursal":
+                sucursal_comp,
+
+            "sucursal_especificar":
+                sucursal_especificar_comp,
+
+            "ref_entrega_fondo":
+                ref_entrega_comp,
+
+            "conceptos":
+                st.session_state[gastos_comp_key],
+
+            "total_comprobado":
+                float(total_general),
+
+            "anticipo_viaje":
+                float(anticipo_viaje),
+
+            "diferencia_cargo_favor":
+                float(diferencia_cargo),
+
+            "observaciones":
+                observaciones_comp
+
+        }).execute()
+
+        # =================================
+        # POPUP
+        # =================================
+
+        @st.dialog("✅ Comprobación Enviada")
+        def mostrar_confirmacion_comp():
+
+            st.success(
+                "Comprobación enviada correctamente."
+            )
+
+            st.markdown(
+                "### 📄 FOLIO DE COMPROBACIÓN"
+            )
+
+            st.code(
+                folio_comprobacion,
+                language=None
+            )
+
+            if st.button(
+                "Cerrar",
+                use_container_width=True,
+                key="cerrar_popup_comp"
+            ):
+
+                # =========================
+                # RESET TABLE
+                # =========================
+
+                st.session_state[gastos_comp_key] = []
+
+                # =========================
+                # FORCE FULL RERUN
+                # =========================
+
+                st.rerun()
+
+        mostrar_confirmacion_comp()
 
 # -------------------------------
 # CSS
