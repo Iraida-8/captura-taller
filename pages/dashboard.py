@@ -185,34 +185,37 @@ def has_access(keys):
 # =============================
 section_ordenes = ["pase_taller", "autorizacion", "solicitud_viaticos"]
 
-col1, col2, col3 = st.columns(3)
+if has_access(section_ordenes):
+    st.subheader("🏭 Gestión y Captura de Órdenes de Taller")
 
-with col1:
-    if "pase_taller" in access:
-        if st.button(
-            "🏭  Generar nuevo Pase a Taller",
-            use_container_width=True,
-            key="btn_pase_taller"
-        ):
-            st.switch_page("pages/3_ Pase a Taller.py")
+    col1, col2, col3 = st.columns(3)
 
-with col2:
-    if "autorizacion" in access:
-        if st.button(
-            "✅  Autorización y Gestión de Pases de Taller",
-            use_container_width=True,
-            key="btn_autorizacion"
-        ):
-            st.switch_page("pages/4_ Autorizacion.py")
+    with col1:
+        if "pase_taller" in access:
+            if st.button(
+                "🏭  Generar nuevo Pase a Taller",
+                use_container_width=True,
+                key="btn_pase_taller"
+            ):
+                st.switch_page("pages/3_ Pase a Taller.py")
 
-with col3:
-    if "solicitud_viaticos" in access:
-        if st.button(
-            "💳  Solicitud de Viáticos y Reembolsos",
-            use_container_width=True,
-            key="btn_viaticos"
-        ):
-            st.switch_page("pages/9_ Viaticos.py")
+    with col2:
+        if "autorizacion" in access:
+            if st.button(
+                "✅  Autorización y Gestión de Pases de Taller",
+                use_container_width=True,
+                key="btn_autorizacion"
+            ):
+                st.switch_page("pages/4_ Autorizacion.py")
+
+    with col3:
+        if "solicitud_viaticos" in access:
+            if st.button(
+                "💳  Solicitud de Viáticos y Reembolsos",
+                use_container_width=True,
+                key="btn_viaticos"
+            ):
+                st.switch_page("pages/9_ Viaticos.py")
 
     st.divider()
 
