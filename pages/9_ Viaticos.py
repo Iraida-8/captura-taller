@@ -181,7 +181,7 @@ with tab_solicitud:
             key=f"motivo_viaje_{FORM_VERSION}"
         )
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
 
@@ -193,11 +193,6 @@ with tab_solicitud:
             )
 
         with col2:
-            st.empty()
-
-        col1, col2 = st.columns(2)
-
-        with col1:
 
             fecha_inicio = st.date_input(
                 "Fecha de Inicio",
@@ -205,7 +200,7 @@ with tab_solicitud:
                 key=f"fecha_inicio_{FORM_VERSION}"
             )
 
-        with col2:
+        with col3:
 
             fecha_fin = st.date_input(
                 "Fecha de Fin",
