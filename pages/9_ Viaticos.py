@@ -90,65 +90,188 @@ with tab_solicitud:
 
     st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
-    # =========================
-    # PART 1: DATOS GENERALES
-    # =========================
-    # Using a container instead of a form here so the radio button can trigger the UI update
-    col1, col2 = st.columns([1, 2])
+    # =================================
+    # USER DATA
+    # =================================
 
-    with col1:
-        fecha_solicitud = st.date_input("Fecha de Solicitud")
+    user_email = st.session_state.get("user_email", "")
 
-    with col2:
-        empresa_servicio = st.text_input("Nombre de la Empresa que Brinda el Servicio")
-
-    empleado = st.text_input("Nombre del Empleado que lo Solicita")
-
-    motivo_viaje = st.text_area("Motivo del Viaje", height=90)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        lugar_viaje = st.text_input("Lugar a Donde se Realiza el Viaje")
-    with col2:
-        periodo_viaje = st.text_input("Periodo del Viaje")
-
-    st.divider()
-
-    # EMPRESA A CARGO
-    st.markdown("### Empresa a Cargo para Gastos de este Viaje")
-    empresa_cargo = st.selectbox(
-        "Empresa a Cargo", 
-        ["Seleccione una opción...", "SET FREIGHT", "LINCOLN", "PICUS", "IGLOO", "SET LOGIS PLUS"],
-        index=0,
-        label_visibility="collapsed"
+    perfil_response = (
+        supabase
+        .table("profiles")
+        .select("full_name")
+        .eq("email", user_email)
+        .limit(1)
+        .execute()
     )
 
-    # UNIDAD DE NEGOCIO
-    st.markdown("### Unidad de Negocio")
-    unidad_negocio = st.selectbox(
-        "Unidad de Negocio", 
-        ["Seleccione una opción...", "CARRIER", "LOGISTICA", "PLUS"],
-        index=0,
-        label_visibility="collapsed"
-    )
+    nombre_usuario = ""
 
-    # =========================
-    # SUCURSAL (REACTIVE SECTION)
-    # =========================
-    st.markdown("### Sucursal")
-    sucursal = st.radio(
-        "",
-        ["NUEVO LAREDO", "DALLAS", "CHICAGO", "GUADALAJARA", "MONTERREY", "QUERETARO", "LEON", "TLAXCALA", "OTRO"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
+    if perfil_response.data:
+        nombre_usuario = perfil_response.data[0].get("full_name", "")
 
-    if sucursal == "OTRO":
-        suc_otro_texto = st.text_input("Especificar")
-        sucursales_final = [suc_otro_texto] if suc_otro_texto else []
-    else:
-        st.text_input("Especificar", value="", disabled=True)
-        sucursales_final = [sucursal]
+    # =================================
+    # INFORMACION GENERAL
+    # =================================
+
+    with st.container(border=True):
+
+        st.markdown("## 📋 Informacion General")
+
+        # =========================
+        # ROW 1
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            empresa_servicio = st.selectbox(
+                "Empresa que Brinda el Servicio",
+                [
+                    "Seleccione una opción...",
+                    "SET FREIGHT",
+                    "LINCOLN",
+                    "PICUS",
+                    "IGLOO",
+                    "SET LOGIS PLUS"
+                ],
+                index=0
+            )
+
+        with col2:
+
+            empleado = st.text_input(
+                "Nombre del Empleado que Solicita",
+                value=nombre_usuario,
+                disabled=True
+            )
+
+        # =========================
+        # ROW 2
+        # =========================
+
+        motivo_viaje = st.text_area(
+            "Motivo del Viaje",
+            height=100
+        )
+
+        # =========================
+        # ROW 3
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            fecha_solicitud = st.date_input(
+                "Fecha de Solicitud",
+                value=date.today(),
+                disabled=True
+            )
+
+        with col2:
+
+            st.empty()
+
+        # =========================
+        # ROW 4
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            fecha_inicio = st.date_input(
+                "Fecha de Inicio",
+                value=date.today()
+            )
+
+        with col2:
+
+            fecha_fin = st.date_input(
+                "Fecha de Fin",
+                value=date.today() + pd.Timedelta(days=1)
+            )
+
+        # =========================
+        # ROW 5
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            empresa_cargo = st.selectbox(
+                "Empresa a Cargo para Gastos de este Viaje",
+                [
+                    "Seleccione una opción...",
+                    "SET FREIGHT",
+                    "LINCOLN",
+                    "PICUS",
+                    "IGLOO",
+                    "SET LOGIS PLUS"
+                ],
+                index=0
+            )
+
+        with col2:
+
+            unidad_negocio = st.selectbox(
+                "Unidad de Negocio",
+                [
+                    "Seleccione una opción...",
+                    "CARRIER",
+                    "LOGISTICA",
+                    "PLUS"
+                ],
+                index=0
+            )
+
+        # =========================
+        # ROW 6
+        # =========================
+
+        st.markdown("### Sucursal")
+
+        sucursal = st.radio(
+            "",
+            [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "QUERETARO",
+                "LEON",
+                "TLAXCALA",
+                "OTRO"
+            ],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+
+        if sucursal == "OTRO":
+
+            suc_otro_texto = st.text_input(
+                "Especificar"
+            )
+
+            sucursales_final = (
+                [suc_otro_texto]
+                if suc_otro_texto
+                else []
+            )
+
+        else:
+
+            st.text_input(
+                "Especificar",
+                value="",
+                disabled=True
+            )
+
+            sucursales_final = [sucursal]
 
     st.divider()
 
