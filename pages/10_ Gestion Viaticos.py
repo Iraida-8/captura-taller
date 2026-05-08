@@ -33,6 +33,70 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# USER DATA
+# =================================
+
+user = st.session_state.user
+
+nombre_usuario = (
+    user.get("name")
+    or user.get("email")
+    or ""
+)
+
+email_usuario = (
+    user.get("email")
+    or ""
+)
+
+# =================================
+# LOAD DATA
+# =================================
+
+@st.cache_data(ttl=30)
+def cargar_solicitudes():
+
+    response = (
+        supabase
+        .table("solicitud_viaje")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    return pd.DataFrame(response.data)
+
+@st.cache_data(ttl=30)
+def cargar_comprobaciones():
+
+    response = (
+        supabase
+        .table("comprobacion_viaje")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    return pd.DataFrame(response.data)
+
+df_solicitudes = cargar_solicitudes()
+df_comprobaciones = cargar_comprobaciones()
+
+# =================================
+# DEFAULT STATUS
+# =================================
+
+if not df_solicitudes.empty:
+
+    if "status" not in df_solicitudes.columns:
+        df_solicitudes["status"] = "PENDIENTE"
+
+if not df_comprobaciones.empty:
+
+    if "status" not in df_comprobaciones.columns:
+        df_comprobaciones["status"] = "VERIFICANDO"
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
