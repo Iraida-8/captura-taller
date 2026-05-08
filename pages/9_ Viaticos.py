@@ -41,6 +41,11 @@ if "solicitud_form_version" not in st.session_state:
 
 FORM_VERSION = st.session_state.solicitud_form_version
 
+if "comprobacion_form_version" not in st.session_state:
+    st.session_state.comprobacion_form_version = 0
+
+COMP_VERSION = st.session_state.comprobacion_form_version
+
 # =================================
 # GLOBAL USER DATA
 # =================================
@@ -91,6 +96,11 @@ if "solicitud_form_version" not in st.session_state:
     st.session_state.solicitud_form_version = 0
 
 FORM_VERSION = st.session_state.solicitud_form_version
+
+if "comprobacion_form_version" not in st.session_state:
+    st.session_state.comprobacion_form_version = 0
+
+COMP_VERSION = st.session_state.comprobacion_form_version
 
 # =================================
 # TAB 1 — SOLICITUD
@@ -525,7 +535,7 @@ with tab_comprobacion:
                     "SET LOGIS PLUS"
                 ],
                 index=0,
-                key="empresa_comp"
+                key=f"empresa_comp_{COMP_VERSION}"
             )
 
         with col2:
@@ -534,7 +544,7 @@ with tab_comprobacion:
                 "Nombre del Empleado que Solicita",
                 value=nombre_usuario,
                 disabled=True,
-                key="empleado_comp"
+                key=f"empleado_comp_{COMP_VERSION}"
             )
 
         # =========================
@@ -544,7 +554,7 @@ with tab_comprobacion:
         motivo_comp = st.text_area(
             "Motivo del Viaje",
             height=100,
-            key="motivo_comp"
+            key=f"motivo_comp_{COMP_VERSION}"
         )
 
         # =========================
@@ -557,14 +567,14 @@ with tab_comprobacion:
 
             lugar_comp = st.text_input(
                 "Lugar a Donde se Realiza el Viaje",
-                key="lugar_comp"
+                key=f"lugar_comp_{COMP_VERSION}"
             )
 
         with col2:
 
             periodo_comp = st.text_input(
                 "Periodo del Viaje",
-                key="periodo_comp"
+                key=f"periodo_comp_{COMP_VERSION}"
             )
 
         # =========================
@@ -578,7 +588,7 @@ with tab_comprobacion:
             fecha_comprobacion = st.date_input(
                 "Fecha de Solicitud",
                 value=date.today(),
-                key="fecha_comprobacion"
+                key=f"fecha_comprobacion_{COMP_VERSION}"
             )
 
         with col2:
@@ -586,7 +596,7 @@ with tab_comprobacion:
             fecha_inicio_comp = st.date_input(
                 "Fecha de Inicio",
                 value=date.today(),
-                key="fecha_inicio_comp"
+                key=f"fecha_inicio_comp_{COMP_VERSION}"
             )
 
         with col3:
@@ -594,7 +604,7 @@ with tab_comprobacion:
             fecha_fin_comp = st.date_input(
                 "Fecha de Fin",
                 value=date.today() + pd.Timedelta(days=1),
-                key="fecha_fin_comp"
+                key=f"fecha_fin_comp_{COMP_VERSION}"
             )
 
         # =========================
@@ -616,7 +626,7 @@ with tab_comprobacion:
                     "SET LOGIS PLUS"
                 ],
                 index=0,
-                key="empresa_cargo_comp"
+                key=f"empresa_cargo_comp_{COMP_VERSION}"
             )
 
         with col2:
@@ -630,7 +640,7 @@ with tab_comprobacion:
                     "PLUS"
                 ],
                 index=0,
-                key="unidad_negocio_comp"
+                key=f"unidad_negocio_comp_{COMP_VERSION}"
             )
 
         # =========================
@@ -653,7 +663,7 @@ with tab_comprobacion:
                 "OTRO"
             ],
             horizontal=True,
-            key="sucursal_comp",
+            key=f"sucursal_comp_{COMP_VERSION}",
             label_visibility="collapsed"
         )
 
@@ -661,7 +671,7 @@ with tab_comprobacion:
 
             sucursal_otro_comp = st.text_input(
                 "Especificar",
-                key="sucursal_otro_comp"
+                key=f"sucursal_otro_comp_{COMP_VERSION}"
             )
 
         else:
@@ -670,7 +680,7 @@ with tab_comprobacion:
                 "Especificar",
                 value="",
                 disabled=True,
-                key="sucursal_otro_disabled_comp"
+                key=f"sucursal_otro_disabled_comp_{COMP_VERSION}"
             )
 
     st.divider()
@@ -681,7 +691,7 @@ with tab_comprobacion:
 
     ref_entrega_comp = st.text_input(
         "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-        key="ref_entrega_comp"
+        key=f"ref_entrega_comp_{COMP_VERSION}"
     )
 
     st.divider()
@@ -694,7 +704,7 @@ with tab_comprobacion:
 
         st.markdown("## 💰 IMPORTE DE GASTOS")
 
-        gastos_comp_key = "gastos_comprobacion"
+        gastos_comp_key = f"gastos_comprobacion_{COMP_VERSION}"
 
         if gastos_comp_key not in st.session_state:
             st.session_state[gastos_comp_key] = []
@@ -719,7 +729,7 @@ with tab_comprobacion:
                     "CASETAS",
                     "GASOLINA"
                 ],
-                key="tipo_gasto_comp"
+                key=f"tipo_gasto_comp_{COMP_VERSION}"
             )
 
         with col2:
@@ -728,7 +738,7 @@ with tab_comprobacion:
                 "Gastos con Comprobante",
                 min_value=0.0,
                 step=100.0,
-                key="gasto_con_comp"
+                key=f"gasto_con_comp_{COMP_VERSION}"
             )
 
         with col3:
@@ -737,7 +747,7 @@ with tab_comprobacion:
                 "Gastos sin Comprobante",
                 min_value=0.0,
                 step=100.0,
-                key="gasto_sin_comp"
+                key=f"gasto_sin_comp_{COMP_VERSION}"
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -748,7 +758,7 @@ with tab_comprobacion:
 
             aplica_iva = st.checkbox(
                 "Aplica IVA",
-                key="aplica_iva"
+                key=f"aplica_iva_{COMP_VERSION}"
             )
 
         with col5:
@@ -780,7 +790,7 @@ with tab_comprobacion:
                         16
                     ],
                     disabled=not aplica_iva,
-                    key="iva_porcentaje",
+                    key=f"iva_porcentaje_{COMP_VERSION}",
                     label_visibility="collapsed"
                 )
 
@@ -788,7 +798,7 @@ with tab_comprobacion:
 
             aplica_retencion = st.checkbox(
                 "Aplica Retención ISR",
-                key="aplica_retencion"
+                key=f"aplica_retencion_{COMP_VERSION}"
             )
 
         # =========================
@@ -798,25 +808,17 @@ with tab_comprobacion:
         if st.button(
             "➕ Agregar Concepto",
             use_container_width=True,
-            key="btn_agregar_comp"
+            key=f"btn_agregar_comp_{COMP_VERSION}"
         ):
 
             if (
                 tipo_gasto_comp != "Selecciona un tipo"
             ):
 
-                # =========================
-                # BASE TOTAL
-                # =========================
-
                 base_total = (
                     gasto_con_comp +
                     gasto_sin_comp
                 )
-
-                # =========================
-                # IMPUESTO ACREDITABLE
-                # =========================
 
                 impuesto_acreditable = 0
 
@@ -830,10 +832,6 @@ with tab_comprobacion:
                         (iva_porcentaje / 100)
                     )
 
-                # =========================
-                # RETENCION ISR
-                # =========================
-
                 if (
                     gasto_con_comp > 0
                     and aplica_retencion
@@ -842,10 +840,6 @@ with tab_comprobacion:
                     impuesto_acreditable -= (
                         gasto_con_comp * 0.0125
                     )
-
-                # =========================
-                # TOTAL
-                # =========================
 
                 total_comprobado = (
                     base_total +
@@ -870,10 +864,6 @@ with tab_comprobacion:
                 })
 
         st.markdown("<br>", unsafe_allow_html=True)
-
-        # =========================
-        # TABLE
-        # =========================
 
         if st.session_state[gastos_comp_key]:
 
@@ -914,10 +904,6 @@ with tab_comprobacion:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # =========================
-        # TOTAL ROW
-        # =========================
-
         col1, col2, col3 = st.columns(3)
 
         with col2:
@@ -926,7 +912,7 @@ with tab_comprobacion:
                 "(-) Anticipo para gastos de viaje",
                 min_value=0.0,
                 step=100.0,
-                key="anticipo_viaje"
+                key=f"anticipo_viaje_{COMP_VERSION}"
             )
 
         diferencia_cargo = (
@@ -939,7 +925,7 @@ with tab_comprobacion:
                 "TOTAL COMPROBADO",
                 value=f"$ {total_general:,.2f}",
                 disabled=True,
-                key=f"total_comprobado_{total_general}"
+                key=f"total_comprobado_{total_general}_{COMP_VERSION}"
             )
 
         with col3:
@@ -948,19 +934,15 @@ with tab_comprobacion:
                 "DIFERENCIA A CARGO (FAVOR)",
                 value=f"$ {diferencia_cargo:,.2f}",
                 disabled=True,
-                key=f"diferencia_cargo_{diferencia_cargo}"
+                key=f"diferencia_cargo_{diferencia_cargo}_{COMP_VERSION}"
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # =========================
-        # OBSERVACIONES
-        # =========================
-
         observaciones_comp = st.text_area(
             "Observaciones",
             height=150,
-            key="observaciones_comp"
+            key=f"observaciones_comp_{COMP_VERSION}"
         )
 
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -969,14 +951,10 @@ with tab_comprobacion:
         "🧾 Guardar Comprobación",
         use_container_width=True,
         type="primary",
-        key="submitted_comp"
+        key=f"submitted_comp_{COMP_VERSION}"
     )
 
     if submitted_comp:
-
-        # =================================
-        # PREFIJOS
-        # =================================
 
         prefijos_sucursal = {
             "NUEVO LAREDO": "NL",
@@ -995,10 +973,6 @@ with tab_comprobacion:
             "OT"
         )
 
-        # =================================
-        # GENERAR FOLIO
-        # =================================
-
         existing = (
             supabase
             .table("comprobacion_viaje")
@@ -1012,20 +986,12 @@ with tab_comprobacion:
             f"{prefijo}-{consecutivo:06d}-CGV"
         )
 
-        # =================================
-        # SUCURSAL ESPECIFICAR
-        # =================================
-
         sucursal_especificar_comp = ""
 
         if sucursal_comp == "OTRO":
             sucursal_especificar_comp = (
                 sucursal_otro_comp
             )
-
-        # =================================
-        # INSERTAR EN SUPABASE
-        # =================================
 
         supabase.table(
             "comprobacion_viaje"
@@ -1090,10 +1056,6 @@ with tab_comprobacion:
 
         }).execute()
 
-        # =================================
-        # POPUP
-        # =================================
-
         @st.dialog("✅ Comprobación Enviada")
         def mostrar_confirmacion_comp():
 
@@ -1113,18 +1075,12 @@ with tab_comprobacion:
             if st.button(
                 "Cerrar",
                 use_container_width=True,
-                key="cerrar_popup_comp"
+                key=f"cerrar_popup_comp_{COMP_VERSION}"
             ):
-
-                # =========================
-                # RESET TABLE
-                # =========================
 
                 st.session_state[gastos_comp_key] = []
 
-                # =========================
-                # FORCE FULL RERUN
-                # =========================
+                st.session_state.comprobacion_form_version += 1
 
                 st.rerun()
 
