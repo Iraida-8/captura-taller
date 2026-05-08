@@ -329,40 +329,39 @@ with tab_solicitud:
                 lambda x: f"$ {x:,.2f}"
             )
 
-            st.dataframe(
+            df_display.insert(0, "Eliminar", False)
+
+            edited_df = st.data_editor(
                 df_display,
                 use_container_width=True,
-                hide_index=True
-            )
-
-            fila_eliminar = st.selectbox(
-                "Seleccionar fila para eliminar",
-                options=[
-                    f"{idx + 1} - {row['Tipo']}"
-                    for idx, row in df_conceptos.iterrows()
+                hide_index=True,
+                disabled=[
+                    "Tipo",
+                    "Descripcion",
+                    "Monto"
                 ],
-                index=None,
-                placeholder="Selecciona una fila...",
-                key=f"fila_eliminar_solicitud_{FORM_VERSION}"
+                key=f"editor_solicitud_{FORM_VERSION}"
             )
 
             if st.button(
-                "🗑️ Eliminar Concepto",
+                "🗑️ Eliminar Filas Seleccionadas",
                 use_container_width=True,
                 key=f"btn_eliminar_concepto_{FORM_VERSION}"
             ):
 
-                if fila_eliminar:
+                filas_restantes = []
 
-                    index_real = int(
-                        fila_eliminar.split(" - ")[0]
-                    ) - 1
+                for idx, row in edited_df.iterrows():
 
-                    st.session_state[conceptos_key].pop(
-                        index_real
-                    )
+                    if not row["Eliminar"]:
 
-                    st.rerun()
+                        filas_restantes.append(
+                            st.session_state[conceptos_key][idx]
+                        )
+
+                st.session_state[conceptos_key] = filas_restantes
+
+                st.rerun()
 
             total_estimado = df_conceptos["Monto"].sum()
 
@@ -982,40 +981,41 @@ with tab_comprobacion:
                     lambda x: f"$ {x:,.2f}"
                 )
 
-            st.dataframe(
+            df_display.insert(0, "Eliminar", False)
+
+            edited_df = st.data_editor(
                 df_display,
                 use_container_width=True,
-                hide_index=True
-            )
-
-            fila_eliminar_comp = st.selectbox(
-                "Seleccionar fila para eliminar",
-                options=[
-                    f"{idx + 1} - {row['Tipo']}"
-                    for idx, row in df_gastos.iterrows()
+                hide_index=True,
+                disabled=[
+                    "Tipo",
+                    "Gastos con Comprobante",
+                    "Gastos sin Comprobante",
+                    "Impuesto Acreditable",
+                    "Total Comprobado"
                 ],
-                index=None,
-                placeholder="Selecciona una fila...",
-                key=f"fila_eliminar_comp_{COMP_VERSION}"
+                key=f"editor_comp_{COMP_VERSION}"
             )
 
             if st.button(
-                "🗑️ Eliminar Concepto",
+                "🗑️ Eliminar Filas Seleccionadas",
                 use_container_width=True,
                 key=f"btn_eliminar_comp_{COMP_VERSION}"
             ):
 
-                if fila_eliminar_comp:
+                filas_restantes = []
 
-                    index_real = int(
-                        fila_eliminar_comp.split(" - ")[0]
-                    ) - 1
+                for idx, row in edited_df.iterrows():
 
-                    st.session_state[gastos_comp_key].pop(
-                        index_real
-                    )
+                    if not row["Eliminar"]:
 
-                    st.rerun()
+                        filas_restantes.append(
+                            st.session_state[gastos_comp_key][idx]
+                        )
+
+                st.session_state[gastos_comp_key] = filas_restantes
+
+                st.rerun()
 
             total_general = (
                 df_gastos["Total Comprobado"]
