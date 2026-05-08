@@ -335,6 +335,35 @@ with tab_solicitud:
                 hide_index=True
             )
 
+            fila_eliminar = st.selectbox(
+                "Seleccionar fila para eliminar",
+                options=[
+                    f"{idx + 1} - {row['Tipo']}"
+                    for idx, row in df_conceptos.iterrows()
+                ],
+                index=None,
+                placeholder="Selecciona una fila...",
+                key=f"fila_eliminar_solicitud_{FORM_VERSION}"
+            )
+
+            if st.button(
+                "🗑️ Eliminar Concepto",
+                use_container_width=True,
+                key=f"btn_eliminar_concepto_{FORM_VERSION}"
+            ):
+
+                if fila_eliminar:
+
+                    index_real = int(
+                        fila_eliminar.split(" - ")[0]
+                    ) - 1
+
+                    st.session_state[conceptos_key].pop(
+                        index_real
+                    )
+
+                    st.rerun()
+
             total_estimado = df_conceptos["Monto"].sum()
 
         else:
@@ -958,6 +987,35 @@ with tab_comprobacion:
                 use_container_width=True,
                 hide_index=True
             )
+
+            fila_eliminar_comp = st.selectbox(
+                "Seleccionar fila para eliminar",
+                options=[
+                    f"{idx + 1} - {row['Tipo']}"
+                    for idx, row in df_gastos.iterrows()
+                ],
+                index=None,
+                placeholder="Selecciona una fila...",
+                key=f"fila_eliminar_comp_{COMP_VERSION}"
+            )
+
+            if st.button(
+                "🗑️ Eliminar Concepto",
+                use_container_width=True,
+                key=f"btn_eliminar_comp_{COMP_VERSION}"
+            ):
+
+                if fila_eliminar_comp:
+
+                    index_real = int(
+                        fila_eliminar_comp.split(" - ")[0]
+                    ) - 1
+
+                    st.session_state[gastos_comp_key].pop(
+                        index_real
+                    )
+
+                    st.rerun()
 
             total_general = (
                 df_gastos["Total Comprobado"]
