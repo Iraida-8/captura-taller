@@ -106,448 +106,457 @@ tab_solicitud, tab_comprobacion = st.tabs(
 # =================================
 # TAB 1 — SOLICITUD
 # =================================
+
+solicitud_form_key = st.session_state.get(
+    "solicitud_form_key",
+    0
+)
+
 with tab_solicitud:
 
-    st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
-
-    # =================================
-    # USER DATA
-    # =================================
-
-    user = st.session_state.user
-
-    nombre_usuario = (
-        user.get("name")
-        or user.get("email")
-        or ""
+    form_container = st.container(
+        key=f"solicitud_form_{solicitud_form_key}"
     )
 
-    # =================================
-    # INFORMACION GENERAL
-    # =================================
+    with form_container:
 
-    with st.container(border=True):
+        st.subheader("🧳 Solicitud de Fondo para Gastos de Viaje")
 
-        st.markdown("## 📋 Informacion General")
+        # =================================
+        # USER DATA
+        # =================================
 
-        # =========================
-        # ROW 1
-        # =========================
+        user = st.session_state.user
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            empresa_servicio = st.selectbox(
-                "Empresa que Brinda el Servicio",
-                [
-                    "Seleccione una opción...",
-                    "SET FREIGHT",
-                    "LINCOLN",
-                    "PICUS",
-                    "IGLOO",
-                    "SET LOGIS PLUS"
-                ],
-                index=0
-            )
-
-        with col2:
-
-            empleado = st.text_input(
-                "Nombre del Empleado que Solicita",
-                value=nombre_usuario,
-                disabled=True
-            )
-
-        # =========================
-        # ROW 2
-        # =========================
-
-        motivo_viaje = st.text_area(
-            "Motivo del Viaje",
-            height=100
+        nombre_usuario = (
+            user.get("name")
+            or user.get("email")
+            or ""
         )
 
-        # =========================
-        # ROW 3
-        # =========================
+        # =================================
+        # INFORMACION GENERAL
+        # =================================
 
-        col1, col2 = st.columns(2)
+        with st.container(border=True):
 
-        with col1:
+            st.markdown("## 📋 Informacion General")
 
-            fecha_solicitud = st.date_input(
-                "Fecha de Solicitud",
-                value=date.today(),
-                disabled=True
+            # =========================
+            # ROW 1
+            # =========================
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                empresa_servicio = st.selectbox(
+                    "Empresa que Brinda el Servicio",
+                    [
+                        "Seleccione una opción...",
+                        "SET FREIGHT",
+                        "LINCOLN",
+                        "PICUS",
+                        "IGLOO",
+                        "SET LOGIS PLUS"
+                    ],
+                    index=0
+                )
+
+            with col2:
+
+                empleado = st.text_input(
+                    "Nombre del Empleado que Solicita",
+                    value=nombre_usuario,
+                    disabled=True
+                )
+
+            # =========================
+            # ROW 2
+            # =========================
+
+            motivo_viaje = st.text_area(
+                "Motivo del Viaje",
+                height=100
             )
 
-        with col2:
+            # =========================
+            # ROW 3
+            # =========================
 
-            st.empty()
+            col1, col2 = st.columns(2)
 
-        # =========================
-        # ROW 4
-        # =========================
+            with col1:
 
-        col1, col2 = st.columns(2)
+                fecha_solicitud = st.date_input(
+                    "Fecha de Solicitud",
+                    value=date.today(),
+                    disabled=True
+                )
 
-        with col1:
+            with col2:
 
-            fecha_inicio = st.date_input(
-                "Fecha de Inicio",
-                value=date.today()
-            )
+                st.empty()
 
-        with col2:
+            # =========================
+            # ROW 4
+            # =========================
 
-            fecha_fin = st.date_input(
-                "Fecha de Fin",
-                value=date.today() + pd.Timedelta(days=1)
-            )
+            col1, col2 = st.columns(2)
 
-        # =========================
-        # ROW 5
-        # =========================
+            with col1:
 
-        col1, col2 = st.columns(2)
+                fecha_inicio = st.date_input(
+                    "Fecha de Inicio",
+                    value=date.today()
+                )
 
-        with col1:
+            with col2:
 
-            empresa_cargo = st.selectbox(
-                "Empresa a Cargo para Gastos de este Viaje",
+                fecha_fin = st.date_input(
+                    "Fecha de Fin",
+                    value=date.today() + pd.Timedelta(days=1)
+                )
+
+            # =========================
+            # ROW 5
+            # =========================
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                empresa_cargo = st.selectbox(
+                    "Empresa a Cargo para Gastos de este Viaje",
+                    [
+                        "Seleccione una opción...",
+                        "SET FREIGHT",
+                        "LINCOLN",
+                        "PICUS",
+                        "IGLOO",
+                        "SET LOGIS PLUS"
+                    ],
+                    index=0
+                )
+
+            with col2:
+
+                unidad_negocio = st.selectbox(
+                    "Unidad de Negocio",
+                    [
+                        "Seleccione una opción...",
+                        "CARRIER",
+                        "LOGISTICA",
+                        "PLUS"
+                    ],
+                    index=0
+                )
+
+            # =========================
+            # ROW 6
+            # =========================
+
+            st.markdown("### Sucursal")
+
+            sucursal = st.radio(
+                "",
                 [
-                    "Seleccione una opción...",
-                    "SET FREIGHT",
-                    "LINCOLN",
-                    "PICUS",
-                    "IGLOO",
-                    "SET LOGIS PLUS"
+                    "NUEVO LAREDO",
+                    "DALLAS",
+                    "CHICAGO",
+                    "GUADALAJARA",
+                    "MONTERREY",
+                    "QUERETARO",
+                    "LEON",
+                    "TLAXCALA",
+                    "OTRO"
                 ],
-                index=0
+                horizontal=True,
+                label_visibility="collapsed"
             )
 
-        with col2:
+            if sucursal == "OTRO":
 
-            unidad_negocio = st.selectbox(
-                "Unidad de Negocio",
-                [
-                    "Seleccione una opción...",
-                    "CARRIER",
-                    "LOGISTICA",
-                    "PLUS"
-                ],
-                index=0
-            )
+                suc_otro_texto = st.text_input(
+                    "Especificar"
+                )
 
-        # =========================
-        # ROW 6
-        # =========================
-
-        st.markdown("### Sucursal")
-
-        sucursal = st.radio(
-            "",
-            [
-                "NUEVO LAREDO",
-                "DALLAS",
-                "CHICAGO",
-                "GUADALAJARA",
-                "MONTERREY",
-                "QUERETARO",
-                "LEON",
-                "TLAXCALA",
-                "OTRO"
-            ],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-
-        if sucursal == "OTRO":
-
-            suc_otro_texto = st.text_input(
-                "Especificar"
-            )
-
-            sucursales_final = (
-                [suc_otro_texto]
-                if suc_otro_texto
-                else []
-            )
-
-        else:
-
-            st.text_input(
-                "Especificar",
-                value="",
-                disabled=True
-            )
-
-            sucursales_final = [sucursal]
-
-    st.divider()
-
-    # =========================
-    # DATOS CONTABLES
-    # =========================
-    col_poliza1, col_poliza2 = st.columns(2)
-
-    with col_poliza1:
-        ref_poliza = st.text_input(
-            "REF DE POLIZA CONTABLE"
-        )
-
-    with col_poliza2:
-        ref_entrega_fondo = st.text_input(
-            "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE"
-        )
-
-    st.divider()
-
-    # =========================
-    # ESTIMACION DE GASTOS
-    # =========================
-
-    with st.container(border=True):
-
-        st.markdown("## 💰 Estimacion de Gastos de Viaje a Incurrir")
-
-        # =========================
-        # SESSION STATE
-        # =========================
-
-        if "conceptos_gastos" not in st.session_state:
-            st.session_state.conceptos_gastos = []
-
-        # =========================
-        # INPUTS
-        # =========================
-
-        col1, col2, col3 = st.columns([2, 3, 2])
-
-        with col1:
-
-            tipo_gasto = st.selectbox(
-                "Tipo",
-                [
-                    "Selecciona un tipo",
-                    "TRANSPORTACION TERRESTRE",
-                    "HOSPEDAJE",
-                    "ALIMENTOS",
-                    "PROPINAS",
-                    "TAXIS",
-                    "OTROS"
-                ],
-                key="tipo_gasto"
-            )
-
-        with col2:
-
-            descripcion_otros = st.text_input(
-                "Describir (Otros)",
-                disabled=tipo_gasto != "OTROS",
-                key="descripcion_otros"
-            )
-
-        with col3:
-
-            monto_estimado = st.number_input(
-                "Monto Estimado",
-                min_value=0.0,
-                step=100.0,
-                key="monto_estimado"
-            )
-
-        # =========================
-        # ADD BUTTON
-        # =========================
-
-        if st.button(
-            "➕ Agregar Concepto",
-            use_container_width=True
-        ):
-
-            descripcion_final = ""
-
-            if tipo_gasto == "OTROS":
-                descripcion_final = descripcion_otros
-
-            if tipo_gasto == "Selecciona un tipo":
-
-                st.warning("Selecciona un tipo.")
-
-            elif monto_estimado <= 0:
-
-                st.warning("Ingresa un monto válido.")
+                sucursales_final = (
+                    [suc_otro_texto]
+                    if suc_otro_texto
+                    else []
+                )
 
             else:
 
-                st.session_state.conceptos_gastos.append({
-                    "Tipo": tipo_gasto,
-                    "Descripcion": descripcion_final,
-                    "Monto": monto_estimado
-                })
+                st.text_input(
+                    "Especificar",
+                    value="",
+                    disabled=True
+                )
 
-                st.success("Concepto agregado correctamente.")
+                sucursales_final = [sucursal]
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.divider()
 
         # =========================
-        # TABLE
+        # DATOS CONTABLES
         # =========================
+        col_poliza1, col_poliza2 = st.columns(2)
 
-        if st.session_state.conceptos_gastos:
-
-            df_conceptos = pd.DataFrame(
-                st.session_state.conceptos_gastos
+        with col_poliza1:
+            ref_poliza = st.text_input(
+                "REF DE POLIZA CONTABLE"
             )
 
-            df_display = df_conceptos.copy()
-
-            df_display["Monto"] = df_display["Monto"].apply(
-                lambda x: f"$ {x:,.2f}"
+        with col_poliza2:
+            ref_entrega_fondo = st.text_input(
+                "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE"
             )
 
-            st.dataframe(
-                df_display,
-                use_container_width=True,
-                hide_index=True
-            )
-
-            total_estimado = (
-                df_conceptos["Monto"]
-                .sum()
-            )
-
-        else:
-
-            st.info(
-                "No hay conceptos agregados."
-            )
-
-            total_estimado = 0
-
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.divider()
 
         # =========================
-        # TOTAL
+        # ESTIMACION DE GASTOS
         # =========================
 
-        st.markdown(
-            f"""
-            <div style="
-                background:white;
-                color:black;
-                border:2px solid black;
-                padding:14px;
-                font-size:24px;
-                font-weight:bold;
-                text-align:right;
-            ">
-                TOTAL ESTIMADO: $ {total_estimado:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        with st.container(border=True):
 
-        st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("## 💰 Estimacion de Gastos de Viaje a Incurrir")
 
-        # =========================
-        # OBSERVACIONES
-        # =========================
+            # =========================
+            # SESSION STATE
+            # =========================
 
-        observaciones = st.text_area(
-            "Observaciones",
-            height=150
-        )
+            if "conceptos_gastos" not in st.session_state:
+                st.session_state.conceptos_gastos = []
 
-        st.markdown("<br>", unsafe_allow_html=True)
+            # =========================
+            # INPUTS
+            # =========================
 
-    st.divider()
+            col1, col2, col3 = st.columns([2, 3, 2])
 
-    submitted = st.button(
-        "💳 Enviar Solicitud",
-        use_container_width=True,
-        type="primary"
-    )
+            with col1:
 
-    if submitted:
+                tipo_gasto = st.selectbox(
+                    "Tipo",
+                    [
+                        "Selecciona un tipo",
+                        "TRANSPORTACION TERRESTRE",
+                        "HOSPEDAJE",
+                        "ALIMENTOS",
+                        "PROPINAS",
+                        "TAXIS",
+                        "OTROS"
+                    ],
+                    key="tipo_gasto"
+                )
 
-        # =========================
-        # PREFIX MAP
-        # =========================
+            with col2:
 
-        prefijos_sucursal = {
-            "NUEVO LAREDO": "NL",
-            "DALLAS": "DL",
-            "CHICAGO": "CH",
-            "GUADALAJARA": "GD",
-            "MONTERREY": "MT",
-            "QUERETARO": "QT",
-            "LEON": "LN",
-            "TLAXCALA": "TL",
-            "OTRO": "OT"
-        }
+                descripcion_otros = st.text_input(
+                    "Describir (Otros)",
+                    disabled=tipo_gasto != "OTROS",
+                    key="descripcion_otros"
+                )
 
-        prefijo = prefijos_sucursal.get(
-            sucursal,
-            "OT"
-        )
+            with col3:
 
-        # =========================
-        # TEMP FOLIO GENERATOR
-        # =========================
+                monto_estimado = st.number_input(
+                    "Monto Estimado",
+                    min_value=0.0,
+                    step=100.0,
+                    key="monto_estimado"
+                )
 
-        consecutivo = 1
-
-        folio_solicitud = (
-            f"{prefijo}-{consecutivo:06d}"
-        )
-
-        # =========================
-        # SUCCESS POPUP
-        # =========================
-
-        @st.dialog("✅ Solicitud Enviada")
-        def mostrar_confirmacion():
-
-            st.success(
-                "Solicitud enviada correctamente."
-            )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.markdown("### 📄 FOLIO DE SOLICITUD")
-
-            st.code(
-                folio_solicitud,
-                language=None
-            )
-
-            st.markdown("<br>", unsafe_allow_html=True)
+            # =========================
+            # ADD BUTTON
+            # =========================
 
             if st.button(
-                "Cerrar",
+                "➕ Agregar Concepto",
                 use_container_width=True
             ):
 
-                # wipe ALL widget state except auth/session
-                protected_keys = [
-                    "logged_in",
-                    "user"
-                ]
+                descripcion_final = ""
 
-                keys_to_delete = [
-                    k for k in st.session_state.keys()
-                    if k not in protected_keys
-                ]
+                if tipo_gasto == "OTROS":
+                    descripcion_final = descripcion_otros
 
-                for k in keys_to_delete:
-                    del st.session_state[k]
+                if tipo_gasto == "Selecciona un tipo":
 
-                st.rerun()
+                    st.warning("Selecciona un tipo.")
 
-        mostrar_confirmacion()
+                elif monto_estimado <= 0:
+
+                    st.warning("Ingresa un monto válido.")
+
+                else:
+
+                    st.session_state.conceptos_gastos.append({
+                        "Tipo": tipo_gasto,
+                        "Descripcion": descripcion_final,
+                        "Monto": monto_estimado
+                    })
+
+                    st.success("Concepto agregado correctamente.")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # =========================
+            # TABLE
+            # =========================
+
+            if st.session_state.conceptos_gastos:
+
+                df_conceptos = pd.DataFrame(
+                    st.session_state.conceptos_gastos
+                )
+
+                df_display = df_conceptos.copy()
+
+                df_display["Monto"] = df_display["Monto"].apply(
+                    lambda x: f"$ {x:,.2f}"
+                )
+
+                st.dataframe(
+                    df_display,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                total_estimado = (
+                    df_conceptos["Monto"]
+                    .sum()
+                )
+
+            else:
+
+                st.info(
+                    "No hay conceptos agregados."
+                )
+
+                total_estimado = 0
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # =========================
+            # TOTAL
+            # =========================
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:white;
+                    color:black;
+                    border:2px solid black;
+                    padding:14px;
+                    font-size:24px;
+                    font-weight:bold;
+                    text-align:right;
+                ">
+                    TOTAL ESTIMADO: $ {total_estimado:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # =========================
+            # OBSERVACIONES
+            # =========================
+
+            observaciones = st.text_area(
+                "Observaciones",
+                height=150
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+        st.divider()
+
+        submitted = st.button(
+            "💳 Enviar Solicitud",
+            use_container_width=True,
+            type="primary"
+        )
+
+        if submitted:
+
+            # =========================
+            # PREFIX MAP
+            # =========================
+
+            prefijos_sucursal = {
+                "NUEVO LAREDO": "NL",
+                "DALLAS": "DL",
+                "CHICAGO": "CH",
+                "GUADALAJARA": "GD",
+                "MONTERREY": "MT",
+                "QUERETARO": "QT",
+                "LEON": "LN",
+                "TLAXCALA": "TL",
+                "OTRO": "OT"
+            }
+
+            prefijo = prefijos_sucursal.get(
+                sucursal,
+                "OT"
+            )
+
+            # =========================
+            # TEMP FOLIO GENERATOR
+            # =========================
+
+            consecutivo = 1
+
+            folio_solicitud = (
+                f"{prefijo}-{consecutivo:06d}"
+            )
+
+            # =========================
+            # SUCCESS POPUP
+            # =========================
+
+            @st.dialog("✅ Solicitud Enviada")
+            def mostrar_confirmacion():
+
+                st.success(
+                    "Solicitud enviada correctamente."
+                )
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                st.markdown("### 📄 FOLIO DE SOLICITUD")
+
+                st.code(
+                    folio_solicitud,
+                    language=None
+                )
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                if st.button(
+                    "Cerrar",
+                    use_container_width=True
+                ):
+
+                    # reset dynamic table
+                    st.session_state.conceptos_gastos = []
+
+                    # increment form key
+                    st.session_state.solicitud_form_key = (
+                        st.session_state.get(
+                            "solicitud_form_key",
+                            0
+                        ) + 1
+                    )
+
+                    st.rerun()
+
+            mostrar_confirmacion()
 
 # =================================
 # TAB 2 — COMPROBACION
