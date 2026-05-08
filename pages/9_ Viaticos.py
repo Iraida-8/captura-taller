@@ -446,7 +446,71 @@ with tab_solicitud:
             "OT"
         )
 
-        folio_solicitud = f"{prefijo}-000001"
+        # =================================
+        # GENERAR FOLIO
+        # =================================
+
+        existing = (
+            supabase
+            .table("solicitud_viaje")
+            .select("id")
+            .execute()
+        )
+
+        consecutivo = len(existing.data) + 1
+
+        folio_solicitud = (
+            f"{prefijo}-{consecutivo:06d}"
+        )
+
+        # =================================
+        # SUCURSAL FINAL
+        # =================================
+
+        sucursal_especificar = ""
+
+        if sucursal == "OTRO":
+            sucursal_especificar = suc_otro_texto
+
+        # =================================
+        # GUARDAR EN SUPABASE
+        # =================================
+
+        supabase.table("solicitud_viaje").insert({
+
+            "folio_solicitud": folio_solicitud,
+
+            "empresa_brinda_servicio": empresa_servicio,
+
+            "nombre_empleado_solicita": empleado,
+
+            "motivo_viaje": motivo_viaje,
+
+            "fecha_solicitud": str(fecha_solicitud),
+
+            "fecha_inicio": str(fecha_inicio),
+
+            "fecha_fin": str(fecha_fin),
+
+            "empresa_cargo_gastos": empresa_cargo,
+
+            "unidad_negocio": unidad_negocio,
+
+            "sucursal": sucursal,
+
+            "sucursal_especificar": sucursal_especificar,
+
+            "ref_poliza_contable": ref_poliza,
+
+            "ref_entrega_fondo": ref_entrega_fondo,
+
+            "conceptos": st.session_state[conceptos_key],
+
+            "total_estimado": float(total_estimado),
+
+            "observaciones": observaciones
+
+        }).execute()
 
         @st.dialog("✅ Solicitud Enviada")
         def mostrar_confirmacion():
