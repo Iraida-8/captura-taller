@@ -33,6 +33,15 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# FORM VERSION
+# =================================
+
+if "solicitud_form_version" not in st.session_state:
+    st.session_state.solicitud_form_version = 0
+
+FORM_VERSION = st.session_state.solicitud_form_version
+
+# =================================
 # FORM RESET
 # =================================
 
@@ -104,6 +113,15 @@ tab_solicitud, tab_comprobacion = st.tabs(
 ])
 
 # =================================
+# FORM VERSION
+# =================================
+
+if "solicitud_form_version" not in st.session_state:
+    st.session_state.solicitud_form_version = 0
+
+FORM_VERSION = st.session_state.solicitud_form_version
+
+# =================================
 # TAB 1 — SOLICITUD
 # =================================
 with tab_solicitud:
@@ -130,10 +148,6 @@ with tab_solicitud:
 
         st.markdown("## 📋 Informacion General")
 
-        # =========================
-        # ROW 1
-        # =========================
-
         col1, col2 = st.columns(2)
 
         with col1:
@@ -149,7 +163,7 @@ with tab_solicitud:
                     "SET LOGIS PLUS"
                 ],
                 index=0,
-                key="empresa_servicio"
+                key=f"empresa_servicio_{FORM_VERSION}"
             )
 
         with col2:
@@ -158,22 +172,14 @@ with tab_solicitud:
                 "Nombre del Empleado que Solicita",
                 value=nombre_usuario,
                 disabled=True,
-                key="empleado"
+                key=f"empleado_{FORM_VERSION}"
             )
-
-        # =========================
-        # ROW 2
-        # =========================
 
         motivo_viaje = st.text_area(
             "Motivo del Viaje",
             height=100,
-            key="motivo_viaje"
+            key=f"motivo_viaje_{FORM_VERSION}"
         )
-
-        # =========================
-        # ROW 3
-        # =========================
 
         col1, col2 = st.columns(2)
 
@@ -183,16 +189,11 @@ with tab_solicitud:
                 "Fecha de Solicitud",
                 value=date.today(),
                 disabled=True,
-                key="fecha_solicitud"
+                key=f"fecha_solicitud_{FORM_VERSION}"
             )
 
         with col2:
-
             st.empty()
-
-        # =========================
-        # ROW 4
-        # =========================
 
         col1, col2 = st.columns(2)
 
@@ -201,7 +202,7 @@ with tab_solicitud:
             fecha_inicio = st.date_input(
                 "Fecha de Inicio",
                 value=date.today(),
-                key="fecha_inicio"
+                key=f"fecha_inicio_{FORM_VERSION}"
             )
 
         with col2:
@@ -209,12 +210,8 @@ with tab_solicitud:
             fecha_fin = st.date_input(
                 "Fecha de Fin",
                 value=date.today() + pd.Timedelta(days=1),
-                key="fecha_fin"
+                key=f"fecha_fin_{FORM_VERSION}"
             )
-
-        # =========================
-        # ROW 5
-        # =========================
 
         col1, col2 = st.columns(2)
 
@@ -231,7 +228,7 @@ with tab_solicitud:
                     "SET LOGIS PLUS"
                 ],
                 index=0,
-                key="empresa_cargo"
+                key=f"empresa_cargo_{FORM_VERSION}"
             )
 
         with col2:
@@ -245,12 +242,8 @@ with tab_solicitud:
                     "PLUS"
                 ],
                 index=0,
-                key="unidad_negocio"
+                key=f"unidad_negocio_{FORM_VERSION}"
             )
-
-        # =========================
-        # ROW 6
-        # =========================
 
         st.markdown("### Sucursal")
 
@@ -269,14 +262,14 @@ with tab_solicitud:
             ],
             horizontal=True,
             label_visibility="collapsed",
-            key="sucursal"
+            key=f"sucursal_{FORM_VERSION}"
         )
 
         if sucursal == "OTRO":
 
             suc_otro_texto = st.text_input(
                 "Especificar",
-                key="suc_otro_texto"
+                key=f"suc_otro_texto_{FORM_VERSION}"
             )
 
             sucursales_final = (
@@ -291,16 +284,12 @@ with tab_solicitud:
                 "Especificar",
                 value="",
                 disabled=True,
-                key="suc_otro_disabled"
+                key=f"suc_otro_disabled_{FORM_VERSION}"
             )
 
             sucursales_final = [sucursal]
 
     st.divider()
-
-    # =========================
-    # DATOS CONTABLES
-    # =========================
 
     col_poliza1, col_poliza2 = st.columns(2)
 
@@ -308,28 +297,26 @@ with tab_solicitud:
 
         ref_poliza = st.text_input(
             "REF DE POLIZA CONTABLE",
-            key="ref_poliza"
+            key=f"ref_poliza_{FORM_VERSION}"
         )
 
     with col_poliza2:
 
         ref_entrega_fondo = st.text_input(
             "REF DE ENTREGA DEL FONDO PARA GASTOS DE ESTE VIAJE",
-            key="ref_entrega_fondo"
+            key=f"ref_entrega_fondo_{FORM_VERSION}"
         )
 
     st.divider()
-
-    # =========================
-    # ESTIMACION DE GASTOS
-    # =========================
 
     with st.container(border=True):
 
         st.markdown("## 💰 Estimacion de Gastos de Viaje a Incurrir")
 
-        if "conceptos_gastos" not in st.session_state:
-            st.session_state.conceptos_gastos = []
+        conceptos_key = f"conceptos_gastos_{FORM_VERSION}"
+
+        if conceptos_key not in st.session_state:
+            st.session_state[conceptos_key] = []
 
         col1, col2, col3 = st.columns([2, 3, 2])
 
@@ -346,7 +333,7 @@ with tab_solicitud:
                     "TAXIS",
                     "OTROS"
                 ],
-                key="tipo_gasto"
+                key=f"tipo_gasto_{FORM_VERSION}"
             )
 
         with col2:
@@ -354,7 +341,7 @@ with tab_solicitud:
             descripcion_otros = st.text_input(
                 "Describir (Otros)",
                 disabled=tipo_gasto != "OTROS",
-                key="descripcion_otros"
+                key=f"descripcion_otros_{FORM_VERSION}"
             )
 
         with col3:
@@ -363,13 +350,13 @@ with tab_solicitud:
                 "Monto Estimado",
                 min_value=0.0,
                 step=100.0,
-                key="monto_estimado"
+                key=f"monto_estimado_{FORM_VERSION}"
             )
 
         if st.button(
             "➕ Agregar Concepto",
             use_container_width=True,
-            key="btn_agregar_concepto"
+            key=f"btn_agregar_concepto_{FORM_VERSION}"
         ):
 
             descripcion_final = ""
@@ -377,30 +364,20 @@ with tab_solicitud:
             if tipo_gasto == "OTROS":
                 descripcion_final = descripcion_otros
 
-            if tipo_gasto == "Selecciona un tipo":
+            if tipo_gasto != "Selecciona un tipo" and monto_estimado > 0:
 
-                st.warning("Selecciona un tipo.")
-
-            elif monto_estimado <= 0:
-
-                st.warning("Ingresa un monto válido.")
-
-            else:
-
-                st.session_state.conceptos_gastos.append({
+                st.session_state[conceptos_key].append({
                     "Tipo": tipo_gasto,
                     "Descripcion": descripcion_final,
                     "Monto": monto_estimado
                 })
 
-                st.success("Concepto agregado correctamente.")
-
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.session_state.conceptos_gastos:
+        if st.session_state[conceptos_key]:
 
             df_conceptos = pd.DataFrame(
-                st.session_state.conceptos_gastos
+                st.session_state[conceptos_key]
             )
 
             df_display = df_conceptos.copy()
@@ -415,18 +392,12 @@ with tab_solicitud:
                 hide_index=True
             )
 
-            total_estimado = (
-                df_conceptos["Monto"]
-                .sum()
-            )
+            total_estimado = df_conceptos["Monto"].sum()
 
         else:
 
             st.info("No hay conceptos agregados.")
-
             total_estimado = 0
-
-        st.markdown("<br>", unsafe_allow_html=True)
 
         st.markdown(
             f"""
@@ -445,12 +416,10 @@ with tab_solicitud:
             unsafe_allow_html=True
         )
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
         observaciones = st.text_area(
             "Observaciones",
             height=150,
-            key="observaciones"
+            key=f"observaciones_{FORM_VERSION}"
         )
 
     st.divider()
@@ -459,7 +428,7 @@ with tab_solicitud:
         "💳 Enviar Solicitud",
         use_container_width=True,
         type="primary",
-        key="submit_solicitud"
+        key=f"submit_solicitud_{FORM_VERSION}"
     )
 
     if submitted:
@@ -481,11 +450,7 @@ with tab_solicitud:
             "OT"
         )
 
-        consecutivo = 1
-
-        folio_solicitud = (
-            f"{prefijo}-{consecutivo:06d}"
-        )
+        folio_solicitud = f"{prefijo}-000001"
 
         @st.dialog("✅ Solicitud Enviada")
         def mostrar_confirmacion():
@@ -504,36 +469,10 @@ with tab_solicitud:
             if st.button(
                 "Cerrar",
                 use_container_width=True,
-                key="cerrar_popup"
+                key=f"cerrar_popup_{FORM_VERSION}"
             ):
 
-                keys_to_delete = [
-                    "empresa_servicio",
-                    "empleado",
-                    "motivo_viaje",
-                    "fecha_solicitud",
-                    "fecha_inicio",
-                    "fecha_fin",
-                    "empresa_cargo",
-                    "unidad_negocio",
-                    "sucursal",
-                    "suc_otro_texto",
-                    "suc_otro_disabled",
-                    "ref_poliza",
-                    "ref_entrega_fondo",
-                    "tipo_gasto",
-                    "descripcion_otros",
-                    "monto_estimado",
-                    "conceptos_gastos",
-                    "observaciones",
-                    "submit_solicitud",
-                    "btn_agregar_concepto"
-                ]
-
-                for k in keys_to_delete:
-                    if k in st.session_state:
-                        del st.session_state[k]
-
+                st.session_state.solicitud_form_version += 1
                 st.rerun()
 
         mostrar_confirmacion()
