@@ -164,42 +164,34 @@ def render_kpi_card(
     bg_color
 ):
 
-    st.markdown(
-        f"""
-        <style>
-        .kpi-card-{title} {{
-            background: {bg_color};
-            border-left: 6px solid {border_color};
-            border-radius: 18px;
-            padding: 22px;
-            height: 170px;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    with st.container(border=False):
+    with st.container():
 
         st.markdown(
             f"""
-            <div class="kpi-card-{title}">
-                <div style="font-size:20px;font-weight:700;color:white;">
-                    {emoji} {title}
-                </div>
-
-                <div style="
-                    margin-top:30px;
-                    font-size:58px;
-                    font-weight:800;
-                    color:white;
-                    line-height:1;
-                ">
-                    {value}
-                </div>
-            </div>
+            <style>
+            div[data-testid="stVerticalBlock"]:has(div.kpi-{title}) {{
+                background:{bg_color};
+                border-left:6px solid {border_color};
+                border-radius:18px;
+                padding:20px;
+                min-height:170px;
+                max-height:170px;
+            }}
+            </style>
             """,
             unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"<div class='kpi-{title}'></div>",
+            unsafe_allow_html=True
+        )
+
+        st.subheader(f"{emoji} {title}")
+
+        st.metric(
+            label="",
+            value=value
         )
 
 with kpi1:
