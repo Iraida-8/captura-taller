@@ -72,7 +72,7 @@ st.divider()
 # HEADER
 # =================================
 
-st.title("💳  Solicitud de Viáticos y Reembolso")
+st.title("💳  Solicitud de Viáticos y Reembolsos")
 
 # =================================
 # TABS
@@ -687,228 +687,173 @@ with tab_comprobacion:
     st.divider()
 
     # =========================
-    # TABLE STYLE
+    # IMPORTE DE GASTOS
     # =========================
 
-    st.markdown(
-        """
-        <style>
+    with st.container(border=True):
 
-        .comp-table-header {
-            background:white;
-            color:black;
-            border:2px solid black;
-            padding:10px;
-            font-size:18px;
-            font-weight:bold;
-            text-align:center;
-        }
+        st.markdown("## 💰 IMPORTE DE GASTOS")
 
-        .comp-table-cell {
-            background:white;
-            color:black;
-            border-left:2px solid black;
-            border-right:2px solid black;
-            border-bottom:1px dotted black;
-            padding:10px;
-            min-height:55px;
-            display:flex;
-            align-items:center;
-            font-size:17px;
-            font-weight:bold;
-        }
+        gastos_comp_key = "gastos_comprobacion"
 
-        .comp-total-box {
-            background:white;
-            color:black;
-            border:2px solid black;
-            padding:12px;
-            font-size:22px;
-            font-weight:bold;
-            min-height:58px;
-            display:flex;
-            align-items:center;
-        }
+        if gastos_comp_key not in st.session_state:
+            st.session_state[gastos_comp_key] = []
 
-        .obs-header {
-            background:#9f9f9f;
-            color:black;
-            border:2px solid black;
-            text-align:center;
-            letter-spacing:8px;
-            font-size:24px;
-            font-weight:bold;
-            padding:12px;
-            margin-bottom:0px;
-        }
+        # =========================
+        # INPUTS
+        # =========================
 
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+        col1, col2, col3 = st.columns(3)
 
-    # =========================
-    # TABLE HEADER
-    # =========================
+        with col1:
 
-    h1, h2, h3, h4, h5 = st.columns([5, 2, 2, 2, 2])
-
-    with h1:
-        st.markdown(
-            '<div class="comp-table-header"></div>',
-            unsafe_allow_html=True
-        )
-
-    with h2:
-        st.markdown(
-            '<div class="comp-table-header">IMPORTE DE GASTOS CON</div>',
-            unsafe_allow_html=True
-        )
-
-    with h3:
-        st.markdown(
-            '<div class="comp-table-header">IMPORTE DE GASTOS SIN</div>',
-            unsafe_allow_html=True
-        )
-
-    with h4:
-        st.markdown(
-            '<div class="comp-table-header">IMPUESTO ACREDITABLE</div>',
-            unsafe_allow_html=True
-        )
-
-    with h5:
-        st.markdown(
-            '<div class="comp-table-header">TOTAL COMPROBADO</div>',
-            unsafe_allow_html=True
-        )
-
-    # =========================
-    # ROW BUILDER
-    # =========================
-
-    def fila_comp(nombre, key):
-
-        c1, c2, c3, c4, c5 = st.columns([5, 2, 2, 2, 2])
-
-        with c1:
-            st.markdown(
-                f'<div class="comp-table-cell">{nombre}</div>',
-                unsafe_allow_html=True
+            tipo_gasto_comp = st.selectbox(
+                "Tipo",
+                [
+                    "Selecciona un tipo",
+                    "TRANSPORTACION TERRESTRE",
+                    "HOSPEDAJE",
+                    "ALIMENTOS",
+                    "PROPINAS",
+                    "TAXIS",
+                    "CASETAS",
+                    "GASOLINA"
+                ],
+                key="tipo_gasto_comp"
             )
 
-        with c2:
-            con_iva = st.number_input(
-                "",
+        with col2:
+
+            gasto_con_comp = st.number_input(
+                "Gastos con Comprobante",
                 min_value=0.0,
                 step=100.0,
-                key=f"{key}_con",
-                label_visibility="collapsed"
+                key="gasto_con_comp"
             )
 
-        with c3:
-            sin_iva = st.number_input(
-                "",
+        with col3:
+
+            gasto_sin_comp = st.number_input(
+                "Gastos sin Comprobante",
                 min_value=0.0,
                 step=100.0,
-                key=f"{key}_sin",
-                label_visibility="collapsed"
+                key="gasto_sin_comp"
             )
 
-        with c4:
-            impuesto = st.number_input(
-                "",
-                min_value=0.0,
-                step=100.0,
-                key=f"{key}_imp",
-                label_visibility="collapsed"
+        # =========================
+        # ADD BUTTON
+        # =========================
+
+        if st.button(
+            "➕ Agregar Concepto",
+            use_container_width=True,
+            key="btn_agregar_comp"
+        ):
+
+            if (
+                tipo_gasto_comp != "Selecciona un tipo"
+            ):
+
+                impuesto_acreditable = 0
+                total_comprobado = (
+                    gasto_con_comp +
+                    gasto_sin_comp +
+                    impuesto_acreditable
+                )
+
+                st.session_state[gastos_comp_key].append({
+
+                    "Tipo": tipo_gasto_comp,
+
+                    "Gastos con Comprobante":
+                        gasto_con_comp,
+
+                    "Gastos sin Comprobante":
+                        gasto_sin_comp,
+
+                    "Impuesto Acreditable":
+                        impuesto_acreditable,
+
+                    "Total Comprobado":
+                        total_comprobado
+                })
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        if st.session_state[gastos_comp_key]:
+
+            df_gastos = pd.DataFrame(
+                st.session_state[gastos_comp_key]
             )
 
-        total = con_iva + sin_iva + impuesto
+            df_display = df_gastos.copy()
 
-        with c5:
-            st.markdown(
-                f'<div class="comp-total-box">$ {total:,.2f}</div>',
-                unsafe_allow_html=True
+            money_cols = [
+                "Gastos con Comprobante",
+                "Gastos sin Comprobante",
+                "Impuesto Acreditable",
+                "Total Comprobado"
+            ]
+
+            for col in money_cols:
+
+                df_display[col] = df_display[col].apply(
+                    lambda x: f"$ {x:,.2f}"
+                )
+
+            st.dataframe(
+                df_display,
+                use_container_width=True,
+                hide_index=True
             )
 
-        return total
+            total_general = (
+                df_gastos["Total Comprobado"]
+                .sum()
+            )
 
-    total_general = 0
+        else:
 
-    total_general += fila_comp("TRANSPORTACION TERRESTRE", "comp_trans")
-    total_general += fila_comp("HOSPEDAJE", "comp_hosp")
-    total_general += fila_comp("ALIMENTOS", "comp_alim")
-    total_general += fila_comp("PROPINAS", "comp_prop")
-    total_general += fila_comp("TAXIS", "comp_taxi")
-    total_general += fila_comp("CASETAS", "comp_case")
-    total_general += fila_comp("GASOLINA", "comp_gaso")
+            st.info("No hay conceptos agregados.")
+            total_general = 0
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    # =========================
-    # LOWER SECTION
-    # =========================
-
-    col_obs, col_tot = st.columns([1.5, 1])
-
-    with col_obs:
+        # =========================
+        # TOTAL
+        # =========================
 
         st.markdown(
-            '<div class="obs-header">OBSERVACIONES</div>',
-            unsafe_allow_html=True
-        )
-
-        obs_comp = st.text_area(
-            "",
-            height=160,
-            key="obs_comp",
-            label_visibility="collapsed"
-        )
-
-    with col_tot:
-
-        st.markdown(
-            """
+            f"""
             <div style="
-                color:white;
-                font-size:22px;
+                background:white;
+                color:black;
+                border:2px solid black;
+                padding:14px;
+                font-size:24px;
                 font-weight:bold;
-                margin-bottom:12px;
+                text-align:right;
             ">
-                (-) Anticipo para gastos de viaje
+                TOTAL COMPROBADO: $ {total_general:,.2f}
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        anticipo_comp = st.number_input(
-            "",
-            min_value=0.0,
-            step=100.0,
-            key="anticipo_comp",
-            label_visibility="collapsed"
-        )
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        diferencia_comp = total_general - anticipo_comp
+        # =========================
+        # OBSERVACIONES
+        # =========================
 
-        st.markdown(
-            f'''
-            <div style="
-                color:white;
-                font-size:24px;
-                font-weight:bold;
-                margin-top:40px;
-                margin-bottom:15px;
-            ">
-                Diferencia a cargo (favor)
-            </div>
-
-            <div class="comp-total-box">
-                $ {diferencia_comp:,.2f}
-            </div>
-            ''',
-            unsafe_allow_html=True
+        observaciones_comp = st.text_area(
+            "Observaciones",
+            height=150,
+            key="observaciones_comp"
         )
 
     st.markdown("<br><br>", unsafe_allow_html=True)
