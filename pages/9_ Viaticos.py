@@ -998,138 +998,94 @@ with tab_comprobacion:
 
     if submitted_comp:
 
-        prefijos_sucursal = {
-            "NUEVO LAREDO": "NL",
-            "DALLAS": "DL",
-            "CHICAGO": "CH",
-            "GUADALAJARA": "GD",
-            "MONTERREY": "MT",
-            "QUERETARO": "QT",
-            "LEON": "LN",
-            "TLAXCALA": "TL",
-            "OTRO": "OT"
-        }
+        if folio_seleccionado == "Selecciona folio":
 
-        prefijo = prefijos_sucursal.get(
-            sucursal_comp,
-            "OT"
-        )
-
-        existing = (
-            supabase
-            .table("comprobacion_viaje")
-            .select("id")
-            .execute()
-        )
-
-        consecutivo = len(existing.data) + 1
-
-        folio_comprobacion = (
-            f"{prefijo}-{consecutivo:06d}-CGV"
-        )
-
-        sucursal_especificar_comp = ""
-
-        if sucursal_comp == "OTRO":
-            sucursal_especificar_comp = (
-                sucursal_otro_comp
+            st.error(
+                "Debes seleccionar un folio."
             )
 
-        supabase.table(
-            "comprobacion_viaje"
-        ).insert({
+        else:
 
-            "folio_comprobacion":
-                folio_comprobacion,
+            # =================================
+            # GENERAR FOLIO COMPROBACION
+            # =================================
 
-            "nombre_compania":
-                empresa_comp,
-
-            "nombre_empleado_solicita":
-                empleado_comp,
-
-            "motivo_viaje":
-                motivo_comp,
-
-            "lugar_viaje":
-                lugar_comp,
-
-            "periodo_viaje":
-                periodo_comp,
-
-            "fecha_solicitud":
-                str(fecha_comprobacion),
-
-            "fecha_inicio":
-                str(fecha_inicio_comp),
-
-            "fecha_fin":
-                str(fecha_fin_comp),
-
-            "empresa_cargo_gastos":
-                empresa_cargo_comp,
-
-            "unidad_negocio":
-                unidad_negocio_comp,
-
-            "sucursal":
-                sucursal_comp,
-
-            "sucursal_especificar":
-                sucursal_especificar_comp,
-
-            "ref_entrega_fondo":
-                ref_entrega_comp,
-
-            "conceptos":
-                st.session_state[gastos_comp_key],
-
-            "total_comprobado":
-                float(total_general),
-
-            "anticipo_viaje":
-                float(anticipo_viaje),
-
-            "diferencia_cargo_favor":
-                float(diferencia_cargo),
-
-            "observaciones":
-                observaciones_comp,
-
-            "estatus":
-                "Pendiente"
-
-        }).execute()
-
-        @st.dialog("✅ Comprobación Enviada")
-        def mostrar_confirmacion_comp():
-
-            st.success(
-                "Comprobación enviada correctamente."
+            existing = (
+                supabase
+                .table("comprobacion_viaje")
+                .select("id")
+                .execute()
             )
 
-            st.markdown(
-                "### 📄 FOLIO DE COMPROBACIÓN"
+            consecutivo = len(existing.data) + 1
+
+            folio_comprobacion = (
+                f"CGV-{consecutivo:06d}"
             )
 
-            st.code(
-                folio_comprobacion,
-                language=None
-            )
+            # =================================
+            # GUARDAR EN SUPABASE
+            # =================================
 
-            if st.button(
-                "Cerrar",
-                use_container_width=True,
-                key=f"cerrar_popup_comp_{COMP_VERSION}"
-            ):
+            supabase.table(
+                "comprobacion_viaje"
+            ).insert({
 
-                st.session_state[gastos_comp_key] = []
+                "folio_comprobacion":
+                    folio_comprobacion,
 
-                st.session_state.comprobacion_form_version += 1
+                "folio_solicitud":
+                    folio_seleccionado,
 
-                st.rerun()
+                "conceptos":
+                    st.session_state[gastos_comp_key],
 
-        mostrar_confirmacion_comp()
+                "total_comprobado":
+                    float(total_general),
+
+                "anticipo_viaje":
+                    float(anticipo_viaje),
+
+                "diferencia_cargo_favor":
+                    float(diferencia_cargo),
+
+                "observaciones":
+                    observaciones_comp,
+
+                "estatus":
+                    "Pendiente"
+
+            }).execute()
+
+            @st.dialog("✅ Comprobación Enviada")
+            def mostrar_confirmacion_comp():
+
+                st.success(
+                    "Comprobación enviada correctamente."
+                )
+
+                st.markdown(
+                    "### 📄 FOLIO DE COMPROBACIÓN"
+                )
+
+                st.code(
+                    folio_comprobacion,
+                    language=None
+                )
+
+                if st.button(
+                    "Cerrar",
+                    use_container_width=True,
+                    key=f"cerrar_popup_comp_{COMP_VERSION}"
+                ):
+
+                    st.session_state[gastos_comp_key] = []
+
+                    st.session_state.comprobacion_form_version += 1
+
+                    st.rerun()
+
+            mostrar_confirmacion_comp()
 
 # -------------------------------
 # CSS
