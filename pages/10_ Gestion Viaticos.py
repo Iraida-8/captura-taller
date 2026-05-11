@@ -1256,35 +1256,37 @@ else:
                                 conceptos_comprobacion
                             )
 
-                            if "Monto" in df_comp.columns:
+                            currency_columns = [
+                                "Monto",
+                                "IVA",
+                                "Acreditable",
+                                "Total",
+                                "Subtotal",
+                                "Total Compartido"
+                            ]
 
-                                df_comp["Monto"] = pd.to_numeric(
-                                    df_comp["Monto"],
-                                    errors="coerce"
-                                ).fillna(0)
+                            for col_name in currency_columns:
 
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic",
-                                    column_config={
-                                        "Monto": st.column_config.NumberColumn(
-                                            "Monto",
-                                            format="$ %.2f"
+                                if col_name in df_comp.columns:
+
+                                    df_comp[col_name] = (
+                                        pd.to_numeric(
+                                            df_comp[col_name],
+                                            errors="coerce"
                                         )
-                                    }
-                                )
+                                        .fillna(0)
+                                        .apply(
+                                            lambda x:
+                                            f"${x:,.2f}"
+                                        )
+                                    )
 
-                            else:
-
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic"
-                                )
-
+                            edited_comp = st.data_editor(
+                                df_comp,
+                                use_container_width=True,
+                                hide_index=True,
+                                num_rows="dynamic"
+                            )
                     # =================================
                     # TOTALES COMPROBACION
                     # =================================
