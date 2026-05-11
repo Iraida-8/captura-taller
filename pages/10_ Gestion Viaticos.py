@@ -479,6 +479,27 @@ def modal_ver_solicitud(row):
 
     st.markdown("## 💰 Conceptos")
 
+    total_value = row.get("total_estimado", 0)
+
+    try:
+        total_value = float(total_value)
+    except:
+        total_value = 0
+
+    st.markdown(
+        f"""
+        <div style='
+            font-size:24px;
+            font-weight:700;
+            color:#BFA75F;
+            margin-bottom:15px;
+        '>
+            Total Estimado: ${total_value:,.2f}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     conceptos = row.get("conceptos", [])
 
     if conceptos:
