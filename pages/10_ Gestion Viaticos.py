@@ -1256,6 +1256,14 @@ else:
                                 conceptos_comprobacion
                             )
 
+                            columnas_mostrar = []
+
+                            if "Tipo" in df_comp.columns:
+                                columnas_mostrar.append("Tipo")
+
+                            if "Descripcion" in df_comp.columns:
+                                columnas_mostrar.append("Descripcion")
+
                             if "Monto" in df_comp.columns:
 
                                 df_comp["Monto"] = (
@@ -1270,21 +1278,16 @@ else:
                                     )
                                 )
 
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic"
-                                )
+                                columnas_mostrar.append("Monto")
 
-                            else:
+                            df_comp = df_comp[columnas_mostrar]
 
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic"
-                                )
+                            edited_comp = st.data_editor(
+                                df_comp,
+                                use_container_width=True,
+                                hide_index=True,
+                                num_rows="dynamic"
+                            )
 
                     # =================================
                     # TOTALES COMPROBACION
