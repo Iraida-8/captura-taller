@@ -1773,7 +1773,114 @@ else:
                 use_container_width=True
             ):
 
-                modal_verificacion()
+                folio_actual = row.get(
+                    "folio_solicitud",
+                    ""
+                )
+
+                solicitud_match = df_solicitudes[
+                    df_solicitudes["folio_solicitud"]
+                    .astype(str)
+                    ==
+                    str(folio_actual)
+                ]
+
+                if not solicitud_match.empty:
+
+                    solicitud_row = (
+                        solicitud_match
+                        .iloc[0]
+                        .to_dict()
+                    )
+
+                else:
+
+                    solicitud_row = {}
+
+                @st.dialog("Detalle de Comprobación")
+                def modal_verificacion_finalizada():
+
+                    st.markdown(
+                        "## 📋 Información General"
+                    )
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+
+                        st.write(
+                            f"**Folio Solicitud:** "
+                            f"{solicitud_row.get('folio_solicitud', '')}"
+                        )
+
+                        st.write(
+                            f"**Folio Comprobación:** "
+                            f"{row.get('folio_comprobacion', '')}"
+                        )
+
+                        st.write(
+                            f"**Estatus:** "
+                            f"{row.get('estatus', '')}"
+                        )
+
+                        st.write(
+                            f"**Empleado Solicita:** "
+                            f"{solicitud_row.get('nombre_empleado_solicita', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Solicitud:** "
+                            f"{solicitud_row.get('fecha_solicitud', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Comprobación:** "
+                            f"{row.get('created_at', '')}"
+                        )
+
+                    with col2:
+
+                        st.write(
+                            f"**Empresa Brinda Servicio:** "
+                            f"{solicitud_row.get('empresa_brinda_servicio', '')}"
+                        )
+
+                        st.write(
+                            f"**Empresa Cargo Gastos:** "
+                            f"{solicitud_row.get('empresa_cargo_gastos', '')}"
+                        )
+
+                        st.write(
+                            f"**Unidad Negocio:** "
+                            f"{solicitud_row.get('unidad_negocio', '')}"
+                        )
+
+                    st.markdown("---")
+
+                    st.markdown(
+                        "## 💰 Conceptos"
+                    )
+
+                    conceptos_comprobacion = (
+                        row.get(
+                            "conceptos",
+                            []
+                        )
+                    )
+
+                    if conceptos_comprobacion:
+
+                        df_comp = pd.DataFrame(
+                            conceptos_comprobacion
+                        )
+
+                        st.dataframe(
+                            df_comp,
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                modal_verificacion_finalizada()
 
 # =================================
 # PAGE BUTTONS
