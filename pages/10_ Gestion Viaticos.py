@@ -1259,7 +1259,7 @@ else:
                             currency_columns = [
                                 "Monto",
                                 "IVA",
-                                "Acreditable",
+                                "IVA Acreditable",
                                 "Total",
                                 "Subtotal",
                                 "Total Compartido"
