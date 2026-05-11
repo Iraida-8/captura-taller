@@ -301,6 +301,254 @@ with kpi6:
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
+# =================================
+# PENDIENTES SECTION
+# =================================
+
+st.markdown(
+    """
+    <h2 style='margin-bottom:20px;'>
+        📋 Solicitudes Pendientes
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
+
+# Only pendientes
+df_pendientes = df_solicitudes[
+    df_solicitudes["estatus"] == "Pendiente"
+].copy()
+
+# Sort newest first
+if "created_at" in df_pendientes.columns:
+
+    df_pendientes = df_pendientes.sort_values(
+        by="created_at",
+        ascending=False
+    )
+
+# =================================
+# PAGINATION
+# =================================
+
+ENTRADAS_POR_PAGINA = 5
+
+total_entries = len(df_pendientes)
+
+total_paginas = max(
+    1,
+    (total_entries + ENTRADAS_POR_PAGINA - 1)
+    // ENTRADAS_POR_PAGINA
+)
+
+if "pagina_viaticos" not in st.session_state:
+    st.session_state.pagina_viaticos = 1
+
+pagina_actual = st.session_state.pagina_viaticos
+
+inicio = (
+    (pagina_actual - 1)
+    * ENTRADAS_POR_PAGINA
+)
+
+fin = inicio + ENTRADAS_POR_PAGINA
+
+df_pagina = df_pendientes.iloc[inicio:fin]
+
+# =================================
+# MODAL
+# =================================
+
+@st.dialog("Detalle de Solicitud")
+def modal_ver_solicitud(row):
+
+    st.markdown("### Información de la Solicitud")
+
+    st.write(
+        f"Folio: {row.get('folio_solicitud', '')}"
+    )
+
+    st.write(
+        f"Empleado: {row.get('nombre_empleado_solicita', '')}"
+    )
+
+    st.write(
+        f"Fecha Solicitud: {row.get('fecha_solicitud', '')}"
+    )
+
+    st.write(
+        f"Total: ${row.get('total_estimado', 0):,.2f}"
+    )
+
+# =================================
+# GRID ENTRIES
+# =================================
+
+for idx, row in df_pagina.iterrows():
+
+    with st.container(border=True):
+
+        col1, col2, col3, col4, col5, col6, col7 = st.columns(
+            [1, 2, 2, 2, 2, 1.2, 1.2]
+        )
+
+        # VER BUTTON
+        with col1:
+
+            if st.button(
+                "Ver",
+                key=f"ver_{idx}",
+                use_container_width=True
+            ):
+                modal_ver_solicitud(row)
+
+        # FOLIO
+        with col2:
+
+            st.markdown(
+                f"""
+                <div style='font-size:13px;color:#BFA75F;'>
+                    Folio
+                </div>
+
+                <div style='font-size:18px;font-weight:700;'>
+                    {row.get("folio_solicitud", "")}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # EMPLEADO
+        with col3:
+
+            st.markdown(
+                f"""
+                <div style='font-size:13px;color:#BFA75F;'>
+                    Empleado
+                </div>
+
+                <div style='font-size:18px;font-weight:700;'>
+                    {row.get("nombre_empleado_solicita", "")}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # FECHA
+        with col4:
+
+            st.markdown(
+                f"""
+                <div style='font-size:13px;color:#BFA75F;'>
+                    Fecha Solicitud
+                </div>
+
+                <div style='font-size:18px;font-weight:700;'>
+                    {row.get("fecha_solicitud", "")}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # TOTAL
+        with col5:
+
+            total_value = row.get("total_estimado", 0)
+
+            try:
+                total_value = float(total_value)
+            except:
+                total_value = 0
+
+            st.markdown(
+                f"""
+                <div style='font-size:13px;color:#BFA75F;'>
+                    Total
+                </div>
+
+                <div style='font-size:18px;font-weight:700;'>
+                    ${total_value:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # APROBAR
+        with col6:
+
+            if st.button(
+                "Aprobar",
+                key=f"aprobar_{idx}",
+                use_container_width=True
+            ):
+
+                supabase.table(
+                    "solicitud_viaje"
+                ).update(
+                    {
+                        "estatus": "Aprobado"
+                    }
+                ).eq(
+                    "id",
+                    row["id"]
+                ).execute()
+
+                st.success("Solicitud aprobada")
+                st.cache_data.clear()
+                st.rerun()
+
+        # RECHAZAR
+        with col7:
+
+            if st.button(
+                "Rechazar",
+                key=f"rechazar_{idx}",
+                use_container_width=True
+            ):
+
+                supabase.table(
+                    "solicitud_viaje"
+                ).update(
+                    {
+                        "estatus": "Rechazado"
+                    }
+                ).eq(
+                    "id",
+                    row["id"]
+                ).execute()
+
+                st.error("Solicitud rechazada")
+                st.cache_data.clear()
+                st.rerun()
+
+# =================================
+# PAGINATION BUTTONS
+# =================================
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+cols_paginas = st.columns(total_paginas)
+
+for i in range(total_paginas):
+
+    pagina_num = i + 1
+
+    with cols_paginas[i]:
+
+        if st.button(
+            str(pagina_num),
+            key=f"pagina_{pagina_num}",
+            use_container_width=True
+        ):
+
+            st.session_state.pagina_viaticos = pagina_num
+            st.rerun()
+
+
+
+
+
+
 # -------------------------------
 # CSS
 # -------------------------------
