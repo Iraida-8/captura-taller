@@ -362,23 +362,117 @@ df_pagina = df_pendientes.iloc[inicio:fin]
 @st.dialog("Detalle de Solicitud")
 def modal_ver_solicitud(row):
 
-    st.markdown("### Información de la Solicitud")
+    st.markdown("## 📋 Información General")
 
-    st.write(
-        f"Folio: {row.get('folio_solicitud', '')}"
-    )
+    col1, col2 = st.columns(2)
 
-    st.write(
-        f"Empleado: {row.get('nombre_empleado_solicita', '')}"
-    )
+    with col1:
 
-    st.write(
-        f"Fecha Solicitud: {row.get('fecha_solicitud', '')}"
-    )
+        st.write(
+            f"**Folio:** {row.get('folio_solicitud', '')}"
+        )
 
-    st.write(
-        f"Total: ${row.get('total_estimado', 0):,.2f}"
-    )
+        st.write(
+            f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}"
+        )
+
+        st.write(
+            f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}"
+        )
+
+        st.write(
+            f"**Motivo Viaje:** {row.get('motivo_viaje', '')}"
+        )
+
+        st.write(
+            f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}"
+        )
+
+        st.write(
+            f"**Fecha Inicio:** {row.get('fecha_inicio', '')}"
+        )
+
+        st.write(
+            f"**Fecha Fin:** {row.get('fecha_fin', '')}"
+        )
+
+    with col2:
+
+        st.write(
+            f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}"
+        )
+
+        st.write(
+            f"**Unidad Negocio:** {row.get('unidad_negocio', '')}"
+        )
+
+        st.write(
+            f"**Sucursal:** {row.get('sucursal', '')}"
+        )
+
+        st.write(
+            f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
+        )
+
+        st.write(
+            f"**Observaciones:** {row.get('observaciones', '')}"
+        )
+
+        st.write(
+            f"**Estatus:** {row.get('estatus', '')}"
+        )
+
+        total_value = row.get("total_estimado", 0)
+
+        try:
+            total_value = float(total_value)
+        except:
+            total_value = 0
+
+        st.write(
+            f"**Total Estimado:** ${total_value:,.2f}"
+        )
+
+    st.markdown("---")
+
+    st.markdown("## 💰 Conceptos")
+
+    conceptos = row.get("conceptos", [])
+
+    if conceptos:
+
+        try:
+
+            df_conceptos = pd.DataFrame(conceptos)
+
+            columnas_mostrar = []
+
+            if "Tipo" in df_conceptos.columns:
+                columnas_mostrar.append("Tipo")
+
+            if "Descripcion" in df_conceptos.columns:
+                columnas_mostrar.append("Descripcion")
+
+            if "Monto" in df_conceptos.columns:
+                columnas_mostrar.append("Monto")
+
+            df_conceptos = df_conceptos[columnas_mostrar]
+
+            st.dataframe(
+                df_conceptos,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Error leyendo conceptos: {e}"
+            )
+
+    else:
+
+        st.info("No hay conceptos registrados.")
 
 # =================================
 # GRID ENTRIES
@@ -486,7 +580,10 @@ for idx, row in df_pagina.iterrows():
                     "solicitud_viaje"
                 ).update(
                     {
-                        "estatus": "Aprobado"
+                        "estatus": "Aprobado",
+                        "fecha_actualizacion": datetime.now(
+                            timezone.utc
+                        ).isoformat()
                     }
                 ).eq(
                     "id",
@@ -510,7 +607,10 @@ for idx, row in df_pagina.iterrows():
                     "solicitud_viaje"
                 ).update(
                     {
-                        "estatus": "Rechazado"
+                        "estatus": "Rechazado",
+                        "fecha_actualizacion": datetime.now(
+                            timezone.utc
+                        ).isoformat()
                     }
                 ).eq(
                     "id",
