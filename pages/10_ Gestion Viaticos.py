@@ -1342,7 +1342,6 @@ else:
                                     ## ${diferencia:,.2f}
                                     """
                                 )
-
                 modal_verificacion()
 
 # =================================
