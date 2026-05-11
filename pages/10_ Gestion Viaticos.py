@@ -302,6 +302,255 @@ with kpi6:
 st.markdown("<br><br>", unsafe_allow_html=True)
 
 # =================================
+# COMPROBACIONES POR VERIFICAR
+# =================================
+
+st.markdown(
+    """
+    <h2 style='margin-bottom:20px;'>
+        🔎 Comprobaciones por Verificar
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# BASE DATA
+# =================================
+
+df_verificar = df_comprobaciones[
+    df_comprobaciones["estatus"] == "Verificar"
+].copy()
+
+# =================================
+# FILTERS
+# =================================
+
+filtro_col1, filtro_col2 = st.columns([2, 5])
+
+with filtro_col1:
+
+    folios_disponibles = ["Todos"]
+
+    if not df_verificar.empty:
+
+        folios_disponibles += sorted(
+            df_verificar["folio_solicitud"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_folio_verificar = st.selectbox(
+        "Filtrar por Folio",
+        folios_disponibles,
+        key="filtro_folio_verificar"
+    )
+
+# APPLY FILTER
+if filtro_folio_verificar != "Todos":
+
+    df_verificar = df_verificar[
+        df_verificar["folio_solicitud"]
+        .astype(str)
+        == str(filtro_folio_verificar)
+    ]
+
+# =================================
+# SORT
+# =================================
+
+if "created_at" in df_verificar.columns:
+
+    df_verificar = df_verificar.sort_values(
+        by="created_at",
+        ascending=False
+    )
+
+# =================================
+# PAGINATION
+# =================================
+
+POSTITS_POR_PAGINA = 5
+
+total_verificar = len(df_verificar)
+
+total_paginas_verificar = max(
+    1,
+    (
+        total_verificar
+        + POSTITS_POR_PAGINA
+        - 1
+    )
+    // POSTITS_POR_PAGINA
+)
+
+if "pagina_verificar" not in st.session_state:
+    st.session_state.pagina_verificar = 1
+
+pagina_actual_verificar = (
+    st.session_state.pagina_verificar
+)
+
+inicio_verificar = (
+    (pagina_actual_verificar - 1)
+    * POSTITS_POR_PAGINA
+)
+
+fin_verificar = (
+    inicio_verificar
+    + POSTITS_POR_PAGINA
+)
+
+df_verificar_pagina = (
+    df_verificar.iloc[
+        inicio_verificar:fin_verificar
+    ]
+)
+
+# =================================
+# POSTITS
+# =================================
+
+if df_verificar_pagina.empty:
+
+    st.info(
+        "No hay comprobaciones pendientes por verificar."
+    )
+
+else:
+
+    cols = st.columns(5)
+
+    for i, (_, row) in enumerate(
+        df_verificar_pagina.iterrows()
+    ):
+
+        col = cols[i % 5]
+
+        with col:
+
+            folio = str(
+                row.get(
+                    "folio_solicitud",
+                    ""
+                )
+            )
+
+            empleado = str(
+                row.get(
+                    "nombre_empleado_solicita",
+                    ""
+                )
+            )
+
+            fecha = str(
+                row.get(
+                    "created_at",
+                    ""
+                )
+            )[:10]
+
+            total = row.get(
+                "total_comprobado",
+                0
+            )
+
+            try:
+                total = float(total)
+            except:
+                total = 0
+
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#ffffff;
+                    padding:14px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    min-height:190px;
+                    font-family:sans-serif;
+                ">
+
+                    <div style="
+                        font-weight:900;
+                        font-size:1rem;
+                    ">
+                        {folio}
+                    </div>
+
+                    <div style="
+                        font-size:0.8rem;
+                        margin-top:4px;
+                    ">
+                        {empleado}
+                    </div>
+
+                    <hr style="margin:8px 0">
+
+                    <div style="
+                        font-size:0.8rem;
+                    ">
+                        <b>Fecha:</b> {fecha}
+                    </div>
+
+                    <div style="
+                        font-size:0.9rem;
+                        margin-top:10px;
+                        font-weight:700;
+                        color:#151F6D;
+                    ">
+                        ${total:,.2f}
+                    </div>
+
+                </div>
+            </div>
+            """
+
+            components.html(
+                html,
+                height=230
+            )
+
+            if st.button(
+                "👁 Ver",
+                key=f"verificar_ver_{i}",
+                use_container_width=True
+            ):
+
+                modal_ver_solicitud(row)
+
+# =================================
+# PAGE BUTTONS
+# =================================
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+cols_paginas_verificar = st.columns(
+    total_paginas_verificar
+)
+
+for i in range(total_paginas_verificar):
+
+    pagina_num = i + 1
+
+    with cols_paginas_verificar[i]:
+
+        if st.button(
+            str(pagina_num),
+            key=f"pagina_verificar_{pagina_num}",
+            use_container_width=True
+        ):
+
+            st.session_state.pagina_verificar = (
+                pagina_num
+            )
+
+            st.rerun()
+            
+# =================================
 # PENDIENTES SECTION
 # =================================
 
