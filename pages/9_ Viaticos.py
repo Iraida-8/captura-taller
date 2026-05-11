@@ -1061,7 +1061,7 @@ with tab_comprobacion:
                 "(-) Anticipo para gastos de viaje",
                 value=f"$ {anticipo_viaje:,.2f}",
                 disabled=True,
-                key=f"anticipo_viaje_{COMP_VERSION}"
+                key=f"anticipo_viaje_{dynamic_key}"
             )
 
         diferencia_cargo = (
