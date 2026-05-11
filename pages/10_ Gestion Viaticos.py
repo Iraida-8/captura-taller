@@ -2108,7 +2108,7 @@ else:
                                 num_rows="dynamic",
                                 disabled=True
                             )
-
+                modal_verificacion_finalizada()
 # =================================
 # PAGE BUTTONS
 # =================================
