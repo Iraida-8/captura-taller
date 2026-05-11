@@ -1086,6 +1086,28 @@ else:
                     )
 
                     st.markdown(
+                        "## 👤 Empleado que metió comprobación"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div style='
+                            background-color:#1B267A;
+                            padding:16px;
+                            border-radius:12px;
+                            border:1px solid rgba(191,167,95,0.25);
+                            margin-bottom:20px;
+                            white-space:pre-wrap;
+                            font-size:18px;
+                            font-weight:600;
+                        '>
+                            {row.get('nombre_empleado_solicita', '')}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    st.markdown(
                         "## 📝 Observaciones Comprobación"
                     )
 
