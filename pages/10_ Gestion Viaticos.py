@@ -1208,10 +1208,11 @@ else:
                                     )
                                 )
 
-                            st.dataframe(
+                            edited_sol = st.data_editor(
                                 df_sol,
                                 use_container_width=True,
-                                hide_index=True
+                                hide_index=True,
+                                num_rows="dynamic"
                             )
 
                     # =================================
@@ -1269,12 +1270,13 @@ else:
                                     )
                                 )
 
-                            st.dataframe(
+                            edited_comp = st.data_editor(
                                 df_comp,
                                 use_container_width=True,
-                                hide_index=True
+                                hide_index=True,
+                                num_rows="dynamic"
                             )
-                            
+
                     # =================================
                     # TOTALES COMPROBACION
                     # =================================
@@ -1341,7 +1343,95 @@ else:
 
                             ## ${diferencia:,.2f}
                             """
-                        )     
+                        )
+
+                    st.markdown("---")
+
+                    btn1, btn2 = st.columns(2)
+
+                    with btn1:
+
+                        if st.button(
+                            "✅ Aprobar Solicitud",
+                            use_container_width=True
+                        ):
+
+                            supabase.table(
+                                "solicitud_viaje"
+                            ).update(
+                                {
+                                    "estatus": "Concluido",
+                                    "conceptos": edited_sol.to_dict(
+                                        orient="records"
+                                    )
+                                }
+                            ).eq(
+                                "folio_solicitud",
+                                folio_actual
+                            ).execute()
+
+                            supabase.table(
+                                "comprobacion_viaje"
+                            ).update(
+                                {
+                                    "estatus": "Concluido",
+                                    "conceptos": edited_comp.to_dict(
+                                        orient="records"
+                                    )
+                                }
+                            ).eq(
+                                "folio_solicitud",
+                                folio_actual
+                            ).execute()
+
+                            st.success(
+                                "Solicitud concluida"
+                            )
+
+                            st.cache_data.clear()
+                            st.rerun()
+
+                    with btn2:
+
+                        if st.button(
+                            "❌ Rechazar Solicitud",
+                            use_container_width=True
+                        ):
+
+                            supabase.table(
+                                "solicitud_viaje"
+                            ).update(
+                                {
+                                    "estatus": "Rechazado",
+                                    "conceptos": edited_sol.to_dict(
+                                        orient="records"
+                                    )
+                                }
+                            ).eq(
+                                "folio_solicitud",
+                                folio_actual
+                            ).execute()
+
+                            supabase.table(
+                                "comprobacion_viaje"
+                            ).update(
+                                {
+                                    "estatus": "Rechazado",
+                                    "conceptos": edited_comp.to_dict(
+                                        orient="records"
+                                    )
+                                }
+                            ).eq(
+                                "folio_solicitud",
+                                folio_actual
+                            ).execute()
+
+                            st.error(
+                                "Solicitud rechazada"
+                            )
+
+                            st.cache_data.clear()
+                            st.rerun()     
 
 
                 modal_verificacion()
