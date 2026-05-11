@@ -928,8 +928,332 @@ else:
                 key=f"verificar_ver_{i}",
                 use_container_width=True
             ):
+                #right here
+                folio_actual = row.get(
+                    "folio_solicitud",
+                    ""
+                )
 
-                modal_ver_solicitud(row)
+                solicitud_match = df_solicitudes[
+                    df_solicitudes["folio_solicitud"]
+                    .astype(str)
+                    ==
+                    str(folio_actual)
+                ]
+
+                if not solicitud_match.empty:
+
+                    solicitud_row = (
+                        solicitud_match
+                        .iloc[0]
+                        .to_dict()
+                    )
+
+                else:
+
+                    solicitud_row = {}
+
+                @st.dialog("Detalle de Comprobación")
+                def modal_verificacion():
+
+                    # =================================
+                    # INFO GENERAL
+                    # =================================
+
+                    st.markdown(
+                        "## 📋 Información General"
+                    )
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+
+                        st.write(
+                            f"**Folio Solicitud:** "
+                            f"{solicitud_row.get('folio_solicitud', '')}"
+                        )
+
+                        st.write(
+                            f"**Folio Comprobación:** "
+                            f"{row.get('folio_comprobacion', '')}"
+                        )
+
+                        st.write(
+                            f"**Estatus:** "
+                            f"{row.get('estatus', '')}"
+                        )
+
+                        st.write(
+                            f"**Empleado Solicita:** "
+                            f"{solicitud_row.get('nombre_empleado_solicita', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Solicitud:** "
+                            f"{solicitud_row.get('fecha_solicitud', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Comprobación:** "
+                            f"{row.get('created_at', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Inicio:** "
+                            f"{solicitud_row.get('fecha_inicio', '')}"
+                        )
+
+                        st.write(
+                            f"**Fecha Fin:** "
+                            f"{solicitud_row.get('fecha_fin', '')}"
+                        )
+
+                    with col2:
+
+                        st.write(
+                            f"**Empresa Brinda Servicio:** "
+                            f"{solicitud_row.get('empresa_brinda_servicio', '')}"
+                        )
+
+                        st.write(
+                            f"**Empresa Cargo Gastos:** "
+                            f"{solicitud_row.get('empresa_cargo_gastos', '')}"
+                        )
+
+                        st.write(
+                            f"**Unidad Negocio:** "
+                            f"{solicitud_row.get('unidad_negocio', '')}"
+                        )
+
+                        st.write(
+                            f"**Sucursal:** "
+                            f"{solicitud_row.get('sucursal', '')}"
+                        )
+
+                        st.write(
+                            f"**Sucursal Especificar:** "
+                            f"{solicitud_row.get('sucursal_especificar', '')}"
+                        )
+
+                    # =================================
+                    # MOTIVO
+                    # =================================
+
+                    st.markdown("---")
+
+                    st.markdown(
+                        "## ✈️ Motivo del Viaje"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div style='
+                            background-color:#1B267A;
+                            padding:16px;
+                            border-radius:12px;
+                            border:1px solid rgba(191,167,95,0.25);
+                            margin-bottom:20px;
+                            white-space:pre-wrap;
+                        '>
+                            {solicitud_row.get('motivo_viaje', '')}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    # =================================
+                    # OBSERVACIONES
+                    # =================================
+
+                    st.markdown(
+                        "## 📝 Observaciones Solicitud"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div style='
+                            background-color:#1B267A;
+                            padding:16px;
+                            border-radius:12px;
+                            border:1px solid rgba(191,167,95,0.25);
+                            margin-bottom:20px;
+                            white-space:pre-wrap;
+                        '>
+                            {solicitud_row.get('observaciones', '')}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    st.markdown(
+                        "## 📝 Observaciones Comprobación"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div style='
+                            background-color:#1B267A;
+                            padding:16px;
+                            border-radius:12px;
+                            border:1px solid rgba(191,167,95,0.25);
+                            margin-bottom:20px;
+                            white-space:pre-wrap;
+                        '>
+                            {row.get('observaciones', '')}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    # =================================
+                    # CONCEPTOS
+                    # =================================
+
+                    st.markdown("---")
+
+                    st.markdown(
+                        "## 💰 Conceptos"
+                    )
+
+                    conceptos_solicitud = (
+                        solicitud_row.get(
+                            "conceptos",
+                            []
+                        )
+                    )
+
+                    conceptos_comprobacion = (
+                        row.get(
+                            "conceptos",
+                            []
+                        )
+                    )
+
+                    col_sol, col_comp = st.columns(2)
+
+                    # =================================
+                    # SOLICITUD
+                    # =================================
+
+                    with col_sol:
+
+                        total_estimado = (
+                            solicitud_row.get(
+                                "total_estimado",
+                                0
+                            )
+                        )
+
+                        try:
+                            total_estimado = (
+                                float(total_estimado)
+                            )
+                        except:
+                            total_estimado = 0
+
+                        st.markdown(
+                            f"""
+                            <div style='
+                                font-size:22px;
+                                font-weight:700;
+                                color:#BFA75F;
+                                margin-bottom:15px;
+                            '>
+                                Solicitud:
+                                ${total_estimado:,.2f}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        if conceptos_solicitud:
+
+                            df_sol = pd.DataFrame(
+                                conceptos_solicitud
+                            )
+
+                            if "Monto" in df_sol.columns:
+
+                                df_sol["Monto"] = (
+                                    pd.to_numeric(
+                                        df_sol["Monto"],
+                                        errors="coerce"
+                                    )
+                                    .fillna(0)
+                                    .apply(
+                                        lambda x:
+                                        f"${x:,.2f}"
+                                    )
+                                )
+
+                            st.dataframe(
+                                df_sol,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+
+                    # =================================
+                    # COMPROBACION
+                    # =================================
+
+                    with col_comp:
+
+                        total_comprobado = (
+                            row.get(
+                                "total_comprobado",
+                                0
+                            )
+                        )
+
+                        try:
+                            total_comprobado = (
+                                float(total_comprobado)
+                            )
+                        except:
+                            total_comprobado = 0
+
+                        st.markdown(
+                            f"""
+                            <div style='
+                                font-size:22px;
+                                font-weight:700;
+                                color:#38BDF8;
+                                margin-bottom:15px;
+                            '>
+                                Comprobación:
+                                ${total_comprobado:,.2f}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        if conceptos_comprobacion:
+
+                            df_comp = pd.DataFrame(
+                                conceptos_comprobacion
+                            )
+
+                            if "Monto" in df_comp.columns:
+
+                                df_comp["Monto"] = (
+                                    pd.to_numeric(
+                                        df_comp["Monto"],
+                                        errors="coerce"
+                                    )
+                                    .fillna(0)
+                                    .apply(
+                                        lambda x:
+                                        f"${x:,.2f}"
+                                    )
+                                )
+
+                            st.dataframe(
+                                df_comp,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+
+                modal_verificacion()
 
 # =================================
 # PAGE BUTTONS
