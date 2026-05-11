@@ -1368,9 +1368,6 @@ else:
                             ).update(
                                 {
                                     "estatus": "Concluido",
-                                    "conceptos": edited_sol.to_dict(
-                                        orient="records"
-                                    )
                                 }
                             ).eq(
                                 "folio_solicitud",
@@ -1382,9 +1379,6 @@ else:
                             ).update(
                                 {
                                     "estatus": "Concluido",
-                                    "conceptos": edited_comp.to_dict(
-                                        orient="records"
-                                    )
                                 }
                             ).eq(
                                 "folio_solicitud",
@@ -1410,9 +1404,6 @@ else:
                             ).update(
                                 {
                                     "estatus": "Rechazado",
-                                    "conceptos": edited_sol.to_dict(
-                                        orient="records"
-                                    )
                                 }
                             ).eq(
                                 "folio_solicitud",
@@ -1424,9 +1415,6 @@ else:
                             ).update(
                                 {
                                     "estatus": "Rechazado",
-                                    "conceptos": edited_comp.to_dict(
-                                        orient="records"
-                                    )
                                 }
                             ).eq(
                                 "folio_solicitud",
@@ -1438,7 +1426,7 @@ else:
                             )
 
                             st.cache_data.clear()
-                            st.rerun()     
+                            st.rerun()    
 
 
                 modal_verificacion()
