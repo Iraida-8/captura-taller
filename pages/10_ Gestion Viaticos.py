@@ -1472,7 +1472,338 @@ for i in range(total_paginas_verificar):
 
             st.rerun()
 
+# =================================
+# SOLICITUDES FINALIZADAS
+# =================================
 
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <h2 style='margin-bottom:20px;'>
+        🏁 Solicitudes Finalizadas
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================
+# BASE DATA
+# =================================
+
+df_finalizadas = df_comprobaciones[
+    df_comprobaciones["estatus"].isin(
+        [
+            "Concluido",
+            "Rechazado"
+        ]
+    )
+].copy()
+
+# =================================
+# FILTERS
+# =================================
+
+f1, f2, f3 = st.columns(3)
+
+with f1:
+
+    folios_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        folios_finalizados += sorted(
+            df_finalizadas["folio_solicitud"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_folio_finalizado = st.selectbox(
+        "Filtrar por Folio",
+        folios_finalizados,
+        key="filtro_folio_finalizado"
+    )
+
+with f2:
+
+    estatus_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        estatus_finalizados += sorted(
+            df_finalizadas["estatus"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_estatus_finalizado = st.selectbox(
+        "Filtrar por Estatus",
+        estatus_finalizados,
+        key="filtro_estatus_finalizado"
+    )
+
+with f3:
+
+    empleados_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        empleados_finalizados += sorted(
+            df_finalizadas["nombre_empleado_solicita"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_empleado_finalizado = st.selectbox(
+        "Filtrar por Empleado",
+        empleados_finalizados,
+        key="filtro_empleado_finalizado"
+    )
+
+# =================================
+# APPLY FILTERS
+# =================================
+
+if filtro_folio_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["folio_solicitud"]
+        .astype(str)
+        ==
+        str(filtro_folio_finalizado)
+    ]
+
+if filtro_estatus_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["estatus"]
+        .astype(str)
+        ==
+        str(filtro_estatus_finalizado)
+    ]
+
+if filtro_empleado_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["nombre_empleado_solicita"]
+        .astype(str)
+        ==
+        str(filtro_empleado_finalizado)
+    ]
+
+# =================================
+# SORT
+# =================================
+
+if "created_at" in df_finalizadas.columns:
+
+    df_finalizadas = df_finalizadas.sort_values(
+        by="created_at",
+        ascending=False
+    )
+
+# =================================
+# PAGINATION
+# =================================
+
+FINALIZADAS_POR_PAGINA = 5
+
+total_finalizadas = len(df_finalizadas)
+
+total_paginas_finalizadas = max(
+    1,
+    (
+        total_finalizadas
+        + FINALIZADAS_POR_PAGINA
+        - 1
+    )
+    // FINALIZADAS_POR_PAGINA
+)
+
+if "pagina_finalizadas" not in st.session_state:
+
+    st.session_state.pagina_finalizadas = 1
+
+pagina_actual_finalizadas = (
+    st.session_state.pagina_finalizadas
+)
+
+inicio_finalizadas = (
+    (pagina_actual_finalizadas - 1)
+    * FINALIZADAS_POR_PAGINA
+)
+
+fin_finalizadas = (
+    inicio_finalizadas
+    + FINALIZADAS_POR_PAGINA
+)
+
+df_finalizadas_pagina = (
+    df_finalizadas.iloc[
+        inicio_finalizadas:fin_finalizadas
+    ]
+)
+
+# =================================
+# POSTITS
+# =================================
+
+if df_finalizadas_pagina.empty:
+
+    st.info(
+        "No hay solicitudes finalizadas."
+    )
+
+else:
+
+    cols = st.columns(5)
+
+    for i, (_, row) in enumerate(
+        df_finalizadas_pagina.iterrows()
+    ):
+
+        col = cols[i % 5]
+
+        with col:
+
+            folio = str(
+                row.get(
+                    "folio_solicitud",
+                    ""
+                )
+            )
+
+            empleado = str(
+                row.get(
+                    "nombre_empleado_solicita",
+                    ""
+                )
+            )
+
+            fecha = str(
+                row.get(
+                    "created_at",
+                    ""
+                )
+            )[:10]
+
+            total = row.get(
+                "total_comprobado",
+                0
+            )
+
+            try:
+                total = float(total)
+            except:
+                total = 0
+
+            estatus = str(
+                row.get(
+                    "estatus",
+                    ""
+                )
+            )
+
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#ffffff;
+                    padding:14px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    min-height:190px;
+                    font-family:sans-serif;
+                ">
+
+                    <div style="
+                        font-weight:900;
+                        font-size:1rem;
+                    ">
+                        {folio}
+                    </div>
+
+                    <div style="
+                        font-size:0.8rem;
+                        margin-top:4px;
+                    ">
+                        {empleado}
+                    </div>
+
+                    <hr style="margin:8px 0">
+
+                    <div style="
+                        font-size:0.8rem;
+                    ">
+                        <b>Fecha:</b> {fecha}
+                    </div>
+
+                    <div style="
+                        font-size:0.8rem;
+                        margin-top:6px;
+                    ">
+                        <b>Estatus:</b> {estatus}
+                    </div>
+
+                    <div style="
+                        font-size:0.9rem;
+                        margin-top:10px;
+                        font-weight:700;
+                        color:#151F6D;
+                    ">
+                        ${total:,.2f}
+                    </div>
+
+                </div>
+            </div>
+            """
+
+            components.html(
+                html,
+                height=230
+            )
+
+            if st.button(
+                "👁 Ver",
+                key=f"finalizada_ver_{i}",
+                use_container_width=True
+            ):
+
+                modal_verificacion()
+
+# =================================
+# PAGE BUTTONS
+# =================================
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+cols_paginas_finalizadas = st.columns(
+    total_paginas_finalizadas
+)
+
+for i in range(total_paginas_finalizadas):
+
+    pagina_num = i + 1
+
+    with cols_paginas_finalizadas[i]:
+
+        if st.button(
+            str(pagina_num),
+            key=f"pagina_finalizada_{pagina_num}",
+            use_container_width=True
+        ):
+
+            st.session_state.pagina_finalizadas = (
+                pagina_num
+            )
+
+            st.rerun()
 
 
 
