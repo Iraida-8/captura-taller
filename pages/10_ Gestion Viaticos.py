@@ -123,7 +123,12 @@ df_comprobaciones["estatus"] = (
 
 # TOTAL
 # Only solicitud_viaje
-total_registros = len(df_solicitudes)
+total_registros = (
+    df_solicitudes["folio_solicitud"]
+    .astype(str)
+    .str.strip()
+    .nunique()
+)
 
 # PENDIENTES
 pendientes = len(
