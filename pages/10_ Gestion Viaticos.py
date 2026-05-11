@@ -2270,14 +2270,17 @@ st.markdown(
     DEFAULT BUTTONS
     ========================= */
     div.stButton > button {
-        height: 38px;
-        font-size: 0.85rem;
-        border-radius: 10px;
-        padding: 0.2rem 0.6rem;
+        height: 95px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        border-radius: 16px;
+        padding: 1.2rem;
+        white-space: normal;
 
         background-color: #1B267A;
         color: #FFFFFF;
         border: 1px solid rgba(191, 167, 95, 0.25);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
         transition: all 0.2s ease-in-out;
     }
 
