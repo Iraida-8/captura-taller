@@ -704,7 +704,6 @@ for i in range(total_paginas):
         if st.button(
             str(pagina_num),
             key=f"pagina_{pagina_num}",
-            use_container_width=True
         ):
 
             st.session_state.pagina_viaticos = pagina_num
@@ -1463,7 +1462,6 @@ for i in range(total_paginas_verificar):
         if st.button(
             str(pagina_num),
             key=f"pagina_verificar_{pagina_num}",
-            use_container_width=True
         ):
 
             st.session_state.pagina_verificar = (
@@ -1796,7 +1794,6 @@ for i in range(total_paginas_finalizadas):
         if st.button(
             str(pagina_num),
             key=f"pagina_finalizada_{pagina_num}",
-            use_container_width=True
         ):
 
             st.session_state.pagina_finalizadas = (
