@@ -1258,22 +1258,23 @@ else:
 
                             if "Monto" in df_comp.columns:
 
-                                df_comp["Monto"] = pd.to_numeric(
-                                    df_comp["Monto"],
-                                    errors="coerce"
-                                ).fillna(0)
+                                df_comp["Monto"] = (
+                                    pd.to_numeric(
+                                        df_comp["Monto"],
+                                        errors="coerce"
+                                    )
+                                    .fillna(0)
+                                    .apply(
+                                        lambda x:
+                                        f"${x:,.2f}"
+                                    )
+                                )
 
                                 edited_comp = st.data_editor(
                                     df_comp,
                                     use_container_width=True,
                                     hide_index=True,
-                                    num_rows="dynamic",
-                                    column_config={
-                                        "Monto": st.column_config.NumberColumn(
-                                            "Monto",
-                                            format="$ %.2f"
-                                        )
-                                    }
+                                    num_rows="dynamic"
                                 )
 
                             else:
