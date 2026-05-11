@@ -1257,12 +1257,10 @@ else:
                             )
 
                             currency_columns = [
-                                "Monto",
-                                "IVA",
-                                "IVA Acreditable",
-                                "Total",
-                                "Subtotal",
-                                "Total Compartido"
+                                "Total Comprobado",
+                                "Impuesto Acreditable",
+                                "Gastos con Comprobante",
+                                "Gastos sin Comprobante"
                             ]
 
                             for col_name in currency_columns:
