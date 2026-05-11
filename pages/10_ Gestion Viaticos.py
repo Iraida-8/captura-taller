@@ -1256,34 +1256,82 @@ else:
                                 conceptos_comprobacion
                             )
 
-                            if "Monto" in df_comp.columns:
+                            # =================================
+                            # COMPROBACION
+                            # =================================
 
-                                df_comp["Monto"] = pd.to_numeric(
-                                    df_comp["Monto"],
-                                    errors="coerce"
-                                ).fillna(0)
+                            with col_comp:
 
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic",
-                                    column_config={
-                                        "Monto": st.column_config.NumberColumn(
-                                            "Monto",
-                                            format="$ %.2f"
-                                        )
-                                    }
+                                total_comprobado = (
+                                    row.get(
+                                        "total_comprobado",
+                                        0
+                                    )
                                 )
 
-                            else:
+                                try:
+                                    total_comprobado = (
+                                        float(total_comprobado)
+                                    )
+                                except:
+                                    total_comprobado = 0
 
-                                edited_comp = st.data_editor(
-                                    df_comp,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    num_rows="dynamic"
+                                st.markdown(
+                                    f"""
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
+                                        margin-bottom:15px;
+                                    '>
+                                        Comprobación:
+                                        ${total_comprobado:,.2f}
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
                                 )
+
+                                if conceptos_comprobacion:
+
+                                    df_comp = pd.DataFrame(
+                                        conceptos_comprobacion
+                                    )
+
+                                    currency_columns = [
+                                        "Monto",
+                                        "IVA",
+                                        "Total",
+                                        "Subtotal"
+                                    ]
+
+                                    column_config = {}
+
+                                    for col_name in currency_columns:
+
+                                        if col_name in df_comp.columns:
+
+                                            df_comp[col_name] = (
+                                                pd.to_numeric(
+                                                    df_comp[col_name],
+                                                    errors="coerce"
+                                                )
+                                                .fillna(0)
+                                            )
+
+                                            column_config[col_name] = (
+                                                st.column_config.NumberColumn(
+                                                    col_name,
+                                                    format="$ %.2f"
+                                                )
+                                            )
+
+                                    edited_comp = st.data_editor(
+                                        df_comp,
+                                        use_container_width=True,
+                                        hide_index=True,
+                                        num_rows="dynamic",
+                                        column_config=column_config
+                                    )
 
                     # =================================
                     # TOTALES COMPROBACION
