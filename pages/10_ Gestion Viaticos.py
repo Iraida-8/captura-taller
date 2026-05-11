@@ -1256,14 +1256,6 @@ else:
                                 conceptos_comprobacion
                             )
 
-                            columnas_mostrar = []
-
-                            if "Tipo" in df_comp.columns:
-                                columnas_mostrar.append("Tipo")
-
-                            if "Descripcion" in df_comp.columns:
-                                columnas_mostrar.append("Descripcion")
-
                             if "Monto" in df_comp.columns:
 
                                 df_comp["Monto"] = (
@@ -1277,10 +1269,6 @@ else:
                                         f"${x:,.2f}"
                                     )
                                 )
-
-                                columnas_mostrar.append("Monto")
-
-                            df_comp = df_comp[columnas_mostrar]
 
                             edited_comp = st.data_editor(
                                 df_comp,
