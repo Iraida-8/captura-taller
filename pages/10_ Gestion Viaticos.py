@@ -1380,8 +1380,8 @@ st.markdown(
     }
     /* Wider dialog modal */
     div[role="dialog"] {
-        width: 90vw !important;
-        max-width: 1400px !important;
+        width: 98vw !important;
+        max-width: 1800px !important;
     }
     </style>
     """,
