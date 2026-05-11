@@ -2101,6 +2101,29 @@ else:
                                 conceptos_comprobacion
                             )
 
+                            currency_columns = [
+                                "Total Comprobado",
+                                "Impuesto Acreditable",
+                                "Gastos con Comprobante",
+                                "Gastos sin Comprobante"
+                            ]
+
+                            for col_name in currency_columns:
+
+                                if col_name in df_comp.columns:
+
+                                    df_comp[col_name] = (
+                                        pd.to_numeric(
+                                            df_comp[col_name],
+                                            errors="coerce"
+                                        )
+                                        .fillna(0)
+                                        .apply(
+                                            lambda x:
+                                            f"${x:,.2f}"
+                                        )
+                                    )
+
                             st.data_editor(
                                 df_comp,
                                 use_container_width=True,
@@ -2108,6 +2131,75 @@ else:
                                 num_rows="dynamic",
                                 disabled=True
                             )
+
+                    # =================================
+                    # TOTALES COMPROBACION
+                    # =================================
+
+                    st.markdown("---")
+
+                    total_comp = row.get(
+                        "total_comprobado",
+                        0
+                    )
+
+                    anticipo = row.get(
+                        "anticipo_viaje",
+                        0
+                    )
+
+                    diferencia = row.get(
+                        "diferencia_cargo_favor",
+                        0
+                    )
+
+                    try:
+                        total_comp = float(total_comp)
+                    except:
+                        total_comp = 0
+
+                    try:
+                        anticipo = float(anticipo)
+                    except:
+                        anticipo = 0
+
+                    try:
+                        diferencia = float(diferencia)
+                    except:
+                        diferencia = 0
+
+                    col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                    with col_tot1:
+
+                        st.markdown(
+                            f"""
+                            ### Total Comprobado
+
+                            ## ${total_comp:,.2f}
+                            """
+                        )
+
+                    with col_tot2:
+
+                        st.markdown(
+                            f"""
+                            ### Anticipo Viaje
+
+                            ## ${anticipo:,.2f}
+                            """
+                        )
+
+                    with col_tot3:
+
+                        st.markdown(
+                            f"""
+                            ### Diferencia Cargo/Favor
+
+                            ## ${diferencia:,.2f}
+                            """
+                        )
+
                 modal_verificacion_finalizada()
 # =================================
 # PAGE BUTTONS
