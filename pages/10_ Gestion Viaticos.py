@@ -414,17 +414,6 @@ def modal_ver_solicitud(row):
             f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
         )
 
-        total_value = row.get("total_estimado", 0)
-
-        try:
-            total_value = float(total_value)
-        except:
-            total_value = 0
-
-        st.write(
-            f"**Total Estimado:** ${total_value:,.2f}"
-        )
-
     # =================================
     # MOTIVO VIAJE
     # =================================
@@ -517,6 +506,18 @@ def modal_ver_solicitud(row):
                 columnas_mostrar.append("Descripcion")
 
             if "Monto" in df_conceptos.columns:
+
+                df_conceptos["Monto"] = (
+                    pd.to_numeric(
+                        df_conceptos["Monto"],
+                        errors="coerce"
+                    )
+                    .fillna(0)
+                    .apply(
+                        lambda x: f"${x:,.2f}"
+                    )
+                )
+
                 columnas_mostrar.append("Monto")
 
             df_conceptos = df_conceptos[columnas_mostrar]
