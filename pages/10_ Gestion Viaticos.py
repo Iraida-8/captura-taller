@@ -1477,7 +1477,12 @@ st.markdown(
 # BASE DATA
 # =================================
 
-df_finalizadas = df_comprobaciones[
+# =================================
+# FINALIZADAS BASE
+# =================================
+
+# comprobaciones concluidas/rechazadas
+df_finalizadas_comp = df_comprobaciones[
     df_comprobaciones["estatus"].isin(
         [
             "Concluido",
@@ -1485,6 +1490,46 @@ df_finalizadas = df_comprobaciones[
         ]
     )
 ].copy()
+
+# solicitudes rechazadas sin comprobacion
+folios_con_comprobacion = set(
+    df_comprobaciones[
+        "folio_solicitud"
+    ]
+    .astype(str)
+    .str.strip()
+    .tolist()
+)
+
+df_finalizadas_sol = df_solicitudes[
+    (
+        df_solicitudes["estatus"]
+        == "Rechazado"
+    )
+    &
+    (
+        ~df_solicitudes["folio_solicitud"]
+        .astype(str)
+        .str.strip()
+        .isin(folios_con_comprobacion)
+    )
+].copy()
+
+# normalize missing columns
+for col in df_finalizadas_comp.columns:
+
+    if col not in df_finalizadas_sol.columns:
+
+        df_finalizadas_sol[col] = None
+
+# merge
+df_finalizadas = pd.concat(
+    [
+        df_finalizadas_comp,
+        df_finalizadas_sol
+    ],
+    ignore_index=True
+)
 
 # =================================
 # FILTERS
