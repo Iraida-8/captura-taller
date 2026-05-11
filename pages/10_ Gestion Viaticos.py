@@ -95,29 +95,26 @@ st.divider()
 # =================================
 
 # Normalize estatus columns
-if not df_solicitudes.empty:
 
-    if "estatus" not in df_solicitudes.columns:
-        df_solicitudes["estatus"] = "Pendiente"
+if "estatus" not in df_solicitudes.columns:
+    df_solicitudes["estatus"] = "Pendiente"
 
-    df_solicitudes["estatus"] = (
-        df_solicitudes["estatus"]
-        .fillna("Pendiente")
-        .astype(str)
-        .str.strip()
-    )
+df_solicitudes["estatus"] = (
+    df_solicitudes["estatus"]
+    .fillna("Pendiente")
+    .astype(str)
+    .str.strip()
+)
 
-if not df_comprobaciones.empty:
+if "estatus" not in df_comprobaciones.columns:
+    df_comprobaciones["estatus"] = "Pendiente"
 
-    if "estatus" not in df_comprobaciones.columns:
-        df_comprobaciones["estatus"] = "Pendiente"
-
-    df_comprobaciones["estatus"] = (
-        df_comprobaciones["estatus"]
-        .fillna("Pendiente")
-        .astype(str)
-        .str.strip()
-    )
+df_comprobaciones["estatus"] = (
+    df_comprobaciones["estatus"]
+    .fillna("Pendiente")
+    .astype(str)
+    .str.strip()
+)
 
 # =================================
 # KPI COUNTS
@@ -162,36 +159,32 @@ rechazados = len(
 concluidos_ids = set()
 
 # solicitud_viaje
-if not df_solicitudes.empty:
+solicitudes_concluidas = df_solicitudes[
+    df_solicitudes["estatus"] == "Concluido"
+]
 
-    solicitudes_concluidas = df_solicitudes[
-        df_solicitudes["estatus"] == "Concluido"
-    ]
+if "id" in solicitudes_concluidas.columns:
 
-    if "id" in solicitudes_concluidas.columns:
-
-        concluidos_ids.update(
-            solicitudes_concluidas["id"]
-            .astype(str)
-            .str.strip()
-            .tolist()
-        )
+    concluidos_ids.update(
+        solicitudes_concluidas["id"]
+        .astype(str)
+        .str.strip()
+        .tolist()
+    )
 
 # comprobacion_viaje
-if not df_comprobaciones.empty:
+comprobaciones_concluidas = df_comprobaciones[
+    df_comprobaciones["estatus"] == "Concluido"
+]
 
-    comprobaciones_concluidas = df_comprobaciones[
-        df_comprobaciones["estatus"] == "Concluido"
-    ]
+if "id" in comprobaciones_concluidas.columns:
 
-    if "id" in comprobaciones_concluidas.columns:
-
-        concluidos_ids.update(
-            comprobaciones_concluidas["id"]
-            .astype(str)
-            .str.strip()
-            .tolist()
-        )
+    concluidos_ids.update(
+        comprobaciones_concluidas["id"]
+        .astype(str)
+        .str.strip()
+        .tolist()
+    )
 
 concluidos = len(concluidos_ids)
 
