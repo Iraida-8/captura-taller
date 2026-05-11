@@ -1378,6 +1378,11 @@ st.markdown(
         min-height: 190px;
         max-height: 190px;
     }
+    /* Wider dialog modal */
+    div[data-testid="stDialog"] > div {
+        width: 90vw !important;
+        max-width: 1400px !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
