@@ -1050,10 +1050,17 @@ with tab_comprobacion:
 
         with col2:
 
-            anticipo_viaje = st.number_input(
+            anticipo_viaje = float(
+                solicitud_data.get(
+                    "total_estimado",
+                    0
+                ) or 0
+            )
+
+            st.text_input(
                 "(-) Anticipo para gastos de viaje",
-                min_value=0.0,
-                step=100.0,
+                value=f"$ {anticipo_viaje:,.2f}",
+                disabled=True,
                 key=f"anticipo_viaje_{COMP_VERSION}"
             )
 
