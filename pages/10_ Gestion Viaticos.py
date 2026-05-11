@@ -157,17 +157,17 @@ rechazados = len(
 # CONCLUIDOS
 # =================================
 
-concluidos_ids = set()
+concluidos_folios = set()
 
 # solicitud_viaje
 solicitudes_concluidas = df_solicitudes[
     df_solicitudes["estatus"] == "Concluido"
 ]
 
-if "id" in solicitudes_concluidas.columns:
+if "folio_solicitud" in solicitudes_concluidas.columns:
 
-    concluidos_ids.update(
-        solicitudes_concluidas["id"]
+    concluidos_folios.update(
+        solicitudes_concluidas["folio_solicitud"]
         .astype(str)
         .str.strip()
         .tolist()
@@ -178,16 +178,16 @@ comprobaciones_concluidas = df_comprobaciones[
     df_comprobaciones["estatus"] == "Concluido"
 ]
 
-if "id" in comprobaciones_concluidas.columns:
+if "folio_solicitud" in comprobaciones_concluidas.columns:
 
-    concluidos_ids.update(
-        comprobaciones_concluidas["id"]
+    concluidos_folios.update(
+        comprobaciones_concluidas["folio_solicitud"]
         .astype(str)
         .str.strip()
         .tolist()
     )
 
-concluidos = len(concluidos_ids)
+concluidos = len(concluidos_folios)
 
 # =================================
 # HEADER
