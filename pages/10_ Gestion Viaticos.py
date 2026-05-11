@@ -119,50 +119,81 @@ if not df_comprobaciones.empty:
         .str.strip()
     )
 
-# Total records
-total_registros = (
-    len(df_solicitudes) +
-    len(df_comprobaciones)
-)
+# =================================
+# KPI COUNTS
+# =================================
 
-# Merge both estatus columns
-estatus_total = pd.concat(
-    [
-        df_solicitudes["estatus"]
-        if not df_solicitudes.empty
-        else pd.Series(dtype=str),
+# TOTAL
+# Only solicitud_viaje
+total_registros = len(df_solicitudes)
 
-        df_comprobaciones["estatus"]
-        if not df_comprobaciones.empty
-        else pd.Series(dtype=str)
-    ],
-    ignore_index=True
-)
-
-# KPI counts
+# PENDIENTES
 pendientes = len(
-    estatus_total[
-        estatus_total == "Pendiente"
+    df_solicitudes[
+        df_solicitudes["estatus"] == "Pendiente"
     ]
 )
 
+# AUTORIZADAS
 autorizados = len(
-    estatus_total[
-        estatus_total == "Autorizada"
+    df_solicitudes[
+        df_solicitudes["estatus"] == "Aprobado"
     ]
 )
 
+# VERIFICANDO
 verificando = len(
-    estatus_total[
-        estatus_total == "Verificando"
+    df_comprobaciones[
+        df_comprobaciones["estatus"] == "Verificar"
     ]
 )
 
+# RECHAZADAS
 rechazados = len(
-    estatus_total[
-        estatus_total == "Rechazada"
+    df_solicitudes[
+        df_solicitudes["estatus"] == "Rechazado"
     ]
 )
+
+# =================================
+# CONCLUIDOS
+# =================================
+
+concluidos_ids = set()
+
+# solicitud_viaje
+if not df_solicitudes.empty:
+
+    solicitudes_concluidas = df_solicitudes[
+        df_solicitudes["estatus"] == "Concluido"
+    ]
+
+    if "id" in solicitudes_concluidas.columns:
+
+        concluidos_ids.update(
+            solicitudes_concluidas["id"]
+            .astype(str)
+            .str.strip()
+            .tolist()
+        )
+
+# comprobacion_viaje
+if not df_comprobaciones.empty:
+
+    comprobaciones_concluidas = df_comprobaciones[
+        df_comprobaciones["estatus"] == "Concluido"
+    ]
+
+    if "id" in comprobaciones_concluidas.columns:
+
+        concluidos_ids.update(
+            comprobaciones_concluidas["id"]
+            .astype(str)
+            .str.strip()
+            .tolist()
+        )
+
+concluidos = len(concluidos_ids)
 
 # =================================
 # HEADER
@@ -188,7 +219,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # KPI CARDS
 # =================================
 
-kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
 def render_kpi_card(
     title,
@@ -264,6 +295,15 @@ with kpi5:
         rechazados,
         "❌",
         "#EF4444"
+    )
+
+with kpi6:
+
+    render_kpi_card(
+        "Concluidos",
+        concluidos,
+        "🏁",
+        "#8B5CF6"
     )
 
 st.markdown("<br><br>", unsafe_allow_html=True)

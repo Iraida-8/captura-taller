@@ -1156,7 +1156,7 @@ with tab_comprobacion:
                     observaciones_comp,
 
                 "estatus":
-                    "Actualizado"
+                    "Verificar"
 
             }).execute()
 
