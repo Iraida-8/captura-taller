@@ -1279,7 +1279,7 @@ else:
                             # TOTALES COMPROBACION
                             # =================================
 
-                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.markdown("---")
 
                             total_comp = row.get(
                                 "total_comprobado",
@@ -1311,102 +1311,36 @@ else:
                             except:
                                 diferencia = 0
 
-                            tot1, tot2, tot3 = st.columns(3)
+                            col_tot1, col_tot2, col_tot3 = st.columns(3)
 
-                            with tot1:
+                            with col_tot1:
 
                                 st.markdown(
                                     f"""
-                                    <div style='
-                                        background:#1B267A;
-                                        padding:18px;
-                                        border-radius:14px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                    '>
+                                    ### Total Comprobado
 
-                                        <div style='
-                                            font-size:14px;
-                                            color:#BFA75F;
-                                            margin-bottom:8px;
-                                        '>
-                                            Total Comprobado
-                                        </div>
-
-                                        <div style='
-                                            font-size:28px;
-                                            font-weight:800;
-                                            color:white;
-                                        '>
-                                            ${total_comp:,.2f}
-                                        </div>
-
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
+                                    ## ${total_comp:,.2f}
+                                    """
                                 )
 
-                            with tot2:
+                            with col_tot2:
 
                                 st.markdown(
                                     f"""
-                                    <div style='
-                                        background:#1B267A;
-                                        padding:18px;
-                                        border-radius:14px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                    '>
+                                    ### Anticipo Viaje
 
-                                        <div style='
-                                            font-size:14px;
-                                            color:#BFA75F;
-                                            margin-bottom:8px;
-                                        '>
-                                            Anticipo Viaje
-                                        </div>
-
-                                        <div style='
-                                            font-size:28px;
-                                            font-weight:800;
-                                            color:white;
-                                        '>
-                                            ${anticipo:,.2f}
-                                        </div>
-
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
+                                    ## ${anticipo:,.2f}
+                                    """
                                 )
 
-                            with tot3:
+                            with col_tot3:
 
                                 st.markdown(
                                     f"""
-                                    <div style='
-                                        background:#1B267A;
-                                        padding:18px;
-                                        border-radius:14px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                    '>
+                                    ### Diferencia Cargo/Favor
 
-                                        <div style='
-                                            font-size:14px;
-                                            color:#BFA75F;
-                                            margin-bottom:8px;
-                                        '>
-                                            Diferencia Cargo/Favor
-                                        </div>
-
-                                        <div style='
-                                            font-size:28px;
-                                            font-weight:800;
-                                            color:white;
-                                        '>
-                                            ${diferencia:,.2f}
-                                        </div>
-
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
+                                    ## ${diferencia:,.2f}
+                                    """
                                 )
 
                 modal_verificacion()
