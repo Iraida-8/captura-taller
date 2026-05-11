@@ -664,10 +664,7 @@ with tab_comprobacion:
 
             empleado_comp = st.text_input(
                 "Nombre del Empleado que Solicita",
-                value=solicitud_data.get(
-                    "nombre_empleado_solicita",
-                    ""
-                ),
+                value=nombre_usuario,
                 disabled=True,
                 key=f"empleado_comp_{dynamic_key}"
             )
@@ -1139,6 +1136,9 @@ with tab_comprobacion:
 
                 "folio_solicitud":
                     folio_seleccionado,
+
+                "nombre_empleado_solicita":
+                    nombre_usuario,
 
                 "conceptos":
                     st.session_state[gastos_comp_key],
