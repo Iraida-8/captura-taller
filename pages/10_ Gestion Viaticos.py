@@ -1274,74 +1274,75 @@ else:
                                 use_container_width=True,
                                 hide_index=True
                             )
+                    # =================================
+                    # TOTALES COMPROBACION
+                    # =================================
 
-                            # =================================
-                            # TOTALES COMPROBACION
-                            # =================================
+                    st.markdown("---")
 
-                            st.markdown("---")
+                    total_comp = row.get(
+                        "total_comprobado",
+                        0
+                    )
 
-                            total_comp = row.get(
-                                "total_comprobado",
-                                0
-                            )
+                    anticipo = row.get(
+                        "anticipo_viaje",
+                        0
+                    )
 
-                            anticipo = row.get(
-                                "anticipo_viaje",
-                                0
-                            )
+                    diferencia = row.get(
+                        "diferencia_cargo_favor",
+                        0
+                    )
 
-                            diferencia = row.get(
-                                "diferencia_cargo_favor",
-                                0
-                            )
+                    try:
+                        total_comp = float(total_comp)
+                    except:
+                        total_comp = 0
 
-                            try:
-                                total_comp = float(total_comp)
-                            except:
-                                total_comp = 0
+                    try:
+                        anticipo = float(anticipo)
+                    except:
+                        anticipo = 0
 
-                            try:
-                                anticipo = float(anticipo)
-                            except:
-                                anticipo = 0
+                    try:
+                        diferencia = float(diferencia)
+                    except:
+                        diferencia = 0
 
-                            try:
-                                diferencia = float(diferencia)
-                            except:
-                                diferencia = 0
+                    col_tot1, col_tot2, col_tot3 = st.columns(3)
 
-                            col_tot1, col_tot2, col_tot3 = st.columns(3)
+                    with col_tot1:
 
-                            with col_tot1:
+                        st.markdown(
+                            f"""
+                            ### Total Comprobado
 
-                                st.markdown(
-                                    f"""
-                                    ### Total Comprobado
+                            ## ${total_comp:,.2f}
+                            """
+                        )
 
-                                    ## ${total_comp:,.2f}
-                                    """
-                                )
+                    with col_tot2:
 
-                            with col_tot2:
+                        st.markdown(
+                            f"""
+                            ### Anticipo Viaje
 
-                                st.markdown(
-                                    f"""
-                                    ### Anticipo Viaje
+                            ## ${anticipo:,.2f}
+                            """
+                        )
 
-                                    ## ${anticipo:,.2f}
-                                    """
-                                )
+                    with col_tot3:
 
-                            with col_tot3:
+                        st.markdown(
+                            f"""
+                            ### Diferencia Cargo/Favor
 
-                                st.markdown(
-                                    f"""
-                                    ### Diferencia Cargo/Favor
+                            ## ${diferencia:,.2f}
+                            """
+                        )     
 
-                                    ## ${diferencia:,.2f}
-                                    """
-                                )
+
                 modal_verificacion()
 
 # =================================
