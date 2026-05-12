@@ -7,5 +7,14 @@
             "Bienvenido al lanzamiento oficial del Portal de Taller",
             "A partir de esta versión se registrarán todas las mejoras y actualizaciones"
         ]
+    },
+    {
+        "version": "1.05.12.26",
+        "date": "12/05/2026",
+        "changes": [
+            "Se corrigió el conteo duplicado en solicitudes concluidas",
+            "Se agregó soporte para solicitudes rechazadas sin comprobación",
+            "Se corrigió la actualización dinámica del anticipo de viaje"
+        ]
     }
 ]
