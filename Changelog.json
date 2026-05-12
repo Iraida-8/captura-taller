@@ -1,11 +1,14 @@
 [
         {
-        "version": "1.05.12.26",
-        "date": "12/05/2026",
+        "version": "1.05.15.26",
+        "date": "15/05/2026",
         "changes": [
-            "Se corrigió el conteo duplicado en solicitudes concluidas",
-            "Se agregó soporte para solicitudes rechazadas sin comprobación",
-            "Se corrigió la actualización dinámica del anticipo de viaje"
+            "Implementación de Solicitud de Viáticos y Reembolsos",
+            "Implementación del módulo de Gestión de Viáticos",
+            "Ajustes a fórmulas de preparación de reportes",
+            "Actualización de formato y presentación",
+            "Actualización de base de datos de refacciones",
+            "Revisión y optimización del sistema"
         ]
     },
     {
