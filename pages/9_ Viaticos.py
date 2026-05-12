@@ -1,6 +1,4 @@
 import streamlit as st
-from pathlib import Path
-from PIL import Image
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
