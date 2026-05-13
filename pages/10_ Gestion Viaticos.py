@@ -80,6 +80,20 @@ df_solicitudes = cargar_solicitudes()
 df_comprobaciones = cargar_comprobaciones()
 
 # =================================
+# GLOBAL TOAST
+# =================================
+
+if "toast_actualizado" in st.session_state:
+
+    st.toast(
+        st.session_state.toast_actualizado
+    )
+
+    del st.session_state[
+        "toast_actualizado"
+    ]
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -583,7 +597,7 @@ def modal_ver_solicitud(row):
 
                 st.cache_data.clear()
 
-                st.toast(
+                st.session_state.toast_actualizado = (
                     f"Folio "
                     f"{row.get('folio_solicitud', '')} "
                     f"actualizado con éxito"
