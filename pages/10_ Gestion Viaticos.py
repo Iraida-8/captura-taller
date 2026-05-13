@@ -580,6 +580,39 @@ def modal_ver_solicitud(row):
                     )
                 )
 
+                # =================================
+                # RECALCULAR TOTAL ESTIMADO
+                # =================================
+
+                nuevo_total_estimado = 0.0
+
+                for item in conceptos_actualizados:
+
+                    aprobado = str(
+                        item.get(
+                            "Aprobado",
+                            "🟢 Si"
+                        )
+                    ).strip()
+
+                    if aprobado in [
+                        "Si",
+                        "🟢 Si"
+                    ]:
+
+                        try:
+
+                            nuevo_total_estimado += float(
+                                item.get(
+                                    "Monto",
+                                    0
+                                ) or 0
+                            )
+
+                        except:
+
+                            pass
+
                 supabase.table(
                     "solicitud_viaje"
                 ).update(
@@ -589,6 +622,11 @@ def modal_ver_solicitud(row):
 
                         "conceptos":
                             conceptos_actualizados,
+
+                        "total_estimado":
+                            float(
+                                nuevo_total_estimado
+                            ),
 
                         "fecha_actualizacion":
                             datetime.now(
