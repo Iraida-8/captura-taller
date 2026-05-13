@@ -288,32 +288,6 @@ st.divider()
 
 st.title("💳  Solicitud de Viáticos y Reembolsos")
 
-if st.button("TEST EMAIL"):
-
-    try:
-
-        resend.Emails.send({
-
-            "from":
-                "onboarding@resend.dev",
-
-            "to":
-                [email_usuario],
-
-            "subject":
-                "TEST EMAIL",
-
-            "html":
-                "<h1>EMAIL WORKS</h1>"
-        })
-
-        st.success(
-            f"EMAIL SENT TO {email_usuario}"
-        )
-
-    except Exception as e:
-
-        st.exception(e)
 # =================================
 # TABS
 # =================================
