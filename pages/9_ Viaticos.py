@@ -1521,10 +1521,16 @@ with tab_comprobacion:
                         ),
 
                     "Tipo":
-                        row["Tipo"],
+                        row.get(
+                            "Tipo",
+                            "OTROS"
+                        ),
 
                     "Descripcion":
-                        row["Descripcion"],
+                        row.get(
+                            "Descripcion",
+                            ""
+                        ),
 
                     "Monto":
                         monto,
