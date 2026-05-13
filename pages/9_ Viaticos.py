@@ -1410,13 +1410,82 @@ with tab_comprobacion:
 
         if st.session_state[gastos_comp_key]:
 
-            df_gastos = pd.DataFrame(
-                st.session_state[gastos_comp_key]
+            # =================================
+            # SOURCE DATA (ONLY EDITABLE FIELDS)
+            # =================================
+
+            source_rows = []
+
+            for row in st.session_state[
+                gastos_comp_key
+            ]:
+
+                source_rows.append({
+
+                    "Eliminar":
+                        row.get(
+                            "Eliminar",
+                            False
+                        ),
+
+                    "Tipo":
+                        row.get(
+                            "Tipo",
+                            "OTROS"
+                        ),
+
+                    "Descripcion":
+                        row.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Monto":
+                        float(
+                            row.get(
+                                "Monto",
+                                0
+                            ) or 0
+                        ),
+
+                    "Comprobante":
+                        row.get(
+                            "Comprobante",
+                            "No"
+                        ),
+
+                    "Aplica IVA":
+                        row.get(
+                            "Aplica IVA",
+                            False
+                        ),
+
+                    "IVA %":
+                        int(
+                            row.get(
+                                "IVA %",
+                                0
+                            ) or 0
+                        ),
+
+                    "Aplica Retencion":
+                        row.get(
+                            "Aplica Retencion",
+                            False
+                        )
+                })
+
+            df_editor = pd.DataFrame(
+                source_rows
             )
+
+            # =================================
+            # EDITOR
+            # =================================
 
             edited_df = st.data_editor(
 
-                df_gastos,
+                df_editor,
 
                 use_container_width=True,
 
@@ -1470,20 +1539,6 @@ with tab_comprobacion:
                     "Aplica Retencion":
                         st.column_config.CheckboxColumn(
                             "Retencion ISR"
-                        ),
-
-                    "Impuesto Acreditable":
-                        st.column_config.NumberColumn(
-                            "Impuesto Acreditable",
-                            format="$ %.2f",
-                            disabled=True
-                        ),
-
-                    "Total Comprobado":
-                        st.column_config.NumberColumn(
-                            "Total Comprobado",
-                            format="$ %.2f",
-                            disabled=True
                         )
                 },
 
@@ -1491,20 +1546,12 @@ with tab_comprobacion:
             )
 
             # =================================
-            # SAVE USER EDITS FIRST
-            # =================================
-
-            st.session_state[
-                gastos_comp_key
-            ] = edited_df.to_dict(
-                orient="records"
-            )
-
-            # =================================
             # RECALCULATE
             # =================================
 
             recalculated_rows = []
+
+            total_general = 0.0
 
             for row in edited_df.to_dict(
                 orient="records"
@@ -1517,11 +1564,6 @@ with tab_comprobacion:
                     ) or 0
                 )
 
-                comprobante = row.get(
-                    "Comprobante",
-                    "No"
-                )
-
                 aplica_iva = bool(
                     row.get(
                         "Aplica IVA",
@@ -1529,7 +1571,7 @@ with tab_comprobacion:
                     )
                 )
 
-                iva_pct = int(
+                iva_pct = float(
                     row.get(
                         "IVA %",
                         0
@@ -1563,6 +1605,8 @@ with tab_comprobacion:
                     impuesto
                 )
 
+                total_general += total_final
+
                 recalculated_rows.append({
 
                     "Eliminar":
@@ -1589,7 +1633,10 @@ with tab_comprobacion:
                         monto,
 
                     "Comprobante":
-                        comprobante,
+                        row.get(
+                            "Comprobante",
+                            "No"
+                        ),
 
                     "Aplica IVA":
                         aplica_iva,
@@ -1614,7 +1661,7 @@ with tab_comprobacion:
                 })
 
             # =================================
-            # SAVE FINAL RECALCULATED DATA
+            # SAVE FINAL STATE
             # =================================
 
             st.session_state[
@@ -1622,22 +1669,22 @@ with tab_comprobacion:
             ] = recalculated_rows
 
             # =================================
-            # RECALCULATE TOTAL FROM FINAL STATE
+            # RESULTS TABLE
             # =================================
 
-            total_general = sum(
-
-                float(
-                    row.get(
-                        "Total Comprobado",
-                        0
-                    ) or 0
-                )
-
-                for row in
-                st.session_state[
-                    gastos_comp_key
+            resultados_df = pd.DataFrame(
+                recalculated_rows
+            )[
+                [
+                    "Impuesto Acreditable",
+                    "Total Comprobado"
                 ]
+            ]
+
+            st.dataframe(
+                resultados_df,
+                use_container_width=True,
+                hide_index=True
             )
 
             # =================================
@@ -1670,7 +1717,7 @@ with tab_comprobacion:
                 "No hay conceptos agregados."
             )
 
-            total_general = 0
+            total_general = 0.0
 
         # =================================
         # TOTALES
