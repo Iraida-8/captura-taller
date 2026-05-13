@@ -287,6 +287,19 @@ with tab_solicitud:
             unidad_default = "Seleccione una opción..."
             sucursal_default = "NUEVO LAREDO"
 
+            sucursal_options = [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "LEON",
+                "QUERETARO",
+                "LINCOLN LOGISTICS",
+                "ROLANDO ALFARO",
+                "OTRO"
+            ]
+
         # =================================
         # PICUS
         # =================================
@@ -558,7 +571,8 @@ with tab_solicitud:
             "MONTERREY": "MT",
             "QUERETARO": "QT",
             "LEON": "LN",
-            "TLAXCALA": "TL",
+            "LINCOLN LOGISTICS": "LL",
+            "ROLANDO ALFARO": "RA",
             "OTRO": "OT"
         }
 
