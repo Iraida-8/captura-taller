@@ -34,7 +34,6 @@ supabase = get_supabase()
 # =================================
 # USER DATA
 # =================================
-
 user = st.session_state.user
 
 nombre_usuario = (
@@ -51,7 +50,6 @@ email_usuario = (
 # =================================
 # LOAD DATA
 # =================================
-
 @st.cache_data(ttl=30)
 def cargar_solicitudes():
 
@@ -92,9 +90,6 @@ st.divider()
 # =================================
 # KPI VALUES
 # =================================
-
-# Normalize estatus columns
-
 if "estatus" not in df_solicitudes.columns:
     df_solicitudes["estatus"] = "Pendiente"
 
@@ -118,9 +113,6 @@ df_comprobaciones["estatus"] = (
 # =================================
 # KPI COUNTS
 # =================================
-
-# TOTAL
-# Only solicitud_viaje
 total_registros = (
     df_solicitudes["folio_solicitud"]
     .astype(str)
@@ -159,7 +151,6 @@ rechazados = len(
 # =================================
 # CONCLUIDOS
 # =================================
-
 concluidos = len(
     df_solicitudes[
         df_solicitudes["estatus"] == "Concluido"
@@ -169,7 +160,6 @@ concluidos = len(
 # =================================
 # HEADER
 # =================================
-
 st.markdown(
     """
     <div style="
@@ -189,7 +179,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =================================
 # KPI CARDS
 # =================================
-
 kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
 def render_kpi_card(
@@ -279,11 +268,9 @@ with kpi6:
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
-
 # =================================
 # PENDIENTES SECTION
 # =================================
-
 st.markdown(
     """
     <h2 style='margin-bottom:20px;'>
@@ -337,7 +324,6 @@ df_pagina = df_pendientes.iloc[inicio:fin]
 # =================================
 # MODAL
 # =================================
-
 @st.dialog("Detalle de Solicitud")
 def modal_ver_solicitud(row):
 
@@ -396,7 +382,6 @@ def modal_ver_solicitud(row):
     # =================================
     # MOTIVO VIAJE
     # =================================
-
     st.markdown("---")
 
     st.markdown("## ✈️ Motivo del Viaje")
@@ -423,20 +408,14 @@ def modal_ver_solicitud(row):
 
     st.markdown("## 📝 Observaciones")
 
-    st.markdown(
-        f"""
-        <div style='
-            background-color:#1B267A;
-            padding:16px;
-            border-radius:12px;
-            border:1px solid rgba(191,167,95,0.25);
-            margin-bottom:20px;
-            white-space:pre-wrap;
-        '>
-            {row.get('observaciones', '')}
-        </div>
-        """,
-        unsafe_allow_html=True
+    observaciones_edit = st.text_area(
+        "Observaciones",
+        value=row.get(
+            "observaciones",
+            ""
+        ),
+        height=150,
+        key=f"obs_edit_{row.get('id')}"
     )
 
     # =================================
@@ -447,7 +426,10 @@ def modal_ver_solicitud(row):
 
     st.markdown("## 💰 Conceptos")
 
-    total_value = row.get("total_estimado", 0)
+    total_value = row.get(
+        "total_estimado",
+        0
+    )
 
     try:
         total_value = float(total_value)
@@ -468,44 +450,145 @@ def modal_ver_solicitud(row):
         unsafe_allow_html=True
     )
 
-    conceptos = row.get("conceptos", [])
+    conceptos = row.get(
+        "conceptos",
+        []
+    )
 
     if conceptos:
 
         try:
 
-            df_conceptos = pd.DataFrame(conceptos)
+            conceptos_final = []
 
-            columnas_mostrar = []
+            for concepto in conceptos:
 
-            if "Tipo" in df_conceptos.columns:
-                columnas_mostrar.append("Tipo")
+                conceptos_final.append({
 
-            if "Descripcion" in df_conceptos.columns:
-                columnas_mostrar.append("Descripcion")
+                    "Tipo":
+                        concepto.get(
+                            "Tipo",
+                            ""
+                        ),
 
-            if "Monto" in df_conceptos.columns:
+                    "Descripcion":
+                        concepto.get(
+                            "Descripcion",
+                            ""
+                        ),
 
-                df_conceptos["Monto"] = (
-                    pd.to_numeric(
-                        df_conceptos["Monto"],
-                        errors="coerce"
-                    )
-                    .fillna(0)
-                    .apply(
-                        lambda x: f"${x:,.2f}"
+                    "Monto":
+                        concepto.get(
+                            "Monto",
+                            0
+                        ),
+
+                    "Aprobado":
+                        concepto.get(
+                            "Aprobado",
+                            "Si"
+                        ),
+
+                    "Razon":
+                        concepto.get(
+                            "Razon",
+                            ""
+                        )
+                })
+
+            df_conceptos = pd.DataFrame(
+                conceptos_final
+            )
+
+            edited_df = st.data_editor(
+
+                df_conceptos,
+
+                use_container_width=True,
+
+                hide_index=True,
+
+                num_rows="fixed",
+
+                column_config={
+
+                    "Tipo":
+                        st.column_config.TextColumn(
+                            "Tipo",
+                            disabled=True
+                        ),
+
+                    "Descripcion":
+                        st.column_config.TextColumn(
+                            "Descripcion",
+                            disabled=True
+                        ),
+
+                    "Monto":
+                        st.column_config.NumberColumn(
+                            "Monto",
+                            disabled=True,
+                            format="$ %.2f"
+                        ),
+
+                    "Aprobado":
+                        st.column_config.SelectboxColumn(
+                            "Aprobado",
+                            options=["Si", "No"],
+                            required=True
+                        ),
+
+                    "Razon":
+                        st.column_config.TextColumn(
+                            "Razon"
+                        )
+                },
+
+                key=f"editor_conceptos_{row.get('id')}"
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            if st.button(
+                "💾 Actualizar Solicitud",
+                use_container_width=True,
+                key=f"actualizar_sol_{row.get('id')}"
+            ):
+
+                conceptos_actualizados = (
+                    edited_df.to_dict(
+                        orient="records"
                     )
                 )
 
-                columnas_mostrar.append("Monto")
+                supabase.table(
+                    "solicitud_viaje"
+                ).update(
+                    {
+                        "observaciones":
+                            observaciones_edit,
 
-            df_conceptos = df_conceptos[columnas_mostrar]
+                        "conceptos":
+                            conceptos_actualizados,
 
-            st.dataframe(
-                df_conceptos,
-                use_container_width=True,
-                hide_index=True
-            )
+                        "fecha_actualizacion":
+                            datetime.now(
+                                timezone.utc
+                            ).isoformat()
+                    }
+                ).eq(
+                    "id",
+                    row["id"]
+                ).execute()
+
+                st.success(
+                    f"Folio "
+                    f"{row.get('folio_solicitud', '')} "
+                    f"actualizado con éxito"
+                )
+
+                st.cache_data.clear()
+                st.rerun()
 
         except Exception as e:
 
@@ -515,7 +598,9 @@ def modal_ver_solicitud(row):
 
     else:
 
-        st.info("No hay conceptos registrados.")
+        st.info(
+            "No hay conceptos registrados."
+        )
 
 # =================================
 # GRID ENTRIES
