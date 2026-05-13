@@ -1545,26 +1545,18 @@ with tab_comprobacion:
 
                 impuesto = 0.0
 
-                if comprobante == "Si":
+                if aplica_iva:
 
-                    if aplica_iva:
+                    impuesto += (
+                        monto *
+                        (iva_pct / 100)
+                    )
 
-                        impuesto += (
-                            monto *
-                            (iva_pct / 100)
-                        )
+                if aplica_ret:
 
-                    if aplica_ret:
-
-                        impuesto -= (
-                            monto * 0.0125
-                        )
-
-                else:
-
-                    aplica_iva = False
-                    iva_pct = 0
-                    aplica_ret = False
+                    impuesto -= (
+                        monto * 0.0125
+                    )
 
                 total_final = (
                     monto +
@@ -1711,8 +1703,8 @@ with tab_comprobacion:
             )
 
         diferencia_cargo = (
-            anticipo_viaje -
-            total_general
+            total_general -
+            anticipo_viaje
         )
 
         with col1:
