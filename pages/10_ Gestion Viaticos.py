@@ -581,13 +581,14 @@ def modal_ver_solicitud(row):
                     row["id"]
                 ).execute()
 
-                st.success(
+                st.cache_data.clear()
+
+                st.toast(
                     f"Folio "
                     f"{row.get('folio_solicitud', '')} "
                     f"actualizado con éxito"
                 )
 
-                st.cache_data.clear()
                 st.rerun()
 
         except Exception as e:
