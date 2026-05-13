@@ -1513,7 +1513,12 @@ with tab_comprobacion:
                 recalculated_rows.append({
 
                     "Eliminar":
-                        row["Eliminar"],
+                        bool(
+                            row.get(
+                                "Eliminar",
+                                False
+                            )
+                        ),
 
                     "Tipo":
                         row["Tipo"],
