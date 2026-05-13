@@ -1292,7 +1292,21 @@ with tab_comprobacion:
 
             nuevos_conceptos = []
 
+            rechazos_texto = []
+
             for item in conceptos_solicitud:
+
+                aprobado = str(
+                    item.get(
+                        "Aprobado",
+                        "Si"
+                    )
+                ).strip()
+
+                es_aprobado = aprobado in [
+                    "Si",
+                    "🟢 Si"
+                ]
 
                 monto = float(
                     item.get(
@@ -1300,6 +1314,33 @@ with tab_comprobacion:
                         0
                     ) or 0
                 )
+
+                # =============================
+                # RECHAZADO
+                # =============================
+
+                if not es_aprobado:
+
+                    rechazo_msg = (
+                        f'Concepto para '
+                        f'"{item.get("Tipo", "")}" '
+                        f'"{item.get("Descripcion", "")}" '
+                        f'por el monto de '
+                        f'"${monto:,.2f}" '
+                        f'ha sido rechazado, '
+                        f'por el motivo de '
+                        f'"{item.get("Razon", "")}"'
+                    )
+
+                    rechazos_texto.append(
+                        rechazo_msg
+                    )
+
+                    continue
+
+                # =============================
+                # APROBADO
+                # =============================
 
                 nuevos_conceptos.append({
 
@@ -1342,6 +1383,20 @@ with tab_comprobacion:
             st.session_state[
                 gastos_comp_key
             ] = nuevos_conceptos
+
+            # =================================
+            # AUTO OBSERVACIONES
+            # =================================
+
+            if rechazos_texto:
+
+                rechazo_final = "\n\n".join(
+                    rechazos_texto
+                )
+
+                st.session_state[
+                    f"observaciones_comp_{COMP_VERSION}"
+                ] = rechazo_final
 
             st.session_state[
                 loaded_folio_key
