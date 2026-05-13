@@ -45,6 +45,47 @@ if "comprobacion_form_version" not in st.session_state:
 COMP_VERSION = st.session_state.comprobacion_form_version
 
 # =================================
+# RESET TAB 2 TABLE STATE
+# =================================
+
+current_comp_tracker = (
+    f"comp_tracker_{COMP_VERSION}"
+)
+
+if (
+    "active_comp_tracker"
+    not in st.session_state
+):
+
+    st.session_state[
+        "active_comp_tracker"
+    ] = current_comp_tracker
+
+elif (
+    st.session_state[
+        "active_comp_tracker"
+    ] != current_comp_tracker
+):
+
+    keys_to_clear = [
+
+        f"gastos_comprobacion_{COMP_VERSION}",
+
+        f"loaded_folio_{COMP_VERSION}",
+
+        f"editor_comp_{COMP_VERSION}"
+    ]
+
+    for key in keys_to_clear:
+
+        if key in st.session_state:
+            del st.session_state[key]
+
+    st.session_state[
+        "active_comp_tracker"
+    ] = current_comp_tracker
+
+# =================================
 # GLOBAL USER DATA
 # =================================
 
@@ -1216,7 +1257,19 @@ with tab_comprobacion:
 
         if gastos_comp_key not in st.session_state:
 
-            st.session_state[gastos_comp_key] = []
+            keys_to_clear = [
+
+                gastos_comp_key,
+
+                loaded_folio_key,
+
+                f"editor_comp_{COMP_VERSION}"
+            ]
+
+            for key in keys_to_clear:
+
+                if key in st.session_state:
+                    del st.session_state[key]
 
         if loaded_folio_key not in st.session_state:
 
