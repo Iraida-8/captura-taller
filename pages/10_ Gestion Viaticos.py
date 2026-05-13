@@ -1653,8 +1653,8 @@ st.markdown(
 # BASE DATA
 # =================================
 
-df_finalizadas = df_comprobaciones[
-    df_comprobaciones["estatus"].isin(
+df_finalizadas = df_solicitudes[
+    df_solicitudes["estatus"].isin(
         [
             "Concluido",
             "Rechazado"
@@ -2391,8 +2391,6 @@ for i in range(total_paginas_finalizadas):
             )
 
             st.rerun()
-
-
 
 # -------------------------------
 # CSS
