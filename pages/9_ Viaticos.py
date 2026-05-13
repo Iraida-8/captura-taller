@@ -3,6 +3,7 @@ import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
 from auth import require_login, require_access
+import resend # type: ignore
 
 # =================================
 # Page configuration
@@ -31,6 +32,14 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# RESEND CONFIG
+# =================================
+
+resend.api_key = (
+    st.secrets["RESEND_API_KEY"]
+)
+
+# =================================
 # FORM VERSION
 # =================================
 
@@ -55,6 +64,208 @@ nombre_usuario = (
     or user.get("email")
     or ""
 )
+
+email_usuario = (
+    user.get("email")
+    or ""
+)
+
+if "reset_form_viaticos" not in st.session_state:
+    st.session_state.reset_form_viaticos = 0
+
+# =================================
+# EMAIL FUNCTION
+# =================================
+
+def enviar_correo_solicitud(
+
+    destinatario,
+    folio,
+    empresa_servicio,
+    empleado,
+    motivo_viaje,
+    fecha_solicitud,
+    fecha_inicio,
+    fecha_fin,
+    empresa_cargo,
+    unidad_negocio,
+    sucursal,
+    sucursal_otro,
+    conceptos,
+    total_estimado,
+    observaciones
+
+):
+
+    conceptos_html = ""
+
+    for item in conceptos:
+
+        conceptos_html += f"""
+        <tr>
+
+            <td style="
+                padding:8px;
+                border:1px solid #ccc;
+            ">
+                {item.get("Tipo", "")}
+            </td>
+
+            <td style="
+                padding:8px;
+                border:1px solid #ccc;
+            ">
+                {item.get("Descripcion", "")}
+            </td>
+
+            <td style="
+                padding:8px;
+                border:1px solid #ccc;
+            ">
+                ${float(item.get("Monto", 0)):,.2f}
+            </td>
+
+        </tr>
+        """
+
+    html = f"""
+
+    <div style="
+        font-family:Arial;
+        max-width:900px;
+        margin:auto;
+    ">
+
+        <h2 style="color:#151F6D;">
+            Solicitud de Viáticos Registrada
+        </h2>
+
+        <h3>
+            Folio:
+            {folio}
+        </h3>
+
+        <hr>
+
+        <p>
+            <b>Empresa que Brinda el Servicio:</b>
+            {empresa_servicio}
+        </p>
+
+        <p>
+            <b>Empleado:</b>
+            {empleado}
+        </p>
+
+        <p>
+            <b>Motivo del Viaje:</b>
+            {motivo_viaje}
+        </p>
+
+        <p>
+            <b>Fecha Solicitud:</b>
+            {fecha_solicitud}
+        </p>
+
+        <p>
+            <b>Fecha Inicio:</b>
+            {fecha_inicio}
+        </p>
+
+        <p>
+            <b>Fecha Fin:</b>
+            {fecha_fin}
+        </p>
+
+        <p>
+            <b>Empresa a Cargo:</b>
+            {empresa_cargo}
+        </p>
+
+        <p>
+            <b>Unidad de Negocio:</b>
+            {unidad_negocio}
+        </p>
+
+        <p>
+            <b>Sucursal:</b>
+            {sucursal}
+        </p>
+
+        <p>
+            <b>Otro:</b>
+            {sucursal_otro}
+        </p>
+
+        <hr>
+
+        <h3>
+            Conceptos
+        </h3>
+
+        <table style="
+            border-collapse:collapse;
+            width:100%;
+        ">
+
+            <tr style="
+                background:#151F6D;
+                color:white;
+            ">
+
+                <th style="padding:10px;">
+                    Tipo
+                </th>
+
+                <th style="padding:10px;">
+                    Descripcion
+                </th>
+
+                <th style="padding:10px;">
+                    Monto
+                </th>
+
+            </tr>
+
+            {conceptos_html}
+
+        </table>
+
+        <h2 style="
+            margin-top:30px;
+            color:#BFA75F;
+        ">
+            TOTAL ESTIMADO:
+            ${float(total_estimado):,.2f}
+        </h2>
+
+        <hr>
+
+        <p>
+            <b>Observaciones:</b>
+        </p>
+
+        <p>
+            {observaciones}
+        </p>
+
+    </div>
+    """
+
+    resend.Emails.send({
+
+        "from":
+            "Viaticos <onboarding@resend.dev>",
+
+        "to":
+            [destinatario],
+
+        "subject":
+            folio,
+
+        "html":
+            html
+    })
 
 # =================================
 # FORM RESET
@@ -652,6 +863,57 @@ with tab_solicitud:
             "estatus": "Pendiente"
 
         }).execute()
+
+        # =================================
+        # SEND EMAIL
+        # =================================
+
+        try:
+
+            enviar_correo_solicitud(
+
+                destinatario=email_usuario,
+
+                folio=folio_solicitud,
+
+                empresa_servicio=empresa_servicio,
+
+                empleado=empleado,
+
+                motivo_viaje=motivo_viaje,
+
+                fecha_solicitud=fecha_solicitud,
+
+                fecha_inicio=fecha_inicio,
+
+                fecha_fin=fecha_fin,
+
+                empresa_cargo=empresa_cargo,
+
+                unidad_negocio=(
+                    ""
+                    if unidad_disabled
+                    else unidad_negocio
+                ),
+
+                sucursal=sucursal,
+
+                sucursal_otro=sucursal_especificar,
+
+                conceptos=st.session_state[
+                    conceptos_key
+                ],
+
+                total_estimado=total_estimado,
+
+                observaciones=observaciones
+            )
+
+        except Exception as e:
+
+            st.warning(
+                f"No se pudo enviar correo: {e}"
+            )
 
         @st.dialog("✅ Solicitud Enviada")
         def mostrar_confirmacion():
