@@ -716,7 +716,10 @@ if comprobaciones_data.data:
         for row in comprobaciones_data.data
     }
 
-folios_solicitud = ["Selecciona folio"]
+folios_solicitud = [
+    "Selecciona folio",
+    "Solicitud sin Folio"
+]
 
 for row in solicitudes:
 
@@ -741,7 +744,7 @@ with tab_comprobacion:
     st.divider()
 
     # =========================
-    # DATOS CONTABLES
+    # SELECT FOLIO
     # =========================
 
     folio_seleccionado = st.selectbox(
@@ -755,7 +758,10 @@ with tab_comprobacion:
 
     folio_real = folio_seleccionado.split(" — ")[0]
 
-    if folio_real != "Selecciona folio":
+    if (
+        folio_real != "Selecciona folio"
+        and folio_real != "Solicitud sin Folio"
+    ):
 
         solicitud_data = next(
             (
@@ -764,6 +770,10 @@ with tab_comprobacion:
             ),
             {}
         )
+
+    modo_sin_folio = (
+        folio_seleccionado == "Solicitud sin Folio"
+    )
 
     st.divider()
 
@@ -799,11 +809,16 @@ with tab_comprobacion:
             "MONTERREY",
             "QUERETARO",
             "LEON",
-            "TLAXCALA",
+            "LINCOLN LOGISTICS",
+            "ROLANDO ALFARO",
             "OTRO"
         ]
 
         dynamic_key = f"{COMP_VERSION}_{folio_seleccionado}"
+
+        # =================================
+        # ROW 1
+        # =================================
 
         col1, col2 = st.columns(2)
 
@@ -817,8 +832,8 @@ with tab_comprobacion:
                         "empresa_brinda_servicio",
                         "Seleccione una opción..."
                     )
-                ),
-                disabled=True,
+                ) if not modo_sin_folio else 0,
+                disabled=not modo_sin_folio,
                 key=f"empresa_servicio_comp_{dynamic_key}"
             )
 
@@ -833,14 +848,22 @@ with tab_comprobacion:
 
         motivo_viaje_comp = st.text_area(
             "Motivo del Viaje",
-            value=solicitud_data.get(
-                "motivo_viaje",
-                ""
+            value=(
+                solicitud_data.get(
+                    "motivo_viaje",
+                    ""
+                )
+                if not modo_sin_folio
+                else ""
             ),
             height=100,
-            disabled=True,
+            disabled=not modo_sin_folio,
             key=f"motivo_viaje_comp_{dynamic_key}"
         )
+
+        # =================================
+        # FECHAS
+        # =================================
 
         col1, col2, col3 = st.columns(3)
 
@@ -848,13 +871,17 @@ with tab_comprobacion:
 
             fecha_solicitud_comp = st.date_input(
                 "Fecha de Solicitud",
-                value=pd.to_datetime(
-                    solicitud_data.get(
-                        "fecha_solicitud",
-                        date.today()
-                    )
-                ).date(),
-                disabled=True,
+                value=(
+                    pd.to_datetime(
+                        solicitud_data.get(
+                            "fecha_solicitud",
+                            date.today()
+                        )
+                    ).date()
+                    if not modo_sin_folio
+                    else date.today()
+                ),
+                disabled=not modo_sin_folio,
                 key=f"fecha_solicitud_comp_{dynamic_key}"
             )
 
@@ -862,13 +889,17 @@ with tab_comprobacion:
 
             fecha_inicio_comp = st.date_input(
                 "Fecha de Inicio",
-                value=pd.to_datetime(
-                    solicitud_data.get(
-                        "fecha_inicio",
-                        date.today()
-                    )
-                ).date(),
-                disabled=True,
+                value=(
+                    pd.to_datetime(
+                        solicitud_data.get(
+                            "fecha_inicio",
+                            date.today()
+                        )
+                    ).date()
+                    if not modo_sin_folio
+                    else date.today()
+                ),
+                disabled=not modo_sin_folio,
                 key=f"fecha_inicio_comp_{dynamic_key}"
             )
 
@@ -876,91 +907,280 @@ with tab_comprobacion:
 
             fecha_fin_comp = st.date_input(
                 "Fecha de Fin",
-                value=pd.to_datetime(
-                    solicitud_data.get(
-                        "fecha_fin",
-                        date.today()
-                    )
-                ).date(),
-                disabled=True,
+                value=(
+                    pd.to_datetime(
+                        solicitud_data.get(
+                            "fecha_fin",
+                            date.today()
+                        )
+                    ).date()
+                    if not modo_sin_folio
+                    else date.today()
+                ),
+                disabled=not modo_sin_folio,
                 key=f"fecha_fin_comp_{dynamic_key}"
             )
+
+        # =================================
+        # EMPRESA A CARGO
+        # =================================
 
         col1, col2 = st.columns(2)
 
         with col1:
 
+            empresa_cargo_default = (
+                solicitud_data.get(
+                    "empresa_cargo_gastos",
+                    "Seleccione una opción..."
+                )
+                if not modo_sin_folio
+                else "Seleccione una opción..."
+            )
+
             empresa_cargo_comp = st.selectbox(
                 "Empresa a Cargo para Gastos de este Viaje",
                 empresas_lista,
                 index=empresas_lista.index(
-                    solicitud_data.get(
-                        "empresa_cargo_gastos",
-                        "Seleccione una opción..."
-                    )
+                    empresa_cargo_default
                 ),
-                disabled=True,
+                disabled=not modo_sin_folio,
                 key=f"empresa_cargo_comp_{dynamic_key}"
             )
 
-        with col2:
+        # =================================
+        # RESET
+        # =================================
+
+        empresa_prev_key_comp = (
+            f"empresa_prev_comp_{dynamic_key}"
+        )
+
+        if empresa_prev_key_comp not in st.session_state:
+            st.session_state[
+                empresa_prev_key_comp
+            ] = empresa_cargo_comp
+
+        if (
+            st.session_state[
+                empresa_prev_key_comp
+            ] != empresa_cargo_comp
+            and modo_sin_folio
+        ):
+
+            st.session_state[
+                f"unidad_negocio_comp_{dynamic_key}"
+            ] = "Seleccione una opción..."
+
+            st.session_state[
+                f"sucursal_comp_{dynamic_key}"
+            ] = "OTRO"
+
+            st.session_state[
+                f"suc_otro_texto_comp_{dynamic_key}"
+            ] = ""
+
+            st.session_state[
+                empresa_prev_key_comp
+            ] = empresa_cargo_comp
+
+            st.rerun()
+
+        # =================================
+        # CONFIG
+        # =================================
+
+        unidad_disabled_comp = False
+        sucursal_disabled_comp = False
+
+        unidad_default_comp = (
+            solicitud_data.get(
+                "unidad_negocio",
+                "Seleccione una opción..."
+            )
+            if not modo_sin_folio
+            else "Seleccione una opción..."
+        )
+
+        sucursal_default_comp = (
+            solicitud_data.get(
+                "sucursal",
+                "OTRO"
+            )
+            if not modo_sin_folio
+            else "OTRO"
+        )
+
+        sucursal_options_comp = (
+            sucursales_lista.copy()
+        )
+
+        # =================================
+        # LINCOLN / SET LOGIS
+        # =================================
+
+        if empresa_cargo_comp in [
+            "LINCOLN",
+            "SET LOGIS PLUS"
+        ]:
+
+            unidad_disabled_comp = True
+            sucursal_disabled_comp = True
+
+            unidad_default_comp = (
+                "Seleccione una opción..."
+            )
+
+            sucursal_default_comp = "OTRO"
+
+        # =================================
+        # IGLOO
+        # =================================
+
+        elif empresa_cargo_comp == "IGLOO":
+
+            unidad_disabled_comp = False
+            sucursal_disabled_comp = True
+
+            sucursal_default_comp = "OTRO"
+
+        # =================================
+        # SET FREIGHT
+        # =================================
+
+        elif empresa_cargo_comp == "SET FREIGHT":
+
+            unidad_disabled_comp = True
+            sucursal_disabled_comp = False
+
+            sucursal_default_comp = (
+                "NUEVO LAREDO"
+            )
+
+            sucursal_options_comp = [
+                "NUEVO LAREDO",
+                "DALLAS",
+                "CHICAGO",
+                "GUADALAJARA",
+                "MONTERREY",
+                "LEON",
+                "QUERETARO",
+                "LINCOLN LOGISTICS",
+                "ROLANDO ALFARO",
+                "OTRO"
+            ]
+
+        # =================================
+        # ROW
+        # =================================
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
 
             unidad_negocio_comp = st.selectbox(
                 "Unidad de Negocio",
                 unidades_lista,
                 index=unidades_lista.index(
-                    solicitud_data.get(
-                        "unidad_negocio",
-                        "Seleccione una opción..."
-                    )
+                    unidad_default_comp
                 ),
-                disabled=True,
+                disabled=(
+                    unidad_disabled_comp
+                    or not modo_sin_folio
+                ),
                 key=f"unidad_negocio_comp_{dynamic_key}"
             )
 
-        st.markdown("### Sucursal")
+        # =================================
+        # PICUS
+        # =================================
 
-        sucursal_db = solicitud_data.get(
-            "sucursal",
-            "NUEVO LAREDO"
-        )
+        if empresa_cargo_comp == "PICUS":
 
-        sucursal_especificar_db = solicitud_data.get(
-            "sucursal_especificar",
-            ""
-        )
+            if unidad_negocio_comp == "PLUS":
 
-        if sucursal_db not in sucursales_lista:
-            sucursal_db = "OTRO"
+                sucursal_options_comp = [
+                    "NUEVO LAREDO",
+                    "QUERETARO",
+                    "OTRO"
+                ]
 
-        radio_index = sucursales_lista.index(sucursal_db)
+                sucursal_disabled_comp = False
+                sucursal_default_comp = (
+                    "NUEVO LAREDO"
+                )
 
-        sucursal_comp = st.radio(
-            "",
-            sucursales_lista,
-            index=radio_index,
-            horizontal=True,
-            disabled=True,
-            label_visibility="collapsed",
-            key=f"sucursal_comp_{dynamic_key}"
-        )
+            elif unidad_negocio_comp in [
+                "CARRIER",
+                "LOGISTICA"
+            ]:
 
-        if sucursal_db == "OTRO":
+                sucursal_options_comp = ["OTRO"]
 
-            st.text_input(
-                "Especificar",
-                value=sucursal_especificar_db,
-                disabled=True,
-                key=f"suc_otro_texto_comp_{dynamic_key}"
+                sucursal_disabled_comp = True
+                sucursal_default_comp = "OTRO"
+
+            else:
+
+                sucursal_options_comp = ["OTRO"]
+
+                sucursal_disabled_comp = True
+                sucursal_default_comp = "OTRO"
+
+        # =================================
+        # VALIDATE
+        # =================================
+
+        if (
+            sucursal_default_comp
+            not in sucursal_options_comp
+        ):
+            sucursal_default_comp = "OTRO"
+
+        # =================================
+        # SUCURSAL
+        # =================================
+
+        with col2:
+
+            sucursal_comp = st.selectbox(
+                "Sucursal",
+                sucursal_options_comp,
+                index=sucursal_options_comp.index(
+                    sucursal_default_comp
+                ),
+                disabled=(
+                    sucursal_disabled_comp
+                    or not modo_sin_folio
+                ),
+                key=f"sucursal_comp_{dynamic_key}"
             )
 
-        else:
+        # =================================
+        # OTRO
+        # =================================
 
-            st.text_input(
-                "Especificar",
-                value="",
-                disabled=True,
-                key=f"suc_otro_disabled_comp_{dynamic_key}"
+        otro_enabled_comp = (
+            sucursal_comp == "OTRO"
+        )
+
+        with col3:
+
+            suc_otro_texto_comp = st.text_input(
+                "Otro",
+                value=(
+                    solicitud_data.get(
+                        "sucursal_especificar",
+                        ""
+                    )
+                    if not modo_sin_folio
+                    else ""
+                ),
+                disabled=(
+                    not otro_enabled_comp
+                    or not modo_sin_folio
+                ),
+                key=f"suc_otro_texto_comp_{dynamic_key}"
             )
 
     # =========================
@@ -975,10 +1195,6 @@ with tab_comprobacion:
 
         if gastos_comp_key not in st.session_state:
             st.session_state[gastos_comp_key] = []
-
-        # =========================
-        # INPUTS
-        # =========================
 
         col1, col2, col3 = st.columns(3)
 
@@ -1068,10 +1284,6 @@ with tab_comprobacion:
                 "Aplica Retención ISR",
                 key=f"aplica_retencion_{COMP_VERSION}"
             )
-
-        # =========================
-        # ADD BUTTON
-        # =========================
 
         if st.button(
             "➕ Agregar Concepto",
@@ -1275,10 +1487,6 @@ with tab_comprobacion:
 
         else:
 
-            # =================================
-            # GENERAR FOLIO COMPROBACION
-            # =================================
-
             existing = (
                 supabase
                 .table("comprobacion_viaje")
@@ -1291,10 +1499,6 @@ with tab_comprobacion:
             folio_comprobacion = (
                 f"CGV-{consecutivo:06d}"
             )
-
-            # =================================
-            # GUARDAR EN SUPABASE
-            # =================================
 
             supabase.table(
                 "comprobacion_viaje"
