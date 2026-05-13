@@ -1257,19 +1257,9 @@ with tab_comprobacion:
 
         if gastos_comp_key not in st.session_state:
 
-            keys_to_clear = [
-
-                gastos_comp_key,
-
-                loaded_folio_key,
-
-                f"editor_comp_{COMP_VERSION}"
-            ]
-
-            for key in keys_to_clear:
-
-                if key in st.session_state:
-                    del st.session_state[key]
+            st.session_state[
+                gastos_comp_key
+            ] = []
 
         if loaded_folio_key not in st.session_state:
 
