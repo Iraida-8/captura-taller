@@ -498,10 +498,12 @@ def modal_ver_solicitud(row):
                         ),
 
                     "Aprobado":
-                        concepto.get(
+                        "🟢 Si"
+                        if concepto.get(
                             "Aprobado",
                             "Si"
-                        ),
+                        ) in ["Si", "🟢 Si"]
+                        else "🔴 No",
 
                     "Razon":
                         concepto.get(
@@ -548,7 +550,10 @@ def modal_ver_solicitud(row):
                     "Aprobado":
                         st.column_config.SelectboxColumn(
                             "Aprobado",
-                            options=["Si", "No"],
+                            options=[
+                                "🟢 Si",
+                                "🔴 No"
+                            ],
                             required=True
                         ),
 
