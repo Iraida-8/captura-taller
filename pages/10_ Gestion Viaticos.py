@@ -144,8 +144,8 @@ autorizados = len(
 
 # VERIFICANDO
 verificando = len(
-    df_comprobaciones[
-        df_comprobaciones["estatus"] == "Verificar"
+    df_solicitudes[
+        df_solicitudes["estatus"] == "Verificar"
     ]
 )
 
@@ -160,37 +160,11 @@ rechazados = len(
 # CONCLUIDOS
 # =================================
 
-concluidos_folios = set()
-
-# solicitud_viaje
-solicitudes_concluidas = df_solicitudes[
-    df_solicitudes["estatus"] == "Concluido"
-]
-
-if "folio_solicitud" in solicitudes_concluidas.columns:
-
-    concluidos_folios.update(
-        solicitudes_concluidas["folio_solicitud"]
-        .astype(str)
-        .str.strip()
-        .tolist()
-    )
-
-# comprobacion_viaje
-comprobaciones_concluidas = df_comprobaciones[
-    df_comprobaciones["estatus"] == "Concluido"
-]
-
-if "folio_solicitud" in comprobaciones_concluidas.columns:
-
-    concluidos_folios.update(
-        comprobaciones_concluidas["folio_solicitud"]
-        .astype(str)
-        .str.strip()
-        .tolist()
-    )
-
-concluidos = len(concluidos_folios)
+concluidos = len(
+    df_solicitudes[
+        df_solicitudes["estatus"] == "Concluido"
+    ]
+)
 
 # =================================
 # HEADER
