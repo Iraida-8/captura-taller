@@ -175,6 +175,10 @@ with tab_solicitud:
                 key=f"fecha_fin_{FORM_VERSION}"
             )
 
+        # =================================
+        # EMPRESA A CARGO
+        # =================================
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -193,46 +197,165 @@ with tab_solicitud:
                 key=f"empresa_cargo_{FORM_VERSION}"
             )
 
-        with col2:
+        # =================================
+        # CONFIGURACIONES BASE
+        # =================================
+
+        unidad_options = [
+            "Seleccione una opción...",
+            "CARRIER",
+            "LOGISTICA",
+            "PLUS"
+        ]
+
+        sucursal_options_all = [
+            "NUEVO LAREDO",
+            "DALLAS",
+            "CHICAGO",
+            "GUADALAJARA",
+            "MONTERREY",
+            "QUERETARO",
+            "LEON",
+            "TLAXCALA",
+            "OTRO"
+        ]
+
+        unidad_disabled = False
+        sucursal_disabled = False
+
+        unidad_default = "Seleccione una opción..."
+        sucursal_default = "OTRO"
+
+        sucursal_options = sucursal_options_all.copy()
+
+        # =================================
+        # LINCOLN / SET LOGIS PLUS
+        # =================================
+
+        if empresa_cargo in ["LINCOLN", "SET LOGIS PLUS"]:
+
+            unidad_disabled = True
+            sucursal_disabled = True
+
+            unidad_default = "Seleccione una opción..."
+            sucursal_default = "OTRO"
+
+        # =================================
+        # IGLOO
+        # =================================
+
+        elif empresa_cargo == "IGLOO":
+
+            unidad_disabled = False
+            sucursal_disabled = True
+
+            unidad_default = "Seleccione una opción..."
+            sucursal_default = "OTRO"
+
+        # =================================
+        # SET FREIGHT
+        # =================================
+
+        elif empresa_cargo == "SET FREIGHT":
+
+            unidad_disabled = True
+            sucursal_disabled = False
+
+            unidad_default = "Seleccione una opción..."
+            sucursal_default = "NUEVO LAREDO"
+
+        # =================================
+        # PICUS
+        # =================================
+
+        elif empresa_cargo == "PICUS":
+
+            unidad_disabled = False
+
+        # =================================
+        # ROW
+        # =================================
+
+        col1, col2, col3 = st.columns(3)
+
+        # =================================
+        # UNIDAD NEGOCIO
+        # =================================
+
+        with col1:
 
             unidad_negocio = st.selectbox(
                 "Unidad de Negocio",
-                [
-                    "Seleccione una opción...",
-                    "CARRIER",
-                    "LOGISTICA",
-                    "PLUS"
-                ],
-                index=0,
+                unidad_options,
+                index=unidad_options.index(unidad_default),
+                disabled=unidad_disabled,
                 key=f"unidad_negocio_{FORM_VERSION}"
             )
 
-        st.markdown("### Sucursal")
+        # =================================
+        # PICUS DEPENDENCIAS
+        # =================================
 
-        sucursal = st.radio(
-            "",
-            [
-                "NUEVO LAREDO",
-                "DALLAS",
-                "CHICAGO",
-                "GUADALAJARA",
-                "MONTERREY",
-                "QUERETARO",
-                "LEON",
-                "TLAXCALA",
-                "OTRO"
-            ],
-            horizontal=True,
-            label_visibility="collapsed",
-            key=f"sucursal_{FORM_VERSION}"
-        )
+        if empresa_cargo == "PICUS":
 
-        if sucursal == "OTRO":
+            if unidad_negocio == "PLUS":
+
+                sucursal_options = [
+                    "NUEVO LAREDO",
+                    "QUERETARO",
+                    "OTRO"
+                ]
+
+                sucursal_disabled = False
+                sucursal_default = "NUEVO LAREDO"
+
+            elif unidad_negocio in ["CARRIER", "LOGISTICA"]:
+
+                sucursal_options = ["OTRO"]
+
+                sucursal_disabled = True
+                sucursal_default = "OTRO"
+
+            else:
+
+                sucursal_options = ["OTRO"]
+
+                sucursal_disabled = True
+                sucursal_default = "OTRO"
+
+        # =================================
+        # SUCURSAL
+        # =================================
+
+        with col2:
+
+            sucursal = st.selectbox(
+                "Sucursal",
+                sucursal_options,
+                index=sucursal_options.index(sucursal_default),
+                disabled=sucursal_disabled,
+                key=f"sucursal_{FORM_VERSION}"
+            )
+
+        # =================================
+        # OTRO
+        # =================================
+
+        otro_enabled = sucursal == "OTRO"
+
+        with col3:
 
             suc_otro_texto = st.text_input(
-                "Especificar",
+                "Otro",
+                disabled=not otro_enabled,
                 key=f"suc_otro_texto_{FORM_VERSION}"
             )
+
+        # =================================
+        # SUCURSAL FINAL
+        # =================================
+
+        if sucursal == "OTRO":
 
             sucursales_final = (
                 [suc_otro_texto]
@@ -242,14 +365,11 @@ with tab_solicitud:
 
         else:
 
-            st.text_input(
-                "Especificar",
-                value="",
-                disabled=True,
-                key=f"suc_otro_disabled_{FORM_VERSION}"
-            )
-
             sucursales_final = [sucursal]
+
+    # =================================
+    # GASTOS
+    # =================================
 
     with st.container(border=True):
 
@@ -277,7 +397,6 @@ with tab_solicitud:
                     "GASOLINA",
                     "OTROS"
                 ],
-
                 key=f"tipo_gasto_{FORM_VERSION}"
             )
 
@@ -330,22 +449,22 @@ with tab_solicitud:
             df_display.insert(0, "Eliminar", False)
 
             edited_df = st.data_editor(
-            df_display,
-            use_container_width=True,
-            hide_index=True,
-            disabled=[
-                "Tipo",
-                "Descripcion",
-                "Monto"
-            ],
-            column_config={
-                "Eliminar": st.column_config.CheckboxColumn(
-                    "Eliminar",
-                    width="small"
-                )
-            },
-            key=f"editor_solicitud_{FORM_VERSION}"
-        )
+                df_display,
+                use_container_width=True,
+                hide_index=True,
+                disabled=[
+                    "Tipo",
+                    "Descripcion",
+                    "Monto"
+                ],
+                column_config={
+                    "Eliminar": st.column_config.CheckboxColumn(
+                        "Eliminar",
+                        width="small"
+                    )
+                },
+                key=f"editor_solicitud_{FORM_VERSION}"
+            )
 
             if st.button(
                 "🗑️ Eliminar Filas Seleccionadas",
@@ -446,13 +565,13 @@ with tab_solicitud:
         # SUCURSAL FINAL
         # =================================
 
-        sucursal_especificar = ""
-
         if sucursal == "OTRO":
             sucursal_especificar = suc_otro_texto
+        else:
+            sucursal_especificar = ""
 
         # =================================
-        # GUARDAR EN SUPABASE
+        # GUARDAR
         # =================================
 
         supabase.table("solicitud_viaje").insert({
@@ -473,9 +592,17 @@ with tab_solicitud:
 
             "empresa_cargo_gastos": empresa_cargo,
 
-            "unidad_negocio": unidad_negocio,
+            "unidad_negocio": (
+                ""
+                if unidad_disabled
+                else unidad_negocio
+            ),
 
-            "sucursal": sucursal,
+            "sucursal": (
+                ""
+                if sucursal_disabled and empresa_cargo in ["LINCOLN", "SET LOGIS PLUS"]
+                else sucursal
+            ),
 
             "sucursal_especificar": sucursal_especificar,
 
