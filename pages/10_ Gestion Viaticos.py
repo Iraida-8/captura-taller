@@ -1964,6 +1964,68 @@ else:
                 @st.dialog("Detalle de Comprobación")
                 def modal_verificacion_finalizada():
 
+                    @st.dialog("Detalle Solicitud")
+                    def modal_detalle_solicitud():
+
+                        conceptos_solicitud = (
+                            solicitud_row.get(
+                                "conceptos",
+                                []
+                            )
+                        )
+
+                        if conceptos_solicitud:
+
+                            df_sol = pd.DataFrame(
+                                conceptos_solicitud
+                            )
+
+                            columnas_solicitud = [
+                                "Tipo",
+                                "Descripcion",
+                                "Monto",
+                                "Aprobado",
+                                "Razon"
+                            ]
+
+                            for col_name in columnas_solicitud:
+
+                                if col_name not in df_sol.columns:
+
+                                    df_sol[col_name] = ""
+
+                            df_sol = df_sol[
+                                columnas_solicitud
+                            ]
+
+                            if "Monto" in df_sol.columns:
+
+                                df_sol["Monto"] = (
+                                    pd.to_numeric(
+                                        df_sol["Monto"],
+                                        errors="coerce"
+                                    )
+                                    .fillna(0)
+                                    .apply(
+                                        lambda x:
+                                        f"${x:,.2f}"
+                                    )
+                                )
+
+                            st.data_editor(
+                                df_sol,
+                                use_container_width=True,
+                                hide_index=True,
+                                disabled=True,
+                                height=450
+                            )
+
+                        else:
+
+                            st.info(
+                                "No hay conceptos."
+                            )
+
                     # =================================
                     # INFO GENERAL
                     # =================================
@@ -2136,20 +2198,76 @@ else:
                     )
 
                     # =================================
-                    # CONCEPTOS
+                    # MONTO SOLICITADO
                     # =================================
 
                     st.markdown("---")
-
-                    st.markdown(
-                        "## 💰 Conceptos"
-                    )
 
                     conceptos_solicitud = (
                         solicitud_row.get(
                             "conceptos",
                             []
                         )
+                    )
+
+                    monto_solicitado = 0.0
+
+                    for item in conceptos_solicitud:
+
+                        try:
+
+                            monto_solicitado += float(
+                                item.get(
+                                    "Monto",
+                                    0
+                                ) or 0
+                            )
+
+                        except:
+
+                            pass
+
+                    col_total_sol, col_btn_sol = st.columns(
+                        [3, 1]
+                    )
+
+                    with col_total_sol:
+
+                        st.markdown(
+                            f"""
+                            <div style='
+                                font-size:26px;
+                                font-weight:800;
+                                color:#BFA75F;
+                                margin-top:10px;
+                                margin-bottom:20px;
+                            '>
+                                Monto Solicitado:
+                                ${monto_solicitado:,.2f}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                    with col_btn_sol:
+
+                        st.markdown("<br>", unsafe_allow_html=True)
+
+                        if st.button(
+                            "👁 Ver Detalles",
+                            use_container_width=True
+                        ):
+
+                            modal_detalle_solicitud()
+
+                    # =================================
+                    # CONCEPTOS COMPROBACION
+                    # =================================
+
+                    st.markdown("---")
+
+                    st.markdown(
+                        "## 🧾 Conceptos Comprobación"
                     )
 
                     conceptos_comprobacion = (
@@ -2159,54 +2277,82 @@ else:
                         )
                     )
 
-                    col_sol, col_comp = st.columns(2)
+                    total_comprobado = (
+                        row.get(
+                            "total_comprobado",
+                            0
+                        )
+                    )
 
-                    # =================================
-                    # SOLICITUD
-                    # =================================
+                    try:
+                        total_comprobado = float(
+                            total_comprobado
+                        )
+                    except:
+                        total_comprobado = 0
 
-                    with col_sol:
+                    st.markdown(
+                        f"""
+                        <div style='
+                            font-size:22px;
+                            font-weight:700;
+                            color:#38BDF8;
+                            margin-bottom:15px;
+                        '>
+                            Comprobación:
+                            ${total_comprobado:,.2f}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
-                        total_estimado = (
-                            solicitud_row.get(
-                                "total_estimado",
-                                0
-                            )
+                    if conceptos_comprobacion:
+
+                        df_comp = pd.DataFrame(
+                            conceptos_comprobacion
                         )
 
-                        try:
-                            total_estimado = (
-                                float(total_estimado)
-                            )
-                        except:
-                            total_estimado = 0
+                        if "Eliminar" in df_comp.columns:
 
-                        st.markdown(
-                            f"""
-                            <div style='
-                                font-size:22px;
-                                font-weight:700;
-                                color:#BFA75F;
-                                margin-bottom:15px;
-                            '>
-                                Solicitud:
-                                ${total_estimado:,.2f}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                        if conceptos_solicitud:
-
-                            df_sol = pd.DataFrame(
-                                conceptos_solicitud
+                            df_comp = df_comp.drop(
+                                columns=["Eliminar"]
                             )
 
-                            if "Monto" in df_sol.columns:
+                        columnas_comprobacion = [
+                            "Tipo",
+                            "Descripcion",
+                            "Monto",
+                            "Comprobante",
+                            "Aplica IVA",
+                            "IVA %",
+                            "Aplica Retencion",
+                            "Impuesto Acreditable",
+                            "Total Comprobado"
+                        ]
 
-                                df_sol["Monto"] = (
+                        for col_name in columnas_comprobacion:
+
+                            if col_name not in df_comp.columns:
+
+                                df_comp[col_name] = ""
+
+                        df_comp = df_comp[
+                            columnas_comprobacion
+                        ]
+
+                        currency_columns = [
+                            "Monto",
+                            "Impuesto Acreditable",
+                            "Total Comprobado"
+                        ]
+
+                        for col_name in currency_columns:
+
+                            if col_name in df_comp.columns:
+
+                                df_comp[col_name] = (
                                     pd.to_numeric(
-                                        df_sol["Monto"],
+                                        df_comp[col_name],
                                         errors="coerce"
                                     )
                                     .fillna(0)
@@ -2216,86 +2362,19 @@ else:
                                     )
                                 )
 
-                            st.data_editor(
-                                df_sol,
-                                use_container_width=True,
-                                hide_index=True,
-                                num_rows="dynamic",
-                                disabled=True
-                            )
-
-                    # =================================
-                    # COMPROBACION
-                    # =================================
-
-                    with col_comp:
-
-                        total_comprobado = (
-                            row.get(
-                                "total_comprobado",
-                                0
-                            )
+                        st.data_editor(
+                            df_comp,
+                            use_container_width=True,
+                            hide_index=True,
+                            disabled=True,
+                            height=350
                         )
 
-                        try:
-                            total_comprobado = (
-                                float(total_comprobado)
-                            )
-                        except:
-                            total_comprobado = 0
+                    else:
 
-                        st.markdown(
-                            f"""
-                            <div style='
-                                font-size:22px;
-                                font-weight:700;
-                                color:#38BDF8;
-                                margin-bottom:15px;
-                            '>
-                                Comprobación:
-                                ${total_comprobado:,.2f}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
+                        st.info(
+                            "No hay conceptos comprobados."
                         )
-
-                        if conceptos_comprobacion:
-
-                            df_comp = pd.DataFrame(
-                                conceptos_comprobacion
-                            )
-
-                            currency_columns = [
-                                "Total Comprobado",
-                                "Impuesto Acreditable",
-                                "Gastos con Comprobante",
-                                "Gastos sin Comprobante"
-                            ]
-
-                            for col_name in currency_columns:
-
-                                if col_name in df_comp.columns:
-
-                                    df_comp[col_name] = (
-                                        pd.to_numeric(
-                                            df_comp[col_name],
-                                            errors="coerce"
-                                        )
-                                        .fillna(0)
-                                        .apply(
-                                            lambda x:
-                                            f"${x:,.2f}"
-                                        )
-                                    )
-
-                            st.data_editor(
-                                df_comp,
-                                use_container_width=True,
-                                hide_index=True,
-                                num_rows="dynamic",
-                                disabled=True
-                            )
-
                     # =================================
                     # TOTALES COMPROBACION
                     # =================================
