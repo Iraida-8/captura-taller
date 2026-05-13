@@ -1712,8 +1712,7 @@ with tab_comprobacion:
             st.text_input(
                 "TOTAL COMPROBADO",
                 value=f"$ {total_general:,.2f}",
-                disabled=True,
-                key=f"total_general_{COMP_VERSION}"
+                disabled=True
             )
 
         with col3:
@@ -1721,8 +1720,7 @@ with tab_comprobacion:
             st.text_input(
                 "DIFERENCIA A CARGO (FAVOR)",
                 value=f"$ {diferencia_cargo:,.2f}",
-                disabled=True,
-                key=f"diferencia_{COMP_VERSION}"
+                disabled=True
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
