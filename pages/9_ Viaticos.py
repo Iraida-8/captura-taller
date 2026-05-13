@@ -1191,159 +1191,173 @@ with tab_comprobacion:
 
         st.markdown("## 💰 IMPORTE DE GASTOS")
 
-        gastos_comp_key = f"gastos_comprobacion_{COMP_VERSION}"
+        gastos_comp_key = (
+            f"gastos_comprobacion_{COMP_VERSION}"
+        )
+
+        loaded_folio_key = (
+            f"loaded_folio_{COMP_VERSION}"
+        )
+
+        tipos_gasto_lista = [
+            "TRANSPORTACION TERRESTRE",
+            "HOSPEDAJE",
+            "ALIMENTOS",
+            "PROPINAS",
+            "TAXIS",
+            "CASETAS",
+            "GASOLINA",
+            "OTROS"
+        ]
+
+        # =================================
+        # INITIALIZE / LOAD DATA
+        # =================================
 
         if gastos_comp_key not in st.session_state:
+
             st.session_state[gastos_comp_key] = []
 
-        col1, col2, col3 = st.columns(3)
+        if loaded_folio_key not in st.session_state:
 
-        with col1:
+            st.session_state[loaded_folio_key] = ""
 
-            tipo_gasto_comp = st.selectbox(
-                "Tipo",
-                [
-                    "Selecciona un tipo",
-                    "TRANSPORTACION TERRESTRE",
-                    "HOSPEDAJE",
-                    "ALIMENTOS",
-                    "PROPINAS",
-                    "TAXIS",
-                    "CASETAS",
-                    "GASOLINA",
-                    "OTROS"
-                ],
-                key=f"tipo_gasto_comp_{COMP_VERSION}"
+        # =================================
+        # LOAD FROM SOLICITUD
+        # =================================
+
+        if (
+            not modo_sin_folio
+            and folio_seleccionado
+            != "Selecciona folio"
+            and st.session_state[loaded_folio_key]
+            != folio_seleccionado
+        ):
+
+            conceptos_solicitud = (
+                solicitud_data.get(
+                    "conceptos",
+                    []
+                ) or []
             )
 
-        with col2:
+            nuevos_conceptos = []
 
-            gasto_con_comp = st.number_input(
-                "Gastos con Comprobante",
-                min_value=0.0,
-                step=100.0,
-                key=f"gasto_con_comp_{COMP_VERSION}"
-            )
+            for item in conceptos_solicitud:
 
-        with col3:
-
-            gasto_sin_comp = st.number_input(
-                "Gastos sin Comprobante",
-                min_value=0.0,
-                step=100.0,
-                key=f"gasto_sin_comp_{COMP_VERSION}"
-            )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        col4, col5, col6 = st.columns([1, 1.2, 1.4])
-
-        with col4:
-
-            aplica_iva = st.checkbox(
-                "Aplica IVA",
-                key=f"aplica_iva_{COMP_VERSION}"
-            )
-
-        with col5:
-
-            iva_inline_col1, iva_inline_col2 = st.columns([0.18, 1])
-
-            with iva_inline_col1:
-
-                st.markdown(
-                    """
-                    <div style="
-                        padding-top:8px;
-                        font-weight:600;
-                        color:white;
-                    ">
-                        IVA %
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                monto = float(
+                    item.get(
+                        "Monto",
+                        0
+                    ) or 0
                 )
 
-            with iva_inline_col2:
+                nuevos_conceptos.append({
 
-                iva_porcentaje = st.selectbox(
-                    "",
-                    [
-                        8,
-                        12,
-                        16
-                    ],
-                    disabled=not aplica_iva,
-                    key=f"iva_porcentaje_{COMP_VERSION}",
-                    label_visibility="collapsed"
-                )
+                    "Eliminar": False,
 
-        with col6:
+                    "Tipo":
+                        item.get(
+                            "Tipo",
+                            "OTROS"
+                        ),
 
-            aplica_retencion = st.checkbox(
-                "Aplica Retención ISR",
-                key=f"aplica_retencion_{COMP_VERSION}"
-            )
+                    "Descripcion":
+                        item.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Monto":
+                        monto,
+
+                    "Comprobante":
+                        "No",
+
+                    "Aplica IVA":
+                        False,
+
+                    "IVA %":
+                        0,
+
+                    "Aplica Retencion":
+                        False,
+
+                    "Impuesto Acreditable":
+                        0.0,
+
+                    "Total Comprobado":
+                        monto
+                })
+
+            st.session_state[
+                gastos_comp_key
+            ] = nuevos_conceptos
+
+            st.session_state[
+                loaded_folio_key
+            ] = folio_seleccionado
+
+        # =================================
+        # EMPTY FOR SIN FOLIO
+        # =================================
+
+        elif (
+            modo_sin_folio
+            and st.session_state[loaded_folio_key]
+            != "Solicitud sin Folio"
+        ):
+
+            st.session_state[
+                gastos_comp_key
+            ] = []
+
+            st.session_state[
+                loaded_folio_key
+            ] = "Solicitud sin Folio"
+
+        # =================================
+        # ADD NEW ROW
+        # =================================
 
         if st.button(
             "➕ Agregar Concepto",
             use_container_width=True,
-            key=f"btn_agregar_comp_{COMP_VERSION}"
+            key=f"btn_add_row_{COMP_VERSION}"
         ):
 
-            if (
-                tipo_gasto_comp != "Selecciona un tipo"
-            ):
+            st.session_state[
+                gastos_comp_key
+            ].append({
 
-                base_total = (
-                    gasto_con_comp +
-                    gasto_sin_comp
-                )
+                "Eliminar": False,
 
-                impuesto_acreditable = 0
+                "Tipo": "OTROS",
 
-                if (
-                    gasto_con_comp > 0
-                    and aplica_iva
-                ):
+                "Descripcion": "",
 
-                    impuesto_acreditable = (
-                        gasto_con_comp *
-                        (iva_porcentaje / 100)
-                    )
+                "Monto": 0.0,
 
-                if (
-                    gasto_con_comp > 0
-                    and aplica_retencion
-                ):
+                "Comprobante": "No",
 
-                    impuesto_acreditable -= (
-                        gasto_con_comp * 0.0125
-                    )
+                "Aplica IVA": False,
 
-                total_comprobado = (
-                    base_total +
-                    impuesto_acreditable
-                )
+                "IVA %": 0,
 
-                st.session_state[gastos_comp_key].append({
+                "Aplica Retencion": False,
 
-                    "Tipo": tipo_gasto_comp,
+                "Impuesto Acreditable": 0.0,
 
-                    "Gastos con Comprobante":
-                        gasto_con_comp,
+                "Total Comprobado": 0.0
+            })
 
-                    "Gastos sin Comprobante":
-                        gasto_sin_comp,
-
-                    "Impuesto Acreditable":
-                        impuesto_acreditable,
-
-                    "Total Comprobado":
-                        total_comprobado
-                })
+            st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
+
+        # =================================
+        # TABLE
+        # =================================
 
         if st.session_state[gastos_comp_key]:
 
@@ -1351,72 +1365,237 @@ with tab_comprobacion:
                 st.session_state[gastos_comp_key]
             )
 
-            df_display = df_gastos.copy()
-
-            money_cols = [
-                "Gastos con Comprobante",
-                "Gastos sin Comprobante",
-                "Impuesto Acreditable",
-                "Total Comprobado"
-            ]
-
-            for col in money_cols:
-
-                df_display[col] = df_display[col].apply(
-                    lambda x: f"$ {x:,.2f}"
-                )
-
-            df_display.insert(0, "Eliminar", False)
-
             edited_df = st.data_editor(
-                df_display,
+
+                df_gastos,
+
                 use_container_width=True,
+
                 hide_index=True,
-                disabled=[
-                    "Tipo",
-                    "Gastos con Comprobante",
-                    "Gastos sin Comprobante",
-                    "Impuesto Acreditable",
-                    "Total Comprobado"
-                ],
+
+                num_rows="dynamic",
+
                 column_config={
-                    "Eliminar": st.column_config.CheckboxColumn(
-                        "Eliminar",
-                        width="small"
-                    )
+
+                    "Eliminar":
+                        st.column_config.CheckboxColumn(
+                            "Eliminar",
+                            width="small"
+                        ),
+
+                    "Tipo":
+                        st.column_config.SelectboxColumn(
+                            "Tipo",
+                            options=tipos_gasto_lista,
+                            required=True
+                        ),
+
+                    "Descripcion":
+                        st.column_config.TextColumn(
+                            "Descripcion"
+                        ),
+
+                    "Monto":
+                        st.column_config.NumberColumn(
+                            "Monto",
+                            format="$ %.2f"
+                        ),
+
+                    "Comprobante":
+                        st.column_config.SelectboxColumn(
+                            "Comprobante",
+                            options=["Si", "No"]
+                        ),
+
+                    "Aplica IVA":
+                        st.column_config.CheckboxColumn(
+                            "IVA"
+                        ),
+
+                    "IVA %":
+                        st.column_config.SelectboxColumn(
+                            "IVA %",
+                            options=[0, 8, 12, 16]
+                        ),
+
+                    "Aplica Retencion":
+                        st.column_config.CheckboxColumn(
+                            "Retencion ISR"
+                        ),
+
+                    "Impuesto Acreditable":
+                        st.column_config.NumberColumn(
+                            "Impuesto Acreditable",
+                            format="$ %.2f",
+                            disabled=True
+                        ),
+
+                    "Total Comprobado":
+                        st.column_config.NumberColumn(
+                            "Total Comprobado",
+                            format="$ %.2f",
+                            disabled=True
+                        )
                 },
+
                 key=f"editor_comp_{COMP_VERSION}"
             )
+
+            # =================================
+            # RECALCULATE
+            # =================================
+
+            recalculated_rows = []
+
+            for _, row in edited_df.iterrows():
+
+                monto = float(
+                    row.get(
+                        "Monto",
+                        0
+                    ) or 0
+                )
+
+                comprobante = row.get(
+                    "Comprobante",
+                    "No"
+                )
+
+                aplica_iva = bool(
+                    row.get(
+                        "Aplica IVA",
+                        False
+                    )
+                )
+
+                iva_pct = int(
+                    row.get(
+                        "IVA %",
+                        0
+                    ) or 0
+                )
+
+                aplica_ret = bool(
+                    row.get(
+                        "Aplica Retencion",
+                        False
+                    )
+                )
+
+                impuesto = 0.0
+
+                if comprobante == "Si":
+
+                    if aplica_iva:
+
+                        impuesto += (
+                            monto *
+                            (iva_pct / 100)
+                        )
+
+                    if aplica_ret:
+
+                        impuesto -= (
+                            monto * 0.0125
+                        )
+
+                else:
+
+                    iva_pct = 0
+                    aplica_iva = False
+                    aplica_ret = False
+
+                total_final = (
+                    monto +
+                    impuesto
+                )
+
+                recalculated_rows.append({
+
+                    "Eliminar":
+                        row["Eliminar"],
+
+                    "Tipo":
+                        row["Tipo"],
+
+                    "Descripcion":
+                        row["Descripcion"],
+
+                    "Monto":
+                        monto,
+
+                    "Comprobante":
+                        comprobante,
+
+                    "Aplica IVA":
+                        aplica_iva,
+
+                    "IVA %":
+                        iva_pct,
+
+                    "Aplica Retencion":
+                        aplica_ret,
+
+                    "Impuesto Acreditable":
+                        round(
+                            impuesto,
+                            2
+                        ),
+
+                    "Total Comprobado":
+                        round(
+                            total_final,
+                            2
+                        )
+                })
+
+            st.session_state[
+                gastos_comp_key
+            ] = recalculated_rows
+
+            # =================================
+            # DELETE
+            # =================================
 
             if st.button(
                 "🗑️ Eliminar Filas Seleccionadas",
                 use_container_width=True,
-                key=f"btn_eliminar_comp_{COMP_VERSION}"
+                key=f"btn_delete_rows_{COMP_VERSION}"
             ):
 
-                filas_restantes = []
+                st.session_state[
+                    gastos_comp_key
+                ] = [
 
-                for idx, row in edited_df.iterrows():
+                    row
 
-                    if not row["Eliminar"]:
+                    for row in
+                    recalculated_rows
 
-                        filas_restantes.append(
-                            st.session_state[gastos_comp_key][idx]
-                        )
-
-                st.session_state[gastos_comp_key] = filas_restantes
+                    if not row["Eliminar"]
+                ]
 
                 st.rerun()
 
-            total_general = (
-                df_gastos["Total Comprobado"]
-                .sum()
+            total_general = sum(
+
+                row["Total Comprobado"]
+
+                for row in
+                recalculated_rows
             )
 
         else:
 
-            st.info("No hay conceptos agregados.")
+            st.info(
+                "No hay conceptos agregados."
+            )
+
             total_general = 0
+
+        # =================================
+        # TOTALES
+        # =================================
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1439,7 +1618,8 @@ with tab_comprobacion:
             )
 
         diferencia_cargo = (
-            anticipo_viaje - total_general
+            anticipo_viaje -
+            total_general
         )
 
         with col1:
@@ -1448,7 +1628,7 @@ with tab_comprobacion:
                 "TOTAL COMPROBADO",
                 value=f"$ {total_general:,.2f}",
                 disabled=True,
-                key=f"total_comprobado_{total_general}_{COMP_VERSION}"
+                key=f"total_general_{COMP_VERSION}"
             )
 
         with col3:
@@ -1457,7 +1637,7 @@ with tab_comprobacion:
                 "DIFERENCIA A CARGO (FAVOR)",
                 value=f"$ {diferencia_cargo:,.2f}",
                 disabled=True,
-                key=f"diferencia_cargo_{diferencia_cargo}_{COMP_VERSION}"
+                key=f"diferencia_{COMP_VERSION}"
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
