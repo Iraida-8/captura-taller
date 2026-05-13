@@ -1653,14 +1653,39 @@ st.markdown(
 # BASE DATA
 # =================================
 
-df_finalizadas = df_solicitudes[
-    df_solicitudes["estatus"].isin(
+df_finalizadas = pd.merge(
+
+    df_solicitudes[
+        df_solicitudes["estatus"].isin(
+            [
+                "Concluido",
+                "Rechazado"
+            ]
+        )
+    ],
+
+    df_comprobaciones[
         [
-            "Concluido",
-            "Rechazado"
+            "folio_solicitud",
+            "folio_comprobacion",
+            "conceptos",
+            "total_comprobado",
+            "anticipo_viaje",
+            "diferencia_cargo_favor",
+            "observaciones",
+            "created_at"
         ]
+    ],
+
+    on="folio_solicitud",
+
+    how="left",
+
+    suffixes=(
+        "_solicitud",
+        ""
     )
-].copy()
+)
 
 # =================================
 # FILTERS
