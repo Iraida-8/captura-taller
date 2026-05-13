@@ -1487,6 +1487,10 @@ with tab_comprobacion:
 
         else:
 
+            # =================================
+            # GENERAR FOLIO COMPROBACION
+            # =================================
+
             existing = (
                 supabase
                 .table("comprobacion_viaje")
@@ -1500,6 +1504,135 @@ with tab_comprobacion:
                 f"CGV-{consecutivo:06d}"
             )
 
+            # =================================
+            # MODO SIN FOLIO
+            # =================================
+
+            if modo_sin_folio:
+
+                # =============================
+                # GENERAR FOLIO SOLICITUD
+                # =============================
+
+                existing_sf = (
+                    supabase
+                    .table("solicitud_viaje")
+                    .select("id")
+                    .execute()
+                )
+
+                consecutivo_sf = (
+                    len(existing_sf.data) + 1
+                )
+
+                folio_solicitud_sf = (
+                    f"SF-{consecutivo_sf:06d}-SF"
+                )
+
+                # =============================
+                # SUCURSAL ESPECIFICAR
+                # =============================
+
+                if sucursal_comp == "OTRO":
+
+                    sucursal_especificar_sf = (
+                        suc_otro_texto_comp
+                    )
+
+                else:
+
+                    sucursal_especificar_sf = ""
+
+                # =============================
+                # INSERT SOLICITUD_VIAJE
+                # =============================
+
+                supabase.table(
+                    "solicitud_viaje"
+                ).insert({
+
+                    "folio_solicitud":
+                        folio_solicitud_sf,
+
+                    "empresa_brinda_servicio":
+                        empresa_servicio_comp,
+
+                    "nombre_empleado_solicita":
+                        nombre_usuario,
+
+                    "motivo_viaje":
+                        "Operacion/Solicitud sin Folio",
+
+                    "fecha_solicitud":
+                        str(fecha_solicitud_comp),
+
+                    "fecha_inicio":
+                        str(fecha_inicio_comp),
+
+                    "fecha_fin":
+                        str(fecha_fin_comp),
+
+                    "empresa_cargo_gastos":
+                        empresa_cargo_comp,
+
+                    "unidad_negocio": (
+                        ""
+                        if unidad_disabled_comp
+                        else unidad_negocio_comp
+                    ),
+
+                    "sucursal": (
+                        ""
+                        if (
+                            sucursal_disabled_comp
+                            and empresa_cargo_comp
+                            in [
+                                "LINCOLN",
+                                "SET LOGIS PLUS"
+                            ]
+                        )
+                        else sucursal_comp
+                    ),
+
+                    "sucursal_especificar":
+                        sucursal_especificar_sf,
+
+                    "conceptos": [
+                        {
+                            "Tipo": "OTROS",
+                            "Descripcion":
+                                "Operacion sin Solicitud",
+                            "Monto": 0.00
+                        }
+                    ],
+
+                    "total_estimado":
+                        0.00,
+
+                    "observaciones":
+                        "Operacion/Solicitud sin Folio",
+
+                    "estatus":
+                        "Verificar"
+
+                }).execute()
+
+                folio_solicitud_final = (
+                    folio_solicitud_sf
+                )
+
+                anticipo_viaje = 0.00
+
+            else:
+
+                folio_solicitud_final = (
+                    folio_seleccionado
+                )
+
+            # =================================
+            # INSERT COMPROBACION
+            # =================================
+
             supabase.table(
                 "comprobacion_viaje"
             ).insert({
@@ -1508,7 +1641,7 @@ with tab_comprobacion:
                     folio_comprobacion,
 
                 "folio_solicitud":
-                    folio_seleccionado,
+                    folio_solicitud_final,
 
                 "nombre_empleado_solicita":
                     nombre_usuario,
@@ -1545,9 +1678,20 @@ with tab_comprobacion:
                 )
 
                 st.code(
-                    folio_seleccionado,
+                    folio_comprobacion,
                     language=None
                 )
+
+                if modo_sin_folio:
+
+                    st.markdown(
+                        "### 📄 FOLIO SOLICITUD GENERADO"
+                    )
+
+                    st.code(
+                        folio_solicitud_final,
+                        language=None
+                    )
 
                 if st.button(
                     "Cerrar",
