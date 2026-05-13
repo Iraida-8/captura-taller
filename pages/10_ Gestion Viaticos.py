@@ -1989,68 +1989,6 @@ else:
                 @st.dialog("Detalle de Comprobación")
                 def modal_verificacion_finalizada():
 
-                    @st.dialog("Detalle Solicitud")
-                    def modal_detalle_solicitud():
-
-                        conceptos_solicitud = (
-                            solicitud_row.get(
-                                "conceptos",
-                                []
-                            )
-                        )
-
-                        if conceptos_solicitud:
-
-                            df_sol = pd.DataFrame(
-                                conceptos_solicitud
-                            )
-
-                            columnas_solicitud = [
-                                "Tipo",
-                                "Descripcion",
-                                "Monto",
-                                "Aprobado",
-                                "Razon"
-                            ]
-
-                            for col_name in columnas_solicitud:
-
-                                if col_name not in df_sol.columns:
-
-                                    df_sol[col_name] = ""
-
-                            df_sol = df_sol[
-                                columnas_solicitud
-                            ]
-
-                            if "Monto" in df_sol.columns:
-
-                                df_sol["Monto"] = (
-                                    pd.to_numeric(
-                                        df_sol["Monto"],
-                                        errors="coerce"
-                                    )
-                                    .fillna(0)
-                                    .apply(
-                                        lambda x:
-                                        f"${x:,.2f}"
-                                    )
-                                )
-
-                            st.data_editor(
-                                df_sol,
-                                use_container_width=True,
-                                hide_index=True,
-                                disabled=True,
-                                height=450
-                            )
-
-                        else:
-
-                            st.info(
-                                "No hay conceptos."
-                            )
-
                     # =================================
                     # INFO GENERAL
                     # =================================
@@ -2251,39 +2189,79 @@ else:
                         except:
 
                             pass
-
-                    col_total_sol, col_btn_sol = st.columns(
-                        [3, 1]
+                    #here
+                    st.markdown(
+                        f"""
+                        <div style='
+                            font-size:26px;
+                            font-weight:800;
+                            color:#BFA75F;
+                            margin-top:10px;
+                            margin-bottom:10px;
+                        '>
+                            Monto Solicitado:
+                            ${monto_solicitado:,.2f}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
                     )
 
-                    with col_total_sol:
+                    with st.expander(
+                        "👁 Ver Detalles Solicitud",
+                        expanded=False
+                    ):
 
-                        st.markdown(
-                            f"""
-                            <div style='
-                                font-size:26px;
-                                font-weight:800;
-                                color:#BFA75F;
-                                margin-top:10px;
-                                margin-bottom:20px;
-                            '>
-                                Monto Solicitado:
-                                ${monto_solicitado:,.2f}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                        if conceptos_solicitud:
 
-                    with col_btn_sol:
+                            df_sol = pd.DataFrame(
+                                conceptos_solicitud
+                            )
 
-                        st.markdown("<br>", unsafe_allow_html=True)
+                            columnas_solicitud = [
+                                "Tipo",
+                                "Descripcion",
+                                "Monto",
+                                "Aprobado",
+                                "Razon"
+                            ]
 
-                        if st.button(
-                            "👁 Ver Detalles",
-                            use_container_width=True
-                        ):
+                            for col_name in columnas_solicitud:
 
-                            modal_detalle_solicitud()
+                                if col_name not in df_sol.columns:
+
+                                    df_sol[col_name] = ""
+
+                            df_sol = df_sol[
+                                columnas_solicitud
+                            ]
+
+                            if "Monto" in df_sol.columns:
+
+                                df_sol["Monto"] = (
+                                    pd.to_numeric(
+                                        df_sol["Monto"],
+                                        errors="coerce"
+                                    )
+                                    .fillna(0)
+                                    .apply(
+                                        lambda x:
+                                        f"${x:,.2f}"
+                                    )
+                                )
+
+                            st.data_editor(
+                                df_sol,
+                                use_container_width=True,
+                                hide_index=True,
+                                disabled=True,
+                                height=350
+                            )
+
+                        else:
+
+                            st.info(
+                                "No hay conceptos."
+                            )
 
                     # =================================
                     # CONCEPTOS COMPROBACION
