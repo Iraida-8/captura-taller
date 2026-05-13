@@ -1442,12 +1442,30 @@ with tab_comprobacion:
             )
 
             # =================================
+            # SAVE USER EDITS FIRST
+            # =================================
+
+            st.session_state[
+                gastos_comp_key
+            ] = edited_df.to_dict(
+                orient="records"
+            )
+
+            # =================================
             # RECALCULATE
             # =================================
 
             recalculated_rows = []
 
-            for _, row in edited_df.iterrows():
+            current_rows = (
+                st.session_state[
+                    gastos_comp_key
+                ]
+            )
+
+            for row in st.session_state[
+                gastos_comp_key
+            ]:
 
                 monto = float(
                     row.get(
