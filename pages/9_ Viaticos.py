@@ -45,47 +45,6 @@ if "comprobacion_form_version" not in st.session_state:
 COMP_VERSION = st.session_state.comprobacion_form_version
 
 # =================================
-# RESET TAB 2 TABLE STATE
-# =================================
-
-current_comp_tracker = (
-    f"comp_tracker_{COMP_VERSION}"
-)
-
-if (
-    "active_comp_tracker"
-    not in st.session_state
-):
-
-    st.session_state[
-        "active_comp_tracker"
-    ] = current_comp_tracker
-
-elif (
-    st.session_state[
-        "active_comp_tracker"
-    ] != current_comp_tracker
-):
-
-    keys_to_clear = [
-
-        f"gastos_comprobacion_{COMP_VERSION}",
-
-        f"loaded_folio_{COMP_VERSION}",
-
-        f"editor_comp_{COMP_VERSION}"
-    ]
-
-    for key in keys_to_clear:
-
-        if key in st.session_state:
-            del st.session_state[key]
-
-    st.session_state[
-        "active_comp_tracker"
-    ] = current_comp_tracker
-
-# =================================
 # GLOBAL USER DATA
 # =================================
 
@@ -794,6 +753,53 @@ with tab_comprobacion:
         index=0,
         key=f"folio_seleccionado_{COMP_VERSION}"
     )
+
+    # =================================
+    # RESET TABLE WHEN FOLIO CHANGES
+    # =================================
+
+    folio_tracker_key = (
+        f"folio_tracker_{COMP_VERSION}"
+    )
+
+    current_folio_value = (
+        folio_seleccionado
+    )
+
+    if (
+        folio_tracker_key
+        not in st.session_state
+    ):
+
+        st.session_state[
+            folio_tracker_key
+        ] = current_folio_value
+
+    elif (
+        st.session_state[
+            folio_tracker_key
+        ] != current_folio_value
+    ):
+
+        keys_to_clear = [
+
+            f"gastos_comprobacion_{COMP_VERSION}",
+
+            f"loaded_folio_{COMP_VERSION}",
+
+            f"editor_comp_{COMP_VERSION}"
+        ]
+
+        for key in keys_to_clear:
+
+            if key in st.session_state:
+                del st.session_state[key]
+
+        st.session_state[
+            folio_tracker_key
+        ] = current_folio_value
+
+        st.rerun()
 
     solicitud_data = {}
 
