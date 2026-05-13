@@ -1940,6 +1940,85 @@ with tab_comprobacion:
                 )
 
             # =================================
+            # CLEAN CONCEPTOS FOR DB
+            # =================================
+
+            conceptos_finales = []
+
+            for row in st.session_state[
+                gastos_comp_key
+            ]:
+
+                conceptos_finales.append({
+
+                    "Tipo":
+                        row.get(
+                            "Tipo",
+                            "OTROS"
+                        ),
+
+                    "Descripcion":
+                        row.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Monto":
+                        float(
+                            row.get(
+                                "Monto",
+                                0
+                            ) or 0
+                        ),
+
+                    "Comprobante":
+                        row.get(
+                            "Comprobante",
+                            "No"
+                        ),
+
+                    "Aplica IVA":
+                        bool(
+                            row.get(
+                                "Aplica IVA",
+                                False
+                            )
+                        ),
+
+                    "IVA %":
+                        float(
+                            row.get(
+                                "IVA %",
+                                0
+                            ) or 0
+                        ),
+
+                    "Aplica Retencion":
+                        bool(
+                            row.get(
+                                "Aplica Retencion",
+                                False
+                            )
+                        ),
+
+                    "Impuesto Acreditable":
+                        float(
+                            row.get(
+                                "Impuesto Acreditable",
+                                0
+                            ) or 0
+                        ),
+
+                    "Total Comprobado":
+                        float(
+                            row.get(
+                                "Total Comprobado",
+                                0
+                            ) or 0
+                        )
+                })
+
+            # =================================
             # INSERT COMPROBACION
             # =================================
 
@@ -1957,7 +2036,7 @@ with tab_comprobacion:
                     nombre_usuario,
 
                 "conceptos":
-                    st.session_state[gastos_comp_key],
+                    conceptos_finales,
 
                 "total_comprobado":
                     float(total_general),
