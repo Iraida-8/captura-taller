@@ -198,6 +198,29 @@ with tab_solicitud:
             )
 
         # =================================
+        # RESET DEPENDENT FIELDS
+        # =================================
+
+        empresa_prev_key = f"empresa_prev_{FORM_VERSION}"
+
+        if empresa_prev_key not in st.session_state:
+            st.session_state[empresa_prev_key] = empresa_cargo
+
+        if st.session_state[empresa_prev_key] != empresa_cargo:
+
+            st.session_state[f"unidad_negocio_{FORM_VERSION}"] = (
+                "Seleccione una opción..."
+            )
+
+            st.session_state[f"sucursal_{FORM_VERSION}"] = "OTRO"
+
+            st.session_state[f"suc_otro_texto_{FORM_VERSION}"] = ""
+
+            st.session_state[empresa_prev_key] = empresa_cargo
+
+            st.rerun()
+
+        # =================================
         # CONFIGURACIONES BASE
         # =================================
 
