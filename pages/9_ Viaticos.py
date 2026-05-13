@@ -1506,15 +1506,9 @@ with tab_comprobacion:
 
             recalculated_rows = []
 
-            current_rows = (
-                st.session_state[
-                    gastos_comp_key
-                ]
-            )
-
-            for row in st.session_state[
-                gastos_comp_key
-            ]:
+            for row in edited_df.to_dict(
+                orient="records"
+            ):
 
                 monto = float(
                     row.get(
@@ -1568,8 +1562,8 @@ with tab_comprobacion:
 
                 else:
 
-                    iva_pct = 0
                     aplica_iva = False
+                    iva_pct = 0
                     aplica_ret = False
 
                 total_final = (
@@ -1627,9 +1621,32 @@ with tab_comprobacion:
                         )
                 })
 
+            # =================================
+            # SAVE FINAL RECALCULATED DATA
+            # =================================
+
             st.session_state[
                 gastos_comp_key
             ] = recalculated_rows
+
+            # =================================
+            # RECALCULATE TOTAL FROM FINAL STATE
+            # =================================
+
+            total_general = sum(
+
+                float(
+                    row.get(
+                        "Total Comprobado",
+                        0
+                    ) or 0
+                )
+
+                for row in
+                st.session_state[
+                    gastos_comp_key
+                ]
+            )
 
             # =================================
             # DELETE
@@ -1655,14 +1672,6 @@ with tab_comprobacion:
 
                 st.rerun()
 
-            total_general = sum(
-
-                row["Total Comprobado"]
-
-                for row in
-                recalculated_rows
-            )
-
         else:
 
             st.info(
@@ -1681,12 +1690,18 @@ with tab_comprobacion:
 
         with col2:
 
-            anticipo_viaje = float(
-                solicitud_data.get(
-                    "total_estimado",
-                    0
-                ) or 0
-            )
+            if modo_sin_folio:
+
+                anticipo_viaje = 0.00
+
+            else:
+
+                anticipo_viaje = float(
+                    solicitud_data.get(
+                        "total_estimado",
+                        0
+                    ) or 0
+                )
 
             st.text_input(
                 "(-) Anticipo para gastos de viaje",
