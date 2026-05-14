@@ -4,6 +4,7 @@ import pandas as pd
 from supabase import create_client
 from datetime import datetime, timezone
 from auth import require_login, require_access
+import resend # type: ignore
 
 # =================================
 # Page configuration
@@ -32,6 +33,14 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
+# RESEND CONFIG
+# =================================
+
+resend.api_key = (
+    st.secrets["RESEND_API_KEY"]
+)
+
+# =================================
 # USER DATA
 # =================================
 user = st.session_state.user
@@ -46,6 +55,285 @@ email_usuario = (
     user.get("email")
     or ""
 )
+
+# =================================
+# GET EMAIL FROM PROFILE
+# =================================
+
+def obtener_email_usuario(nombre_completo):
+
+    try:
+
+        profile_result = (
+            supabase
+            .table("profiles")
+            .select("id")
+            .eq(
+                "full_name",
+                nombre_completo
+            )
+            .limit(1)
+            .execute()
+        )
+
+        if (
+            not profile_result.data
+            or len(profile_result.data) == 0
+        ):
+            return None
+
+        user_id = (
+            profile_result
+            .data[0]
+            .get("id")
+        )
+
+        auth_response = (
+            supabase.auth.admin.get_user_by_id(
+                user_id
+            )
+        )
+
+        if auth_response and auth_response.user:
+
+            return auth_response.user.email
+
+    except Exception as e:
+
+        print(
+            f"Error obteniendo email: {e}"
+        )
+
+    return None
+
+# =================================
+# EMAIL APROBACION / RECHAZO
+# =================================
+
+def enviar_correo_estatus_solicitud(
+
+    destinatarios,
+    folio,
+    estatus,
+    fecha_inicio,
+    fecha_fin,
+    motivo_viaje,
+    observaciones,
+    conceptos
+
+):
+
+    total_aprobado = 0.0
+
+    conceptos_html = ""
+
+    for item in conceptos:
+
+        tipo = item.get("Tipo", "")
+
+        descripcion = item.get(
+            "Descripcion",
+            ""
+        )
+
+        monto = float(
+            item.get(
+                "Monto",
+                0
+            ) or 0
+        )
+
+        aprobado = str(
+            item.get(
+                "Aprobado",
+                "Si"
+            )
+        )
+
+        razon = item.get(
+            "Razon",
+            ""
+        )
+
+        aprobado_texto = (
+            "🟢 APROBADO"
+            if aprobado in [
+                "Si",
+                "🟢 Si"
+            ]
+            else "🔴 RECHAZADO"
+        )
+
+        if aprobado in [
+            "Si",
+            "🟢 Si"
+        ]:
+
+            total_aprobado += monto
+
+        conceptos_html += f"""
+
+        <tr>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+            ">
+                {tipo}
+            </td>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+            ">
+                {descripcion}
+            </td>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+            ">
+                ${monto:,.2f}
+            </td>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+                font-weight:700;
+            ">
+                {aprobado_texto}
+            </td>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+            ">
+                {razon}
+            </td>
+
+        </tr>
+        """
+
+    color_estatus = (
+        "#10B981"
+        if estatus == "Aprobado"
+        else "#EF4444"
+    )
+
+    html = f"""
+
+    <div style="
+        font-family:Arial;
+        max-width:900px;
+        margin:auto;
+    ">
+
+        <h2 style="
+            color:#151F6D;
+        ">
+            Actualización de Solicitud
+        </h2>
+
+        <h2 style="
+            color:{color_estatus};
+        ">
+            {estatus}
+        </h2>
+
+        <hr>
+
+        <p>
+            <b>Folio:</b>
+            {folio}
+        </p>
+
+        <p>
+            <b>Fecha Inicio:</b>
+            {fecha_inicio}
+        </p>
+
+        <p>
+            <b>Fecha Fin:</b>
+            {fecha_fin}
+        </p>
+
+        <p>
+            <b>Motivo del Viaje:</b>
+            {motivo_viaje}
+        </p>
+
+        <p>
+            <b>Observaciones:</b>
+            {observaciones}
+        </p>
+
+        <hr>
+
+        <h3>
+            Conceptos
+        </h3>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+        ">
+
+            <tr style="
+                background:#151F6D;
+                color:white;
+            ">
+
+                <th style="padding:10px;">
+                    Tipo
+                </th>
+
+                <th style="padding:10px;">
+                    Descripción
+                </th>
+
+                <th style="padding:10px;">
+                    Monto
+                </th>
+
+                <th style="padding:10px;">
+                    Estatus
+                </th>
+
+                <th style="padding:10px;">
+                    Razón
+                </th>
+
+            </tr>
+
+            {conceptos_html}
+
+        </table>
+
+        <h2 style="
+            margin-top:30px;
+            color:#BFA75F;
+        ">
+            TOTAL APROBADO:
+            ${total_aprobado:,.2f}
+        </h2>
+
+    </div>
+    """
+
+    resend.Emails.send({
+
+        "from":
+            "onboarding@resend.dev",
+
+        "to":
+            destinatarios,
+
+        "subject":
+            folio,
+
+        "html":
+            html
+    })
 
 # =================================
 # LOAD DATA
@@ -776,6 +1064,82 @@ for idx, row in df_pagina.iterrows():
                     row["id"]
                 ).execute()
 
+                # =================================
+                # GET CREATOR EMAIL
+                # =================================
+
+                correo_creador = (
+                    obtener_email_usuario(
+                        row.get(
+                            "nombre_empleado_solicita",
+                            ""
+                        )
+                    )
+                )
+
+                destinatarios = [email_usuario]
+
+                if (
+                    correo_creador
+                    and correo_creador
+                    not in destinatarios
+                ):
+
+                    destinatarios.append(
+                        correo_creador
+                    )
+
+                # =================================
+                # SEND EMAIL
+                # =================================
+
+                try:
+
+                    enviar_correo_estatus_solicitud(
+
+                        destinatarios=destinatarios,
+
+                        folio=row.get(
+                            "folio_solicitud",
+                            ""
+                        ),
+
+                        estatus="Aprobado",
+
+                        fecha_inicio=row.get(
+                            "fecha_inicio",
+                            ""
+                        ),
+
+                        fecha_fin=row.get(
+                            "fecha_fin",
+                            ""
+                        ),
+
+                        motivo_viaje=row.get(
+                            "motivo_viaje",
+                            ""
+                        ),
+
+                        observaciones=row.get(
+                            "observaciones",
+                            ""
+                        ),
+
+                        conceptos=row.get(
+                            "conceptos",
+                            []
+                        )
+                    )
+
+                except Exception as e:
+
+                    st.warning(
+                        f"No se pudo enviar correo: {e}"
+                    )
+
+
+
                 st.success("Solicitud aprobada")
                 st.cache_data.clear()
                 st.rerun()
@@ -802,6 +1166,80 @@ for idx, row in df_pagina.iterrows():
                     "id",
                     row["id"]
                 ).execute()
+
+                # =================================
+                # GET CREATOR EMAIL
+                # =================================
+
+                correo_creador = (
+                    obtener_email_usuario(
+                        row.get(
+                            "nombre_empleado_solicita",
+                            ""
+                        )
+                    )
+                )
+
+                destinatarios = [email_usuario]
+
+                if (
+                    correo_creador
+                    and correo_creador
+                    not in destinatarios
+                ):
+
+                    destinatarios.append(
+                        correo_creador
+                    )
+
+                # =================================
+                # SEND EMAIL
+                # =================================
+
+                try:
+
+                    enviar_correo_estatus_solicitud(
+
+                        destinatarios=destinatarios,
+
+                        folio=row.get(
+                            "folio_solicitud",
+                            ""
+                        ),
+
+                        estatus="Rechazado",
+
+                        fecha_inicio=row.get(
+                            "fecha_inicio",
+                            ""
+                        ),
+
+                        fecha_fin=row.get(
+                            "fecha_fin",
+                            ""
+                        ),
+
+                        motivo_viaje=row.get(
+                            "motivo_viaje",
+                            ""
+                        ),
+
+                        observaciones=row.get(
+                            "observaciones",
+                            ""
+                        ),
+
+                        conceptos=row.get(
+                            "conceptos",
+                            []
+                        )
+                    )
+
+                except Exception as e:
+
+                    st.warning(
+                        f"No se pudo enviar correo: {e}"
+                    )
 
                 st.error("Solicitud rechazada")
                 st.cache_data.clear()
