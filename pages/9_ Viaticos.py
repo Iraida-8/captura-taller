@@ -268,6 +268,88 @@ def enviar_correo_solicitud(
     })
 
 # =================================
+# EMAIL COMPROBACION
+# =================================
+
+def enviar_correo_comprobacion(
+
+    destinatario,
+    folio_comprobacion,
+    folio_solicitud,
+    modo_sin_folio=False
+
+):
+
+    html = f"""
+
+    <div style="
+        font-family:Arial;
+        max-width:700px;
+        margin:auto;
+    ">
+
+        <h2 style="color:#151F6D;">
+            Comprobación Enviada con Éxito
+        </h2>
+
+        <hr>
+
+        <p>
+            <b>Folio Comprobación:</b>
+            {folio_comprobacion}
+        </p>
+
+    """
+
+    if modo_sin_folio:
+
+        html += f"""
+
+        <p>
+            <b>Folio Solicitud Generado:</b>
+            {folio_solicitud}
+        </p>
+
+        """
+
+    else:
+
+        html += f"""
+
+        <p>
+            <b>Folio Solicitud:</b>
+            {folio_solicitud}
+        </p>
+
+        """
+
+    html += """
+
+        <hr>
+
+        <p>
+            La comprobación fue registrada correctamente.
+        </p>
+
+    </div>
+    """
+
+    resend.Emails.send({
+
+        "from":
+            "onboarding@resend.dev",
+
+        "to":
+            [destinatario],
+
+        "subject":
+            folio_comprobacion,
+
+        "html":
+            html
+    })
+
+# =================================
 # FORM RESET
 # =================================
 
@@ -2371,6 +2453,29 @@ with tab_comprobacion:
                     "Verificar"
 
             }).execute()
+
+            # =================================
+            # SEND EMAIL
+            # =================================
+
+            try:
+
+                enviar_correo_comprobacion(
+
+                    destinatario=email_usuario,
+
+                    folio_comprobacion=folio_comprobacion,
+
+                    folio_solicitud=folio_solicitud_final,
+
+                    modo_sin_folio=modo_sin_folio
+                )
+
+            except Exception as e:
+
+                st.warning(
+                    f"No se pudo enviar correo: {e}"
+                )
 
             @st.dialog("✅ Comprobación Actualizada")
             def mostrar_confirmacion_comp():
