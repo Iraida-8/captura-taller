@@ -2179,6 +2179,10 @@ with tab_comprobacion:
             "## 📎 Subir Tickets o Comprobantes de Gastos"
         )
 
+        st.caption(
+            "⚠️ El total de archivos no debe superar los 25 MB."
+        )
+
         uploaded_files = st.file_uploader(
 
             "Selecciona imágenes o archivos PDF",
@@ -2195,40 +2199,74 @@ with tab_comprobacion:
             key=f"tickets_upload_{COMP_VERSION}"
         )
 
-        if uploaded_files:
+        total_size_bytes = 0
 
-            st.success(
-                f"{len(uploaded_files)} archivo(s) cargado(s)"
-            )
+        if uploaded_files:
 
             for archivo in uploaded_files:
 
-                col1, col2 = st.columns([1, 4])
+                total_size_bytes += archivo.size
 
-                with col1:
+            total_size_mb = (
+                total_size_bytes
+                / (1024 * 1024)
+            )
 
-                    if (
-                        archivo.type.startswith(
-                            "image/"
-                        )
-                    ):
+            # =================================
+            # VALIDATE TOTAL SIZE
+            # =================================
 
-                        st.image(
-                            archivo,
-                            width=120
-                        )
+            if total_size_mb > 25:
 
-                with col2:
+                st.error(
+                    f"""
+                    El total de archivos excede el límite permitido.
 
-                    st.markdown(
-                        f"""
-                        **Archivo:** {archivo.name}
+                    Tamaño actual:
+                    {total_size_mb:.2f} MB
 
-                        **Tipo:** {archivo.type}
+                    Máximo permitido:
+                    25 MB
+                    """
+                )
 
-                        **Tamaño:** {round(archivo.size / 1024, 2)} KB
-                        """
-                    )
+            else:
+
+                st.success(
+                    f"""
+                    {len(uploaded_files)} archivo(s) cargado(s)
+                    | Tamaño total:
+                    {total_size_mb:.2f} MB
+                    """
+                )
+
+                archivos_info = []
+
+                for archivo in uploaded_files:
+
+                    archivos_info.append({
+
+                        "Archivo":
+                            archivo.name,
+
+                        "Tipo":
+                            archivo.type,
+
+                        "Tamaño MB":
+                            round(
+                                archivo.size
+                                / (1024 * 1024),
+                                2
+                            )
+                    })
+
+                st.dataframe(
+                    pd.DataFrame(
+                        archivos_info
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
 
         observaciones_comp = st.text_area(
             "Observaciones",
