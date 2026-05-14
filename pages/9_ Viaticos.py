@@ -4,6 +4,9 @@ from supabase import create_client
 from datetime import datetime, date, timezone
 from auth import require_login, require_access
 import resend # type: ignore
+from PIL import Image
+from io import BytesIO
+import base64
 
 # =================================
 # Page configuration
@@ -69,6 +72,75 @@ email_usuario = (
     user.get("email")
     or ""
 )
+
+# =================================
+# COMPRESS IMAGE
+# =================================
+
+def compress_image(uploaded_file):
+
+    try:
+
+        image = Image.open(uploaded_file)
+
+        if image.mode != "RGB":
+
+            image = image.convert("RGB")
+
+        # =================================
+        # RESIZE LARGE IMAGES
+        # =================================
+
+        max_size = (1600, 1600)
+
+        image.thumbnail(max_size)
+
+        # =================================
+        # SAVE COMPRESSED JPEG
+        # =================================
+
+        buffer = BytesIO()
+
+        image.save(
+
+            buffer,
+
+            format="JPEG",
+
+            quality=55,
+            optimize=True
+        )
+
+        buffer.seek(0)
+
+        compressed_bytes = buffer.read()
+
+        filename = (
+            uploaded_file.name
+            .split(".")[0]
+            + ".jpg"
+        )
+
+        return {
+
+            "filename":
+                filename,
+
+            "content":
+                base64.b64encode(
+                    compressed_bytes
+                ).decode("utf-8"),
+
+            "type":
+                "image/jpeg",
+
+            "size":
+                len(compressed_bytes)
+        }
+
+    except Exception:
+
+        return None
 
 if "reset_form_viaticos" not in st.session_state:
     st.session_state.reset_form_viaticos = 0
@@ -276,8 +348,8 @@ def enviar_correo_comprobacion(
     destinatario,
     folio_comprobacion,
     folio_solicitud,
-    modo_sin_folio=False
-
+    modo_sin_folio=False,
+    attachments=None
 ):
 
     html = f"""
@@ -333,8 +405,7 @@ def enviar_correo_comprobacion(
 
     </div>
     """
-
-    resend.Emails.send({
+    payload = {
 
         "from":
             "onboarding@resend.dev",
@@ -347,7 +418,13 @@ def enviar_correo_comprobacion(
 
         "html":
             html
-    })
+    }
+
+    if attachments:
+
+        payload["attachments"] = attachments
+
+    resend.Emails.send(payload)
 
 # =================================
 # FORM RESET
@@ -2179,10 +2256,6 @@ with tab_comprobacion:
             "## 📎 Subir Tickets o Comprobantes de Gastos"
         )
 
-        st.caption(
-            "⚠️ El total de archivos no debe superar los 25 MB."
-        )
-
         uploaded_files = st.file_uploader(
 
             "Selecciona imágenes o archivos PDF",
@@ -2199,50 +2272,85 @@ with tab_comprobacion:
             key=f"tickets_upload_{COMP_VERSION}"
         )
 
+        compressed_attachments = []
+
         total_size_bytes = 0
 
         if uploaded_files:
 
+            archivos_info = []
+
             for archivo in uploaded_files:
 
-                total_size_bytes += archivo.size
+                # =============================
+                # IMAGES
+                # =============================
 
-            total_size_mb = (
-                total_size_bytes
-                / (1024 * 1024)
-            )
+                if archivo.type.startswith(
+                    "image/"
+                ):
 
-            # =================================
-            # VALIDATE TOTAL SIZE
-            # =================================
+                    compressed = compress_image(
+                        archivo
+                    )
 
-            if total_size_mb > 25:
+                    if compressed:
 
-                st.error(
-                    f"""
-                    El total de archivos excede el límite permitido.
+                        compressed_attachments.append(
+                            compressed
+                        )
 
-                    Tamaño actual:
-                    {total_size_mb:.2f} MB
+                        size_mb = (
+                            compressed["size"]
+                            / (1024 * 1024)
+                        )
 
-                    Máximo permitido:
-                    25 MB
-                    """
-                )
+                        total_size_bytes += (
+                            compressed["size"]
+                        )
 
-            else:
+                        archivos_info.append({
 
-                st.success(
-                    f"""
-                    {len(uploaded_files)} archivo(s) cargado(s)
-                    | Tamaño total:
-                    {total_size_mb:.2f} MB
-                    """
-                )
+                            "Archivo":
+                                compressed["filename"],
 
-                archivos_info = []
+                            "Tipo":
+                                "image/jpeg",
 
-                for archivo in uploaded_files:
+                            "Tamaño MB":
+                                round(
+                                    size_mb,
+                                    2
+                                )
+                        })
+
+                # =============================
+                # PDF
+                # =============================
+
+                else:
+
+                    file_bytes = (
+                        archivo.read()
+                    )
+
+                    total_size_bytes += (
+                        len(file_bytes)
+                    )
+
+                    compressed_attachments.append({
+
+                        "filename":
+                            archivo.name,
+
+                        "content":
+                            base64.b64encode(
+                                file_bytes
+                            ).decode("utf-8"),
+
+                        "type":
+                            "application/pdf"
+                    })
 
                     archivos_info.append({
 
@@ -2250,23 +2358,40 @@ with tab_comprobacion:
                             archivo.name,
 
                         "Tipo":
-                            archivo.type,
+                            "application/pdf",
 
                         "Tamaño MB":
                             round(
-                                archivo.size
+                                len(file_bytes)
                                 / (1024 * 1024),
                                 2
                             )
                     })
 
-                st.dataframe(
-                    pd.DataFrame(
-                        archivos_info
-                    ),
-                    use_container_width=True,
-                    hide_index=True
-                )
+            total_size_mb = (
+                total_size_bytes
+                / (1024 * 1024)
+            )
+
+            st.session_state[
+                f"attachments_{COMP_VERSION}"
+            ] = compressed_attachments
+
+            st.success(
+                f"""
+                {len(compressed_attachments)} archivo(s) preparado(s)
+                | Tamaño total:
+                {total_size_mb:.2f} MB
+                """
+            )
+
+            st.dataframe(
+                pd.DataFrame(
+                    archivos_info
+                ),
+                use_container_width=True,
+                hide_index=True
+            )
 
         observaciones_comp = st.text_area(
             "Observaciones",
@@ -2565,7 +2690,12 @@ with tab_comprobacion:
 
                     folio_solicitud=folio_solicitud_final,
 
-                    modo_sin_folio=modo_sin_folio
+                    modo_sin_folio=modo_sin_folio,
+
+                    attachments=st.session_state.get(
+                        f"attachments_{COMP_VERSION}",
+                        []
+                    )
                 )
 
             except Exception as e:
