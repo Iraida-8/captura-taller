@@ -87,16 +87,40 @@ def obtener_email_usuario(nombre_completo):
             .data[0]
             .get("id")
         )
+        def obtener_email_usuario(nombre_completo):
 
-        auth_response = (
-            supabase.auth.admin.get_user_by_id(
-                user_id
-            )
-        )
+            try:
 
-        if auth_response and auth_response.user:
+                response = (
+                    supabase
+                    .table("profiles")
+                    .select("email")
+                    .eq(
+                        "full_name",
+                        nombre_completo
+                    )
+                    .limit(1)
+                    .execute()
+                )
 
-            return auth_response.user.email
+                if (
+                    response.data
+                    and len(response.data) > 0
+                ):
+
+                    return (
+                        response
+                        .data[0]
+                        .get("email")
+                    )
+
+            except Exception as e:
+
+                st.warning(
+                    f"Error obteniendo email: {e}"
+                )
+
+            return None
 
     except Exception as e:
 
