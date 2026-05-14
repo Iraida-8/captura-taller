@@ -2171,6 +2171,65 @@ with tab_comprobacion:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # =================================
+        # SUBIR COMPROBANTES
+        # =================================
+
+        st.markdown(
+            "## 📎 Subir Tickets o Comprobantes de Gastos"
+        )
+
+        uploaded_files = st.file_uploader(
+
+            "Selecciona imágenes o archivos PDF",
+
+            type=[
+                "png",
+                "jpg",
+                "jpeg",
+                "pdf"
+            ],
+
+            accept_multiple_files=True,
+
+            key=f"tickets_upload_{COMP_VERSION}"
+        )
+
+        if uploaded_files:
+
+            st.success(
+                f"{len(uploaded_files)} archivo(s) cargado(s)"
+            )
+
+            for archivo in uploaded_files:
+
+                col1, col2 = st.columns([1, 4])
+
+                with col1:
+
+                    if (
+                        archivo.type.startswith(
+                            "image/"
+                        )
+                    ):
+
+                        st.image(
+                            archivo,
+                            width=120
+                        )
+
+                with col2:
+
+                    st.markdown(
+                        f"""
+                        **Archivo:** {archivo.name}
+
+                        **Tipo:** {archivo.type}
+
+                        **Tamaño:** {round(archivo.size / 1024, 2)} KB
+                        """
+                    )
+
         observaciones_comp = st.text_area(
             "Observaciones",
             height=150,
