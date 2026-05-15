@@ -1764,6 +1764,7 @@ else:
                             "Tipo",
                             "Descripcion",
                             "Monto",
+                            "Tipo Cambio",
                             "Aprobado",
                             "Razon"
                         ]
