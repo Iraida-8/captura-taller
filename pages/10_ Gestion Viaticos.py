@@ -1873,14 +1873,31 @@ else:
                             )
 
                         columnas_comprobacion = [
+
                             "Tipo",
+
                             "Descripcion",
+
+                            "Fecha Factura",
+
+                            "Folio",
+
+                            "Proveedor",
+
+                            "Moneda",
+
                             "Monto",
+
                             "Comprobante",
+
                             "Aplica IVA",
+
                             "IVA %",
+
                             "Aplica Retencion",
+
                             "Impuesto Acreditable",
+
                             "Total Comprobado"
                         ]
 
