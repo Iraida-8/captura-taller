@@ -1825,6 +1825,18 @@ with tab_comprobacion:
                             ""
                         ),
 
+                    "Fecha Factura":
+                        str(date.today()),
+
+                    "Folio":
+                        "",
+
+                    "Proveedor":
+                        "",
+
+                    "Moneda":
+                        "MXP",
+
                     "Monto":
                         monto,
 
@@ -1896,7 +1908,7 @@ with tab_comprobacion:
             use_container_width=True,
             key=f"btn_add_row_{COMP_VERSION}"
         ):
-
+            #here
             st.session_state[
                 gastos_comp_key
             ].append({
@@ -1906,6 +1918,18 @@ with tab_comprobacion:
                 "Tipo": "OTROS",
 
                 "Descripcion": "",
+
+                "Fecha Factura":
+                    str(date.today()),
+
+                "Folio":
+                    "",
+
+                "Proveedor":
+                    "",
+
+                "Moneda":
+                    "MXP",
 
                 "Monto": 0.0,
 
@@ -1960,6 +1984,30 @@ with tab_comprobacion:
                         row.get(
                             "Descripcion",
                             ""
+                        ),
+                    
+                    "Fecha Factura":
+                        row.get(
+                            "Fecha Factura",
+                            str(date.today())
+                        ),
+
+                    "Folio":
+                        row.get(
+                            "Folio",
+                            ""
+                        ),
+
+                    "Proveedor":
+                        row.get(
+                            "Proveedor",
+                            ""
+                        ),
+
+                    "Moneda":
+                        row.get(
+                            "Moneda",
+                            "MXP"
                         ),
 
                     "Monto":
@@ -2033,6 +2081,30 @@ with tab_comprobacion:
                     "Descripcion":
                         st.column_config.TextColumn(
                             "Descripcion"
+                        ),
+                    
+                    "Fecha Factura":
+                        st.column_config.DateColumn(
+                            "Fecha Factura"
+                        ),
+
+                    "Folio":
+                        st.column_config.TextColumn(
+                            "Folio"
+                        ),
+
+                    "Proveedor":
+                        st.column_config.TextColumn(
+                            "Proveedor"
+                        ),
+
+                    "Moneda":
+                        st.column_config.SelectboxColumn(
+                            "Moneda",
+                            options=[
+                                "MXP",
+                                "USD"
+                            ]
                         ),
 
                     "Monto":
@@ -2149,6 +2221,30 @@ with tab_comprobacion:
                         row.get(
                             "Descripcion",
                             ""
+                        ),
+
+                    "Fecha Factura":
+                        row.get(
+                            "Fecha Factura",
+                            str(date.today())
+                        ),
+
+                    "Folio":
+                        row.get(
+                            "Folio",
+                            ""
+                        ),
+
+                    "Proveedor":
+                        row.get(
+                            "Proveedor",
+                            ""
+                        ),
+
+                    "Moneda":
+                        row.get(
+                            "Moneda",
+                            "MXP"
                         ),
 
                     "Monto":
@@ -2628,6 +2724,30 @@ with tab_comprobacion:
                         row.get(
                             "Descripcion",
                             ""
+                        ),
+                    
+                    "Fecha Factura":
+                        row.get(
+                            "Fecha Factura",
+                            str(date.today())
+                        ),
+
+                    "Folio":
+                        row.get(
+                            "Folio",
+                            ""
+                        ),
+
+                    "Proveedor":
+                        row.get(
+                            "Proveedor",
+                            ""
+                        ),
+
+                    "Moneda":
+                        row.get(
+                            "Moneda",
+                            "MXP"
                         ),
 
                     "Monto":
