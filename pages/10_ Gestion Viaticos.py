@@ -808,6 +808,12 @@ def modal_ver_solicitud(row):
                             "Monto",
                             0
                         ),
+                    
+                    "Tipo Cambio":
+                        concepto.get(
+                            "Tipo Cambio",
+                            ""
+                        ),
 
                     "Aprobado":
                         "🟢 Si"
