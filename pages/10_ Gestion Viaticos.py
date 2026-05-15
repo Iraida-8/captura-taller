@@ -2023,6 +2023,80 @@ else:
                                 folio_actual
                             ).execute()
 
+                            # =================================
+                            # GET CREATOR EMAIL
+                            # =================================
+
+                            correo_creador = (
+                                obtener_email_usuario(
+                                    solicitud_row.get(
+                                        "nombre_empleado_solicita",
+                                        ""
+                                    )
+                                )
+                            )
+
+                            destinatarios = [email_usuario]
+
+                            if (
+                                correo_creador
+                                and correo_creador
+                                not in destinatarios
+                            ):
+
+                                destinatarios.append(
+                                    correo_creador
+                                )
+
+                            # =================================
+                            # SEND EMAIL
+                            # =================================
+
+                            try:
+
+                                enviar_correo_estatus_solicitud(
+
+                                    destinatarios=destinatarios,
+
+                                    folio=solicitud_row.get(
+                                        "folio_solicitud",
+                                        ""
+                                    ),
+
+                                    estatus="Concluido",
+
+                                    fecha_inicio=solicitud_row.get(
+                                        "fecha_inicio",
+                                        ""
+                                    ),
+
+                                    fecha_fin=solicitud_row.get(
+                                        "fecha_fin",
+                                        ""
+                                    ),
+
+                                    motivo_viaje=solicitud_row.get(
+                                        "motivo_viaje",
+                                        ""
+                                    ),
+
+                                    observaciones=row.get(
+                                        "observaciones",
+                                        ""
+                                    ),
+
+                                    conceptos=solicitud_row.get(
+                                        "conceptos",
+                                        []
+                                    )
+                                )
+
+                            except Exception as e:
+
+                                st.warning(
+                                    f"No se pudo enviar correo: {e}"
+                                )
+
                             st.success(
                                 "Solicitud concluida"
                             )
@@ -2058,6 +2132,80 @@ else:
                                 "folio_solicitud",
                                 folio_actual
                             ).execute()
+
+                            # =================================
+                            # GET CREATOR EMAIL
+                            # =================================
+
+                            correo_creador = (
+                                obtener_email_usuario(
+                                    solicitud_row.get(
+                                        "nombre_empleado_solicita",
+                                        ""
+                                    )
+                                )
+                            )
+
+                            destinatarios = [email_usuario]
+
+                            if (
+                                correo_creador
+                                and correo_creador
+                                not in destinatarios
+                            ):
+
+                                destinatarios.append(
+                                    correo_creador
+                                )
+
+                            # =================================
+                            # SEND EMAIL
+                            # =================================
+
+                            try:
+
+                                enviar_correo_estatus_solicitud(
+
+                                    destinatarios=destinatarios,
+
+                                    folio=solicitud_row.get(
+                                        "folio_solicitud",
+                                        ""
+                                    ),
+
+                                    estatus="Rechazado",
+
+                                    fecha_inicio=solicitud_row.get(
+                                        "fecha_inicio",
+                                        ""
+                                    ),
+
+                                    fecha_fin=solicitud_row.get(
+                                        "fecha_fin",
+                                        ""
+                                    ),
+
+                                    motivo_viaje=solicitud_row.get(
+                                        "motivo_viaje",
+                                        ""
+                                    ),
+
+                                    observaciones=row.get(
+                                        "observaciones",
+                                        ""
+                                    ),
+
+                                    conceptos=solicitud_row.get(
+                                        "conceptos",
+                                        []
+                                    )
+                                )
+
+                            except Exception as e:
+
+                                st.warning(
+                                    f"No se pudo enviar correo: {e}"
+                                )
 
                             st.error(
                                 "Solicitud rechazada"
