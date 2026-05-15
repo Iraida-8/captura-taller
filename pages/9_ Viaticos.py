@@ -833,9 +833,18 @@ with tab_solicitud:
             if tipo_gasto != "Selecciona un tipo" and monto_estimado > 0:
 
                 st.session_state[conceptos_key].append({
-                    "Tipo": tipo_gasto,
-                    "Descripcion": descripcion_final,
-                    "Monto": monto_estimado
+
+                    "Tipo":
+                        tipo_gasto,
+
+                    "Descripcion":
+                        descripcion_final,
+
+                    "Monto":
+                        monto_estimado,
+
+                    "Tipo Cambio":
+                        "MXP"
                 })
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -854,19 +863,29 @@ with tab_solicitud:
 
             df_display.insert(0, "Eliminar", False)
 
+            if "Tipo Cambio" not in df_display.columns:
+
+                df_display["Tipo Cambio"] = "MXP"
+
             edited_df = st.data_editor(
                 df_display,
                 use_container_width=True,
                 hide_index=True,
-                disabled=[
-                    "Tipo",
-                    "Descripcion",
-                    "Monto"
-                ],
+                disabled=[],
                 column_config={
+
                     "Eliminar": st.column_config.CheckboxColumn(
                         "Eliminar",
                         width="small"
+                    ),
+
+                    "Tipo Cambio": st.column_config.SelectboxColumn(
+                        "Tipo Cambio",
+                        options=[
+                            "MXP",
+                            "USD"
+                        ],
+                        required=True
                     )
                 },
                 key=f"editor_solicitud_{FORM_VERSION}"
