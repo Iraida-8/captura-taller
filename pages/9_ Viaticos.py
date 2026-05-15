@@ -197,6 +197,13 @@ def enviar_correo_solicitud(
                 ${float(item.get("Monto", 0)):,.2f}
             </td>
 
+            <td style="
+                padding:8px;
+                border:1px solid #ccc;
+            ">
+                {item.get("Tipo Cambio", "MXP")}
+            </td>
+
         </tr>
         """
 
@@ -295,6 +302,10 @@ def enviar_correo_solicitud(
 
                 <th style="padding:10px;">
                     Monto
+                </th>
+
+                <th style="padding:10px;">
+                    Moneda
                 </th>
 
             </tr>
@@ -786,7 +797,7 @@ with tab_solicitud:
         if conceptos_key not in st.session_state:
             st.session_state[conceptos_key] = []
 
-        col1, col2, col3 = st.columns([2, 3, 2])
+        col1, col2, col3, col4 = st.columns([2, 3, 2, 1.5])
 
         with col1:
 
@@ -821,6 +832,17 @@ with tab_solicitud:
                 step=100.0,
                 key=f"monto_estimado_{FORM_VERSION}"
             )
+        
+        with col4:
+
+            tipo_cambio = st.selectbox(
+                "Tipo Cambio",
+                [
+                    "MXP",
+                    "USD"
+                ],
+                key=f"tipo_cambio_{FORM_VERSION}"
+            )
 
         if st.button(
             "➕ Agregar Concepto",
@@ -844,7 +866,7 @@ with tab_solicitud:
                         monto_estimado,
 
                     "Tipo Cambio":
-                        "MXP"
+                        tipo_cambio
                 })
 
         st.markdown("<br>", unsafe_allow_html=True)
