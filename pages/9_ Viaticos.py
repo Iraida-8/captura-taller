@@ -1826,7 +1826,7 @@ with tab_comprobacion:
                         ),
 
                     "Fecha Factura":
-                        str(date.today()),
+                        date.today(),
 
                     "Folio":
                         "",
@@ -1920,7 +1920,7 @@ with tab_comprobacion:
                 "Descripcion": "",
 
                 "Fecha Factura":
-                    str(date.today()),
+                    date.today(),
 
                 "Folio":
                     "",
@@ -1989,7 +1989,7 @@ with tab_comprobacion:
                     "Fecha Factura":
                         row.get(
                             "Fecha Factura",
-                            str(date.today())
+                            date.today()
                         ),
 
                     "Folio":
@@ -2226,7 +2226,7 @@ with tab_comprobacion:
                     "Fecha Factura":
                         row.get(
                             "Fecha Factura",
-                            str(date.today())
+                            date.today()
                         ),
 
                     "Folio":
@@ -2729,7 +2729,7 @@ with tab_comprobacion:
                     "Fecha Factura":
                         row.get(
                             "Fecha Factura",
-                            str(date.today())
+                            date.today()
                         ),
 
                     "Folio":
