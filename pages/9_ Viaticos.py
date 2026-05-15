@@ -893,7 +893,12 @@ with tab_solicitud:
                 df_display,
                 use_container_width=True,
                 hide_index=True,
-                disabled=[],
+                disabled=[
+                    "Tipo",
+                    "Descripcion",
+                    "Monto",
+                    "Tipo Cambio"
+                ],
                 column_config={
 
                     "Eliminar": st.column_config.CheckboxColumn(
