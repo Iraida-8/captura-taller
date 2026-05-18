@@ -2906,9 +2906,11 @@ with tab_comprobacion:
                         ),
                     
                     "Fecha Factura":
-                        row.get(
-                            "Fecha Factura",
-                            date.today()
+                        str(
+                            row.get(
+                                "Fecha Factura",
+                                date.today()
+                            )
                         ),
 
                     "Folio":
