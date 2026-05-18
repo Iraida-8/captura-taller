@@ -805,13 +805,12 @@ with tab_solicitud:
                 "Tipo",
                 [
                     "Selecciona un tipo",
-                    "TRANSPORTACION TERRESTRE",
-                    "HOSPEDAJE",
-                    "ALIMENTOS",
-                    "PROPINAS",
-                    "TAXIS",
-                    "CASETAS",
-                    "GASOLINA",
+                    "ALIMENTOS VIAJE",
+                    "CASETAS Y PEAJES",
+                    "ESTACIONAMIENTO VIAJE",
+                    "GASOLINA VIAJE",
+                    "RENTA DE AUTOMOVIL/TRANSPORTE",
+                    "ATENCION/PRESENTE CLIENTES VIAJE",
                     "OTROS"
                 ],
                 key=f"tipo_gasto_{FORM_VERSION}"
@@ -1714,13 +1713,12 @@ with tab_comprobacion:
         )
 
         tipos_gasto_lista = [
-            "TRANSPORTACION TERRESTRE",
-            "HOSPEDAJE",
-            "ALIMENTOS",
-            "PROPINAS",
-            "TAXIS",
-            "CASETAS",
-            "GASOLINA",
+            "ALIMENTOS VIAJE",
+            "CASETAS Y PEAJES",
+            "ESTACIONAMIENTO VIAJE",
+            "GASOLINA VIAJE",
+            "RENTA DE AUTOMOVIL/TRANSPORTE",
+            "ATENCION/PRESENTE CLIENTES VIAJE",
             "OTROS"
         ]
 
