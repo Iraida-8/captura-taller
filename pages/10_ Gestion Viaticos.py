@@ -705,6 +705,16 @@ def modal_ver_solicitud(row):
             f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
         )
 
+        st.write(
+            f"**Nombre del Cliente:** "
+            f"{row.get('nombre_cliente', '')}"
+        )
+
+        st.write(
+            f"**Folio SAC:** "
+            f"{row.get('folio_sac', '')}"
+        )
+
     # =================================
     # MOTIVO VIAJE
     # =================================
