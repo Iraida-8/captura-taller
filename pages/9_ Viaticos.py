@@ -544,16 +544,53 @@ with tab_solicitud:
             "OTROS"
         ]
 
-        motivo_viaje = st.selectbox(
+        motivos_cliente = [
 
-            "Motivo del Viaje",
+            "VISITA CLIENTE PROSPECTO",
 
-            motivos_viaje_lista,
+            "VISITA CLIENTE ACTIVO/SEGUIMIENTO"
+        ]
 
-            index=0,
+        col1, col2, col3 = st.columns([2, 2, 2])
 
-            key=f"motivo_viaje_{FORM_VERSION}"
+        with col1:
+
+            motivo_viaje = st.selectbox(
+
+                "Motivo del Viaje",
+
+                motivos_viaje_lista,
+
+                index=0,
+
+                key=f"motivo_viaje_{FORM_VERSION}"
+            )
+
+        cliente_enabled = (
+            motivo_viaje in motivos_cliente
         )
+
+        with col2:
+
+            nombre_cliente = st.text_input(
+
+                "Nombre del Cliente",
+
+                disabled=not cliente_enabled,
+
+                key=f"nombre_cliente_{FORM_VERSION}"
+            )
+
+        with col3:
+
+            folio_sac = st.text_input(
+
+                "Folio SAC",
+
+                disabled=not cliente_enabled,
+
+                key=f"folio_sac_{FORM_VERSION}"
+            )
 
         col1, col2, col3 = st.columns(3)
 
@@ -1062,6 +1099,12 @@ with tab_solicitud:
 
             "motivo_viaje": motivo_viaje,
 
+            "nombre_cliente":
+                nombre_cliente,
+
+            "folio_sac":
+                folio_sac,
+
             "fecha_solicitud": str(fecha_solicitud),
 
             "fecha_inicio": str(fecha_inicio),
@@ -1421,21 +1464,82 @@ with tab_comprobacion:
         if motivo_actual not in motivos_viaje_lista:
 
             motivo_actual = "Selecciona Motivo"
+        
+        motivos_cliente = [
 
-        motivo_viaje_comp = st.selectbox(
+            "VISITA CLIENTE PROSPECTO",
 
-            "Motivo del Viaje",
+            "VISITA CLIENTE ACTIVO/SEGUIMIENTO"
+        ]
 
-            motivos_viaje_lista,
+        col1, col2, col3 = st.columns([2, 2, 2])
 
-            index=motivos_viaje_lista.index(
-                motivo_actual
-            ),
+        with col1:
 
-            disabled=not modo_sin_folio,
+            motivo_viaje_comp = st.selectbox(
 
-            key=f"motivo_viaje_comp_{dynamic_key}"
+                "Motivo del Viaje",
+
+                motivos_viaje_lista,
+
+                index=motivos_viaje_lista.index(
+                    motivo_actual
+                ),
+
+                disabled=not modo_sin_folio,
+
+                key=f"motivo_viaje_comp_{dynamic_key}"
+            )
+
+        cliente_enabled_comp = (
+            motivo_viaje_comp in motivos_cliente
         )
+
+        with col2:
+
+            nombre_cliente_comp = st.text_input(
+
+                "Nombre del Cliente",
+
+                value=(
+                    solicitud_data.get(
+                        "nombre_cliente",
+                        ""
+                    )
+                    if not modo_sin_folio
+                    else ""
+                ),
+
+                disabled=(
+                    not cliente_enabled_comp
+                    or not modo_sin_folio
+                ),
+
+                key=f"nombre_cliente_comp_{dynamic_key}"
+            )
+
+        with col3:
+
+            folio_sac_comp = st.text_input(
+
+                "Folio SAC",
+
+                value=(
+                    solicitud_data.get(
+                        "folio_sac",
+                        ""
+                    )
+                    if not modo_sin_folio
+                    else ""
+                ),
+
+                disabled=(
+                    not cliente_enabled_comp
+                    or not modo_sin_folio
+                ),
+
+                key=f"folio_sac_comp_{dynamic_key}"
+            )
 
         # =================================
         # FECHAS
@@ -2696,6 +2800,12 @@ with tab_comprobacion:
 
                     "motivo_viaje":
                         "Operacion/Solicitud sin Folio",
+
+                    "nombre_cliente":
+                        nombre_cliente_comp,
+
+                    "folio_sac":
+                        folio_sac_comp,
 
                     "fecha_solicitud":
                         str(fecha_solicitud_comp),
