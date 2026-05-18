@@ -2722,6 +2722,16 @@ else:
                             f"{solicitud_row.get('sucursal_especificar', '')}"
                         )
 
+                        st.write(
+                            f"**Nombre del Cliente:** "
+                            f"{solicitud_row.get('nombre_cliente', '')}"
+                        )
+
+                        st.write(
+                            f"**Folio SAC:** "
+                            f"{solicitud_row.get('folio_sac', '')}"
+                        )
+
                     # =================================
                     # MOTIVO
                     # =================================
