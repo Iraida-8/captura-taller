@@ -523,9 +523,35 @@ with tab_solicitud:
                 key=f"empleado_{FORM_VERSION}"
             )
 
-        motivo_viaje = st.text_area(
+        motivos_viaje_lista = [
+
+            "Selecciona Motivo",
+
+            "VISITA CLIENTE PROSPECTO",
+
+            "VISITA CLIENTE ACTIVO/SEGUIMIENTO",
+
+            "ASISTENCIA CONGRESO/EVENTO DE TRANSPORTE",
+
+            "DILIGENCIA OPERATIVA/ADMINISTRATIVA",
+
+            "VISITA DE AUDITORIA A PROVEEDOR",
+
+            "TRASLADO DE PERSONAL",
+
+            "AUDITORIA DE INSTALACIONES PROPIAS",
+
+            "OTROS"
+        ]
+
+        motivo_viaje = st.selectbox(
+
             "Motivo del Viaje",
-            height=100,
+
+            motivos_viaje_lista,
+
+            index=0,
+
             key=f"motivo_viaje_{FORM_VERSION}"
         )
 
@@ -1359,18 +1385,55 @@ with tab_comprobacion:
                 key=f"empleado_comp_{dynamic_key}"
             )
 
-        motivo_viaje_comp = st.text_area(
+        motivos_viaje_lista = [
+
+            "Selecciona Motivo",
+
+            "VISITA CLIENTE PROSPECTO",
+
+            "VISITA CLIENTE ACTIVO/SEGUIMIENTO",
+
+            "ASISTENCIA CONGRESO/EVENTO DE TRANSPORTE",
+
+            "DILIGENCIA OPERATIVA/ADMINISTRATIVA",
+
+            "VISITA DE AUDITORIA A PROVEEDOR",
+
+            "TRASLADO DE PERSONAL",
+
+            "AUDITORIA DE INSTALACIONES PROPIAS",
+
+            "OTROS"
+        ]
+
+        motivo_actual = (
+            solicitud_data.get(
+                "motivo_viaje",
+                "Selecciona Motivo"
+            )
+            if not modo_sin_folio
+            else st.session_state.get(
+                f"motivo_viaje_comp_{dynamic_key}",
+                "Selecciona Motivo"
+            )
+        )
+
+        if motivo_actual not in motivos_viaje_lista:
+
+            motivo_actual = "Selecciona Motivo"
+
+        motivo_viaje_comp = st.selectbox(
+
             "Motivo del Viaje",
-            value=(
-                solicitud_data.get(
-                    "motivo_viaje",
-                    ""
-                )
-                if not modo_sin_folio
-                else ""
+
+            motivos_viaje_lista,
+
+            index=motivos_viaje_lista.index(
+                motivo_actual
             ),
-            height=100,
+
             disabled=not modo_sin_folio,
+
             key=f"motivo_viaje_comp_{dynamic_key}"
         )
 
