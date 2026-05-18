@@ -705,9 +705,20 @@ def modal_ver_solicitud(row):
             f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
         )
 
+        label_cliente = (
+            "Motivo del Viaje"
+            if str(
+                solicitud_row.get(
+                    "motivo_viaje",
+                    ""
+                )
+            ).strip().upper() == "OTROS"
+            else "Nombre del Cliente"
+        )
+
         st.write(
-            f"**Nombre del Cliente:** "
-            f"{row.get('nombre_cliente', '')}"
+            f"**{label_cliente}:** "
+            f"{solicitud_row.get('nombre_cliente', '')}"
         )
 
         st.write(
@@ -1632,8 +1643,19 @@ else:
                             f"{solicitud_row.get('sucursal_especificar', '')}"
                         )
 
+                        label_cliente = (
+                            "Motivo del Viaje"
+                            if str(
+                                solicitud_row.get(
+                                    "motivo_viaje",
+                                    ""
+                                )
+                            ).strip().upper() == "OTROS"
+                            else "Nombre del Cliente"
+                        )
+
                         st.write(
-                            f"**Nombre del Cliente:** "
+                            f"**{label_cliente}:** "
                             f"{solicitud_row.get('nombre_cliente', '')}"
                         )
 
@@ -2722,8 +2744,19 @@ else:
                             f"{solicitud_row.get('sucursal_especificar', '')}"
                         )
 
+                        label_cliente = (
+                            "Motivo del Viaje"
+                            if str(
+                                solicitud_row.get(
+                                    "motivo_viaje",
+                                    ""
+                                )
+                            ).strip().upper() == "OTROS"
+                            else "Nombre del Cliente"
+                        )
+
                         st.write(
-                            f"**Nombre del Cliente:** "
+                            f"**{label_cliente}:** "
                             f"{solicitud_row.get('nombre_cliente', '')}"
                         )
 
