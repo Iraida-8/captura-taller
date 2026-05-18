@@ -568,15 +568,28 @@ with tab_solicitud:
 
         cliente_enabled = (
             motivo_viaje in motivos_cliente
+            or motivo_viaje == "OTROS"
+        )
+
+        cliente_label = (
+            "Motivo"
+            if motivo_viaje == "OTROS"
+            else "Nombre del Cliente"
+        )
+
+        cliente_placeholder = (
+            "Ingresa motivo del viaje"
+            if motivo_viaje == "OTROS"
+            else "Ingresa el nombre del cliente a visitar"
         )
 
         with col2:
 
             nombre_cliente = st.text_input(
 
-                "Nombre del Cliente",
+                cliente_label,
 
-                placeholder="Ingresa el nombre del cliente a visitar",
+                placeholder=cliente_placeholder,
 
                 disabled=not cliente_enabled,
 
@@ -1497,15 +1510,28 @@ with tab_comprobacion:
 
         cliente_enabled_comp = (
             motivo_viaje_comp in motivos_cliente
+            or motivo_viaje_comp == "OTROS"
+        )
+
+        cliente_label_comp = (
+            "Motivo"
+            if motivo_viaje_comp == "OTROS"
+            else "Nombre del Cliente"
+        )
+
+        cliente_placeholder_comp = (
+            "Ingresa motivo del viaje"
+            if motivo_viaje_comp == "OTROS"
+            else "Ingresa el nombre del cliente a visitar"
         )
 
         with col2:
 
             nombre_cliente_comp = st.text_input(
 
-                "Nombre del Cliente",
+                cliente_label_comp,
 
-                placeholder="Ingresa el nombre del cliente a visitar",
+                placeholder=cliente_placeholder_comp,
 
                 value=(
                     solicitud_data.get(
