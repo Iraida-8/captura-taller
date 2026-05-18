@@ -708,7 +708,7 @@ def modal_ver_solicitud(row):
         label_cliente = (
             "Motivo del Viaje"
             if str(
-                solicitud_row.get(
+                row.get(
                     "motivo_viaje",
                     ""
                 )
@@ -718,7 +718,7 @@ def modal_ver_solicitud(row):
 
         st.write(
             f"**{label_cliente}:** "
-            f"{solicitud_row.get('nombre_cliente', '')}"
+            f"{row.get('nombre_cliente', '')}"
         )
 
         st.write(
