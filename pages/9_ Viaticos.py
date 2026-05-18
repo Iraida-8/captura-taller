@@ -571,6 +571,10 @@ with tab_solicitud:
             or motivo_viaje == "OTROS"
         )
 
+        folio_sac_enabled = (
+            motivo_viaje in motivos_cliente
+        )
+
         cliente_label = (
             "Motivo"
             if motivo_viaje == "OTROS"
@@ -604,7 +608,7 @@ with tab_solicitud:
 
                 placeholder="Ingresa el folio SAC relacionado",
 
-                disabled=not cliente_enabled,
+                disabled=not folio_sac_enabled,
 
                 key=f"folio_sac_{FORM_VERSION}"
             )
@@ -1513,6 +1517,10 @@ with tab_comprobacion:
             or motivo_viaje_comp == "OTROS"
         )
 
+        folio_sac_enabled_comp = (
+            motivo_viaje_comp in motivos_cliente
+        )
+
         cliente_label_comp = (
             "Motivo"
             if motivo_viaje_comp == "OTROS"
@@ -1568,7 +1576,7 @@ with tab_comprobacion:
                 ),
 
                 disabled=(
-                    not cliente_enabled_comp
+                    not folio_sac_enabled_comp
                     or not modo_sin_folio
                 ),
 
