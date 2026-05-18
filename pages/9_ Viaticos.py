@@ -576,6 +576,8 @@ with tab_solicitud:
 
                 "Nombre del Cliente",
 
+                placeholder="Ingresa el nombre del cliente a visitar",
+
                 disabled=not cliente_enabled,
 
                 key=f"nombre_cliente_{FORM_VERSION}"
@@ -586,6 +588,8 @@ with tab_solicitud:
             folio_sac = st.text_input(
 
                 "Folio SAC",
+
+                placeholder="Ingresa el folio SAC relacionado",
 
                 disabled=not cliente_enabled,
 
@@ -1501,6 +1505,8 @@ with tab_comprobacion:
 
                 "Nombre del Cliente",
 
+                placeholder="Ingresa el nombre del cliente a visitar",
+
                 value=(
                     solicitud_data.get(
                         "nombre_cliente",
@@ -1523,6 +1529,8 @@ with tab_comprobacion:
             folio_sac_comp = st.text_input(
 
                 "Folio SAC",
+
+                placeholder="Ingresa el folio SAC relacionado",
 
                 value=(
                     solicitud_data.get(
