@@ -2835,7 +2835,7 @@ with tab_comprobacion:
         type="primary",
         key=f"submitted_comp_{COMP_VERSION}"
     )
-
+    #here
     if submitted_comp:
 
         if folio_seleccionado == "Selecciona folio":
@@ -2845,365 +2845,412 @@ with tab_comprobacion:
             )
 
         else:
-
+            #here
             # =================================
-            # GENERAR FOLIO COMPROBACION
+            # VALIDACIONES MODO SIN FOLIO
             # =================================
 
-            existing = (
-                supabase
-                .table("comprobacion_viaje")
-                .select("id")
-                .execute()
-            )
-
-            consecutivo = len(existing.data) + 1
-
-            folio_comprobacion = (
-                f"CGV-{consecutivo:06d}"
-            )
-
-            # =================================
-            # MODO SIN FOLIO
-            # =================================
+            errores_comp = []
 
             if modo_sin_folio:
 
-                # =============================
-                # GENERAR FOLIO SOLICITUD
-                # =============================
+                if empresa_servicio_comp == "Seleccione una opción...":
 
-                existing_sf = (
+                    errores_comp.append(
+                        "Debes seleccionar una Empresa que Brinda el Servicio."
+                    )
+
+                if motivo_viaje_comp == "Selecciona Motivo":
+
+                    errores_comp.append(
+                        "Debes seleccionar un Motivo del Viaje."
+                    )
+
+                if empresa_cargo_comp == "Seleccione una opción...":
+
+                    errores_comp.append(
+                        "Debes seleccionar una Empresa a Cargo."
+                    )
+
+                if len(
+                    st.session_state[gastos_comp_key]
+                ) == 0:
+
+                    errores_comp.append(
+                        "Debes agregar al menos un concepto."
+                    )
+
+            # =================================
+            # MOSTRAR ERRORES
+            # =================================
+
+            if errores_comp:
+
+                for error in errores_comp:
+
+                    st.error(error)
+
+            else:
+
+
+                # =================================
+                # GENERAR FOLIO COMPROBACION
+                # =================================
+
+                existing = (
                     supabase
-                    .table("solicitud_viaje")
+                    .table("comprobacion_viaje")
                     .select("id")
                     .execute()
                 )
 
-                consecutivo_sf = (
-                    len(existing_sf.data) + 1
+                consecutivo = len(existing.data) + 1
+
+                folio_comprobacion = (
+                    f"CGV-{consecutivo:06d}"
                 )
 
-                folio_solicitud_sf = (
-                    f"SF-{consecutivo_sf:06d}-SF"
-                )
+                # =================================
+                # MODO SIN FOLIO
+                # =================================
 
-                # =============================
-                # SUCURSAL ESPECIFICAR
-                # =============================
+                if modo_sin_folio:
 
-                if sucursal_comp == "OTRO":
+                    # =============================
+                    # GENERAR FOLIO SOLICITUD
+                    # =============================
 
-                    sucursal_especificar_sf = (
-                        suc_otro_texto_comp
+                    existing_sf = (
+                        supabase
+                        .table("solicitud_viaje")
+                        .select("id")
+                        .execute()
                     )
+
+                    consecutivo_sf = (
+                        len(existing_sf.data) + 1
+                    )
+
+                    folio_solicitud_sf = (
+                        f"SF-{consecutivo_sf:06d}-SF"
+                    )
+
+                    # =============================
+                    # SUCURSAL ESPECIFICAR
+                    # =============================
+
+                    if sucursal_comp == "OTRO":
+
+                        sucursal_especificar_sf = (
+                            suc_otro_texto_comp
+                        )
+
+                    else:
+
+                        sucursal_especificar_sf = ""
+
+                    # =============================
+                    # INSERT SOLICITUD_VIAJE
+                    # =============================
+
+                    supabase.table(
+                        "solicitud_viaje"
+                    ).insert({
+
+                        "folio_solicitud":
+                            folio_solicitud_sf,
+
+                        "empresa_brinda_servicio":
+                            empresa_servicio_comp,
+
+                        "nombre_empleado_solicita":
+                            nombre_usuario,
+
+                        "motivo_viaje":
+                            "Operacion/Solicitud sin Folio",
+
+                        "nombre_cliente":
+                            nombre_cliente_comp,
+
+                        "folio_sac":
+                            folio_sac_comp,
+
+                        "fecha_solicitud":
+                            str(fecha_solicitud_comp),
+
+                        "fecha_inicio":
+                            str(fecha_inicio_comp),
+
+                        "fecha_fin":
+                            str(fecha_fin_comp),
+
+                        "empresa_cargo_gastos":
+                            empresa_cargo_comp,
+
+                        "unidad_negocio": (
+                            ""
+                            if unidad_disabled_comp
+                            else unidad_negocio_comp
+                        ),
+
+                        "sucursal": (
+                            ""
+                            if (
+                                sucursal_disabled_comp
+                                and empresa_cargo_comp
+                                in [
+                                    "LINCOLN",
+                                    "SET LOGIS PLUS"
+                                ]
+                            )
+                            else sucursal_comp
+                        ),
+
+                        "sucursal_especificar":
+                            sucursal_especificar_sf,
+
+                        "conceptos": [
+                            {
+                                "Tipo": "OTROS",
+                                "Descripcion":
+                                    "Operacion sin Solicitud",
+                                "Monto": 0.00
+                            }
+                        ],
+
+                        "total_estimado":
+                            0.00,
+
+                        "observaciones":
+                            "Operacion/Solicitud sin Folio",
+
+                        "estatus":
+                            "Verificar"
+
+                    }).execute()
+
+                    folio_solicitud_final = (
+                        folio_solicitud_sf
+                    )
+
+                    anticipo_viaje = 0.00
 
                 else:
 
-                    sucursal_especificar_sf = ""
+                    folio_solicitud_final = (
+                        folio_seleccionado
+                    )
 
-                # =============================
-                # INSERT SOLICITUD_VIAJE
-                # =============================
+                # =================================
+                # CLEAN CONCEPTOS FOR DB
+                # =================================
+
+                conceptos_finales = []
+
+                for row in st.session_state[
+                    gastos_comp_key
+                ]:
+
+                    conceptos_finales.append({
+
+                        "Tipo":
+                            row.get(
+                                "Tipo",
+                                "OTROS"
+                            ),
+
+                        "Descripcion":
+                            row.get(
+                                "Descripcion",
+                                ""
+                            ),
+                        
+                        "Fecha Factura":
+                            str(
+                                row.get(
+                                    "Fecha Factura",
+                                    date.today()
+                                )
+                            ),
+
+                        "Folio":
+                            row.get(
+                                "Folio",
+                                ""
+                            ),
+
+                        "Proveedor":
+                            row.get(
+                                "Proveedor",
+                                ""
+                            ),
+
+                        "Moneda":
+                            row.get(
+                                "Moneda",
+                                "MXP"
+                            ),
+
+                        "Monto":
+                            float(
+                                row.get(
+                                    "Monto",
+                                    0
+                                ) or 0
+                            ),
+
+                        "Comprobante":
+                            row.get(
+                                "Comprobante",
+                                "No"
+                            ),
+
+                        "Aplica IVA":
+                            bool(
+                                row.get(
+                                    "Aplica IVA",
+                                    False
+                                )
+                            ),
+
+                        "IVA %":
+                            float(
+                                row.get(
+                                    "IVA %",
+                                    0
+                                ) or 0
+                            ),
+
+                        "Aplica Retencion":
+                            bool(
+                                row.get(
+                                    "Aplica Retencion",
+                                    False
+                                )
+                            ),
+
+                        "Impuesto Acreditable":
+                            float(
+                                row.get(
+                                    "Impuesto Acreditable",
+                                    0
+                                ) or 0
+                            ),
+
+                        "Total Comprobado":
+                            float(
+                                row.get(
+                                    "Total Comprobado",
+                                    0
+                                ) or 0
+                            )
+                    })
+
+                # =================================
+                # INSERT COMPROBACION
+                # =================================
 
                 supabase.table(
-                    "solicitud_viaje"
+                    "comprobacion_viaje"
                 ).insert({
 
-                    "folio_solicitud":
-                        folio_solicitud_sf,
+                    "folio_comprobacion":
+                        folio_comprobacion,
 
-                    "empresa_brinda_servicio":
-                        empresa_servicio_comp,
+                    "folio_solicitud":
+                        folio_solicitud_final,
 
                     "nombre_empleado_solicita":
                         nombre_usuario,
 
-                    "motivo_viaje":
-                        "Operacion/Solicitud sin Folio",
+                    "conceptos":
+                        conceptos_finales,
 
-                    "nombre_cliente":
-                        nombre_cliente_comp,
+                    "total_comprobado":
+                        float(total_general),
 
-                    "folio_sac":
-                        folio_sac_comp,
+                    "anticipo_viaje":
+                        float(anticipo_viaje),
 
-                    "fecha_solicitud":
-                        str(fecha_solicitud_comp),
-
-                    "fecha_inicio":
-                        str(fecha_inicio_comp),
-
-                    "fecha_fin":
-                        str(fecha_fin_comp),
-
-                    "empresa_cargo_gastos":
-                        empresa_cargo_comp,
-
-                    "unidad_negocio": (
-                        ""
-                        if unidad_disabled_comp
-                        else unidad_negocio_comp
-                    ),
-
-                    "sucursal": (
-                        ""
-                        if (
-                            sucursal_disabled_comp
-                            and empresa_cargo_comp
-                            in [
-                                "LINCOLN",
-                                "SET LOGIS PLUS"
-                            ]
-                        )
-                        else sucursal_comp
-                    ),
-
-                    "sucursal_especificar":
-                        sucursal_especificar_sf,
-
-                    "conceptos": [
-                        {
-                            "Tipo": "OTROS",
-                            "Descripcion":
-                                "Operacion sin Solicitud",
-                            "Monto": 0.00
-                        }
-                    ],
-
-                    "total_estimado":
-                        0.00,
+                    "diferencia_cargo_favor":
+                        float(diferencia_cargo),
 
                     "observaciones":
-                        "Operacion/Solicitud sin Folio",
+                        observaciones_comp,
 
                     "estatus":
                         "Verificar"
 
                 }).execute()
 
-                folio_solicitud_final = (
-                    folio_solicitud_sf
-                )
+                # =================================
+                # SEND EMAIL
+                # =================================
 
-                anticipo_viaje = 0.00
+                try:
 
-            else:
+                    enviar_correo_comprobacion(
 
-                folio_solicitud_final = (
-                    folio_seleccionado
-                )
+                        destinatario=email_usuario,
 
-            # =================================
-            # CLEAN CONCEPTOS FOR DB
-            # =================================
+                        folio_comprobacion=folio_comprobacion,
 
-            conceptos_finales = []
+                        folio_solicitud=folio_solicitud_final,
 
-            for row in st.session_state[
-                gastos_comp_key
-            ]:
+                        modo_sin_folio=modo_sin_folio,
 
-                conceptos_finales.append({
-
-                    "Tipo":
-                        row.get(
-                            "Tipo",
-                            "OTROS"
-                        ),
-
-                    "Descripcion":
-                        row.get(
-                            "Descripcion",
-                            ""
-                        ),
-                    
-                    "Fecha Factura":
-                        str(
-                            row.get(
-                                "Fecha Factura",
-                                date.today()
-                            )
-                        ),
-
-                    "Folio":
-                        row.get(
-                            "Folio",
-                            ""
-                        ),
-
-                    "Proveedor":
-                        row.get(
-                            "Proveedor",
-                            ""
-                        ),
-
-                    "Moneda":
-                        row.get(
-                            "Moneda",
-                            "MXP"
-                        ),
-
-                    "Monto":
-                        float(
-                            row.get(
-                                "Monto",
-                                0
-                            ) or 0
-                        ),
-
-                    "Comprobante":
-                        row.get(
-                            "Comprobante",
-                            "No"
-                        ),
-
-                    "Aplica IVA":
-                        bool(
-                            row.get(
-                                "Aplica IVA",
-                                False
-                            )
-                        ),
-
-                    "IVA %":
-                        float(
-                            row.get(
-                                "IVA %",
-                                0
-                            ) or 0
-                        ),
-
-                    "Aplica Retencion":
-                        bool(
-                            row.get(
-                                "Aplica Retencion",
-                                False
-                            )
-                        ),
-
-                    "Impuesto Acreditable":
-                        float(
-                            row.get(
-                                "Impuesto Acreditable",
-                                0
-                            ) or 0
-                        ),
-
-                    "Total Comprobado":
-                        float(
-                            row.get(
-                                "Total Comprobado",
-                                0
-                            ) or 0
+                        attachments=st.session_state.get(
+                            f"attachments_{COMP_VERSION}",
+                            []
                         )
-                })
-
-            # =================================
-            # INSERT COMPROBACION
-            # =================================
-
-            supabase.table(
-                "comprobacion_viaje"
-            ).insert({
-
-                "folio_comprobacion":
-                    folio_comprobacion,
-
-                "folio_solicitud":
-                    folio_solicitud_final,
-
-                "nombre_empleado_solicita":
-                    nombre_usuario,
-
-                "conceptos":
-                    conceptos_finales,
-
-                "total_comprobado":
-                    float(total_general),
-
-                "anticipo_viaje":
-                    float(anticipo_viaje),
-
-                "diferencia_cargo_favor":
-                    float(diferencia_cargo),
-
-                "observaciones":
-                    observaciones_comp,
-
-                "estatus":
-                    "Verificar"
-
-            }).execute()
-
-            # =================================
-            # SEND EMAIL
-            # =================================
-
-            try:
-
-                enviar_correo_comprobacion(
-
-                    destinatario=email_usuario,
-
-                    folio_comprobacion=folio_comprobacion,
-
-                    folio_solicitud=folio_solicitud_final,
-
-                    modo_sin_folio=modo_sin_folio,
-
-                    attachments=st.session_state.get(
-                        f"attachments_{COMP_VERSION}",
-                        []
                     )
-                )
 
-            except Exception as e:
+                except Exception as e:
 
-                st.warning(
-                    f"No se pudo enviar correo: {e}"
-                )
+                    st.warning(
+                        f"No se pudo enviar correo: {e}"
+                    )
 
-            @st.dialog("✅ Comprobación Actualizada")
-            def mostrar_confirmacion_comp():
+                @st.dialog("✅ Comprobación Actualizada")
+                def mostrar_confirmacion_comp():
 
-                st.success(
-                    "Folio actualizado exitosamente."
-                )
-
-                st.markdown(
-                    "### 📄 FOLIO ACTUALIZADO"
-                )
-
-                st.code(
-                    folio_comprobacion,
-                    language=None
-                )
-
-                if modo_sin_folio:
+                    st.success(
+                        "Folio actualizado exitosamente."
+                    )
 
                     st.markdown(
-                        "### 📄 FOLIO SOLICITUD GENERADO"
+                        "### 📄 FOLIO ACTUALIZADO"
                     )
 
                     st.code(
-                        folio_solicitud_final,
+                        folio_comprobacion,
                         language=None
                     )
 
-                if st.button(
-                    "Cerrar",
-                    use_container_width=True,
-                    key=f"cerrar_popup_comp_{COMP_VERSION}"
-                ):
+                    if modo_sin_folio:
 
-                    st.session_state[gastos_comp_key] = []
+                        st.markdown(
+                            "### 📄 FOLIO SOLICITUD GENERADO"
+                        )
 
-                    st.session_state.comprobacion_form_version += 1
+                        st.code(
+                            folio_solicitud_final,
+                            language=None
+                        )
 
-                    st.rerun()
+                    if st.button(
+                        "Cerrar",
+                        use_container_width=True,
+                        key=f"cerrar_popup_comp_{COMP_VERSION}"
+                    ):
 
-            mostrar_confirmacion_comp()
+                        st.session_state[gastos_comp_key] = []
+
+                        st.session_state.comprobacion_form_version += 1
+
+                        st.rerun()
+
+                mostrar_confirmacion_comp()
 
 # -------------------------------
 # CSS
