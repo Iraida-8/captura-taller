@@ -392,6 +392,36 @@ df_solicitudes = cargar_solicitudes()
 df_comprobaciones = cargar_comprobaciones()
 
 # =================================
+# EMPTY DATAFRAME SAFETY
+# =================================
+
+if df_solicitudes.empty:
+
+    df_solicitudes = pd.DataFrame(columns=[
+
+        "folio_solicitud",
+        "estatus",
+        "nombre_empleado_solicita",
+        "fecha_solicitud",
+        "total_estimado",
+        "created_at"
+    ])
+
+if df_comprobaciones.empty:
+
+    df_comprobaciones = pd.DataFrame(columns=[
+
+        "folio_solicitud",
+        "folio_comprobacion",
+        "estatus",
+        "nombre_empleado_solicita",
+        "total_comprobado",
+        "anticipo_viaje",
+        "diferencia_cargo_favor",
+        "created_at"
+    ])
+
+# =================================
 # GLOBAL TOAST
 # =================================
 
