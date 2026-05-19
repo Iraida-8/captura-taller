@@ -2374,6 +2374,152 @@ st.markdown(
 )
 
 # =================================
+# BASE DATA
+# =================================
+
+df_finalizadas = pd.merge(
+
+    df_solicitudes[
+        df_solicitudes["estatus"].isin(
+            [
+                "Concluido",
+                "Rechazado"
+            ]
+        )
+    ],
+
+    df_comprobaciones[
+        [
+            "folio_solicitud",
+            "folio_comprobacion",
+            "conceptos",
+            "total_comprobado",
+            "anticipo_viaje",
+            "diferencia_cargo_favor",
+            "observaciones",
+            "created_at"
+        ]
+    ],
+
+    on="folio_solicitud",
+
+    how="left",
+
+    suffixes=(
+        "_solicitud",
+        ""
+    )
+)
+
+# =================================
+# FILTERS
+# =================================
+
+f1, f2, f3 = st.columns(3)
+
+with f1:
+
+    folios_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        folios_finalizados += sorted(
+            df_finalizadas["folio_solicitud"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_folio_finalizado = st.selectbox(
+        "Filtrar por Folio",
+        folios_finalizados,
+        key="filtro_folio_finalizado"
+    )
+
+with f2:
+
+    estatus_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        estatus_finalizados += sorted(
+            df_finalizadas["estatus"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_estatus_finalizado = st.selectbox(
+        "Filtrar por Estatus",
+        estatus_finalizados,
+        key="filtro_estatus_finalizado"
+    )
+
+with f3:
+
+    empleados_finalizados = ["Todos"]
+
+    if not df_finalizadas.empty:
+
+        empleados_finalizados += sorted(
+            df_finalizadas["nombre_empleado_solicita"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    filtro_empleado_finalizado = st.selectbox(
+        "Filtrar por Empleado",
+        empleados_finalizados,
+        key="filtro_empleado_finalizado"
+    )
+
+# =================================
+# APPLY FILTERS
+# =================================
+
+if filtro_folio_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["folio_solicitud"]
+        .astype(str)
+        ==
+        str(filtro_folio_finalizado)
+    ]
+
+if filtro_estatus_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["estatus"]
+        .astype(str)
+        ==
+        str(filtro_estatus_finalizado)
+    ]
+
+if filtro_empleado_finalizado != "Todos":
+
+    df_finalizadas = df_finalizadas[
+        df_finalizadas["nombre_empleado_solicita"]
+        .astype(str)
+        ==
+        str(filtro_empleado_finalizado)
+    ]
+
+# =================================
+# SORT
+# =================================
+
+if "created_at" in df_finalizadas.columns:
+
+    df_finalizadas = df_finalizadas.sort_values(
+        by="created_at",
+        ascending=False
+    )
+
+# =================================
 # DESCARGAR REPORTE
 # =================================
 
@@ -2745,153 +2891,7 @@ if st.button(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         )
-
-# =================================
-# BASE DATA
-# =================================
-
-df_finalizadas = pd.merge(
-
-    df_solicitudes[
-        df_solicitudes["estatus"].isin(
-            [
-                "Concluido",
-                "Rechazado"
-            ]
-        )
-    ],
-
-    df_comprobaciones[
-        [
-            "folio_solicitud",
-            "folio_comprobacion",
-            "conceptos",
-            "total_comprobado",
-            "anticipo_viaje",
-            "diferencia_cargo_favor",
-            "observaciones",
-            "created_at"
-        ]
-    ],
-
-    on="folio_solicitud",
-
-    how="left",
-
-    suffixes=(
-        "_solicitud",
-        ""
-    )
-)
-
-# =================================
-# FILTERS
-# =================================
-
-f1, f2, f3 = st.columns(3)
-
-with f1:
-
-    folios_finalizados = ["Todos"]
-
-    if not df_finalizadas.empty:
-
-        folios_finalizados += sorted(
-            df_finalizadas["folio_solicitud"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-    filtro_folio_finalizado = st.selectbox(
-        "Filtrar por Folio",
-        folios_finalizados,
-        key="filtro_folio_finalizado"
-    )
-
-with f2:
-
-    estatus_finalizados = ["Todos"]
-
-    if not df_finalizadas.empty:
-
-        estatus_finalizados += sorted(
-            df_finalizadas["estatus"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-    filtro_estatus_finalizado = st.selectbox(
-        "Filtrar por Estatus",
-        estatus_finalizados,
-        key="filtro_estatus_finalizado"
-    )
-
-with f3:
-
-    empleados_finalizados = ["Todos"]
-
-    if not df_finalizadas.empty:
-
-        empleados_finalizados += sorted(
-            df_finalizadas["nombre_empleado_solicita"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-    filtro_empleado_finalizado = st.selectbox(
-        "Filtrar por Empleado",
-        empleados_finalizados,
-        key="filtro_empleado_finalizado"
-    )
-
-# =================================
-# APPLY FILTERS
-# =================================
-
-if filtro_folio_finalizado != "Todos":
-
-    df_finalizadas = df_finalizadas[
-        df_finalizadas["folio_solicitud"]
-        .astype(str)
-        ==
-        str(filtro_folio_finalizado)
-    ]
-
-if filtro_estatus_finalizado != "Todos":
-
-    df_finalizadas = df_finalizadas[
-        df_finalizadas["estatus"]
-        .astype(str)
-        ==
-        str(filtro_estatus_finalizado)
-    ]
-
-if filtro_empleado_finalizado != "Todos":
-
-    df_finalizadas = df_finalizadas[
-        df_finalizadas["nombre_empleado_solicita"]
-        .astype(str)
-        ==
-        str(filtro_empleado_finalizado)
-    ]
-
-# =================================
-# SORT
-# =================================
-
-if "created_at" in df_finalizadas.columns:
-
-    df_finalizadas = df_finalizadas.sort_values(
-        by="created_at",
-        ascending=False
-    )
-
+        
 # =================================
 # PAGINATION
 # =================================
