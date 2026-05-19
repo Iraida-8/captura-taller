@@ -1113,179 +1113,179 @@ with tab_solicitud:
 
                 st.error(error)
 
-            st.stop()
-
-        prefijos_sucursal = {
-            "NUEVO LAREDO": "NL",
-            "DALLAS": "DL",
-            "CHICAGO": "CH",
-            "GUADALAJARA": "GD",
-            "MONTERREY": "MT",
-            "QUERETARO": "QT",
-            "LEON": "LN",
-            "LINCOLN LOGISTICS": "LL",
-            "ROLANDO ALFARO": "RA",
-            "OTRO": "OT"
-        }
-
-        prefijo = prefijos_sucursal.get(
-            sucursal,
-            "OT"
-        )
-
-        # =================================
-        # GENERAR FOLIO
-        # =================================
-
-        existing = (
-            supabase
-            .table("solicitud_viaje")
-            .select("id")
-            .execute()
-        )
-
-        consecutivo = len(existing.data) + 1
-
-        folio_solicitud = (
-            f"{prefijo}-{consecutivo:06d}-SGV"
-        )
-
-        # =================================
-        # SUCURSAL FINAL
-        # =================================
-
-        if sucursal == "OTRO":
-            sucursal_especificar = suc_otro_texto
         else:
-            sucursal_especificar = ""
 
-        # =================================
-        # GUARDAR
-        # =================================
+            prefijos_sucursal = {
+                "NUEVO LAREDO": "NL",
+                "DALLAS": "DL",
+                "CHICAGO": "CH",
+                "GUADALAJARA": "GD",
+                "MONTERREY": "MT",
+                "QUERETARO": "QT",
+                "LEON": "LN",
+                "LINCOLN LOGISTICS": "LL",
+                "ROLANDO ALFARO": "RA",
+                "OTRO": "OT"
+            }
 
-        supabase.table("solicitud_viaje").insert({
+            prefijo = prefijos_sucursal.get(
+                sucursal,
+                "OT"
+            )
 
-            "folio_solicitud": folio_solicitud,
+            # =================================
+            # GENERAR FOLIO
+            # =================================
 
-            "empresa_brinda_servicio": empresa_servicio,
+            existing = (
+                supabase
+                .table("solicitud_viaje")
+                .select("id")
+                .execute()
+            )
 
-            "nombre_empleado_solicita": empleado,
+            consecutivo = len(existing.data) + 1
 
-            "motivo_viaje": motivo_viaje,
+            folio_solicitud = (
+                f"{prefijo}-{consecutivo:06d}-SGV"
+            )
 
-            "nombre_cliente":
-                nombre_cliente,
+            # =================================
+            # SUCURSAL FINAL
+            # =================================
 
-            "folio_sac":
-                folio_sac,
+            if sucursal == "OTRO":
+                sucursal_especificar = suc_otro_texto
+            else:
+                sucursal_especificar = ""
 
-            "fecha_solicitud": str(fecha_solicitud),
+            # =================================
+            # GUARDAR
+            # =================================
 
-            "fecha_inicio": str(fecha_inicio),
+            supabase.table("solicitud_viaje").insert({
 
-            "fecha_fin": str(fecha_fin),
+                "folio_solicitud": folio_solicitud,
 
-            "empresa_cargo_gastos": empresa_cargo,
+                "empresa_brinda_servicio": empresa_servicio,
 
-            "unidad_negocio": (
-                ""
-                if unidad_disabled
-                else unidad_negocio
-            ),
+                "nombre_empleado_solicita": empleado,
 
-            "sucursal": (
-                ""
-                if sucursal_disabled and empresa_cargo in ["LINCOLN", "SET LOGIS PLUS"]
-                else sucursal
-            ),
+                "motivo_viaje": motivo_viaje,
 
-            "sucursal_especificar": sucursal_especificar,
+                "nombre_cliente":
+                    nombre_cliente,
 
-            "conceptos": st.session_state[conceptos_key],
+                "folio_sac":
+                    folio_sac,
 
-            "total_estimado": float(total_estimado),
+                "fecha_solicitud": str(fecha_solicitud),
 
-            "observaciones": observaciones,
+                "fecha_inicio": str(fecha_inicio),
 
-            "estatus": "Pendiente"
+                "fecha_fin": str(fecha_fin),
 
-        }).execute()
+                "empresa_cargo_gastos": empresa_cargo,
 
-        # =================================
-        # SEND EMAIL
-        # =================================
-
-        try:
-
-            enviar_correo_solicitud(
-
-                destinatario=email_usuario,
-
-                folio=folio_solicitud,
-
-                empresa_servicio=empresa_servicio,
-
-                empleado=empleado,
-
-                motivo_viaje=motivo_viaje,
-
-                fecha_solicitud=fecha_solicitud,
-
-                fecha_inicio=fecha_inicio,
-
-                fecha_fin=fecha_fin,
-
-                empresa_cargo=empresa_cargo,
-
-                unidad_negocio=(
+                "unidad_negocio": (
                     ""
                     if unidad_disabled
                     else unidad_negocio
                 ),
 
-                sucursal=sucursal,
+                "sucursal": (
+                    ""
+                    if sucursal_disabled and empresa_cargo in ["LINCOLN", "SET LOGIS PLUS"]
+                    else sucursal
+                ),
 
-                sucursal_otro=sucursal_especificar,
+                "sucursal_especificar": sucursal_especificar,
 
-                conceptos=st.session_state[
-                    conceptos_key
-                ],
+                "conceptos": st.session_state[conceptos_key],
 
-                total_estimado=total_estimado,
+                "total_estimado": float(total_estimado),
 
-                observaciones=observaciones
-            )
+                "observaciones": observaciones,
 
-        except Exception as e:
+                "estatus": "Pendiente"
 
-            st.warning(
-                f"No se pudo enviar correo: {e}"
-            )
+            }).execute()
 
-        @st.dialog("✅ Solicitud Enviada")
-        def mostrar_confirmacion():
+            # =================================
+            # SEND EMAIL
+            # =================================
 
-            st.success(
-                "Solicitud enviada correctamente."
-            )
+            try:
 
-            st.markdown("### 📄 FOLIO DE SOLICITUD")
+                enviar_correo_solicitud(
 
-            st.code(
-                folio_solicitud,
-                language=None
-            )
+                    destinatario=email_usuario,
 
-            if st.button(
-                "Cerrar",
-                use_container_width=True,
-                key=f"cerrar_popup_{FORM_VERSION}"
-            ):
+                    folio=folio_solicitud,
 
-                st.session_state.solicitud_form_version += 1
-                st.rerun()
+                    empresa_servicio=empresa_servicio,
 
-        mostrar_confirmacion()
+                    empleado=empleado,
+
+                    motivo_viaje=motivo_viaje,
+
+                    fecha_solicitud=fecha_solicitud,
+
+                    fecha_inicio=fecha_inicio,
+
+                    fecha_fin=fecha_fin,
+
+                    empresa_cargo=empresa_cargo,
+
+                    unidad_negocio=(
+                        ""
+                        if unidad_disabled
+                        else unidad_negocio
+                    ),
+
+                    sucursal=sucursal,
+
+                    sucursal_otro=sucursal_especificar,
+
+                    conceptos=st.session_state[
+                        conceptos_key
+                    ],
+
+                    total_estimado=total_estimado,
+
+                    observaciones=observaciones
+                )
+
+            except Exception as e:
+
+                st.warning(
+                    f"No se pudo enviar correo: {e}"
+                )
+
+            @st.dialog("✅ Solicitud Enviada")
+            def mostrar_confirmacion():
+
+                st.success(
+                    "Solicitud enviada correctamente."
+                )
+
+                st.markdown("### 📄 FOLIO DE SOLICITUD")
+
+                st.code(
+                    folio_solicitud,
+                    language=None
+                )
+
+                if st.button(
+                    "Cerrar",
+                    use_container_width=True,
+                    key=f"cerrar_popup_{FORM_VERSION}"
+                ):
+
+                    st.session_state.solicitud_form_version += 1
+                    st.rerun()
+
+            mostrar_confirmacion()
 
 # =================================
 # TAB 2 — COMPROBACION
