@@ -754,7 +754,7 @@ def modal_ver_solicitud(row):
         )
 
         st.write(
-            f"**Folio SAC:** "
+            f"**Registro SAC Ventas?:** "
             f"{row.get('folio_sac', '')}"
         )
 
@@ -1692,7 +1692,7 @@ else:
                         )
 
                         st.write(
-                            f"**Folio SAC:** "
+                            f"**Registro SAC Ventas?:** "
                             f"{solicitud_row.get('folio_sac', '')}"
                         )
 
@@ -2793,7 +2793,7 @@ else:
                         )
 
                         st.write(
-                            f"**Folio SAC:** "
+                            f"**Registro SAC Ventas?:** "
                             f"{solicitud_row.get('folio_sac', '')}"
                         )
 
