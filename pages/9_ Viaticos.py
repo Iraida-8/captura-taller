@@ -602,6 +602,12 @@ with tab_solicitud:
 
         with col3:
 
+            if not folio_sac_enabled:
+
+                st.session_state[
+                    f"folio_sac_{FORM_VERSION}"
+                ] = "NO"
+
             folio_sac = st.radio(
 
                 "Registro SAC Ventas?",
@@ -609,8 +615,6 @@ with tab_solicitud:
                 ["SI", "NO"],
 
                 horizontal=True,
-
-                index=1,
 
                 disabled=not folio_sac_enabled,
 
@@ -1577,6 +1581,19 @@ with tab_comprobacion:
 
                 valor_folio_sac = "NO"
 
+            # =================================
+            # FORCE RESET WHEN DISABLED
+            # =================================
+
+            if (
+                not folio_sac_enabled_comp
+                or modo_sin_folio
+            ):
+
+                st.session_state[
+                    f"folio_sac_comp_{dynamic_key}"
+                ] = "NO"
+
             folio_sac_comp = st.radio(
 
                 "Registro SAC Ventas?",
@@ -1586,7 +1603,10 @@ with tab_comprobacion:
                 horizontal=True,
 
                 index=["SI", "NO"].index(
-                    valor_folio_sac
+                    st.session_state.get(
+                        f"folio_sac_comp_{dynamic_key}",
+                        valor_folio_sac
+                    )
                 ),
 
                 disabled=(
