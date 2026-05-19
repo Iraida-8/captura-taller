@@ -1803,6 +1803,12 @@ with tab_comprobacion:
             else "Seleccione una opción..."
         )
 
+        if unidad_default_comp not in unidades_lista:
+
+            unidad_default_comp = (
+                "Seleccione una opción..."
+            )
+
         sucursal_default_comp = (
             solicitud_data.get(
                 "sucursal",
