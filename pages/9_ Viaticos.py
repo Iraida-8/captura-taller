@@ -604,11 +604,13 @@ with tab_solicitud:
 
             folio_sac = st.radio(
 
-                "Folio SAC",
+                "Registro SAC Ventas?",
 
                 ["SI", "NO"],
 
                 horizontal=True,
+
+                index=1,
 
                 disabled=not folio_sac_enabled,
 
@@ -1562,26 +1564,29 @@ with tab_comprobacion:
 
         with col3:
 
+            valor_folio_sac = (
+                "NO"
+                if modo_sin_folio
+                else solicitud_data.get(
+                    "folio_sac",
+                    "NO"
+                )
+            )
+
+            if valor_folio_sac not in ["SI", "NO"]:
+
+                valor_folio_sac = "NO"
+
             folio_sac_comp = st.radio(
 
-                "Folio SAC",
+                "Registro SAC Ventas?",
 
                 ["SI", "NO"],
 
                 horizontal=True,
 
-                index=(
-                    ["SI", "NO"].index(
-                        solicitud_data.get(
-                            "folio_sac",
-                            "NO"
-                        )
-                    )
-                    if solicitud_data.get(
-                        "folio_sac",
-                        "NO"
-                    ) in ["SI", "NO"]
-                    else 1
+                index=["SI", "NO"].index(
+                    valor_folio_sac
                 ),
 
                 disabled=(
