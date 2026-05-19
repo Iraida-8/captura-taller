@@ -167,6 +167,11 @@ def enviar_correo_estatus_solicitud(
             ) or 0
         )
 
+        moneda = item.get(
+            "Moneda",
+            "MXN"
+        )
+
         aprobado = str(
             item.get(
                 "Aprobado",
@@ -211,6 +216,13 @@ def enviar_correo_estatus_solicitud(
                 padding:8px;
             ">
                 {descripcion}
+            </td>
+
+            <td style="
+                border:1px solid #ccc;
+                padding:8px;
+            ">
+                {moneda}
             </td>
 
             <td style="
@@ -313,6 +325,10 @@ def enviar_correo_estatus_solicitud(
 
                 <th style="padding:10px;">
                     Descripción
+                </th>
+
+                <th style="padding:10px;">
+                    Moneda
                 </th>
 
                 <th style="padding:10px;">
