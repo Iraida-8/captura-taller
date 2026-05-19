@@ -373,31 +373,80 @@ def enviar_correo_estatus_solicitud(
 # =================================
 # LOAD DATA
 # =================================
+
 @st.cache_data(ttl=30)
 def cargar_solicitudes():
 
-    response = (
-        supabase
-        .table("solicitud_viaje")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
+    all_rows = []
 
-    return pd.DataFrame(response.data)
+    page_size = 1000
+    start = 0
+
+    while True:
+
+        response = (
+            supabase
+            .table("solicitud_viaje")
+            .select("*")
+            .order("created_at", desc=True)
+            .range(
+                start,
+                start + page_size - 1
+            )
+            .execute()
+        )
+
+        data = response.data or []
+
+        if len(data) == 0:
+            break
+
+        all_rows.extend(data)
+
+        if len(data) < page_size:
+            break
+
+        start += page_size
+
+    return pd.DataFrame(all_rows)
+
 
 @st.cache_data(ttl=30)
 def cargar_comprobaciones():
 
-    response = (
-        supabase
-        .table("comprobacion_viaje")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
+    all_rows = []
 
-    return pd.DataFrame(response.data)
+    page_size = 1000
+    start = 0
+
+    while True:
+
+        response = (
+            supabase
+            .table("comprobacion_viaje")
+            .select("*")
+            .order("created_at", desc=True)
+            .range(
+                start,
+                start + page_size - 1
+            )
+            .execute()
+        )
+
+        data = response.data or []
+
+        if len(data) == 0:
+            break
+
+        all_rows.extend(data)
+
+        if len(data) < page_size:
+            break
+
+        start += page_size
+
+    return pd.DataFrame(all_rows)
+
 
 df_solicitudes = cargar_solicitudes()
 df_comprobaciones = cargar_comprobaciones()
