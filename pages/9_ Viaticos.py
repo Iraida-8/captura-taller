@@ -602,11 +602,13 @@ with tab_solicitud:
 
         with col3:
 
-            folio_sac = st.text_input(
+            folio_sac = st.radio(
 
                 "Folio SAC",
 
-                placeholder="Ingresa el folio SAC relacionado",
+                ["SI", "NO"],
+
+                horizontal=True,
 
                 disabled=not folio_sac_enabled,
 
@@ -1560,19 +1562,26 @@ with tab_comprobacion:
 
         with col3:
 
-            folio_sac_comp = st.text_input(
+            folio_sac_comp = st.radio(
 
                 "Folio SAC",
 
-                placeholder="Ingresa el folio SAC relacionado",
+                ["SI", "NO"],
 
-                value=(
-                    solicitud_data.get(
-                        "folio_sac",
-                        ""
+                horizontal=True,
+
+                index=(
+                    ["SI", "NO"].index(
+                        solicitud_data.get(
+                            "folio_sac",
+                            "NO"
+                        )
                     )
-                    if not modo_sin_folio
-                    else ""
+                    if solicitud_data.get(
+                        "folio_sac",
+                        "NO"
+                    ) in ["SI", "NO"]
+                    else 1
                 ),
 
                 disabled=(
