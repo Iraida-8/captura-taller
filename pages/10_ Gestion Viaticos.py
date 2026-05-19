@@ -415,6 +415,8 @@ if df_comprobaciones.empty:
         "folio_comprobacion",
         "estatus",
         "nombre_empleado_solicita",
+        "conceptos",
+        "observaciones",
         "total_comprobado",
         "anticipo_viaje",
         "diferencia_cargo_favor",
