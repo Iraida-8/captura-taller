@@ -298,11 +298,6 @@ def enviar_correo_estatus_solicitud(
             {motivo_viaje}
         </p>
 
-        <p>
-            <b>Observaciones:</b>
-            {observaciones}
-        </p>
-
         <hr>
 
         <h3>
@@ -2891,7 +2886,7 @@ if st.button(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         )
-        
+
 # =================================
 # PAGINATION
 # =================================
