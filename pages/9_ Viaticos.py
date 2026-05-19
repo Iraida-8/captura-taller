@@ -1070,6 +1070,51 @@ with tab_solicitud:
 
     if submitted:
 
+        #her
+        # =================================
+        # VALIDACIONES OBLIGATORIAS
+        # =================================
+
+        errores = []
+
+        if empresa_servicio == "Seleccione una opción...":
+
+            errores.append(
+                "Debes seleccionar una Empresa que Brinda el Servicio."
+            )
+
+        if motivo_viaje == "Selecciona Motivo":
+
+            errores.append(
+                "Debes seleccionar un Motivo del Viaje."
+            )
+
+        if empresa_cargo == "Seleccione una opción...":
+
+            errores.append(
+                "Debes seleccionar una Empresa a Cargo."
+            )
+
+        if len(
+            st.session_state[conceptos_key]
+        ) == 0:
+
+            errores.append(
+                "Debes agregar al menos un concepto."
+            )
+
+        # =================================
+        # MOSTRAR ERRORES
+        # =================================
+
+        if errores:
+
+            for error in errores:
+
+                st.error(error)
+
+            st.stop()
+
         prefijos_sucursal = {
             "NUEVO LAREDO": "NL",
             "DALLAS": "DL",
