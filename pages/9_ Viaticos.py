@@ -3390,7 +3390,7 @@ st.markdown(
     /* =========================
        BIG MODULE BUTTONS
        ========================= */
-    div.stButton > button:not(:first-child) {
+    div.stButton > button {
         height: 95px;
         font-size: 1.05rem;
         font-weight: 600;
