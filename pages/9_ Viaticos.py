@@ -57,7 +57,7 @@ EMAILS_FIJOS = [
 
     "Maria.garcia@palosgarza.com",
     "cristobal.ochoa@set-freight.com",
-    "practicas.auditoria@palosgarzalogistics.com"
+    "Maria.garcia@palosgarza.com"
 ]
 
 EMAILS_EMPRESA = {
@@ -3272,7 +3272,7 @@ with tab_comprobacion:
 
                     destinatarios_email = obtener_destinatarios(
 
-                        empresa_servicio_comp
+                        empresa_cargo_comp
                     )
 
                     destinatarios_email.append(
@@ -3285,7 +3285,7 @@ with tab_comprobacion:
                     # =================================
 
                     destinatarios_email = list(
-                        dict.fromkeys(destinatarios_email)
+                        set(destinatarios_email)
                     )
 
                     enviar_correo_comprobacion(
@@ -3390,7 +3390,7 @@ st.markdown(
     /* =========================
        BIG MODULE BUTTONS
        ========================= */
-    div.stButton > button {
+    div.stButton > button:not(:first-child) {
         height: 95px;
         font-size: 1.05rem;
         font-weight: 600;
