@@ -7,6 +7,7 @@ import resend # type: ignore
 from PIL import Image
 from io import BytesIO
 import base64
+from decimal import Decimal
 
 # =================================
 # Page configuration
@@ -41,6 +42,79 @@ supabase = get_supabase()
 resend.api_key = (
     st.secrets["RESEND_API_KEY"]
 )
+
+if "submitting_solicitud" not in st.session_state:
+    st.session_state.submitting_solicitud = False
+
+if "submitting_comp" not in st.session_state:
+    st.session_state.submitting_comp = False
+    
+# =================================
+# EMAIL ROUTING
+# =================================
+
+EMAILS_FIJOS = [
+
+    "Maria.garcia@palosgarza.com",
+    "cristobal.ochoa@set-freight.com",
+    "Maria.garcia@palosgarza.com"
+]
+
+EMAILS_EMPRESA = {
+
+    "SET FREIGHT": [
+
+        "karina.colina@palosgarza.com", #karina colina
+        "cindy.gonzalez@palosgarza.com" # cindy gonzalez
+    ],
+
+    "LINCOLN": [
+
+        "karina.colina@palosgarza.com", #karina colina
+        "corina@palosgarza.com", # corina gomez
+        "ivonne.hernandez@palosgarza.com" #karla ivonne
+    ],
+
+    "PICUS": [
+
+        "argelia.salinas@palosgarza.com" #angela salinas
+    ],
+
+    "IGLOO": [
+
+        "agustin.rodriguez@palosgarza.com" #agustin rodriguez
+    ],
+
+    "SET LOGIS PLUS": [
+
+        "juan.santos@palosgarza.com" #juan santos
+    ]
+}
+
+# =================================
+# BUILD EMAIL LIST
+# =================================
+
+def obtener_destinatarios(empresa):
+
+    destinatarios = EMAILS_FIJOS.copy()
+
+    correos_empresa = EMAILS_EMPRESA.get(
+        empresa,
+        []
+    )
+
+    destinatarios.extend(correos_empresa)
+
+    # =================================
+    # REMOVE DUPLICATES
+    # =================================
+
+    destinatarios = list(
+        dict.fromkeys(destinatarios)
+    )
+
+    return destinatarios
 
 # =================================
 # FORM VERSION
@@ -341,7 +415,7 @@ def enviar_correo_solicitud(
             "onboarding@resend.dev",
 
         "to":
-            [destinatario],
+            destinatario,
 
         "subject":
             folio,
@@ -422,7 +496,7 @@ def enviar_correo_comprobacion(
             "onboarding@resend.dev",
 
         "to":
-            [destinatario],
+            destinatario,
 
         "subject":
             folio_comprobacion,
@@ -436,13 +510,6 @@ def enviar_correo_comprobacion(
         payload["attachments"] = attachments
 
     resend.Emails.send(payload)
-
-# =================================
-# FORM RESET
-# =================================
-
-if "reset_form_viaticos" not in st.session_state:
-    st.session_state.reset_form_viaticos = 0
 
 # =================================
 # Top navigation
@@ -466,20 +533,6 @@ tab_solicitud, tab_comprobacion = st.tabs(
     "🧳 SOLICITUD GASTOS DE VIAJE",
     "🧾 COMPROBACION GASTOS DE VIAJE"
 ])
-
-# =================================
-# FORM VERSION
-# =================================
-
-if "solicitud_form_version" not in st.session_state:
-    st.session_state.solicitud_form_version = 0
-
-FORM_VERSION = st.session_state.solicitud_form_version
-
-if "comprobacion_form_version" not in st.session_state:
-    st.session_state.comprobacion_form_version = 0
-
-COMP_VERSION = st.session_state.comprobacion_form_version
 
 # =================================
 # TAB 1 — SOLICITUD
@@ -1070,7 +1123,6 @@ with tab_solicitud:
 
     if submitted:
 
-        #her
         # =================================
         # VALIDACIONES OBLIGATORIAS
         # =================================
@@ -1136,15 +1188,21 @@ with tab_solicitud:
             # =================================
             # GENERAR FOLIO
             # =================================
-
             existing = (
                 supabase
                 .table("solicitud_viaje")
                 .select("id")
+                .order("id", desc=True)
+                .limit(1)
                 .execute()
             )
 
-            consecutivo = len(existing.data) + 1
+            ultimo_id = 0
+
+            if existing.data:
+                ultimo_id = existing.data[0]["id"]
+
+            consecutivo = ultimo_id + 1
 
             folio_solicitud = (
                 f"{prefijo}-{consecutivo:06d}-SGV"
@@ -1217,9 +1275,17 @@ with tab_solicitud:
 
             try:
 
+                destinatarios_email = obtener_destinatarios(
+                    empresa_servicio
+                )
+
+                destinatarios_email.append(
+                    email_usuario
+                )
+
                 enviar_correo_solicitud(
 
-                    destinatario=email_usuario,
+                    destinatario=destinatarios_email,
 
                     folio=folio_solicitud,
 
@@ -2067,7 +2133,7 @@ with tab_comprobacion:
                     "🟢 Si"
                 ]
 
-                monto = float(
+                monto = Decimal(
                     item.get(
                         "Monto",
                         0
@@ -2200,7 +2266,6 @@ with tab_comprobacion:
             use_container_width=True,
             key=f"btn_add_row_{COMP_VERSION}"
         ):
-            #here
             st.session_state[
                 gastos_comp_key
             ].append({
@@ -2841,7 +2906,6 @@ with tab_comprobacion:
         type="primary",
         key=f"submitted_comp_{COMP_VERSION}"
     )
-    #here
     if submitted_comp:
 
         if folio_seleccionado == "Selecciona folio":
@@ -2851,7 +2915,6 @@ with tab_comprobacion:
             )
 
         else:
-            #here
             # =================================
             # VALIDACIONES MODO SIN FOLIO
             # =================================
@@ -2907,10 +2970,17 @@ with tab_comprobacion:
                     supabase
                     .table("comprobacion_viaje")
                     .select("id")
+                    .order("id", desc=True)
+                    .limit(1)
                     .execute()
                 )
 
-                consecutivo = len(existing.data) + 1
+                ultimo_id = 0
+
+                if existing.data:
+                    ultimo_id = existing.data[0]["id"]
+
+                consecutivo = ultimo_id + 1
 
                 folio_comprobacion = (
                     f"CGV-{consecutivo:06d}"
@@ -2930,12 +3000,17 @@ with tab_comprobacion:
                         supabase
                         .table("solicitud_viaje")
                         .select("id")
+                        .order("id", desc=True)
+                        .limit(1)
                         .execute()
                     )
 
-                    consecutivo_sf = (
-                        len(existing_sf.data) + 1
-                    )
+                    ultimo_id_sf = 0
+
+                    if existing_sf.data:
+                        ultimo_id_sf = existing_sf.data[0]["id"]
+
+                    consecutivo_sf = ultimo_id_sf + 1
 
                     folio_solicitud_sf = (
                         f"SF-{consecutivo_sf:06d}-SF"
@@ -3195,9 +3270,27 @@ with tab_comprobacion:
 
                 try:
 
+                    destinatarios_email = obtener_destinatarios(
+
+                        empresa_servicio_comp
+                    )
+
+                    destinatarios_email.append(
+
+                        email_usuario
+                    )
+
+                    # =================================
+                    # REMOVE DUPLICATES
+                    # =================================
+
+                    destinatarios_email = list(
+                        set(destinatarios_email)
+                    )
+
                     enviar_correo_comprobacion(
 
-                        destinatario=email_usuario,
+                        destinatario=destinatarios_email,
 
                         folio_comprobacion=folio_comprobacion,
 
@@ -3297,7 +3390,7 @@ st.markdown(
     /* =========================
        BIG MODULE BUTTONS
        ========================= */
-    div.stButton > button {
+    div.stButton > button:not(:first-child) {
         height: 95px;
         font-size: 1.05rem;
         font-weight: 600;
