@@ -57,6 +57,57 @@ email_usuario = (
 )
 
 # =================================
+# EMAIL CONFIG
+# =================================
+
+EMAILS_FIJOS = [
+
+    "Maria.garcia@palosgarza.com",
+
+    "cristobal.ochoa@set-freight.com",
+
+    "practicas.auditoria@palosgarzalogistics.com"
+]
+
+EMAILS_EMPRESA = {
+
+    "SET FREIGHT": [
+
+        "karina.colina@palosgarza.com",
+
+        "cindy.gonzalez@palosgarza.com"
+    ],
+
+    "LINCOLN": [
+
+        "karina.colina@palosgarza.com",
+
+        "corina@palosgarza.com",
+
+        "ivonne.hernandez@palosgarza.com"
+    ],
+
+    "PICUS": [
+
+        "argelia.salinas@palosgarza.com"
+    ],
+
+    "IGLOO": [
+
+        "agustin.rodriguez@palosgarza.com"
+    ],
+
+    "SET LOGIS PLUS": [
+
+        "juan.santos@palosgarza.com"
+    ]
+}
+
+# =================================
+# GET EMAIL FROM PROFILE
+# =================================
+
+# =================================
 # GET EMAIL FROM PROFILE
 # =================================
 
@@ -64,10 +115,10 @@ def obtener_email_usuario(nombre_completo):
 
     try:
 
-        profile_result = (
+        response = (
             supabase
             .table("profiles")
-            .select("id")
+            .select("email")
             .eq(
                 "full_name",
                 nombre_completo
@@ -77,58 +128,95 @@ def obtener_email_usuario(nombre_completo):
         )
 
         if (
-            not profile_result.data
-            or len(profile_result.data) == 0
+            response.data
+            and len(response.data) > 0
         ):
-            return None
 
-        user_id = (
-            profile_result
-            .data[0]
-            .get("id")
-        )
-        def obtener_email_usuario(nombre_completo):
-
-            try:
-
-                response = (
-                    supabase
-                    .table("profiles")
-                    .select("email")
-                    .eq(
-                        "full_name",
-                        nombre_completo
-                    )
-                    .limit(1)
-                    .execute()
-                )
-
-                if (
-                    response.data
-                    and len(response.data) > 0
-                ):
-
-                    return (
-                        response
-                        .data[0]
-                        .get("email")
-                    )
-
-            except Exception as e:
-
-                st.warning(
-                    f"Error obteniendo email: {e}"
-                )
-
-            return None
+            return (
+                response
+                .data[0]
+                .get("email")
+            )
 
     except Exception as e:
 
-        print(
+        st.warning(
             f"Error obteniendo email: {e}"
         )
 
     return None
+
+# =================================
+# BUILD EMAIL LIST
+# =================================
+
+def construir_destinatarios(
+
+    empresa,
+    email_usuario_actual,
+    correo_creador=None
+):
+
+    destinatarios = []
+
+    # =================================
+    # LOGGED USER
+    # =================================
+
+    if (
+        email_usuario_actual
+        and email_usuario_actual not in destinatarios
+    ):
+
+        destinatarios.append(
+            email_usuario_actual
+        )
+
+    # =================================
+    # CREATOR EMAIL
+    # =================================
+
+    if (
+        correo_creador
+        and correo_creador not in destinatarios
+    ):
+
+        destinatarios.append(
+            correo_creador
+        )
+
+    # =================================
+    # FIXED EMAILS
+    # =================================
+
+    for correo in EMAILS_FIJOS:
+
+        if correo not in destinatarios:
+
+            destinatarios.append(correo)
+
+    # =================================
+    # CONDITIONAL EMAILS
+    # =================================
+
+    empresa = str(
+        empresa or ""
+    ).strip().upper()
+
+    correos_empresa = (
+        EMAILS_EMPRESA.get(
+            empresa,
+            []
+        )
+    )
+
+    for correo in correos_empresa:
+
+        if correo not in destinatarios:
+
+            destinatarios.append(correo)
+
+    return destinatarios
 
 # =================================
 # EMAIL APROBACION / RECHAZO
@@ -250,11 +338,17 @@ def enviar_correo_estatus_solicitud(
         </tr>
         """
 
-    color_estatus = (
-        "#10B981"
-        if estatus == "Aprobado"
-        else "#EF4444"
-    )
+    if estatus in ["Aprobado", "Concluido"]:
+
+        color_estatus = "#10B981"
+
+    elif estatus == "Rechazado":
+
+        color_estatus = "#EF4444"
+
+    else:
+
+        color_estatus = "#38BDF8"
 
     html = f"""
 
@@ -1220,17 +1314,17 @@ for idx, row in df_pagina.iterrows():
                     )
                 )
 
-                destinatarios = [email_usuario]
+                destinatarios = construir_destinatarios(
 
-                if (
-                    correo_creador
-                    and correo_creador
-                    not in destinatarios
-                ):
+                    empresa=row.get(
+                        "empresa_brinda_servicio",
+                        ""
+                    ),
 
-                    destinatarios.append(
-                        correo_creador
-                    )
+                    email_usuario_actual=email_usuario,
+
+                    correo_creador=correo_creador
+                )
 
                 # =================================
                 # SEND EMAIL
@@ -1323,17 +1417,17 @@ for idx, row in df_pagina.iterrows():
                     )
                 )
 
-                destinatarios = [email_usuario]
+                destinatarios = construir_destinatarios(
 
-                if (
-                    correo_creador
-                    and correo_creador
-                    not in destinatarios
-                ):
+                    empresa=row.get(
+                        "empresa_brinda_servicio",
+                        ""
+                    ),
 
-                    destinatarios.append(
-                        correo_creador
-                    )
+                    email_usuario_actual=email_usuario,
+
+                    correo_creador=correo_creador
+                )
 
                 # =================================
                 # SEND EMAIL
@@ -2194,17 +2288,17 @@ else:
                                 )
                             )
 
-                            destinatarios = [email_usuario]
+                            destinatarios = construir_destinatarios(
 
-                            if (
-                                correo_creador
-                                and correo_creador
-                                not in destinatarios
-                            ):
+                                empresa=row.get(
+                                    "empresa_brinda_servicio",
+                                    ""
+                                ),
 
-                                destinatarios.append(
-                                    correo_creador
-                                )
+                                email_usuario_actual=email_usuario,
+
+                                correo_creador=correo_creador
+                            )
 
                             # =================================
                             # SEND EMAIL
@@ -2304,17 +2398,17 @@ else:
                                 )
                             )
 
-                            destinatarios = [email_usuario]
+                            destinatarios = construir_destinatarios(
 
-                            if (
-                                correo_creador
-                                and correo_creador
-                                not in destinatarios
-                            ):
+                                empresa=row.get(
+                                    "empresa_brinda_servicio",
+                                    ""
+                                ),
 
-                                destinatarios.append(
-                                    correo_creador
-                                )
+                                email_usuario_actual=email_usuario,
+
+                                correo_creador=correo_creador
+                            )
 
                             # =================================
                             # SEND EMAIL
@@ -2421,6 +2515,17 @@ st.markdown(
 # BASE DATA
 # =================================
 
+df_comp_final = (
+    df_comprobaciones
+    .sort_values(
+        by="created_at",
+        ascending=False
+    )
+    .drop_duplicates(
+        subset=["folio_solicitud"]
+    )
+)
+
 df_finalizadas = pd.merge(
 
     df_solicitudes[
@@ -2432,7 +2537,7 @@ df_finalizadas = pd.merge(
         )
     ],
 
-    df_comprobaciones[
+    df_comp_final[
         [
             "folio_solicitud",
             "folio_comprobacion",
