@@ -3285,7 +3285,7 @@ with tab_comprobacion:
                     # =================================
 
                     destinatarios_email = list(
-                        set(destinatarios_email)
+                        dict.fromkeys(destinatarios_email)
                     )
 
                     enviar_correo_comprobacion(
