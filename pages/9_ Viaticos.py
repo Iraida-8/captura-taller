@@ -57,7 +57,7 @@ EMAILS_FIJOS = [
 
     "Maria.garcia@palosgarza.com",
     "cristobal.ochoa@set-freight.com",
-    "Maria.garcia@palosgarza.com"
+    "practicas.auditoria@palosgarzalogistics.com"
 ]
 
 EMAILS_EMPRESA = {
