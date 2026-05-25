@@ -1,5 +1,9 @@
+import streamlit as st
 import requests
-import json
+import pandas as pd
+
+# Page title
+st.title("GPS Insight Vehicles")
 
 # Your session token
 SESSION_TOKEN = "YOUR_SESSION_TOKEN"
@@ -8,25 +12,28 @@ SESSION_TOKEN = "YOUR_SESSION_TOKEN"
 url = f"https://api.gpsinsight.com/v2/vehicle/getattributes?session_token={SESSION_TOKEN}"
 
 try:
-    # Send request
+    # Request API
     response = requests.get(url)
 
-    # Raise error if request failed
+    # Raise error if failed
     response.raise_for_status()
 
     # Convert response to JSON
     data = response.json()
 
-    # Save locally
-    with open("vehicles.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+    # Show raw JSON if you want
+    st.subheader("Raw API Response")
+    st.json(data)
 
-    print("All vehicle data saved successfully.")
+    # OPTIONAL:
+    # Convert to dataframe if response is list/dict structure
+    if isinstance(data, list):
+        df = pd.DataFrame(data)
+        st.subheader("Vehicle Table")
+        st.dataframe(df, use_container_width=True)
 
 except requests.exceptions.RequestException as e:
-    print("Request failed:")
-    print(e)
+    st.error(f"Request failed: {e}")
 
-except json.JSONDecodeError:
-    print("Response was not valid JSON.")
-    print(response.text)
+except Exception as e:
+    st.error(f"Unexpected error: {e}")
