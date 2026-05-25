@@ -6,7 +6,7 @@ import pandas as pd
 st.title("GPS Insight Vehicles")
 
 # Your session token
-SESSION_TOKEN = "YOUR_SESSION_TOKEN"
+SESSION_TOKEN = "763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
 
 # API URL
 url = f"https://api.gpsinsight.com/v2/vehicle/getattributes?session_token={SESSION_TOKEN}"
