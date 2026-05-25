@@ -1,16 +1,17 @@
 import streamlit as st
 import requests
 import pandas as pd
+import json
 
 st.set_page_config(layout="wide")
 
-st.title("GPS Insight Vehicles")
+st.title("GPS Insight Fleet Tracking")
 
 # Session token
 SESSION_TOKEN = "YOUR_TOKEN"
 
-# Vehicle list endpoint
-url = f"https://api.gpsinsight.com/v2/vehicle/list?session_token=763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
+# Location endpoint
+url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token=763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
 
 try:
     # API request
@@ -24,7 +25,7 @@ try:
     st.subheader("Raw API Response")
     st.json(result)
 
-    # Extract vehicles
+    # Extract data
     vehicles = result.get("data", [])
 
     if vehicles:
@@ -32,16 +33,35 @@ try:
         # Convert to dataframe
         df = pd.DataFrame(vehicles)
 
-        st.subheader("Vehicle Table")
-        st.dataframe(df, use_container_width=True)
-
         # Save locally
-        df.to_json("vehicles.json", orient="records", indent=4)
+        with open("vehicles.json", "w", encoding="utf-8") as f:
+            json.dump(vehicles, f, indent=4, ensure_ascii=False)
 
-        st.success("Vehicles loaded and saved locally.")
+        # Dashboard metrics
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Vehicles", len(df))
+
+        if "inst_speed" in df.columns:
+            moving = (pd.to_numeric(df["inst_speed"], errors="coerce") > 0).sum()
+            col2.metric("Moving", moving)
+
+        if "ignition" in df.columns:
+            on_count = (df["ignition"].astype(str).str.lower() == "on").sum()
+            col3.metric("Ignition On", on_count)
+
+        st.subheader("Fleet Table")
+
+        st.dataframe(
+            df,
+            use_container_width=True,
+            height=700
+        )
+
+        st.success("Fleet data loaded successfully.")
 
     else:
-        st.warning("No vehicles found.")
+        st.warning("No vehicle location data returned.")
 
 except requests.exceptions.RequestException as e:
     st.error(f"Request failed: {e}")
