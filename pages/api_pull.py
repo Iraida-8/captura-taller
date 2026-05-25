@@ -1,19 +1,32 @@
 import requests
 import json
 
-url = "https://api.gpsinsight.com/v2/vehicle/getattributes?session_token=YOUR_TOKEN&vehicle=12345"
+# Your session token
+SESSION_TOKEN = "YOUR_SESSION_TOKEN"
 
-response = requests.get(url)
+# API URL
+url = f"https://api.gpsinsight.com/v2/vehicle/getattributes?session_token={SESSION_TOKEN}"
 
-# Check if request worked
-if response.status_code == 200:
+try:
+    # Send request
+    response = requests.get(url)
+
+    # Raise error if request failed
+    response.raise_for_status()
+
+    # Convert response to JSON
     data = response.json()
 
     # Save locally
     with open("vehicles.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
-    print("Saved successfully.")
-else:
-    print("Error:", response.status_code)
+    print("All vehicle data saved successfully.")
+
+except requests.exceptions.RequestException as e:
+    print("Request failed:")
+    print(e)
+
+except json.JSONDecodeError:
+    print("Response was not valid JSON.")
     print(response.text)
