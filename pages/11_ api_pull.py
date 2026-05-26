@@ -1067,7 +1067,7 @@ if "df" in locals() and not df.empty:
                 layers=[layer],
                 initial_view_state=view_state,
                 tooltip=tooltip,
-                map_style="mapbox://styles/mapbox/dark-v10"
+                map_style="light"
             ),
             use_container_width=True
         )
