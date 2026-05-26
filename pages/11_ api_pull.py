@@ -168,9 +168,25 @@ require_login()
 require_access("gps_tracking")
 
 # =================================
+# Defensive modal reset
+# =================================
+if st.session_state.get("_reset_gps_page", True):
+
+    st.session_state.modal_gps_unit = None
+
+    st.session_state["_reset_gps_page"] = False
+
+# Initialize modal state
+st.session_state.setdefault("modal_gps_unit", None)
+
+# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
+
+    st.session_state["_reset_gps_page"] = True
+    st.session_state.modal_gps_unit = None
+
     st.switch_page("pages/dashboard.py")
 
 st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
@@ -504,6 +520,25 @@ if "df" in locals() and not df.empty:
         ]
 
     # =====================================================
+    # RESET MODAL ON FILTER CHANGE
+    # =====================================================
+    current_filter_state = (
+        unidad_select,
+        estado_select
+    )
+
+    previous_filter_state = st.session_state.get(
+        "_gps_filter_state"
+    )
+
+    if previous_filter_state != current_filter_state:
+
+        st.session_state.modal_gps_unit = None
+        st.session_state.gps_page = 1
+
+    st.session_state["_gps_filter_state"] = current_filter_state
+
+    # =====================================================
     # MODAL STATE
     # =====================================================
     st.session_state.setdefault("modal_gps_unit", None)
@@ -682,6 +717,7 @@ if "df" in locals() and not df.empty:
             use_container_width=True
         ):
             st.session_state.gps_page -= 1
+            st.session_state.modal_gps_unit = None
             st.rerun()
 
     with p2:
@@ -708,6 +744,7 @@ if "df" in locals() and not df.empty:
             use_container_width=True
         ):
             st.session_state.gps_page += 1
+            st.session_state.modal_gps_unit = None
             st.rerun()
 
     # =====================================================
