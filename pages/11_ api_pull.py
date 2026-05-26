@@ -185,7 +185,7 @@ url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token={SESSION_TO
 
 #==============================================================================================================
 
-with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=True):
+with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=False):
 
     try:
         # API request
@@ -267,7 +267,7 @@ if "df" in locals() and not df.empty:
 
     st.divider()
 
-    st.header("📊 KPI Dashboard")
+    st.header("📊 Dashboard Operativo GPS")
 
     # =========================================
     # DATA PREP
@@ -321,17 +321,17 @@ if "df" in locals() and not df.empty:
     # =========================================
     c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-    c1.metric("🚛 Total Units", total_units)
+    c1.metric("🚛 Total Unidades", total_units)
 
-    c2.metric("🟢 Moving", moving_units)
+    c2.metric("🟢 En Movimiento", moving_units)
 
-    c3.metric("🔴 Stopped", stopped_units)
+    c3.metric("🔴 Detenidas", stopped_units)
 
-    c4.metric("⚡ Ignition ON", ignition_on)
+    c4.metric("⚡ Ignición Encendida", ignition_on)
 
-    c5.metric("⛔ Ignition OFF", ignition_off)
+    c5.metric("⛔ Ignición Apagada", ignition_off)
 
-    c6.metric("🏎️ Avg Speed", f"{avg_speed} km/h")
+    c6.metric("🏎️ Velocidad Promedio", f"{avg_speed} km/h")
 
     # =========================================
     # SECOND ROW
@@ -339,14 +339,14 @@ if "df" in locals() and not df.empty:
     c7, c8, c9 = st.columns(3)
 
     c7.metric(
-        "🔥 Max Fleet Speed",
+        "🔥 Velocidad Máxima",
         f"{max_speed} km/h"
     )
 
     low_voltage = (df["voltage"] < 11).sum()
 
     c8.metric(
-        "🔋 Low Voltage Units",
+        "🔋 Voltaje Bajo",
         low_voltage
     )
 
@@ -364,7 +364,7 @@ if "df" in locals() and not df.empty:
                         panic_active += 1
 
     c9.metric(
-        "🚨 Panic Buttons",
+        "🚨 Botón de Pánico",
         panic_active
     )
 
@@ -377,7 +377,7 @@ if "df" in locals() and not df.empty:
 
     with col1:
 
-        st.subheader("Ignition Status")
+        st.subheader("Estado de Ignición")
 
         ignition_counts = (
             df["ignition"]
@@ -389,7 +389,7 @@ if "df" in locals() and not df.empty:
 
     with col2:
 
-        st.subheader("Speed Distribution")
+        st.subheader("Distribución de Velocidades")
 
         speed_df = df[df["inst_speed"] > 0]
 
@@ -400,14 +400,14 @@ if "df" in locals() and not df.empty:
             )
 
         else:
-            st.info("No moving vehicles detected.")
+            st.info("No se detectaron unidades en movimiento.")
 
     st.divider()
 
     # =====================================================
     # LONGEST STOPPED UNITS
     # =====================================================
-    st.subheader("🛑 Units Stopped Longest")
+    st.subheader("🛑 Unidades Detenidas por Más Tiempo")
 
     if "speed_label" in df.columns:
 
@@ -431,7 +431,7 @@ if "df" in locals() and not df.empty:
     # =====================================================
     # LOW VOLTAGE ALERTS
     # =====================================================
-    st.subheader("🔋 Low Voltage Alerts")
+    st.subheader("🔋 Alertas de Voltaje Bajo")
 
     voltage_df = df[df["voltage"] < 11][[
         "label",
@@ -449,4 +449,4 @@ if "df" in locals() and not df.empty:
         )
 
     else:
-        st.success("No low voltage units detected.")
+        st.success("No se detectaron unidades con voltaje bajo.")
