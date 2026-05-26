@@ -191,7 +191,6 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
-st.divider()
 
 #==============================================================================================================
 # Session token
