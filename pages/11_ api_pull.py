@@ -747,6 +747,10 @@ if "df" in locals() and not df.empty:
 
         modal_gps()
 
+    st.divider()
+
+    st.subheader("📊 Estado de Ignición de Unidades")
+
     # =====================================================
     # CHARTS
     # =====================================================
