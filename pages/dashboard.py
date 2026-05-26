@@ -323,7 +323,7 @@ if has_access(section_extras):
         },
         {
             "access": "gps_tracking",
-            "label": "🛰️  Fleet GPS Tracking",
+            "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
             "page": "pages/11_ api_pull.py",
             "key": "btn_gps_tracking"
         }
