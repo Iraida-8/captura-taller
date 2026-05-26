@@ -1483,26 +1483,55 @@ for idx, row in df_pagina.iterrows():
                 st.rerun()
 
 # =================================
-# PAGINATION BUTTONS
+# PAGINATION CONTROLS
 # =================================
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.divider()
 
-cols_paginas = st.columns(total_paginas)
+p1, p2, p3 = st.columns([1,2,1])
 
-for i in range(total_paginas):
+with p1:
 
-    pagina_num = i + 1
+    if st.button(
+        "⬅ Anterior",
+        disabled=st.session_state.pagina_viaticos <= 1,
+        use_container_width=True,
+        key="prev_pendientes"
+    ):
 
-    with cols_paginas[i]:
+        st.session_state.pagina_viaticos -= 1
+        st.rerun()
 
-        if st.button(
-            str(pagina_num),
-            key=f"pagina_{pagina_num}",
-        ):
+with p2:
 
-            st.session_state.pagina_viaticos = pagina_num
-            st.rerun()
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding-top:8px;
+            font-weight:700;
+            color:white;
+        ">
+            Página {st.session_state.pagina_viaticos} de {total_paginas}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with p3:
+
+    if st.button(
+        "Siguiente ➡",
+        disabled=(
+            st.session_state.pagina_viaticos
+            >= total_paginas
+        ),
+        use_container_width=True,
+        key="next_pendientes"
+    ):
+
+        st.session_state.pagina_viaticos += 1
+        st.rerun()
 
 # =================================
 # COMPROBACIONES POR VERIFICAR
@@ -2470,31 +2499,57 @@ else:
                 modal_verificacion()
 
 # =================================
-# PAGE BUTTONS
+# PAGINATION CONTROLS
 # =================================
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.divider()
 
-cols_paginas_verificar = st.columns(
-    total_paginas_verificar
-)
+p1, p2, p3 = st.columns([1,2,1])
 
-for i in range(total_paginas_verificar):
+with p1:
 
-    pagina_num = i + 1
+    if st.button(
+        "⬅ Anterior",
+        disabled=(
+            st.session_state.pagina_verificar <= 1
+        ),
+        use_container_width=True,
+        key="prev_verificar"
+    ):
 
-    with cols_paginas_verificar[i]:
+        st.session_state.pagina_verificar -= 1
+        st.rerun()
 
-        if st.button(
-            str(pagina_num),
-            key=f"pagina_verificar_{pagina_num}",
-        ):
+with p2:
 
-            st.session_state.pagina_verificar = (
-                pagina_num
-            )
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding-top:8px;
+            font-weight:700;
+            color:white;
+        ">
+            Página {st.session_state.pagina_verificar} de {total_paginas_verificar}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-            st.rerun()
+with p3:
+
+    if st.button(
+        "Siguiente ➡",
+        disabled=(
+            st.session_state.pagina_verificar
+            >= total_paginas_verificar
+        ),
+        use_container_width=True,
+        key="next_verificar"
+    ):
+
+        st.session_state.pagina_verificar += 1
+        st.rerun()
 
 # =================================
 # SOLICITUDES FINALIZADAS
@@ -3732,32 +3787,59 @@ else:
                         )
 
                 modal_verificacion_finalizada()
+                
 # =================================
-# PAGE BUTTONS
+# PAGINATION CONTROLS
 # =================================
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.divider()
 
-cols_paginas_finalizadas = st.columns(
-    total_paginas_finalizadas
-)
+p1, p2, p3 = st.columns([1,2,1])
 
-for i in range(total_paginas_finalizadas):
+with p1:
 
-    pagina_num = i + 1
+    if st.button(
+        "⬅ Anterior",
+        disabled=(
+            st.session_state.pagina_finalizadas <= 1
+        ),
+        use_container_width=True,
+        key="prev_finalizadas"
+    ):
 
-    with cols_paginas_finalizadas[i]:
+        st.session_state.pagina_finalizadas -= 1
+        st.rerun()
 
-        if st.button(
-            str(pagina_num),
-            key=f"pagina_finalizada_{pagina_num}",
-        ):
+with p2:
 
-            st.session_state.pagina_finalizadas = (
-                pagina_num
-            )
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding-top:8px;
+            font-weight:700;
+            color:white;
+        ">
+            Página {st.session_state.pagina_finalizadas} de {total_paginas_finalizadas}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-            st.rerun()
+with p3:
+
+    if st.button(
+        "Siguiente ➡",
+        disabled=(
+            st.session_state.pagina_finalizadas
+            >= total_paginas_finalizadas
+        ),
+        use_container_width=True,
+        key="next_finalizadas"
+    ):
+
+        st.session_state.pagina_finalizadas += 1
+        st.rerun()
 
 # -------------------------------
 # CSS
