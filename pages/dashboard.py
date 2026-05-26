@@ -264,12 +264,12 @@ if has_access(section_consultas):
 # =============================
 # 4. EXTRAS
 # =============================
-section_extras = ["ifuel", "lector_pdf"]
+section_extras = ["ifuel", "lector_pdf", "gps_tracking"]
 
 if has_access(section_extras):
     st.subheader("⚙️ Extras")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         if "ifuel" in access:
@@ -280,6 +280,11 @@ if has_access(section_extras):
         if "lector_pdf" in access:
             if st.button("📄  Lector PDF", use_container_width=True, key="btn_lector_pdf"):
                 st.switch_page("pages/2_ Lector PDF.py")
+
+    with col3:
+        if "gps_tracking" in access:
+            if st.button("🛰️  Fleet GPS Tracking", use_container_width=True, key="btn_gps_tracking"):
+                st.switch_page("pages/11_ api_pull.py")
 
     st.divider()
 
