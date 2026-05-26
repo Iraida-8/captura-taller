@@ -178,10 +178,12 @@ st.divider()
 st.title("GPS Insight Fleet Tracking")
 
 # Session token
-SESSION_TOKEN = "YOUR_TOKEN"
+SESSION_TOKEN = "763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
 
+#=================================================================
 # Location endpoint
-url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token=763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
+url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token={SESSION_TOKEN}"
+#=================================================================
 
 try:
     # API request
