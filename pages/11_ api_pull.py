@@ -956,72 +956,69 @@ if "df" in locals() and not df.empty:
     # =====================================================
     # LIVE GPS MAP
     # =====================================================
-    with st.expander(
-        "🗺️ Mapa GPS de Unidades",
-        expanded=False
-    ):
+    st.subheader("🗺️ Mapa GPS de Unidades")
 
-        map_df = df.copy()
+    map_df = df.copy()
 
-        # =============================================
-        # CLEAN GPS DATA
-        # =============================================
-        map_df["latitude"] = pd.to_numeric(
-            map_df["latitude"],
-            errors="coerce"
+    # =============================================
+    # CLEAN GPS DATA
+    # =============================================
+    map_df["latitude"] = pd.to_numeric(
+        map_df["latitude"],
+        errors="coerce"
+    )
+
+    map_df["longitude"] = pd.to_numeric(
+        map_df["longitude"],
+        errors="coerce"
+    )
+
+    map_df = map_df.dropna(
+        subset=["latitude", "longitude"]
+    )
+
+    if not map_df.empty:
+
+        st.info(
+            "Cada punto representa una unidad GPS."
         )
 
-        map_df["longitude"] = pd.to_numeric(
-            map_df["longitude"],
-            errors="coerce"
+        # =========================================
+        # DISPLAY MAP
+        # =========================================
+        st.map(
+            map_df.rename(
+                columns={
+                    "latitude": "lat",
+                    "longitude": "lon"
+                }
+            ),
+            size=12
         )
 
-        map_df = map_df.dropna(
-            subset=["latitude", "longitude"]
+        # =========================================
+        # GPS COORDINATE TABLE
+        # =========================================
+        with st.expander(
+            "📍 Coordenadas de Unidades",
+            expanded=False
+        ):
+
+            st.dataframe(
+                map_df[[
+                    "label",
+                    "latitude",
+                    "longitude",
+                    "address",
+                    "ignition",
+                    "inst_speed"
+                ]],
+                use_container_width=True,
+                height=300
+            )
+
+    else:
+
+        st.warning(
+            "No se encontraron coordenadas GPS válidas."
         )
-
-        if not map_df.empty:
-
-            st.info(
-                "Cada punto representa una unidad GPS."
-            )
-
-            # =========================================
-            # DISPLAY MAP
-            # =========================================
-            st.map(
-                map_df.rename(
-                    columns={
-                        "latitude": "lat",
-                        "longitude": "lon"
-                    }
-                ),
-                size=12
-            )
-
-            # =========================================
-            # OPTIONAL GPS TABLE
-            # =========================================
-            with st.expander(
-                "📍 Coordenadas de Unidades",
-                expanded=False
-            ):
-
-                st.dataframe(
-                    map_df[[
-                        "label",
-                        "latitude",
-                        "longitude",
-                        "address",
-                        "ignition",
-                        "inst_speed"
-                    ]],
-                    use_container_width=True,
-                    height=300
-                )
-
-        else:
-
-            st.warning(
-                "No se encontraron coordenadas GPS válidas."
-            )
