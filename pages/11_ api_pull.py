@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import io
 import pandas as pd
 import json
 from auth import require_login, require_access
@@ -612,36 +613,46 @@ if "df" in locals() and not df.empty:
 
                     components.html(html, height=310)
 
-                    if st.button(
-                        "👁 Ver",
-                        key=f"gps_unit_{unidad}_{idx}",
-                        use_container_width=True
-                    ):
-                        st.session_state.modal_gps_unit = r.to_dict()
-
                     # =====================================
-                    # SAVE EXCEL
+                    # BUTTONS
                     # =====================================
-                    excel_df = pd.DataFrame([r])
+                    b1, b2 = st.columns(2)
 
-                    excel_filename = f"Unidad_{unidad}.xlsx"
+                    with b1:
 
-                    with pd.ExcelWriter(
-                        excel_filename,
-                        engine="openpyxl"
-                    ) as writer:
+                        if st.button(
+                            "👁 Ver",
+                            key=f"gps_unit_{unidad}_{idx}",
+                            use_container_width=True
+                        ):
+                            st.session_state.modal_gps_unit = r.to_dict()
 
-                        excel_df.to_excel(
-                            writer,
-                            index=False,
-                            sheet_name="GPS"
+                    with b2:
+
+                        excel_df = pd.DataFrame([r])
+
+                        excel_filename = (
+                            f"Unidad_{unidad}.xlsx"
                         )
 
-                    with open(excel_filename, "rb") as file:
+                        excel_buffer = io.BytesIO()
+
+                        with pd.ExcelWriter(
+                            excel_buffer,
+                            engine="openpyxl"
+                        ) as writer:
+
+                            excel_df.to_excel(
+                                writer,
+                                index=False,
+                                sheet_name="GPS"
+                            )
+
+                        excel_buffer.seek(0)
 
                         st.download_button(
                             label="💾 Guardar",
-                            data=file,
+                            data=excel_buffer,
                             file_name=excel_filename,
                             mime=(
                                 "application/"
