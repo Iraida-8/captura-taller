@@ -203,80 +203,47 @@ url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token={SESSION_TO
 
 #==============================================================================================================
 
-with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=False):
+# =================================
+# API REQUEST
+# =================================
+try:
 
-    try:
-        # API request
-        response = requests.get(url)
-        response.raise_for_status()
+    response = requests.get(url)
+    response.raise_for_status()
 
-        # Convert to JSON
-        result = response.json()
+    result = response.json()
 
-        # =================================
-        # Raw API Response
-        # =================================
-        with st.expander("📦 Raw API Response", expanded=False):
-            st.json(result)
+    vehicles = result.get("data", [])
 
-        # Extract data
-        vehicles = result.get("data", [])
+    if vehicles:
 
-        if vehicles:
+        df = pd.DataFrame(vehicles)
 
-            # Convert to dataframe
-            df = pd.DataFrame(vehicles)
+        with open(
+            "vehicles.json",
+            "w",
+            encoding="utf-8"
+        ) as f:
 
-            # Save locally
-            with open("vehicles.json", "w", encoding="utf-8") as f:
-                json.dump(vehicles, f, indent=4, ensure_ascii=False)
+            json.dump(
+                vehicles,
+                f,
+                indent=4,
+                ensure_ascii=False
+            )
 
-            # =================================
-            # Dashboard metrics
-            # =================================
-            col1, col2, col3 = st.columns(3)
+    else:
+        st.warning(
+            "No vehicle location data returned."
+        )
 
-            col1.metric("Vehicles", len(df))
+except requests.exceptions.RequestException as e:
 
-            if "inst_speed" in df.columns:
-                moving = (
-                    pd.to_numeric(df["inst_speed"], errors="coerce") > 0
-                ).sum()
+    st.error(f"Request failed: {e}")
 
-                col2.metric("Moving", moving)
+except Exception as e:
 
-            if "ignition" in df.columns:
-                on_count = (
-                    df["ignition"]
-                    .astype(str)
-                    .str.lower()
-                    .eq("on")
-                    .sum()
-                )
-
-                col3.metric("Ignition On", on_count)
-
-            # =================================
-            # Fleet Table
-            # =================================
-            with st.expander("🚛 Fleet Table", expanded=False):
-
-                st.dataframe(
-                    df,
-                    use_container_width=True,
-                    height=700
-                )
-
-            st.success("Fleet data loaded successfully.")
-
-        else:
-            st.warning("No vehicle location data returned.")
-
-    except requests.exceptions.RequestException as e:
-        st.error(f"Request failed: {e}")
-
-    except Exception as e:
-        st.error(f"Unexpected error: {e}")
+    st.error(f"Unexpected error: {e}")
 
 # =========================================================
 # KPI DASHBOARD
@@ -853,6 +820,33 @@ if "df" in locals() and not df.empty:
             height=350
         )
 
+        stopped_buffer = io.BytesIO()
+
+        with pd.ExcelWriter(
+            stopped_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            stopped_df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Detenidas"
+            )
+
+        stopped_buffer.seek(0)
+
+        st.download_button(
+            label="💾 Descargar Unidades Detenidas",
+            data=stopped_buffer,
+            file_name="Unidades_Detenidas.xlsx",
+            mime=(
+                "application/"
+                "vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
+            use_container_width=True
+        )
+
     # =====================================================
     # LOW VOLTAGE ALERTS
     # =====================================================
@@ -872,6 +866,73 @@ if "df" in locals() and not df.empty:
             use_container_width=True,
             height=250
         )
+        voltage_buffer = io.BytesIO()
+
+        with pd.ExcelWriter(
+            voltage_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            voltage_df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Voltaje_Bajo"
+            )
+
+        voltage_buffer.seek(0)
+
+        st.download_button(
+            label="💾 Descargar Voltaje Bajo",
+            data=voltage_buffer,
+            file_name="Voltaje_Bajo.xlsx",
+            mime=(
+                "application/"
+                "vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
+            use_container_width=True
+        )
 
     else:
         st.success("No se detectaron unidades con voltaje bajo.")
+
+    st.divider()
+
+    # =====================================================
+    # FULL UNIT TABLE
+    # =====================================================
+
+    st.subheader("🚛 Tabla General de Flotilla")
+
+    st.dataframe(
+        df,
+        use_container_width=True,
+        height=700
+    )
+
+    fleet_buffer = io.BytesIO()
+
+    with pd.ExcelWriter(
+        fleet_buffer,
+        engine="openpyxl"
+    ) as writer:
+
+        df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Flotilla"
+        )
+
+    fleet_buffer.seek(0)
+
+    st.download_button(
+        label="💾 Descargar Tabla General",
+        data=fleet_buffer,
+        file_name="Flotilla_GPS.xlsx",
+        mime=(
+            "application/"
+            "vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        use_container_width=True
+    )
