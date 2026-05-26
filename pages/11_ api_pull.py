@@ -1217,7 +1217,7 @@ endpoint_options = {
         "vehicle/list",
 
     "Vehicle Groups":
-        "vehicle/getgroups"
+        "vehicle/listvehiclegroups"
 }
 
 tb1, tb2 = st.columns(2)
