@@ -3,6 +3,7 @@ import requests
 import io
 import pandas as pd
 import json
+import pydeck as pdk
 from auth import require_login, require_access
 import streamlit.components.v1 as components
 
@@ -973,32 +974,107 @@ if "df" in locals() and not df.empty:
         errors="coerce"
     )
 
+    map_df["inst_speed"] = pd.to_numeric(
+        map_df["inst_speed"],
+        errors="coerce"
+    ).fillna(0)
+
     map_df = map_df.dropna(
         subset=["latitude", "longitude"]
+    )
+
+    # =============================================
+    # COLOR STATES
+    # =============================================
+    def get_color(row):
+
+        ignition = str(
+            row.get("ignition", "")
+        ).lower()
+
+        speed = row.get("inst_speed", 0)
+
+        # GREEN = moving
+        if speed > 0:
+            return [0, 255, 0]
+
+        # YELLOW = on but stopped
+        if ignition == "on" and speed == 0:
+            return [255, 255, 0]
+
+        # RED = off and stopped
+        return [255, 0, 0]
+
+    map_df["color"] = map_df.apply(
+        get_color,
+        axis=1
     )
 
     if not map_df.empty:
 
         st.info(
-            "Cada punto representa una unidad GPS."
+            "🟢 En Movimiento | 🟡 Encendida sin Movimiento | 🔴 Apagada"
         )
 
-        # =========================================
+        # =============================================
+        # PYDECK MAP
+        # =============================================
+        import pydeck as pdk
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=map_df,
+            get_position="[longitude, latitude]",
+            get_fill_color="color",
+            get_radius=120,
+            pickable=True,
+            auto_highlight=True
+        )
+
+        # =============================================
+        # TOOLTIP
+        # =============================================
+        tooltip = {
+            "html": """
+                <b>Unidad:</b> {label} <br/>
+                <b>Latitud:</b> {latitude} <br/>
+                <b>Longitud:</b> {longitude} <br/>
+                <b>Velocidad:</b> {inst_speed} km/h <br/>
+                <b>Ignición:</b> {ignition} <br/>
+                <b>Dirección:</b> {address}
+            """,
+            "style": {
+                "backgroundColor": "#1B267A",
+                "color": "white"
+            }
+        }
+
+        # =============================================
+        # VIEW STATE
+        # =============================================
+        view_state = pdk.ViewState(
+            latitude=map_df["latitude"].mean(),
+            longitude=map_df["longitude"].mean(),
+            zoom=5,
+            pitch=0
+        )
+
+        # =============================================
         # DISPLAY MAP
-        # =========================================
-        st.map(
-            map_df.rename(
-                columns={
-                    "latitude": "lat",
-                    "longitude": "lon"
-                }
+        # =============================================
+        st.pydeck_chart(
+            pdk.Deck(
+                layers=[layer],
+                initial_view_state=view_state,
+                tooltip=tooltip,
+                map_style="mapbox://styles/mapbox/dark-v10"
             ),
-            size=12
+            use_container_width=True
         )
 
-        # =========================================
+        # =============================================
         # GPS COORDINATE TABLE
-        # =========================================
+        # =============================================
         with st.expander(
             "📍 Coordenadas de Unidades",
             expanded=False

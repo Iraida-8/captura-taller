@@ -8,3 +8,4 @@ Pillow
 pdfplumber
 openpyxl
 resend
+pydeck
