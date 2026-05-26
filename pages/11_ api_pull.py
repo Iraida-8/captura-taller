@@ -359,8 +359,6 @@ if "df" in locals() and not df.empty:
 # =========================================================
 if "df" in locals() and not df.empty:
 
-    st.divider()
-
     st.header("🚛 Seguimiento Individual de Unidades")
 
     # =====================================================
