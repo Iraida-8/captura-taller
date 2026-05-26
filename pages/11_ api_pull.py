@@ -387,87 +387,6 @@ if "df" in locals() and not df.empty:
 
     st.divider()
 
-    # =====================================================
-    # CHARTS
-    # =====================================================
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.subheader("Estado de Ignición")
-
-        ignition_counts = (
-            df["ignition"]
-            .astype(str)
-            .value_counts()
-        )
-
-        st.bar_chart(ignition_counts)
-
-    with col2:
-
-        st.subheader("Distribución de Velocidades")
-
-        speed_df = df[df["inst_speed"] > 0]
-
-        if not speed_df.empty:
-
-            st.bar_chart(
-                speed_df["inst_speed"]
-            )
-
-        else:
-            st.info("No se detectaron unidades en movimiento.")
-
-    st.divider()
-
-    # =====================================================
-    # LONGEST STOPPED UNITS
-    # =====================================================
-    st.subheader("🛑 Unidades Detenidas por Más Tiempo")
-
-    if "speed_label" in df.columns:
-
-        stopped_df = df[
-            df["speed_label"]
-            .astype(str)
-            .str.contains("Stopped", case=False, na=False)
-        ][[
-            "label",
-            "speed_label",
-            "address",
-            "fix_time"
-        ]]
-
-        st.dataframe(
-            stopped_df,
-            use_container_width=True,
-            height=350
-        )
-
-    # =====================================================
-    # LOW VOLTAGE ALERTS
-    # =====================================================
-    st.subheader("🔋 Alertas de Voltaje Bajo")
-
-    voltage_df = df[df["voltage"] < 11][[
-        "label",
-        "voltage",
-        "address",
-        "fix_time"
-    ]]
-
-    if not voltage_df.empty:
-
-        st.dataframe(
-            voltage_df,
-            use_container_width=True,
-            height=250
-        )
-
-    else:
-        st.success("No se detectaron unidades con voltaje bajo.")
-
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
@@ -827,3 +746,84 @@ if "df" in locals() and not df.empty:
                 st.rerun()
 
         modal_gps()
+
+    # =====================================================
+    # CHARTS
+    # =====================================================
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("Estado de Ignición")
+
+        ignition_counts = (
+            df["ignition"]
+            .astype(str)
+            .value_counts()
+        )
+
+        st.bar_chart(ignition_counts)
+
+    with col2:
+
+        st.subheader("Distribución de Velocidades")
+
+        speed_df = df[df["inst_speed"] > 0]
+
+        if not speed_df.empty:
+
+            st.bar_chart(
+                speed_df["inst_speed"]
+            )
+
+        else:
+            st.info("No se detectaron unidades en movimiento.")
+
+    st.divider()
+
+    # =====================================================
+    # LONGEST STOPPED UNITS
+    # =====================================================
+    st.subheader("🛑 Unidades Detenidas por Más Tiempo")
+
+    if "speed_label" in df.columns:
+
+        stopped_df = df[
+            df["speed_label"]
+            .astype(str)
+            .str.contains("Stopped", case=False, na=False)
+        ][[
+            "label",
+            "speed_label",
+            "address",
+            "fix_time"
+        ]]
+
+        st.dataframe(
+            stopped_df,
+            use_container_width=True,
+            height=350
+        )
+
+    # =====================================================
+    # LOW VOLTAGE ALERTS
+    # =====================================================
+    st.subheader("🔋 Alertas de Voltaje Bajo")
+
+    voltage_df = df[df["voltage"] < 11][[
+        "label",
+        "voltage",
+        "address",
+        "fix_time"
+    ]]
+
+    if not voltage_df.empty:
+
+        st.dataframe(
+            voltage_df,
+            use_container_width=True,
+            height=250
+        )
+
+    else:
+        st.success("No se detectaron unidades con voltaje bajo.")
