@@ -1195,101 +1195,168 @@ if "df" in locals() and not df.empty:
     st.divider()
 
     # =====================================================
-    # GPS INSIGHT TESTBENCH
+    # GPS INSIGHT API TESTBENCH
     # =====================================================
-    st.header("🧪 GPS Insight Testbench")
+    st.header("🧪 GPS Insight API Testbench")
 
     st.caption(
-        "Pruebas manuales para asignar grupos a unidades."
+        "Pruebas manuales de endpoints GPS Insight."
     )
 
     # =====================================================
-    # INPUTS
+    # ENDPOINT SELECTOR
     # =====================================================
-    tb1, tb2 = st.columns(2)
+    endpoint_options = {
+        "Vehicle Location":
+            "vehicle/location",
 
-    with tb1:
+        "Vehicle Attributes":
+            "vehicle/getattributes",
 
-        tb_vehicle = st.text_input(
-            "Unidad / Vehicle ID",
-            placeholder="CA4531009036"
-        )
+        "Vehicle List":
+            "vehicle/list",
 
-    with tb2:
+        "Vehicle Groups":
+            "vehicle/getgroups"
+    }
 
-        tb_groups = st.text_input(
-            "Grupos",
-            placeholder="delivery,service"
-        )
+    selected_label = st.selectbox(
+        "Endpoint",
+        list(endpoint_options.keys())
+    )
+
+    endpoint = endpoint_options[selected_label]
 
     # =====================================================
-    # EXECUTE REQUEST
+    # OPTIONAL VEHICLE FILTER
+    # =====================================================
+    tb_vehicle = st.text_input(
+        "Unidad / Vehicle ID (Opcional)",
+        placeholder="CA4531009036"
+    )
+
+    # =====================================================
+    # EXECUTE
     # =====================================================
     if st.button(
-        "🚀 Ejecutar addVehicleGroup",
+        "🚀 Ejecutar Endpoint",
         use_container_width=True
     ):
 
-        if not tb_vehicle.strip():
+        try:
 
-            st.warning(
-                "Ingresa una unidad válida."
+            # =========================================
+            # BUILD URL
+            # =========================================
+            test_url = (
+                "https://api.gpsinsight.com/v2/"
+                f"{endpoint}"
+                f"?session_token={SESSION_TOKEN}"
             )
 
-        elif not tb_groups.strip():
+            # Optional vehicle filter
+            if tb_vehicle.strip():
 
-            st.warning(
-                "Ingresa al menos un grupo."
-            )
-
-        else:
-
-            try:
-
-                # =====================================
-                # ENDPOINT
-                # =====================================
-                add_group_url = (
-                    "https://api.gpsinsight.com/"
-                    "v2/vehicle/addvehiclegroup/"
-                    f"?session_token={SESSION_TOKEN}"
+                test_url += (
                     f"&vehicle={tb_vehicle}"
-                    f"&groups={tb_groups}"
                 )
 
-                # =====================================
-                # REQUEST
-                # =====================================
-                tb_response = requests.get(
-                    add_group_url
-                )
+            # =========================================
+            # REQUEST
+            # =========================================
+            tb_response = requests.get(
+                test_url
+            )
 
-                tb_response.raise_for_status()
+            tb_response.raise_for_status()
 
-                tb_json = tb_response.json()
+            tb_json = tb_response.json()
 
-                st.success(
-                    "Solicitud ejecutada correctamente."
-                )
+            st.success(
+                "Endpoint ejecutado correctamente."
+            )
 
-                # =====================================
-                # RAW RESPONSE
-                # =====================================
-                with st.expander(
-                    "📦 Respuesta API",
-                    expanded=True
-                ):
+            # =========================================
+            # REQUEST URL
+            # =========================================
+            st.code(
+                test_url,
+                language="text"
+            )
 
-                    st.json(tb_json)
+            # =========================================
+            # RAW RESPONSE
+            # =========================================
+            with st.expander(
+                "📦 Raw JSON Response",
+                expanded=True
+            ):
 
-            except requests.exceptions.RequestException as e:
+                st.json(tb_json)
 
-                st.error(
-                    f"Request failed: {e}"
-                )
+            # =========================================
+            # TABLE VIEW
+            # =========================================
+            if "data" in tb_json:
 
-            except Exception as e:
+                if isinstance(tb_json["data"], list):
 
-                st.error(
-                    f"Unexpected error: {e}"
-                )
+                    tb_df = pd.DataFrame(
+                        tb_json["data"]
+                    )
+
+                    if not tb_df.empty:
+
+                        st.subheader(
+                            "📋 Data Table"
+                        )
+
+                        st.dataframe(
+                            tb_df,
+                            use_container_width=True,
+                            height=500
+                        )
+
+                        # =========================
+                        # EXPORT
+                        # =========================
+                        export_buffer = io.BytesIO()
+
+                        with pd.ExcelWriter(
+                            export_buffer,
+                            engine="openpyxl"
+                        ) as writer:
+
+                            tb_df.to_excel(
+                                writer,
+                                index=False,
+                                sheet_name="API_Test"
+                            )
+
+                        export_buffer.seek(0)
+
+                        st.download_button(
+                            label="💾 Descargar Resultado",
+                            data=export_buffer,
+                            file_name=(
+                                f"{endpoint.replace('/', '_')}.xlsx"
+                            ),
+                            mime=(
+                                "application/"
+                                "vnd.openxmlformats-officedocument."
+                                "spreadsheetml.sheet"
+                            ),
+                            use_container_width=True
+                        )
+
+        except requests.exceptions.RequestException as e:
+
+            st.error(
+                f"Request failed: {e}"
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Unexpected error: {e}"
+            )
