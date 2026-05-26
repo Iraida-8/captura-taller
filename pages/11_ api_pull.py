@@ -796,8 +796,6 @@ if "df" in locals() and not df.empty:
                     "No se detectaron unidades en movimiento."
                 )
 
-    st.divider()
-
     # =====================================================
     # LONGEST STOPPED UNITS
     # =====================================================
@@ -856,8 +854,6 @@ if "df" in locals() and not df.empty:
                 use_container_width=True
             )
 
-    st.divider()
-
     # =====================================================
     # LOW VOLTAGE ALERTS
     # =====================================================
@@ -912,8 +908,6 @@ if "df" in locals() and not df.empty:
             st.success(
                 "No se detectaron unidades con voltaje bajo."
             )
-
-    st.divider()
 
     # =====================================================
     # FULL UNIT TABLE
