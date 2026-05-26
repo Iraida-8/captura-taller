@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import json
 from auth import require_login, require_access
+import streamlit.components.v1 as components
 
 # =================================
 # Page configuration
