@@ -195,9 +195,11 @@ try:
     # Convert to JSON
     result = response.json()
 
-    # Show raw response
-    st.subheader("Raw API Response")
-    st.json(result)
+    # =================================
+    # Raw API Response
+    # =================================
+    with st.expander("📦 Raw API Response", expanded=False):
+        st.json(result)
 
     # Extract data
     vehicles = result.get("data", [])
@@ -224,13 +226,16 @@ try:
             on_count = (df["ignition"].astype(str).str.lower() == "on").sum()
             col3.metric("Ignition On", on_count)
 
-        st.subheader("Fleet Table")
+        # =================================
+        # Fleet Table
+        # =================================
+        with st.expander("🚛 Fleet Table", expanded=True):
 
-        st.dataframe(
-            df,
-            use_container_width=True,
-            height=700
-        )
+            st.dataframe(
+                df,
+                use_container_width=True,
+                height=700
+            )
 
         st.success("Fleet data loaded successfully.")
 
