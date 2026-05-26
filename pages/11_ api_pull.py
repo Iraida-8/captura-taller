@@ -950,3 +950,5 @@ if "df" in locals() and not df.empty:
             ),
             use_container_width=True
         )
+
+    st.divider()
