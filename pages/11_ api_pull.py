@@ -1189,3 +1189,107 @@ if "df" in locals() and not df.empty:
         st.warning(
             "No se encontraron coordenadas GPS válidas."
         )
+
+
+#tests
+    st.divider()
+
+    # =====================================================
+    # GPS INSIGHT TESTBENCH
+    # =====================================================
+    st.header("🧪 GPS Insight Testbench")
+
+    st.caption(
+        "Pruebas manuales para asignar grupos a unidades."
+    )
+
+    # =====================================================
+    # INPUTS
+    # =====================================================
+    tb1, tb2 = st.columns(2)
+
+    with tb1:
+
+        tb_vehicle = st.text_input(
+            "Unidad / Vehicle ID",
+            placeholder="CA4531009036"
+        )
+
+    with tb2:
+
+        tb_groups = st.text_input(
+            "Grupos",
+            placeholder="delivery,service"
+        )
+
+    # =====================================================
+    # EXECUTE REQUEST
+    # =====================================================
+    if st.button(
+        "🚀 Ejecutar addVehicleGroup",
+        use_container_width=True
+    ):
+
+        if not tb_vehicle.strip():
+
+            st.warning(
+                "Ingresa una unidad válida."
+            )
+
+        elif not tb_groups.strip():
+
+            st.warning(
+                "Ingresa al menos un grupo."
+            )
+
+        else:
+
+            try:
+
+                # =====================================
+                # ENDPOINT
+                # =====================================
+                add_group_url = (
+                    "https://api.gpsinsight.com/"
+                    "v2/vehicle/addvehiclegroup/"
+                    f"?session_token={SESSION_TOKEN}"
+                    f"&vehicle={tb_vehicle}"
+                    f"&groups={tb_groups}"
+                )
+
+                # =====================================
+                # REQUEST
+                # =====================================
+                tb_response = requests.get(
+                    add_group_url
+                )
+
+                tb_response.raise_for_status()
+
+                tb_json = tb_response.json()
+
+                st.success(
+                    "Solicitud ejecutada correctamente."
+                )
+
+                # =====================================
+                # RAW RESPONSE
+                # =====================================
+                with st.expander(
+                    "📦 Respuesta API",
+                    expanded=True
+                ):
+
+                    st.json(tb_json)
+
+            except requests.exceptions.RequestException as e:
+
+                st.error(
+                    f"Request failed: {e}"
+                )
+
+            except Exception as e:
+
+                st.error(
+                    f"Unexpected error: {e}"
+                )
