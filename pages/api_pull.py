@@ -2,8 +2,30 @@ import streamlit as st
 import requests
 import pandas as pd
 import json
+from auth import require_login, require_access
 
-st.set_page_config(layout="wide")
+# =================================
+# Page configuration
+# =================================
+st.set_page_config(
+    page_title="Seguimiento de Unidades y GPS",
+    layout="wide"
+)
+
+# =================================
+# Security gates
+# =================================
+require_login()
+require_access("gps_tracking")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.title("⛽ Reporte iFuel")
+st.divider()
 
 st.title("GPS Insight Fleet Tracking")
 
