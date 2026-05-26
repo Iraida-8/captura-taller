@@ -984,26 +984,87 @@ if "df" in locals() and not df.empty:
     )
 
     # =============================================
+    # STOPPED TIME PARSER
+    # =============================================
+    import re
+
+    def extract_stopped_minutes(speed_label):
+
+        if not isinstance(speed_label, str):
+            return 0
+
+        speed_label = speed_label.lower()
+
+        total_minutes = 0
+
+        # days
+        d = re.search(r"(\d+)\s*day", speed_label)
+        if d:
+            total_minutes += int(d.group(1)) * 1440
+
+        # hours
+        h = re.search(r"(\d+)\s*hr", speed_label)
+        if h:
+            total_minutes += int(h.group(1)) * 60
+
+        # minutes
+        m = re.search(r"(\d+)\s*min", speed_label)
+        if m:
+            total_minutes += int(m.group(1))
+
+        return total_minutes
+
+    # =============================================
     # COLOR STATES
     # =============================================
     def get_color(row):
 
-        ignition = str(
-            row.get("ignition", "")
-        ).lower()
+        speed = float(
+            row.get("inst_speed", 0)
+        )
 
-        speed = row.get("inst_speed", 0)
+        speed_label = str(
+            row.get("speed_label", "")
+        )
 
-        # GREEN = moving
+        # =====================================
+        # MOVING = GREEN
+        # =====================================
         if speed > 0:
             return [0, 255, 0]
 
-        # YELLOW = on but stopped
-        if ignition == "on" and speed == 0:
-            return [255, 255, 0]
+        stopped_minutes = extract_stopped_minutes(
+            speed_label
+        )
 
-        # RED = off and stopped
-        return [255, 0, 0]
+        # =====================================
+        # < 1 HOUR = ORANGE
+        # =====================================
+        if stopped_minutes < 60:
+            return [255, 165, 0]
+
+        # =====================================
+        # 1-6 HOURS = RED-ORANGE
+        # =====================================
+        if stopped_minutes < 360:
+            return [255, 80, 0]
+
+        # =====================================
+        # 6-24 HOURS = RED
+        # =====================================
+        if stopped_minutes < 1440:
+            return [255, 0, 0]
+
+        # =====================================
+        # 1-7 DAYS = DARK RED
+        # =====================================
+        if stopped_minutes < 10080:
+            return [139, 0, 0]
+
+        # =====================================
+        # CRITICAL STOPPED = BLACK
+        # =====================================
+        return [0, 0, 0]
 
     map_df["color"] = map_df.apply(
         get_color,
@@ -1013,30 +1074,44 @@ if "df" in locals() and not df.empty:
     if not map_df.empty:
 
         st.info(
-            "🟢 En Movimiento | 🟡 Encendida sin Movimiento | 🔴 Apagada"
+            """
+🟢 En Movimiento  
+🟠 Detenido < 1 Hora  
+🔴 Detenido Varias Horas  
+🟥 Detenido +1 Día  
+⚫ Detenido Crítico
+            """
         )
 
         # =============================================
-        # PYDECK MAP
+        # PYDECK LAYER
         # =============================================
-        #import pydeck as pdk
-
         layer = pdk.Layer(
             "ScatterplotLayer",
             data=map_df,
+
             get_position="[longitude, latitude]",
+
             get_fill_color="color",
 
-            # MUCH BIGGER DOTS
-            get_radius=4000,
+            # =====================================
+            # INTERACTIVE SCALING
+            # =====================================
+            radius_units="pixels",
+
+            get_radius=12,
+
+            radius_min_pixels=6,
+            radius_max_pixels=30,
 
             pickable=True,
             auto_highlight=True,
 
-            # visible borders
             stroked=True,
             filled=True,
+
             line_width_min_pixels=2,
+
             get_line_color=[255, 255, 255]
         )
 
@@ -1050,6 +1125,7 @@ if "df" in locals() and not df.empty:
                 <b>Longitud:</b> {longitude} <br/>
                 <b>Velocidad:</b> {inst_speed} km/h <br/>
                 <b>Ignición:</b> {ignition} <br/>
+                <b>Tiempo detenido:</b> {speed_label} <br/>
                 <b>Dirección:</b> {address}
             """,
             "style": {
@@ -1073,9 +1149,14 @@ if "df" in locals() and not df.empty:
         # =============================================
         st.pydeck_chart(
             pdk.Deck(
+                height=700,
+
                 layers=[layer],
+
                 initial_view_state=view_state,
+
                 tooltip=tooltip,
+
                 map_style="light"
             ),
             use_container_width=True
@@ -1096,7 +1177,8 @@ if "df" in locals() and not df.empty:
                     "longitude",
                     "address",
                     "ignition",
-                    "inst_speed"
+                    "inst_speed",
+                    "speed_label"
                 ]],
                 use_container_width=True,
                 height=300
