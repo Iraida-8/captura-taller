@@ -757,191 +757,85 @@ if "df" in locals() and not df.empty:
 
     st.divider()
 
+    st.subheader("📊 Estado de Ignición de Unidades")
+
     # =====================================================
     # CHARTS
     # =====================================================
-    with st.expander(
-        "📊 Estado de Ignición de Unidades",
-        expanded=False
-    ):
+    col1, col2 = st.columns(2)
 
-        col1, col2 = st.columns(2)
+    with col1:
 
-        with col1:
+        st.subheader("Estado de Ignición")
 
-            st.subheader("Estado de Ignición")
+        ignition_counts = (
+            df["ignition"]
+            .astype(str)
+            .value_counts()
+        )
 
-            ignition_counts = (
-                df["ignition"]
-                .astype(str)
-                .value_counts()
+        st.bar_chart(ignition_counts)
+
+    with col2:
+
+        st.subheader("Distribución de Velocidades")
+
+        speed_df = df[df["inst_speed"] > 0]
+
+        if not speed_df.empty:
+
+            st.bar_chart(
+                speed_df["inst_speed"]
             )
 
-            st.bar_chart(ignition_counts)
+        else:
+            st.info("No se detectaron unidades en movimiento.")
 
-        with col2:
-
-            st.subheader("Distribución de Velocidades")
-
-            speed_df = df[df["inst_speed"] > 0]
-
-            if not speed_df.empty:
-
-                st.bar_chart(
-                    speed_df["inst_speed"]
-                )
-
-            else:
-                st.info(
-                    "No se detectaron unidades en movimiento."
-                )
+    st.divider()
 
     # =====================================================
     # LONGEST STOPPED UNITS
     # =====================================================
-    with st.expander(
-        "🛑 Unidades Detenidas por Más Tiempo",
-        expanded=False
-    ):
+    st.subheader("🛑 Unidades Detenidas por Más Tiempo")
 
-        if "speed_label" in df.columns:
+    if "speed_label" in df.columns:
 
-            stopped_df = df[
-                df["speed_label"]
-                .astype(str)
-                .str.contains(
-                    "Stopped",
-                    case=False,
-                    na=False
-                )
-            ][[
-                "label",
-                "speed_label",
-                "address",
-                "fix_time"
-            ]]
-
-            st.dataframe(
-                stopped_df,
-                use_container_width=True,
-                height=350
-            )
-
-            stopped_buffer = io.BytesIO()
-
-            with pd.ExcelWriter(
-                stopped_buffer,
-                engine="openpyxl"
-            ) as writer:
-
-                stopped_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Detenidas"
-                )
-
-            stopped_buffer.seek(0)
-
-            st.download_button(
-                label="💾 Descargar Unidades Detenidas",
-                data=stopped_buffer,
-                file_name="Unidades_Detenidas.xlsx",
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
-
-    # =====================================================
-    # LOW VOLTAGE ALERTS
-    # =====================================================
-    with st.expander(
-        "🔋 Alertas de Voltaje Bajo",
-        expanded=False
-    ):
-
-        voltage_df = df[df["voltage"] < 11][[
+        stopped_df = df[
+            df["speed_label"]
+            .astype(str)
+            .str.contains("Stopped", case=False, na=False)
+        ][[
             "label",
-            "voltage",
+            "speed_label",
             "address",
             "fix_time"
         ]]
 
-        if not voltage_df.empty:
-
-            st.dataframe(
-                voltage_df,
-                use_container_width=True,
-                height=250
-            )
-
-            voltage_buffer = io.BytesIO()
-
-            with pd.ExcelWriter(
-                voltage_buffer,
-                engine="openpyxl"
-            ) as writer:
-
-                voltage_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Voltaje_Bajo"
-                )
-
-            voltage_buffer.seek(0)
-
-            st.download_button(
-                label="💾 Descargar Voltaje Bajo",
-                data=voltage_buffer,
-                file_name="Voltaje_Bajo.xlsx",
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
-
-        else:
-            st.success(
-                "No se detectaron unidades con voltaje bajo."
-            )
-
-    # =====================================================
-    # FULL UNIT TABLE
-    # =====================================================
-    with st.expander(
-        "🚛 Tabla General de Flotilla",
-        expanded=False
-    ):
-
         st.dataframe(
-            df,
+            stopped_df,
             use_container_width=True,
-            height=700
+            height=350
         )
 
-        fleet_buffer = io.BytesIO()
+        stopped_buffer = io.BytesIO()
 
         with pd.ExcelWriter(
-            fleet_buffer,
+            stopped_buffer,
             engine="openpyxl"
         ) as writer:
 
-            df.to_excel(
+            stopped_df.to_excel(
                 writer,
                 index=False,
-                sheet_name="Flotilla"
+                sheet_name="Detenidas"
             )
 
-        fleet_buffer.seek(0)
+        stopped_buffer.seek(0)
 
         st.download_button(
-            label="💾 Descargar Tabla General",
-            data=fleet_buffer,
-            file_name="Flotilla_GPS.xlsx",
+            label="💾 Descargar Unidades Detenidas",
+            data=stopped_buffer,
+            file_name="Unidades_Detenidas.xlsx",
             mime=(
                 "application/"
                 "vnd.openxmlformats-officedocument."
@@ -949,3 +843,93 @@ if "df" in locals() and not df.empty:
             ),
             use_container_width=True
         )
+
+    # =====================================================
+    # LOW VOLTAGE ALERTS
+    # =====================================================
+    st.subheader("🔋 Alertas de Voltaje Bajo")
+
+    voltage_df = df[df["voltage"] < 11][[
+        "label",
+        "voltage",
+        "address",
+        "fix_time"
+    ]]
+
+    if not voltage_df.empty:
+
+        st.dataframe(
+            voltage_df,
+            use_container_width=True,
+            height=250
+        )
+        voltage_buffer = io.BytesIO()
+
+        with pd.ExcelWriter(
+            voltage_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            voltage_df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Voltaje_Bajo"
+            )
+
+        voltage_buffer.seek(0)
+
+        st.download_button(
+            label="💾 Descargar Voltaje Bajo",
+            data=voltage_buffer,
+            file_name="Voltaje_Bajo.xlsx",
+            mime=(
+                "application/"
+                "vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
+            use_container_width=True
+        )
+
+    else:
+        st.success("No se detectaron unidades con voltaje bajo.")
+
+    st.divider()
+
+    # =====================================================
+    # FULL UNIT TABLE
+    # =====================================================
+
+    st.subheader("🚛 Tabla General de Flotilla")
+
+    st.dataframe(
+        df,
+        use_container_width=True,
+        height=700
+    )
+
+    fleet_buffer = io.BytesIO()
+
+    with pd.ExcelWriter(
+        fleet_buffer,
+        engine="openpyxl"
+    ) as writer:
+
+        df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Flotilla"
+        )
+
+    fleet_buffer.seek(0)
+
+    st.download_button(
+        label="💾 Descargar Tabla General",
+        data=fleet_buffer,
+        file_name="Flotilla_GPS.xlsx",
+        mime=(
+            "application/"
+            "vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        use_container_width=True
+    )
