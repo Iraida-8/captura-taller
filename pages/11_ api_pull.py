@@ -1019,16 +1019,25 @@ if "df" in locals() and not df.empty:
         # =============================================
         # PYDECK MAP
         # =============================================
-        import pydeck as pdk
+        #import pydeck as pdk
 
         layer = pdk.Layer(
             "ScatterplotLayer",
             data=map_df,
             get_position="[longitude, latitude]",
             get_fill_color="color",
-            get_radius=120,
+
+            # MUCH BIGGER DOTS
+            get_radius=4000,
+
             pickable=True,
-            auto_highlight=True
+            auto_highlight=True,
+
+            # visible borders
+            stroked=True,
+            filled=True,
+            line_width_min_pixels=2,
+            get_line_color=[255, 255, 255]
         )
 
         # =============================================
@@ -1055,7 +1064,7 @@ if "df" in locals() and not df.empty:
         view_state = pdk.ViewState(
             latitude=map_df["latitude"].mean(),
             longitude=map_df["longitude"].mean(),
-            zoom=5,
+            zoom=6.5,
             pitch=0
         )
 
