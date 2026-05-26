@@ -106,9 +106,14 @@ st.markdown(
 )
 
 # -------------------------------
+# USER / ACCESS
+# -------------------------------
 user = st.session_state.user
 access = user.get("access", [])
 
+# -------------------------------
+# CHANGELOG
+# -------------------------------
 changelog_path = Path(__file__).parent.parent / "Changelog.json"
 
 if changelog_path.exists():
@@ -124,12 +129,8 @@ latest_version = (
 )
 
 # -------------------------------
-# Header
+# HEADER
 # -------------------------------
-
-from pathlib import Path
-from PIL import Image
-
 assets_dir = Path(__file__).parent.parent / "assets"
 logo_path = assets_dir / "white_pgl.png"
 
@@ -146,15 +147,20 @@ with col_info:
 
     # live date / time
     clock_placeholder = st.empty()
+
     clock_placeholder.caption(
         datetime.now().strftime("%A, %d %B %Y")
     )
 
 with col_logo:
-    st.markdown("<div style='margin-top: 35px;'></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-top: 35px;'></div>",
+        unsafe_allow_html=True
+    )
 
     if logo_path.exists():
         img = Image.open(logo_path)
+
         st.image(
             img,
             width=300
@@ -173,148 +179,183 @@ with col_logout:
 st.divider()
 
 # -------------------------------
-# Navigation
+# HELPERS
 # -------------------------------
-
 def has_access(keys):
     return any(k in access for k in keys)
+
+def render_button_grid(buttons, columns_per_row=2):
+
+    visible_buttons = [
+        b for b in buttons
+        if b["access"] in access
+    ]
+
+    for i in range(0, len(visible_buttons), columns_per_row):
+
+        row_buttons = visible_buttons[i:i + columns_per_row]
+
+        cols = st.columns(columns_per_row)
+
+        for idx, btn in enumerate(row_buttons):
+
+            with cols[idx]:
+
+                if st.button(
+                    btn["label"],
+                    use_container_width=True,
+                    key=btn["key"]
+                ):
+                    st.switch_page(btn["page"])
 
 # =============================
 # 1. GENERACION DE PASES Y SOLICITUDES
 # =============================
-section_generacion = ["pase_taller", "solicitud_viaticos"]
+section_generacion = [
+    "pase_taller",
+    "solicitud_viaticos"
+]
 
 if has_access(section_generacion):
+
     st.subheader("🏭 Generación de Pases y Solicitudes")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if "pase_taller" in access:
-            if st.button(
-                "🏭  Generar nuevo Pase a Taller",
-                use_container_width=True,
-                key="btn_pase_taller"
-            ):
-                st.switch_page("pages/3_ Pase a Taller.py")
-
-    with col2:
-        if "solicitud_viaticos" in access:
-            if st.button(
-                "💳  Solicitud de Viáticos y Reembolsos",
-                use_container_width=True,
-                key="btn_viaticos"
-            ):
-                st.switch_page("pages/9_ Viaticos.py")
+    render_button_grid([
+        {
+            "access": "pase_taller",
+            "label": "🏭  Generar nuevo Pase a Taller",
+            "page": "pages/3_ Pase a Taller.py",
+            "key": "btn_pase_taller"
+        },
+        {
+            "access": "solicitud_viaticos",
+            "label": "💳  Solicitud de Viáticos y Reembolsos",
+            "page": "pages/9_ Viaticos.py",
+            "key": "btn_viaticos"
+        }
+    ])
 
     st.divider()
 
 # =============================
 # 2. GESTION DE ORDENES Y PASES
 # =============================
-section_gestion = ["autorizacion", "gestion_viaticos"]
+section_gestion = [
+    "autorizacion",
+    "gestion_viaticos"
+]
 
 if has_access(section_gestion):
+
     st.subheader("📋 Gestión de Órdenes y Pases")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if "autorizacion" in access:
-            if st.button(
-                "✅  Autorización y Gestión de Pases de Taller",
-                use_container_width=True,
-                key="btn_autorizacion"
-            ):
-                st.switch_page("pages/4_ Autorizacion.py")
-
-    with col2:
-        if "gestion_viaticos" in access:
-            if st.button(
-                "💼  Gestión de Viáticos",
-                use_container_width=True,
-                key="btn_gestion_viaticos"
-            ):
-                st.switch_page("pages/10_ Gestion Viaticos.py")
+    render_button_grid([
+        {
+            "access": "autorizacion",
+            "label": "✅  Autorización y Gestión de Pases de Taller",
+            "page": "pages/4_ Autorizacion.py",
+            "key": "btn_autorizacion"
+        },
+        {
+            "access": "gestion_viaticos",
+            "label": "💼  Gestión de Viáticos",
+            "page": "pages/10_ Gestion Viaticos.py",
+            "key": "btn_gestion_viaticos"
+        }
+    ])
 
     st.divider()
 
 # =============================
 # 3. CONSULTAS
 # =============================
-section_consultas = ["consultar_reparacion", "consulta_reportes"]
+section_consultas = [
+    "consultar_reparacion",
+    "consulta_reportes"
+]
 
 if has_access(section_consultas):
+
     st.subheader("🔍 Consultas de Reparación y Reportes")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if "consultar_reparacion" in access:
-            if st.button("🔍  Consultar Historial de Reparación", use_container_width=True, key="btn_consultar_reparacion"):
-                st.switch_page("pages/1_ Consultar Reparacion.py")
-
-    with col2:
-        if "consulta_reportes" in access:
-            if st.button("📊  Consulta de Pases de Taller", use_container_width=True, key="btn_consulta_reportes"):
-                st.switch_page("pages/6_ Consulta Reportes.py")
+    render_button_grid([
+        {
+            "access": "consultar_reparacion",
+            "label": "🔍  Consultar Historial de Reparación",
+            "page": "pages/1_ Consultar Reparacion.py",
+            "key": "btn_consultar_reparacion"
+        },
+        {
+            "access": "consulta_reportes",
+            "label": "📊  Consulta de Pases de Taller",
+            "page": "pages/6_ Consulta Reportes.py",
+            "key": "btn_consulta_reportes"
+        }
+    ])
 
     st.divider()
 
 # =============================
 # 4. EXTRAS
 # =============================
-section_extras = ["ifuel", "lector_pdf", "gps_tracking"]
+section_extras = [
+    "ifuel",
+    "lector_pdf",
+    "gps_tracking"
+]
 
 if has_access(section_extras):
+
     st.subheader("⚙️ Extras")
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if "ifuel" in access:
-            if st.button("⛽  Reporte iFuel", use_container_width=True, key="btn_ifuel"):
-                st.switch_page("pages/5_ Reporte iFuel.py")
-
-    with col2:
-        if "lector_pdf" in access:
-            if st.button("📄  Lector PDF", use_container_width=True, key="btn_lector_pdf"):
-                st.switch_page("pages/2_ Lector PDF.py")
-
-    with col3:
-        if "gps_tracking" in access:
-            if st.button("🛰️  Fleet GPS Tracking", use_container_width=True, key="btn_gps_tracking"):
-                st.switch_page("pages/11_ api_pull.py")
+    render_button_grid([
+        {
+            "access": "ifuel",
+            "label": "⛽  Reporte iFuel",
+            "page": "pages/5_ Reporte iFuel.py",
+            "key": "btn_ifuel"
+        },
+        {
+            "access": "lector_pdf",
+            "label": "📄  Lector PDF",
+            "page": "pages/2_ Lector PDF.py",
+            "key": "btn_lector_pdf"
+        },
+        {
+            "access": "gps_tracking",
+            "label": "🛰️  Fleet GPS Tracking",
+            "page": "pages/11_ api_pull.py",
+            "key": "btn_gps_tracking"
+        }
+    ])
 
     st.divider()
 
 # =============================
 # 5. AUDIT
 # =============================
-section_audit = ["prepara_reportes", "gestion_unidades"]
+section_audit = [
+    "prepara_reportes",
+    "gestion_unidades"
+]
 
 if has_access(section_audit):
+
     st.subheader("🧾 Audit")
 
-    # ROW 1
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if "prepara_reportes" in access:
-            if st.button(
-                "🛠️  Preparación de Reportes",
-                use_container_width=True,
-                key="btn_prepara_reportes"
-            ):
-                st.switch_page("pages/7_ Preparacion de Reportes.py")
-
-    with col2:
-        if "gestion_unidades" in access:
-            if st.button(
-                "🚚  Gestión de Unidades",
-                use_container_width=True,
-                key="btn_gestion_unidades"
-            ):
-                st.switch_page("pages/8_ Gestion de Unidades.py")
+    render_button_grid([
+        {
+            "access": "prepara_reportes",
+            "label": "🛠️  Preparación de Reportes",
+            "page": "pages/7_ Preparacion de Reportes.py",
+            "key": "btn_prepara_reportes"
+        },
+        {
+            "access": "gestion_unidades",
+            "label": "🚚  Gestión de Unidades",
+            "page": "pages/8_ Gestion de Unidades.py",
+            "key": "btn_gestion_unidades"
+        }
+    ])
 
     st.divider()
