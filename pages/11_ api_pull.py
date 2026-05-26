@@ -8,7 +8,7 @@ from auth import require_login, require_access
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Seguimiento de Unidades y GPS",
+    page_title="Rastreador y Seguimiento GPS de Unidades",
     layout="wide"
 )
 
@@ -24,7 +24,7 @@ require_access("gps_tracking")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
-st.title("⛽ Reporte iFuel")
+st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
 st.divider()
 
 st.title("GPS Insight Fleet Tracking")
