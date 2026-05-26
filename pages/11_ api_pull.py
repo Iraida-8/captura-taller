@@ -241,7 +241,7 @@ with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=True):
             # =================================
             # Fleet Table
             # =================================
-            with st.expander("🚛 Fleet Table", expanded=True):
+            with st.expander("🚛 Fleet Table", expanded=False):
 
                 st.dataframe(
                     df,
