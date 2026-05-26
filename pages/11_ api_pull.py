@@ -619,6 +619,39 @@ if "df" in locals() and not df.empty:
                     ):
                         st.session_state.modal_gps_unit = r.to_dict()
 
+                    # =====================================
+                    # SAVE EXCEL
+                    # =====================================
+                    excel_df = pd.DataFrame([r])
+
+                    excel_filename = f"Unidad_{unidad}.xlsx"
+
+                    with pd.ExcelWriter(
+                        excel_filename,
+                        engine="openpyxl"
+                    ) as writer:
+
+                        excel_df.to_excel(
+                            writer,
+                            index=False,
+                            sheet_name="GPS"
+                        )
+
+                    with open(excel_filename, "rb") as file:
+
+                        st.download_button(
+                            label="💾 Guardar",
+                            data=file,
+                            file_name=excel_filename,
+                            mime=(
+                                "application/"
+                                "vnd.openxmlformats-officedocument."
+                                "spreadsheetml.sheet"
+                            ),
+                            key=f"save_excel_{unidad}_{idx}",
+                            use_container_width=True
+                        )
+
                 idx += 1
 
     # =====================================================
