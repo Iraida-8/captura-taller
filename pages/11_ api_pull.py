@@ -450,3 +450,273 @@ if "df" in locals() and not df.empty:
 
     else:
         st.success("No se detectaron unidades con voltaje bajo.")
+
+# =========================================================
+# INDIVIDUAL UNIT TRACKING
+# =========================================================
+if "df" in locals() and not df.empty:
+
+    st.divider()
+
+    st.header("🚛 Seguimiento Individual de Unidades")
+
+    # =====================================================
+    # FILTERS
+    # =====================================================
+    f1, f2 = st.columns(2)
+
+    with f1:
+
+        unidades = sorted(
+            df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        unidad_select = st.selectbox(
+            "No. de Unidad",
+            ["Todas"] + unidades
+        )
+
+    with f2:
+
+        estado_select = st.selectbox(
+            "Estado de Ignición",
+            ["Todos", "on", "off"]
+        )
+
+    # =====================================================
+    # APPLY FILTERS
+    # =====================================================
+    df_units = df.copy()
+
+    if unidad_select != "Todas":
+        df_units = df_units[
+            df_units["label"].astype(str) == unidad_select
+        ]
+
+    if estado_select != "Todos":
+        df_units = df_units[
+            df_units["ignition"].astype(str).str.lower() == estado_select
+        ]
+
+    # =====================================================
+    # MODAL STATE
+    # =====================================================
+    st.session_state.setdefault("modal_gps_unit", None)
+
+    # =====================================================
+    # POSTITS
+    # =====================================================
+    total = len(df_units)
+
+    if total == 0:
+
+        st.warning("No se encontraron unidades.")
+
+    else:
+
+        idx = 0
+        rows_needed = (total - 1) // 5 + 1
+
+        for _ in range(rows_needed):
+
+            cols = st.columns(5)
+
+            for col in cols:
+
+                if idx >= total:
+                    break
+
+                r = df_units.iloc[idx]
+
+                unidad = str(r.get("label", "-"))
+                direccion = str(r.get("address", "-"))
+                velocidad = r.get("inst_speed", 0)
+                ignicion = str(r.get("ignition", "-")).upper()
+                odometro = r.get("odometer", "-")
+                speed_label = str(r.get("speed_label", "-"))
+                ultima_conexion = str(r.get("fix_time", "-"))
+                voltaje = str(r.get("voltage", "-"))
+
+                color_estado = (
+                    "#D4EDDA"
+                    if ignicion.lower() == "on"
+                    else "#F8D7DA"
+                )
+
+                with col:
+
+                    html = f"""
+                    <div style="padding:6px;">
+                        <div style="
+                            background:#e8f0ff;
+                            padding:14px;
+                            border-radius:16px;
+                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                            color:#111;
+                            min-height:260px;
+                            font-family:sans-serif;
+                        ">
+
+                            <div style="
+                                font-size:1.1rem;
+                                font-weight:900;
+                            ">
+                                🚛 {unidad}
+                            </div>
+
+                            <hr style="margin:8px 0">
+
+                            <div style="
+                                font-size:0.75rem;
+                                min-height:55px;
+                            ">
+                                {direccion}
+                            </div>
+
+                            <div style="
+                                margin-top:8px;
+                                font-size:0.8rem;
+                            ">
+                                <strong>Velocidad:</strong> {velocidad} km/h
+                            </div>
+
+                            <div style="
+                                font-size:0.8rem;
+                            ">
+                                <strong>Odómetro:</strong> {odometro}
+                            </div>
+
+                            <div style="
+                                font-size:0.8rem;
+                            ">
+                                <strong>Voltaje:</strong> {voltaje}V
+                            </div>
+
+                            <div style="
+                                margin-top:8px;
+                                padding:6px;
+                                border-radius:8px;
+                                background:{color_estado};
+                                text-align:center;
+                                font-weight:700;
+                            ">
+                                Ignición: {ignicion}
+                            </div>
+
+                            <div style="
+                                margin-top:8px;
+                                font-size:0.75rem;
+                                color:#444;
+                            ">
+                                {speed_label}
+                            </div>
+
+                            <div style="
+                                margin-top:6px;
+                                font-size:0.72rem;
+                                opacity:0.75;
+                            ">
+                                Última conexión:
+                                <br>
+                                {ultima_conexion}
+                            </div>
+
+                        </div>
+                    </div>
+                    """
+
+                    components.html(html, height=310)
+
+                    if st.button(
+                        "👁 Ver",
+                        key=f"gps_unit_{unidad}_{idx}",
+                        use_container_width=True
+                    ):
+                        st.session_state.modal_gps_unit = r.to_dict()
+
+                idx += 1
+
+    # =====================================================
+    # MODAL
+    # =====================================================
+    if st.session_state.get("modal_gps_unit"):
+
+        gps_row = st.session_state.modal_gps_unit
+
+        unidad_modal = gps_row.get("label", "-")
+
+        @st.dialog(f"Unidad {unidad_modal}")
+        def modal_gps():
+
+            st.subheader("📍 Ubicación")
+
+            st.markdown(
+                f"""
+                **Dirección:**  
+                {gps_row.get("address", "-")}
+                """
+            )
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.metric(
+                    "Velocidad",
+                    f"{gps_row.get('inst_speed', 0)} km/h"
+                )
+
+            with c2:
+                st.metric(
+                    "Ignición",
+                    str(gps_row.get("ignition", "-")).upper()
+                )
+
+            with c3:
+                st.metric(
+                    "Voltaje",
+                    f"{gps_row.get('voltage', '-')}"
+                )
+
+            st.divider()
+
+            st.subheader("📡 Información GPS")
+
+            st.markdown(
+                f"""
+                - **Latitud:** {gps_row.get("latitude", "-")}
+                - **Longitud:** {gps_row.get("longitude", "-")}
+                - **Dirección:** {gps_row.get("direction", "-")}
+                - **Heading:** {gps_row.get("heading", "-")}
+                - **Última conexión:** {gps_row.get("fix_time", "-")}
+                - **Tiempo detenido:** {gps_row.get("speed_label", "-")}
+                - **Odómetro:** {gps_row.get("odometer", "-")}
+                """
+            )
+
+            st.divider()
+
+            st.subheader("👤 Operador")
+
+            st.markdown(
+                f"""
+                - **Driver ID:** {gps_row.get("driver_id", "-")}
+                - **Estado Driver:** {gps_row.get("driver_status", "-")}
+                - **Último cambio:** {gps_row.get("driver_date", "-")}
+                """
+            )
+
+            st.divider()
+
+            st.subheader("🔌 Inputs")
+
+            st.json(gps_row.get("inputs", {}))
+
+            if st.button("Cerrar"):
+                st.session_state.modal_gps_unit = None
+                st.rerun()
+
+        modal_gps()
