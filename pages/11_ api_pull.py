@@ -509,9 +509,35 @@ if "df" in locals() and not df.empty:
     st.session_state.setdefault("modal_gps_unit", None)
 
     # =====================================================
+    # PAGINATION
+    # =====================================================
+    ITEMS_PER_PAGE = 10
+
+    total_items = len(df_units)
+
+    total_pages = max(
+        (total_items - 1) // ITEMS_PER_PAGE + 1,
+        1
+    )
+
+    st.session_state.setdefault("gps_page", 1)
+
+    # Prevent overflow
+    if st.session_state.gps_page > total_pages:
+        st.session_state.gps_page = total_pages
+
+    if st.session_state.gps_page < 1:
+        st.session_state.gps_page = 1
+
+    start_idx = (st.session_state.gps_page - 1) * ITEMS_PER_PAGE
+    end_idx = start_idx + ITEMS_PER_PAGE
+
+    df_units_page = df_units.iloc[start_idx:end_idx]
+
+    # =====================================================
     # POSTITS
     # =====================================================
-    total = len(df_units)
+    total = len(df_units_page)
 
     if total == 0:
 
@@ -531,7 +557,7 @@ if "df" in locals() and not df.empty:
                 if idx >= total:
                     break
 
-                r = df_units.iloc[idx]
+                r = df_units_page.iloc[idx]
 
                 unidad = str(r.get("label", "-"))
                 direccion = str(r.get("address", "-"))
@@ -640,6 +666,49 @@ if "df" in locals() and not df.empty:
                         st.session_state.modal_gps_unit = r.to_dict()
 
                 idx += 1
+
+    # =====================================================
+    # PAGINATION CONTROLS
+    # =====================================================
+    st.divider()
+
+    p1, p2, p3 = st.columns([1,2,1])
+
+    with p1:
+
+        if st.button(
+            "⬅ Anterior",
+            disabled=st.session_state.gps_page <= 1,
+            use_container_width=True
+        ):
+            st.session_state.gps_page -= 1
+            st.rerun()
+
+    with p2:
+
+        st.markdown(
+            f"""
+            <div style="
+                text-align:center;
+                padding-top:8px;
+                font-weight:700;
+                color:white;
+            ">
+                Página {st.session_state.gps_page} de {total_pages}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with p3:
+
+        if st.button(
+            "Siguiente ➡",
+            disabled=st.session_state.gps_page >= total_pages,
+            use_container_width=True
+        ):
+            st.session_state.gps_page += 1
+            st.rerun()
 
     # =====================================================
     # MODAL
