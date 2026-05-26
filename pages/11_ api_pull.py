@@ -175,8 +175,6 @@ if st.button("⬅ Volver al Dashboard"):
 st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
 st.divider()
 
-st.title("GPS Insight Fleet Tracking")
-
 #==============================================================================================================
 # Session token
 SESSION_TOKEN = "763aade0cf05363d50e5ddcb2f597f6cb0c94e73cecae0c8ac8c"
@@ -187,63 +185,77 @@ url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token={SESSION_TO
 
 #==============================================================================================================
 
-try:
-    # API request
-    response = requests.get(url)
-    response.raise_for_status()
+with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=True):
 
-    # Convert to JSON
-    result = response.json()
+    try:
+        # API request
+        response = requests.get(url)
+        response.raise_for_status()
 
-    # =================================
-    # Raw API Response
-    # =================================
-    with st.expander("📦 Raw API Response", expanded=False):
-        st.json(result)
-
-    # Extract data
-    vehicles = result.get("data", [])
-
-    if vehicles:
-
-        # Convert to dataframe
-        df = pd.DataFrame(vehicles)
-
-        # Save locally
-        with open("vehicles.json", "w", encoding="utf-8") as f:
-            json.dump(vehicles, f, indent=4, ensure_ascii=False)
-
-        # Dashboard metrics
-        col1, col2, col3 = st.columns(3)
-
-        col1.metric("Vehicles", len(df))
-
-        if "inst_speed" in df.columns:
-            moving = (pd.to_numeric(df["inst_speed"], errors="coerce") > 0).sum()
-            col2.metric("Moving", moving)
-
-        if "ignition" in df.columns:
-            on_count = (df["ignition"].astype(str).str.lower() == "on").sum()
-            col3.metric("Ignition On", on_count)
+        # Convert to JSON
+        result = response.json()
 
         # =================================
-        # Fleet Table
+        # Raw API Response
         # =================================
-        with st.expander("🚛 Fleet Table", expanded=True):
+        with st.expander("📦 Raw API Response", expanded=False):
+            st.json(result)
 
-            st.dataframe(
-                df,
-                use_container_width=True,
-                height=700
-            )
+        # Extract data
+        vehicles = result.get("data", [])
 
-        st.success("Fleet data loaded successfully.")
+        if vehicles:
 
-    else:
-        st.warning("No vehicle location data returned.")
+            # Convert to dataframe
+            df = pd.DataFrame(vehicles)
 
-except requests.exceptions.RequestException as e:
-    st.error(f"Request failed: {e}")
+            # Save locally
+            with open("vehicles.json", "w", encoding="utf-8") as f:
+                json.dump(vehicles, f, indent=4, ensure_ascii=False)
 
-except Exception as e:
-    st.error(f"Unexpected error: {e}")
+            # =================================
+            # Dashboard metrics
+            # =================================
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("Vehicles", len(df))
+
+            if "inst_speed" in df.columns:
+                moving = (
+                    pd.to_numeric(df["inst_speed"], errors="coerce") > 0
+                ).sum()
+
+                col2.metric("Moving", moving)
+
+            if "ignition" in df.columns:
+                on_count = (
+                    df["ignition"]
+                    .astype(str)
+                    .str.lower()
+                    .eq("on")
+                    .sum()
+                )
+
+                col3.metric("Ignition On", on_count)
+
+            # =================================
+            # Fleet Table
+            # =================================
+            with st.expander("🚛 Fleet Table", expanded=True):
+
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    height=700
+                )
+
+            st.success("Fleet data loaded successfully.")
+
+        else:
+            st.warning("No vehicle location data returned.")
+
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
