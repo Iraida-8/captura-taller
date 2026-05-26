@@ -259,3 +259,194 @@ with st.expander("🛰️ GPS Insight Fleet Tracking", expanded=True):
 
     except Exception as e:
         st.error(f"Unexpected error: {e}")
+
+# =========================================================
+# KPI DASHBOARD
+# =========================================================
+if "df" in locals() and not df.empty:
+
+    st.divider()
+
+    st.header("📊 KPI Dashboard")
+
+    # =========================================
+    # DATA PREP
+    # =========================================
+    df["inst_speed"] = pd.to_numeric(
+        df["inst_speed"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["odometer"] = pd.to_numeric(
+        df["odometer"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["voltage"] = pd.to_numeric(
+        df["voltage"],
+        errors="coerce"
+    ).fillna(0)
+
+    # =========================================
+    # BASIC COUNTS
+    # =========================================
+    total_units = len(df)
+
+    moving_units = (df["inst_speed"] > 0).sum()
+
+    stopped_units = (df["inst_speed"] <= 0).sum()
+
+    ignition_on = (
+        df["ignition"]
+        .astype(str)
+        .str.lower()
+        .eq("on")
+        .sum()
+    )
+
+    ignition_off = (
+        df["ignition"]
+        .astype(str)
+        .str.lower()
+        .eq("off")
+        .sum()
+    )
+
+    avg_speed = round(df["inst_speed"].mean(), 1)
+
+    max_speed = round(df["inst_speed"].max(), 1)
+
+    # =========================================
+    # KPI POST-ITS
+    # =========================================
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+    c1.metric("🚛 Total Units", total_units)
+
+    c2.metric("🟢 Moving", moving_units)
+
+    c3.metric("🔴 Stopped", stopped_units)
+
+    c4.metric("⚡ Ignition ON", ignition_on)
+
+    c5.metric("⛔ Ignition OFF", ignition_off)
+
+    c6.metric("🏎️ Avg Speed", f"{avg_speed} km/h")
+
+    # =========================================
+    # SECOND ROW
+    # =========================================
+    c7, c8, c9 = st.columns(3)
+
+    c7.metric(
+        "🔥 Max Fleet Speed",
+        f"{max_speed} km/h"
+    )
+
+    low_voltage = (df["voltage"] < 11).sum()
+
+    c8.metric(
+        "🔋 Low Voltage Units",
+        low_voltage
+    )
+
+    panic_active = 0
+
+    if "inputs" in df.columns:
+
+        for val in df["inputs"]:
+
+            if isinstance(val, dict):
+
+                if "Panic Button" in val:
+
+                    if str(val["Panic Button"]).lower() == "on":
+                        panic_active += 1
+
+    c9.metric(
+        "🚨 Panic Buttons",
+        panic_active
+    )
+
+    st.divider()
+
+    # =====================================================
+    # CHARTS
+    # =====================================================
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("Ignition Status")
+
+        ignition_counts = (
+            df["ignition"]
+            .astype(str)
+            .value_counts()
+        )
+
+        st.bar_chart(ignition_counts)
+
+    with col2:
+
+        st.subheader("Speed Distribution")
+
+        speed_df = df[df["inst_speed"] > 0]
+
+        if not speed_df.empty:
+
+            st.bar_chart(
+                speed_df["inst_speed"]
+            )
+
+        else:
+            st.info("No moving vehicles detected.")
+
+    st.divider()
+
+    # =====================================================
+    # LONGEST STOPPED UNITS
+    # =====================================================
+    st.subheader("🛑 Units Stopped Longest")
+
+    if "speed_label" in df.columns:
+
+        stopped_df = df[
+            df["speed_label"]
+            .astype(str)
+            .str.contains("Stopped", case=False, na=False)
+        ][[
+            "label",
+            "speed_label",
+            "address",
+            "fix_time"
+        ]]
+
+        st.dataframe(
+            stopped_df,
+            use_container_width=True,
+            height=350
+        )
+
+    # =====================================================
+    # LOW VOLTAGE ALERTS
+    # =====================================================
+    st.subheader("🔋 Low Voltage Alerts")
+
+    voltage_df = df[df["voltage"] < 11][[
+        "label",
+        "voltage",
+        "address",
+        "fix_time"
+    ]]
+
+    if not voltage_df.empty:
+
+        st.dataframe(
+            voltage_df,
+            use_container_width=True,
+            height=250
+        )
+
+    else:
+        st.success("No low voltage units detected.")
