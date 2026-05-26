@@ -1192,171 +1192,222 @@ if "df" in locals() and not df.empty:
 
 
 #tests
-    st.divider()
+# =====================================================
+# GPS INSIGHT API TESTBENCH
+# =====================================================
+st.divider()
 
-    # =====================================================
-    # GPS INSIGHT API TESTBENCH
-    # =====================================================
-    st.header("🧪 GPS Insight API Testbench")
+st.header("🧪 GPS Insight API Testbench")
 
-    st.caption(
-        "Pruebas manuales de endpoints GPS Insight."
-    )
+st.caption(
+    "Pruebas manuales de endpoints GPS Insight."
+)
 
-    # =====================================================
-    # ENDPOINT SELECTOR
-    # =====================================================
-    endpoint_options = {
-        "Vehicle Location":
-            "vehicle/location",
+# =====================================================
+# ENDPOINT SELECTOR
+# =====================================================
+endpoint_options = {
+    "Vehicle Location":
+        "vehicle/location",
 
-        "Vehicle Attributes":
-            "vehicle/getattributes",
+    "Vehicle Attributes":
+        "vehicle/getattributes",
 
-        "Vehicle List":
-            "vehicle/list",
+    "Vehicle List":
+        "vehicle/list",
 
-        "Vehicle Groups":
-            "vehicle/getgroups"
-    }
+    "Vehicle Groups":
+        "vehicle/getgroups"
+}
+
+tb1, tb2 = st.columns(2)
+
+with tb1:
 
     selected_label = st.selectbox(
         "Endpoint",
         list(endpoint_options.keys())
     )
 
-    endpoint = endpoint_options[selected_label]
+endpoint = endpoint_options[selected_label]
 
-    # =====================================================
-    # OPTIONAL VEHICLE FILTER
-    # =====================================================
-    tb_vehicle = st.text_input(
-        "Unidad / Vehicle ID (Opcional)",
-        placeholder="CA4531009036"
+# =====================================================
+# VEHICLE DROPDOWN
+# =====================================================
+with tb2:
+
+    vehicle_ids = []
+
+    if "id" in df.columns:
+
+        vehicle_ids = sorted(
+            df["id"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+    tb_vehicle = st.selectbox(
+        "Unidad / Vehicle ID",
+        ["Todos"] + vehicle_ids
     )
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-    if st.button(
-        "🚀 Ejecutar Endpoint",
-        use_container_width=True
-    ):
+# =====================================================
+# EXECUTE
+# =====================================================
+if st.button(
+    "🚀 Ejecutar Endpoint",
+    use_container_width=True
+):
 
-        try:
+    try:
 
-            # =========================================
-            # BUILD URL
-            # =========================================
-            test_url = (
-                "https://api.gpsinsight.com/v2/"
-                f"{endpoint}"
-                f"?session_token={SESSION_TOKEN}"
+        # =========================================
+        # BUILD URL
+        # =========================================
+        test_url = (
+            "https://api.gpsinsight.com/v2/"
+            f"{endpoint}"
+            f"?session_token={SESSION_TOKEN}"
+        )
+
+        # =========================================
+        # OPTIONAL VEHICLE FILTER
+        # =========================================
+        if tb_vehicle != "Todos":
+
+            test_url += (
+                f"&vehicle={tb_vehicle}"
             )
 
-            # Optional vehicle filter
-            if tb_vehicle.strip():
+        # =========================================
+        # REQUEST
+        # =========================================
+        tb_response = requests.get(
+            test_url
+        )
 
-                test_url += (
-                    f"&vehicle={tb_vehicle}"
+        tb_response.raise_for_status()
+
+        tb_json = tb_response.json()
+
+        # =========================================
+        # STATUS
+        # =========================================
+        st.success(
+            "Endpoint ejecutado correctamente."
+        )
+
+        # =========================================
+        # REQUEST URL
+        # =========================================
+        st.subheader("🔗 Request URL")
+
+        st.code(
+            test_url,
+            language="text"
+        )
+
+        # =========================================
+        # RAW RESPONSE
+        # =========================================
+        with st.expander(
+            "📦 Raw JSON Response",
+            expanded=True
+        ):
+
+            st.json(tb_json)
+
+        # =========================================
+        # TABLE VIEW
+        # =========================================
+        if "data" in tb_json:
+
+            if isinstance(tb_json["data"], list):
+
+                tb_df = pd.DataFrame(
+                    tb_json["data"]
                 )
 
-            # =========================================
-            # REQUEST
-            # =========================================
-            tb_response = requests.get(
-                test_url
-            )
+                if not tb_df.empty:
 
-            tb_response.raise_for_status()
-
-            tb_json = tb_response.json()
-
-            st.success(
-                "Endpoint ejecutado correctamente."
-            )
-
-            # =========================================
-            # REQUEST URL
-            # =========================================
-            st.code(
-                test_url,
-                language="text"
-            )
-
-            # =========================================
-            # RAW RESPONSE
-            # =========================================
-            with st.expander(
-                "📦 Raw JSON Response",
-                expanded=True
-            ):
-
-                st.json(tb_json)
-
-            # =========================================
-            # TABLE VIEW
-            # =========================================
-            if "data" in tb_json:
-
-                if isinstance(tb_json["data"], list):
-
-                    tb_df = pd.DataFrame(
-                        tb_json["data"]
+                    st.subheader(
+                        "📋 Data Table"
                     )
 
-                    if not tb_df.empty:
+                    st.dataframe(
+                        tb_df,
+                        use_container_width=True,
+                        height=500
+                    )
 
-                        st.subheader(
-                            "📋 Data Table"
+                    # =================================
+                    # EXPORT
+                    # =================================
+                    export_buffer = io.BytesIO()
+
+                    with pd.ExcelWriter(
+                        export_buffer,
+                        engine="openpyxl"
+                    ) as writer:
+
+                        tb_df.to_excel(
+                            writer,
+                            index=False,
+                            sheet_name="API_Test"
                         )
 
-                        st.dataframe(
-                            tb_df,
-                            use_container_width=True,
-                            height=500
-                        )
+                    export_buffer.seek(0)
 
-                        # =========================
-                        # EXPORT
-                        # =========================
-                        export_buffer = io.BytesIO()
+                    st.download_button(
+                        label="💾 Descargar Resultado",
+                        data=export_buffer,
+                        file_name=(
+                            f"{endpoint.replace('/', '_')}.xlsx"
+                        ),
+                        mime=(
+                            "application/"
+                            "vnd.openxmlformats-officedocument."
+                            "spreadsheetml.sheet"
+                        ),
+                        use_container_width=True
+                    )
 
-                        with pd.ExcelWriter(
-                            export_buffer,
-                            engine="openpyxl"
-                        ) as writer:
+                else:
 
-                            tb_df.to_excel(
-                                writer,
-                                index=False,
-                                sheet_name="API_Test"
-                            )
+                    st.warning(
+                        "El endpoint no regresó datos."
+                    )
 
-                        export_buffer.seek(0)
+            elif isinstance(tb_json["data"], dict):
 
-                        st.download_button(
-                            label="💾 Descargar Resultado",
-                            data=export_buffer,
-                            file_name=(
-                                f"{endpoint.replace('/', '_')}.xlsx"
-                            ),
-                            mime=(
-                                "application/"
-                                "vnd.openxmlformats-officedocument."
-                                "spreadsheetml.sheet"
-                            ),
-                            use_container_width=True
-                        )
+                st.subheader(
+                    "📋 Data Object"
+                )
 
-        except requests.exceptions.RequestException as e:
+                st.json(tb_json["data"])
 
-            st.error(
-                f"Request failed: {e}"
+            else:
+
+                st.info(
+                    "El endpoint no contiene una estructura tabular."
+                )
+
+        else:
+
+            st.warning(
+                "La respuesta no contiene la llave 'data'."
             )
 
-        except Exception as e:
+    except requests.exceptions.RequestException as e:
 
-            st.error(
-                f"Unexpected error: {e}"
-            )
+        st.error(
+            f"Request failed: {e}"
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Unexpected error: {e}"
+        )
