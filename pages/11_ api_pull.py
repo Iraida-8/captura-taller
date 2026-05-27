@@ -198,7 +198,6 @@ st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
 # =====================================================
 # AUTO REFRESH TIMER
 # =====================================================
-from streamlit_autorefresh import st_autorefresh
 
 REFRESH_SECONDS = 300  # 5 minutes
 
