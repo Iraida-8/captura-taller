@@ -535,8 +535,11 @@ if "df" in locals() and not df.empty:
     # =====================================================
     # FILTERS
     # =====================================================
-    f1, f2 = st.columns(2)
+    f1, f2, f3 = st.columns(3)
 
+    # =============================================
+    # UNIT FILTER
+    # =============================================
     with f1:
 
         unidades = sorted(
@@ -552,6 +555,9 @@ if "df" in locals() and not df.empty:
             ["Todas"] + unidades
         )
 
+    # =============================================
+    # IGNITION FILTER
+    # =============================================
     with f2:
 
         estado_select = st.selectbox(
@@ -559,19 +565,71 @@ if "df" in locals() and not df.empty:
             ["Todos", "on", "off"]
         )
 
+    # =============================================
+    # TYPE FILTER
+    # =============================================
+    with f3:
+
+        tipo_select = st.selectbox(
+            "Tipo de Unidad",
+            [
+                "Todos",
+                "Tracto",
+                "Caja"
+            ]
+        )
+
     # =====================================================
     # APPLY FILTERS
     # =====================================================
     df_units = df.copy()
 
+    # =============================================
+    # UNIT FILTER
+    # =============================================
     if unidad_select != "Todas":
+
         df_units = df_units[
-            df_units["label"].astype(str) == unidad_select
+            df_units["label"]
+            .astype(str) == unidad_select
         ]
 
+    # =============================================
+    # IGNITION FILTER
+    # =============================================
     if estado_select != "Todos":
+
         df_units = df_units[
-            df_units["ignition"].astype(str).str.lower() == estado_select
+            df_units["ignition"]
+            .astype(str)
+            .str.lower() == estado_select
+        ]
+
+    # =============================================
+    # TYPE FILTER
+    # =============================================
+    if tipo_select == "Caja":
+
+        df_units = df_units[
+            df_units["label"]
+            .astype(str)
+            .str.lower()
+            .str.contains(
+                "caja",
+                na=False
+            )
+        ]
+
+    elif tipo_select == "Tracto":
+
+        df_units = df_units[
+            ~df_units["label"]
+            .astype(str)
+            .str.lower()
+            .str.contains(
+                "caja",
+                na=False
+            )
         ]
 
     # =====================================================
