@@ -330,14 +330,31 @@ if "df" in locals() and not df.empty:
     st.header("📊 Dashboard Operativo GPS")
 
     # =========================================
-    # UNIT TYPE CLASSIFICATION
+    # DATA PREP
     # =========================================
     df["label"] = (
         df["label"]
         .astype(str)
     )
 
-    # Cajas / Remolques
+    df["inst_speed"] = pd.to_numeric(
+        df["inst_speed"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["odometer"] = pd.to_numeric(
+        df["odometer"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["voltage"] = pd.to_numeric(
+        df["voltage"],
+        errors="coerce"
+    ).fillna(0)
+
+    # =========================================
+    # UNIT CLASSIFICATION
+    # =========================================
     cajas_df = df[
         df["label"]
         .str.lower()
@@ -347,7 +364,6 @@ if "df" in locals() and not df.empty:
         )
     ]
 
-    # Tractocamiones
     trucks_df = df[
         ~df["label"]
         .str.lower()
@@ -358,68 +374,147 @@ if "df" in locals() and not df.empty:
     ]
 
     # =========================================
-    # COUNTS
+    # KPI FUNCTION
     # =========================================
-    total_cajas = len(cajas_df)
-    total_trucks = len(trucks_df)
+    def render_kpis(dataframe, title):
 
-    moving_cajas = (
-        cajas_df["inst_speed"] > 0
-    ).sum()
+        total_units = len(dataframe)
 
-    moving_trucks = (
-        trucks_df["inst_speed"] > 0
-    ).sum()
+        moving_units = (
+            dataframe["inst_speed"] > 0
+        ).sum()
 
-    stopped_cajas = (
-        cajas_df["inst_speed"] <= 0
-    ).sum()
+        stopped_units = (
+            dataframe["inst_speed"] <= 0
+        ).sum()
 
-    stopped_trucks = (
-        trucks_df["inst_speed"] <= 0
-    ).sum()
+        ignition_on = (
+            dataframe["ignition"]
+            .astype(str)
+            .str.lower()
+            .eq("on")
+            .sum()
+        )
+
+        ignition_off = (
+            dataframe["ignition"]
+            .astype(str)
+            .str.lower()
+            .eq("off")
+            .sum()
+        )
+
+        avg_speed = round(
+            dataframe["inst_speed"].mean(),
+            1
+        )
+
+        max_speed = round(
+            dataframe["inst_speed"].max(),
+            1
+        )
+
+        low_voltage = (
+            dataframe["voltage"] < 11
+        ).sum()
+
+        # =====================================
+        # PANIC BUTTON
+        # =====================================
+        panic_active = 0
+
+        if "inputs" in dataframe.columns:
+
+            for val in dataframe["inputs"]:
+
+                if isinstance(val, dict):
+
+                    if "Panic Button" in val:
+
+                        if str(
+                            val["Panic Button"]
+                        ).lower() == "on":
+
+                            panic_active += 1
+
+        # =====================================
+        # SECTION TITLE
+        # =====================================
+        st.subheader(title)
+
+        # =====================================
+        # FIRST ROW
+        # =====================================
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+        c1.metric(
+            "🚛 Total",
+            total_units
+        )
+
+        c2.metric(
+            "🟢 Movimiento",
+            moving_units
+        )
+
+        c3.metric(
+            "🔴 Detenidas",
+            stopped_units
+        )
+
+        c4.metric(
+            "⚡ Ignición ON",
+            ignition_on
+        )
+
+        c5.metric(
+            "⛔ Ignición OFF",
+            ignition_off
+        )
+
+        c6.metric(
+            "🏎️ Vel. Promedio",
+            f"{avg_speed} km/h"
+        )
+
+        # =====================================
+        # SECOND ROW
+        # =====================================
+        c7, c8, c9 = st.columns(3)
+
+        c7.metric(
+            "🔥 Velocidad Máxima",
+            f"{max_speed} km/h"
+        )
+
+        c8.metric(
+            "🔋 Voltaje Bajo",
+            low_voltage
+        )
+
+        c9.metric(
+            "🚨 Pánico",
+            panic_active
+        )
+
+        st.divider()
 
     # =========================================
-    # KPI SECTION
+    # RENDER KPI SECTIONS
     # =========================================
-    st.subheader("🚛 KPIs Tractocamiones")
-
-    tc1, tc2, tc3 = st.columns(3)
-
-    tc1.metric(
-        "🚛 Total Tractos",
-        total_trucks
+    render_kpis(
+        trucks_df,
+        "🚛 KPIs Tractocamiones"
     )
 
-    tc2.metric(
-        "🟢 Tractos en Movimiento",
-        moving_trucks
+    render_kpis(
+        cajas_df,
+        "📦 KPIs Cajas / Remolques"
     )
 
-    tc3.metric(
-        "🔴 Tractos Detenidos",
-        stopped_trucks
-    )
-
-    st.divider()
-
-    st.subheader("📦 KPIs Cajas / Remolques")
-
-    rc1, rc2, rc3 = st.columns(3)
-
-    rc1.metric(
-        "📦 Total Cajas",
-        total_cajas
-    )
-
-    rc2.metric(
-        "🟢 Cajas en Movimiento",
-        moving_cajas
-    )
-
-    rc3.metric(
-        "🔴 Cajas Detenidas",
-        stopped_cajas
+    render_kpis(
+        df,
+        "🌐 KPIs Generales"
     )
 
     st.divider()
