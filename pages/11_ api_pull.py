@@ -994,12 +994,35 @@ if "df" in locals() and not df.empty:
         expanded=False
     ):
 
+        # =====================================
+        # SAFE DATAFRAME COPY
+        # =====================================
+        display_df = df.copy()
+
+        for col in display_df.columns:
+
+            display_df[col] = display_df[col].apply(
+                lambda x:
+                json.dumps(
+                    x,
+                    ensure_ascii=False
+                )
+                if isinstance(x, (dict, list))
+                else x
+            )
+
+        # =====================================
+        # DISPLAY TABLE
+        # =====================================
         st.dataframe(
-            df,
+            display_df,
             use_container_width=True,
             height=700
         )
 
+        # =====================================
+        # EXPORT
+        # =====================================
         fleet_buffer = io.BytesIO()
 
         with pd.ExcelWriter(
@@ -1007,7 +1030,7 @@ if "df" in locals() and not df.empty:
             engine="openpyxl"
         ) as writer:
 
-            df.to_excel(
+            display_df.to_excel(
                 writer,
                 index=False,
                 sheet_name="Flotilla"
