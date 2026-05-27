@@ -6,6 +6,8 @@ import json
 import pydeck as pdk
 from auth import require_login, require_access
 import streamlit.components.v1 as components
+from streamlit_autorefresh import st_autorefresh # type: ignore
+from datetime import datetime
 
 # =================================
 # Page configuration
@@ -192,6 +194,58 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
+
+# =====================================================
+# AUTO REFRESH TIMER
+# =====================================================
+
+REFRESH_SECONDS = 300  # 5 minutes
+
+refresh_counter = st_autorefresh(
+    interval=REFRESH_SECONDS * 1000,
+    key="gps_auto_refresh"
+)
+
+# =============================================
+# COUNTDOWN DISPLAY
+# =============================================
+remaining_seconds = (
+    REFRESH_SECONDS -
+    (datetime.now().timestamp() % REFRESH_SECONDS)
+)
+
+remaining_seconds = int(remaining_seconds)
+
+mins = remaining_seconds // 60
+secs = remaining_seconds % 60
+
+timer_html = f"""
+<div style="
+    background:#1B267A;
+    border:1px solid rgba(191,167,95,0.25);
+    padding:12px;
+    border-radius:14px;
+    margin-top:10px;
+    margin-bottom:20px;
+    text-align:center;
+    color:white;
+    font-weight:700;
+    font-size:1rem;
+">
+    🔄 Actualización automática en:
+    <span style="
+        color:#BFA75F;
+        font-size:1.1rem;
+    ">
+        {mins:02d}:{secs:02d}
+    </span>
+</div>
+"""
+
+st.markdown(
+    timer_html,
+    unsafe_allow_html=True
+)
 
 #==============================================================================================================
 # Session token

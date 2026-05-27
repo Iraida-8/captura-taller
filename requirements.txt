@@ -9,3 +9,4 @@ pdfplumber
 openpyxl
 resend
 pydeck
+streamlit-autorefresh
