@@ -330,6 +330,101 @@ if "df" in locals() and not df.empty:
     st.header("📊 Dashboard Operativo GPS")
 
     # =========================================
+    # UNIT TYPE CLASSIFICATION
+    # =========================================
+    df["label"] = (
+        df["label"]
+        .astype(str)
+    )
+
+    # Cajas / Remolques
+    cajas_df = df[
+        df["label"]
+        .str.lower()
+        .str.contains(
+            "caja",
+            na=False
+        )
+    ]
+
+    # Tractocamiones
+    trucks_df = df[
+        ~df["label"]
+        .str.lower()
+        .str.contains(
+            "caja",
+            na=False
+        )
+    ]
+
+    # =========================================
+    # COUNTS
+    # =========================================
+    total_cajas = len(cajas_df)
+    total_trucks = len(trucks_df)
+
+    moving_cajas = (
+        cajas_df["inst_speed"] > 0
+    ).sum()
+
+    moving_trucks = (
+        trucks_df["inst_speed"] > 0
+    ).sum()
+
+    stopped_cajas = (
+        cajas_df["inst_speed"] <= 0
+    ).sum()
+
+    stopped_trucks = (
+        trucks_df["inst_speed"] <= 0
+    ).sum()
+
+    # =========================================
+    # KPI SECTION
+    # =========================================
+    st.subheader("🚛 KPIs Tractocamiones")
+
+    tc1, tc2, tc3 = st.columns(3)
+
+    tc1.metric(
+        "🚛 Total Tractos",
+        total_trucks
+    )
+
+    tc2.metric(
+        "🟢 Tractos en Movimiento",
+        moving_trucks
+    )
+
+    tc3.metric(
+        "🔴 Tractos Detenidos",
+        stopped_trucks
+    )
+
+    st.divider()
+
+    st.subheader("📦 KPIs Cajas / Remolques")
+
+    rc1, rc2, rc3 = st.columns(3)
+
+    rc1.metric(
+        "📦 Total Cajas",
+        total_cajas
+    )
+
+    rc2.metric(
+        "🟢 Cajas en Movimiento",
+        moving_cajas
+    )
+
+    rc3.metric(
+        "🔴 Cajas Detenidas",
+        stopped_cajas
+    )
+
+    st.divider()
+
+    # =========================================
     # DATA PREP
     # =========================================
     df["inst_speed"] = pd.to_numeric(
