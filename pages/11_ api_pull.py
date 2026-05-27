@@ -198,29 +198,23 @@ st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
 # =====================================================
 # AUTO REFRESH TIMER
 # =====================================================
+from streamlit_autorefresh import st_autorefresh
 
 REFRESH_SECONDS = 300  # 5 minutes
 
-refresh_counter = st_autorefresh(
+# =============================================
+# AUTO REFRESH
+# =============================================
+st_autorefresh(
     interval=REFRESH_SECONDS * 1000,
     key="gps_auto_refresh"
 )
 
 # =============================================
-# COUNTDOWN DISPLAY
+# LIVE JAVASCRIPT COUNTDOWN
 # =============================================
-remaining_seconds = (
-    REFRESH_SECONDS -
-    (datetime.now().timestamp() % REFRESH_SECONDS)
-)
-
-remaining_seconds = int(remaining_seconds)
-
-mins = remaining_seconds // 60
-secs = remaining_seconds % 60
-
 timer_html = f"""
-<div style="
+<div id="gps-refresh-timer" style="
     background:#1B267A;
     border:1px solid rgba(191,167,95,0.25);
     padding:12px;
@@ -233,18 +227,46 @@ timer_html = f"""
     font-size:1rem;
 ">
     🔄 Actualización automática en:
-    <span style="
+    <span id="countdown" style="
         color:#BFA75F;
         font-size:1.1rem;
     ">
-        {mins:02d}:{secs:02d}
+        05:00
     </span>
 </div>
+
+<script>
+
+let totalSeconds = {REFRESH_SECONDS};
+
+function updateCountdown() {{
+
+    let minutes = Math.floor(totalSeconds / 60);
+    let seconds = totalSeconds % 60;
+
+    minutes = String(minutes).padStart(2, '0');
+    seconds = String(seconds).padStart(2, '0');
+
+    document.getElementById("countdown").innerHTML =
+        `${{minutes}}:${{seconds}}`;
+
+    totalSeconds--;
+
+    if (totalSeconds < 0) {{
+        totalSeconds = {REFRESH_SECONDS};
+    }}
+}}
+
+updateCountdown();
+
+setInterval(updateCountdown, 1000);
+
+</script>
 """
 
-st.markdown(
+components.html(
     timer_html,
-    unsafe_allow_html=True
+    height=80
 )
 
 #==============================================================================================================
