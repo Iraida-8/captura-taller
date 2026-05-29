@@ -897,86 +897,160 @@ if "df" in locals() and not df.empty:
             st.session_state.modal_gps_unit = None
             st.rerun()
 
+    st.session_state.modal_gps_unit = r.to_dict()
+
     # =====================================================
-    # MODAL
+    # SELECTED UNIT DETAIL
     # =====================================================
     if st.session_state.get("modal_gps_unit"):
 
         gps_row = st.session_state.modal_gps_unit
 
-        unidad_modal = gps_row.get("label", "-")
+        st.divider()
 
-        @st.dialog(f"Unidad {unidad_modal}")
-        def modal_gps():
+        st.header(
+            f"🚛 Unidad Seleccionada: {gps_row.get('label', '-')}"
+        )
+
+        left, right = st.columns([1, 1])
+
+        # =============================================
+        # LEFT SIDE
+        # =============================================
+        with left:
 
             st.subheader("📍 Ubicación")
 
-            st.markdown(
-                f"""
-                **Dirección:**  
-                {gps_row.get("address", "-")}
-                """
+            st.info(
+                gps_row.get(
+                    "address",
+                    "-"
+                )
             )
 
-            c1, c2, c3 = st.columns(3)
+            c1, c2 = st.columns(2)
 
             with c1:
+
+                st.metric(
+                    "Latitud",
+                    gps_row.get(
+                        "latitude",
+                        "-"
+                    )
+                )
+
+                st.metric(
+                    "Dirección",
+                    gps_row.get(
+                        "direction",
+                        "-"
+                    )
+                )
+
+            with c2:
+
+                st.metric(
+                    "Longitud",
+                    gps_row.get(
+                        "longitude",
+                        "-"
+                    )
+                )
+
+                st.metric(
+                    "Heading",
+                    gps_row.get(
+                        "heading",
+                        "-"
+                    )
+                )
+
+            st.subheader("📡 Información GPS")
+
+            st.write(
+                f"**Última conexión:** {gps_row.get('fix_time', '-')}"
+            )
+
+            st.write(
+                f"**Tiempo detenido:** {gps_row.get('speed_label', '-')}"
+            )
+
+            st.write(
+                f"**Odómetro:** {gps_row.get('odometer', '-')}"
+            )
+
+        # =============================================
+        # RIGHT SIDE
+        # =============================================
+        with right:
+
+            st.subheader("⚡ Estado Operativo")
+
+            c3, c4, c5 = st.columns(3)
+
+            with c3:
+
                 st.metric(
                     "Velocidad",
                     f"{gps_row.get('inst_speed', 0)} km/h"
                 )
 
-            with c2:
+            with c4:
+
                 st.metric(
                     "Ignición",
-                    str(gps_row.get("ignition", "-")).upper()
+                    str(
+                        gps_row.get(
+                            "ignition",
+                            "-"
+                        )
+                    ).upper()
                 )
 
-            with c3:
+            with c5:
+
                 st.metric(
                     "Voltaje",
-                    f"{gps_row.get('voltage', '-')}"
+                    gps_row.get(
+                        "voltage",
+                        "-"
+                    )
                 )
-
-            st.divider()
-
-            st.subheader("📡 Información GPS")
-
-            st.markdown(
-                f"""
-                - **Latitud:** {gps_row.get("latitude", "-")}
-                - **Longitud:** {gps_row.get("longitude", "-")}
-                - **Dirección:** {gps_row.get("direction", "-")}
-                - **Heading:** {gps_row.get("heading", "-")}
-                - **Última conexión:** {gps_row.get("fix_time", "-")}
-                - **Tiempo detenido:** {gps_row.get("speed_label", "-")}
-                - **Odómetro:** {gps_row.get("odometer", "-")}
-                """
-            )
 
             st.divider()
 
             st.subheader("👤 Operador")
 
-            st.markdown(
-                f"""
-                - **Driver ID:** {gps_row.get("driver_id", "-")}
-                - **Estado Driver:** {gps_row.get("driver_status", "-")}
-                - **Último cambio:** {gps_row.get("driver_date", "-")}
-                """
+            st.write(
+                f"**Driver ID:** {gps_row.get('driver_id', '-')}"
+            )
+
+            st.write(
+                f"**Estado Driver:** {gps_row.get('driver_status', '-')}"
+            )
+
+            st.write(
+                f"**Último cambio:** {gps_row.get('driver_date', '-')}"
             )
 
             st.divider()
 
             st.subheader("🔌 Inputs")
 
-            st.json(gps_row.get("inputs", {}))
+            st.json(
+                gps_row.get(
+                    "inputs",
+                    {}
+                )
+            )
 
-            if st.button("Cerrar"):
+            if st.button(
+                "❌ Limpiar Selección",
+                use_container_width=True
+            ):
                 st.session_state.modal_gps_unit = None
                 st.rerun()
-
-        modal_gps()
 
     st.divider()
 
