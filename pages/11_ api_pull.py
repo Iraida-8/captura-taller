@@ -181,7 +181,10 @@ if st.session_state.get("_reset_gps_page", True):
     st.session_state["_reset_gps_page"] = False
 
 # Initialize modal state
-st.session_state.setdefault("modal_gps_unit", None)
+st.session_state.setdefault(
+    "selected_unit",
+    None
+)
 
 # =================================
 # Top navigation
@@ -812,7 +815,7 @@ if "df" in locals() and not df.empty:
                             key=f"gps_unit_{unidad}_{idx}",
                             use_container_width=True
                         ):
-                            st.session_state.modal_gps_unit = r.to_dict()
+                            st.session_state.selected_unit = r.to_dict()
 
                     with b2:
 
@@ -897,109 +900,139 @@ if "df" in locals() and not df.empty:
             st.session_state.modal_gps_unit = None
             st.rerun()
 
-    # =====================================================
-    # MODAL
-    # =====================================================
-    if st.session_state.get("modal_gps_unit"):
+# =====================================================
+# SELECTED UNIT DETAIL
+# =====================================================
+if st.session_state.get("selected_unit"):
 
-        gps_row = st.session_state.modal_gps_unit
+    gps_row = st.session_state.selected_unit
 
-        unidad_modal = gps_row.get("label", "-")
+    st.divider()
 
-        @st.dialog(f"Unidad {unidad_modal}")
-        def modal_gps():
+    st.header(
+        f"🚛 Unidad Seleccionada: {gps_row.get('label','-')}"
+    )
 
-            st.subheader("📍 Ubicación")
+    left, right = st.columns([2,1])
 
-            st.markdown(
-                f"""
-                **Dirección:**  
-                {gps_row.get("address", "-")}
-                """
+    # =========================================
+    # LEFT = MAP
+    # =========================================
+    with left:
+
+        map_unit = pd.DataFrame([{
+            "latitude": gps_row.get("latitude"),
+            "longitude": gps_row.get("longitude")
+        }])
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=map_unit,
+            get_position="[longitude, latitude]",
+            get_fill_color=[0, 120, 255],
+            radius_units="pixels",
+            get_radius=15
+        )
+
+        view_state = pdk.ViewState(
+            latitude=float(
+                gps_row.get("latitude", 25)
+            ),
+            longitude=float(
+                gps_row.get("longitude", -100)
+            ),
+            zoom=12
+        )
+
+        st.pydeck_chart(
+            pdk.Deck(
+                layers=[layer],
+                initial_view_state=view_state,
+                map_style="light"
+            ),
+            use_container_width=True
+        )
+
+    # =========================================
+    # RIGHT = DETAILS
+    # =========================================
+    with right:
+
+        st.subheader("⚡ Estado Operativo")
+
+        st.metric(
+            "Ignición",
+            str(
+                gps_row.get(
+                    "ignition",
+                    "-"
+                )
+            ).upper()
+        )
+
+        st.metric(
+            "Velocidad",
+            f"{gps_row.get('inst_speed',0)} km/h"
+        )
+
+        st.metric(
+            "Voltaje",
+            gps_row.get("voltage","-")
+        )
+
+        st.metric(
+            "Tiempo Detenido",
+            gps_row.get("speed_label","-")
+        )
+
+        st.subheader("📍 Ubicación")
+
+        st.write(
+            gps_row.get(
+                "address",
+                "-"
             )
+        )
 
-            c1, c2, c3 = st.columns(3)
+        st.write(
+            f"Lat: {gps_row.get('latitude','-')}"
+        )
 
-            with c1:
-                st.metric(
-                    "Velocidad",
-                    f"{gps_row.get('inst_speed', 0)} km/h"
-                )
+        st.write(
+            f"Lon: {gps_row.get('longitude','-')}"
+        )
 
-            with c2:
-                st.metric(
-                    "Ignición",
-                    str(gps_row.get("ignition", "-")).upper()
-                )
+        st.write(
+            f"Heading: {gps_row.get('heading','-')}"
+        )
 
-            with c3:
-                st.metric(
-                    "Voltaje",
-                    f"{gps_row.get('voltage', '-')}"
-                )
+        st.subheader("🚛 Unidad")
 
-            st.divider()
+        st.write(
+            f"ID: {gps_row.get('id','-')}"
+        )
 
-            st.subheader("📡 Información GPS")
+        st.write(
+            f"Odómetro: {gps_row.get('odometer','-')}"
+        )
 
-            st.markdown(
-                f"""
-                - **Latitud:** {gps_row.get("latitude", "-")}
-                - **Longitud:** {gps_row.get("longitude", "-")}
-                - **Dirección:** {gps_row.get("direction", "-")}
-                - **Heading:** {gps_row.get("heading", "-")}
-                - **Última conexión:** {gps_row.get("fix_time", "-")}
-                - **Tiempo detenido:** {gps_row.get("speed_label", "-")}
-                - **Odómetro:** {gps_row.get("odometer", "-")}
-                """
-            )
+        st.write(
+            f"Último reporte: {gps_row.get('fix_time','-')}"
+        )
 
-            st.divider()
+        st.subheader("👤 Operador")
 
-            st.subheader("👤 Operador")
+        st.write(
+            f"Driver ID: {gps_row.get('driver_id','-')}"
+        )
 
-            st.subheader("🏷️ Grupos")
+        st.write(
+            f"Estado: {gps_row.get('driver_status','-')}"
+        )
 
-            try:
-
-                group_url = (
-                    "https://api.gpsinsight.com/v2/"
-                    "vehicle/listvehiclegroups"
-                    f"?session_token={SESSION_TOKEN}"
-                    f"&vehicle={gps_row.get('id')}"
-                )
-
-                group_response = requests.get(group_url)
-
-                group_json = group_response.json()
-
-                st.json(group_json)
-
-            except Exception as e:
-
-                st.warning(
-                    f"No fue posible obtener grupos: {e}"
-                )
-
-            st.markdown(
-                f"""
-                - **Driver ID:** {gps_row.get("driver_id", "-")}
-                - **Estado Driver:** {gps_row.get("driver_status", "-")}
-                - **Último cambio:** {gps_row.get("driver_date", "-")}
-                """
-            )
-
-            st.divider()
-
-            st.subheader("🔌 Inputs")
-
-            st.json(gps_row.get("inputs", {}))
-
-            if st.button("Cerrar"):
-                st.session_state.modal_gps_unit = None
-                st.rerun()
-
-        modal_gps()
+        st.write(
+            f"Último cambio: {gps_row.get('driver_date','-')}"
+        )
 
     st.divider()
 
