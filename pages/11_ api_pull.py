@@ -958,6 +958,29 @@ if "df" in locals() and not df.empty:
 
             st.subheader("👤 Operador")
 
+            st.subheader("🏷️ Grupos")
+
+            try:
+
+                group_url = (
+                    "https://api.gpsinsight.com/v2/"
+                    "vehicle/listvehiclegroups"
+                    f"?session_token={SESSION_TOKEN}"
+                    f"&vehicle={gps_row.get('id')}"
+                )
+
+                group_response = requests.get(group_url)
+
+                group_json = group_response.json()
+
+                st.json(group_json)
+
+            except Exception as e:
+
+                st.warning(
+                    f"No fue posible obtener grupos: {e}"
+                )
+
             st.markdown(
                 f"""
                 - **Driver ID:** {gps_row.get("driver_id", "-")}
