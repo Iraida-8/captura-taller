@@ -269,8 +269,54 @@ components.html(
 )
 
 #==============================================================================================================
-# Session token
-SESSION_TOKEN = "e487c2595ef34288cb6a99eb096b8bbcf16d92959c5ecc44c136"
+#==============================================================================================================
+# GPS INSIGHT AUTH
+#==============================================================================================================
+
+@st.cache_data(ttl=300)
+def get_gps_token():
+
+    auth_url = (
+        "https://api.gpsinsight.com/v2/userauth/login"
+        "?username=aldodevpicus"
+        "&app_token=6a10839fe4fb6"
+    )
+
+    response = requests.get(
+        auth_url,
+        timeout=30
+    )
+
+    response.raise_for_status()
+
+    auth_json = response.json()
+
+    token = (
+        auth_json
+        .get("data", {})
+        .get("token")
+    )
+
+    if not token:
+
+        raise Exception(
+            "GPS Insight no regresó token."
+        )
+
+    return token
+
+
+try:
+
+    SESSION_TOKEN = get_gps_token()
+
+except Exception as e:
+
+    st.error(
+        f"Error obteniendo token GPS Insight: {e}"
+    )
+
+    st.stop()
 
 #==============================================================================================================
 # Location endpoint
