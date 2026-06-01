@@ -1481,7 +1481,144 @@ if "df" in locals() and not df.empty:
             "No se encontraron coordenadas GPS válidas."
         )
 
+# =====================================================
+# LANDMARKS
+# =====================================================
+st.divider()
 
+st.header("📍 Landmarks GPS Insight")
+
+try:
+
+    landmark_url = (
+        "https://api.gpsinsight.com/v2/"
+        f"landmark/list?session_token={SESSION_TOKEN}"
+    )
+
+    landmark_response = requests.get(
+        landmark_url,
+        timeout=30
+    )
+
+    landmark_response.raise_for_status()
+
+    landmark_json = landmark_response.json()
+
+    landmarks = landmark_json.get(
+        "data",
+        []
+    )
+
+    if landmarks:
+
+        landmark_df = pd.DataFrame(
+            landmarks
+        )
+
+        # =====================================
+        # KPIs
+        # =====================================
+        k1, k2, k3 = st.columns(3)
+
+        with k1:
+
+            st.metric(
+                "📍 Total Landmarks",
+                len(landmark_df)
+            )
+
+        with k2:
+
+            st.metric(
+                "⭕ Circulares",
+                (
+                    landmark_df["polygon"] == 0
+                ).sum()
+                if "polygon" in landmark_df.columns
+                else 0
+            )
+
+        with k3:
+
+            st.metric(
+                "🔺 Polígonos",
+                (
+                    landmark_df["polygon"] == 1
+                ).sum()
+                if "polygon" in landmark_df.columns
+                else 0
+            )
+
+        st.divider()
+
+        # =====================================
+        # TABLE
+        # =====================================
+        with st.expander(
+            "📋 Tabla de Landmarks",
+            expanded=False
+        ):
+
+            st.dataframe(
+                landmark_df,
+                use_container_width=True,
+                height=500
+            )
+
+        # =====================================
+        # EXPORT
+        # =====================================
+        landmark_buffer = io.BytesIO()
+
+        with pd.ExcelWriter(
+            landmark_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            landmark_df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Landmarks"
+            )
+
+        landmark_buffer.seek(0)
+
+        st.download_button(
+            label="💾 Descargar Landmarks",
+            data=landmark_buffer,
+            file_name="Landmarks_GPS.xlsx",
+            mime=(
+                "application/"
+                "vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
+            use_container_width=True
+        )
+
+        # =====================================
+        # RAW RESPONSE
+        # =====================================
+        with st.expander(
+            "📦 Raw Landmark Response",
+            expanded=False
+        ):
+
+            st.json(
+                landmark_json
+            )
+
+    else:
+
+        st.warning(
+            "No se encontraron landmarks."
+        )
+
+except Exception as e:
+
+    st.error(
+        f"Error cargando landmarks: {e}"
+    )
+    
 #tests
 # =====================================================
 # GPS INSIGHT API TESTBENCH
