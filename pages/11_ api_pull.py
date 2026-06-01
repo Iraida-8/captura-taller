@@ -1504,6 +1504,15 @@ try:
 
     landmark_json = landmark_response.json()
 
+    st.subheader("Landmark Debug")
+
+    st.write(
+        "Status:",
+        landmark_json.get("head", {})
+    )
+
+    st.json(landmark_json)
+
     landmarks = landmark_json.get(
         "data",
         []
@@ -1618,7 +1627,7 @@ except Exception as e:
     st.error(
         f"Error cargando landmarks: {e}"
     )
-    
+
 #tests
 # =====================================================
 # GPS INSIGHT API TESTBENCH
