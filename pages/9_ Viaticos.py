@@ -52,6 +52,11 @@ if "submitting_comp" not in st.session_state:
 # =================================
 # EMAIL ROUTING
 # =================================
+EMAIL_TEST_MODE = True
+
+EMAIL_TEST_RECIPIENT = (
+    "aldo.sanchez@palosgarzalogistics.com"
+)
 
 EMAILS_FIJOS = [
 
@@ -97,6 +102,9 @@ EMAILS_EMPRESA = {
 
 def obtener_destinatarios(empresa):
 
+    if EMAIL_TEST_MODE:
+        return [EMAIL_TEST_RECIPIENT]
+
     destinatarios = EMAILS_FIJOS.copy()
 
     correos_empresa = EMAILS_EMPRESA.get(
@@ -105,10 +113,6 @@ def obtener_destinatarios(empresa):
     )
 
     destinatarios.extend(correos_empresa)
-
-    # =================================
-    # REMOVE DUPLICATES
-    # =================================
 
     destinatarios = list(
         dict.fromkeys(destinatarios)
