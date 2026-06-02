@@ -56,11 +56,15 @@ st.markdown(
        ========================= */
     div.stButton > button {
         height: 95px;
-        font-size: 1.05rem;
-        font-weight: 600;
         border-radius: 16px;
         padding: 1.2rem;
-        white-space: normal;
+    }
+
+    div.stButton > button p,
+    div.stButton > button span {
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+    }
 
         background-color: #1B267A;
         color: #FFFFFF;
