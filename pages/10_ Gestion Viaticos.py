@@ -147,17 +147,25 @@ def obtener_email_usuario(nombre_completo):
     return None
 
 # =================================
-# BUILD EMAIL LIST
+# EMAIL TEST MODE
 # =================================
 
-def construir_destinatarios(
+EMAIL_TEST_MODE = True
+EMAIL_TEST_RECIPIENT = (
+    "aldo.sanchez@palosgarzalogistics.com"
+)
 
+def construir_destinatarios(
     empresa,
     email_usuario_actual,
     correo_creador=None
 ):
 
+    if EMAIL_TEST_MODE:
+        return [EMAIL_TEST_RECIPIENT]
+
     destinatarios = []
+
 
     # =================================
     # LOGGED USER
