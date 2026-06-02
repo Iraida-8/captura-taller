@@ -60,7 +60,7 @@ st.markdown(
     /* Standard buttons */
     div.stButton > button {
         height: 42px;
-        font-size: 18px;
+        font-size: 14px;
         font-weight: 600;
         border-radius: 12px;
         background-color: #1B267A;
@@ -79,7 +79,7 @@ st.markdown(
     /* Main module buttons */
     .main-btn div.stButton > button {
         height: 120px;
-        font-size: 20px;
+        font-size: 26px;
         font-weight: 700;
         border-radius: 18px;
         background-color: #1B267A;
