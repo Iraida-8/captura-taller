@@ -359,6 +359,12 @@ if has_access(section_audit):
             "label": "🚚  Gestión de Unidades",
             "page": "pages/8_ Gestion de Unidades.py",
             "key": "btn_gestion_unidades"
+        },
+        {
+            "access": "ai_testing",
+            "label": "🚚  Pruebas de IA",
+            "page": "pages/12_ AI_tests.py",
+            "key": "btn_ai_testing"
         }
     ])
 
