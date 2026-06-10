@@ -382,6 +382,158 @@ try:
             vehicles
         )
 
+        # =====================================================
+        # RAW DATA DEBUG
+        # =====================================================
+        with st.expander(
+            "🔍 DEBUG - Datos GPS Sin Filtrar",
+            expanded=True
+        ):
+
+            st.write(
+                f"Total registros cargados: {len(df)}"
+            )
+
+            st.write(
+                f"Columnas: {list(df.columns)}"
+            )
+
+            if "gps_account" in df.columns:
+
+                st.subheader("Por Cuenta GPS")
+
+                st.dataframe(
+                    df["gps_account"]
+                    .value_counts()
+                    .reset_index()
+                    .rename(
+                        columns={
+                            "index": "Cuenta",
+                            "gps_account": "Total"
+                        }
+                    ),
+                    use_container_width=True
+                )
+
+            if "label" in df.columns:
+
+                st.subheader("Primeras 100 unidades")
+
+                st.dataframe(
+                    df[[
+                        "label",
+                        "gps_account"
+                    ]].head(100),
+                    use_container_width=True,
+                    height=400
+                )
+
+                st.write(
+                    f"Unidades únicas: {df['label'].nunique()}"
+                )
+
+            st.subheader("Conteos para filtros")
+
+            picus_count = len(
+                df[
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.contains("PI", na=False)
+                    )
+                    |
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.match(r"^P\d+", na=False)
+                    )
+                ]
+            )
+
+            lincoln_count = len(
+                df[
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.contains("LF", na=False)
+                    )
+                    |
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.match(r"^L\d+", na=False)
+                    )
+                ]
+            )
+
+            set_freight_count = len(
+                df[
+                    df["label"]
+                    .astype(str)
+                    .str.upper()
+                    .str.contains(
+                        "SET",
+                        na=False
+                    )
+                ]
+            )
+
+            set_logis_count = len(
+                df[
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.contains("SPL", na=False)
+                    )
+                    |
+                    (
+                        df["label"]
+                        .astype(str)
+                        .str.upper()
+                        .str.contains("STL", na=False)
+                    )
+                ]
+            )
+
+            debug_df = pd.DataFrame({
+                "Filtro": [
+                    "PICUS",
+                    "LINCOLN",
+                    "SET FREIGHT",
+                    "SET LOGIS"
+                ],
+                "Registros": [
+                    picus_count,
+                    lincoln_count,
+                    set_freight_count,
+                    set_logis_count
+                ]
+            })
+
+            st.dataframe(
+                debug_df,
+                use_container_width=True
+            )
+
+            st.subheader("Todos los labels")
+
+            st.dataframe(
+                pd.DataFrame({
+                    "label": sorted(
+                        df["label"]
+                        .astype(str)
+                        .unique()
+                    )
+                }),
+                use_container_width=True,
+                height=500
+            )
+
         with open(
             "vehicles.json",
             "w",
