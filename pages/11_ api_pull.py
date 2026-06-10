@@ -381,14 +381,6 @@ try:
         df = pd.DataFrame(
             vehicles
         )
-        st.write("PICUS:", len(picus_vehicles))
-        st.write("PGL:", len(pgl_vehicles))
-        st.write("TOTAL:", len(vehicles))
-
-        st.write(
-            df["gps_account"]
-            .value_counts()
-        )
 
         with open(
             "vehicles.json",
@@ -425,6 +417,52 @@ if "df" in locals() and not df.empty:
 
     st.header("📊 Dashboard Operativo GPS")
 
+# =========================================
+# COMPANY FILTERS
+# =========================================
+
+st.session_state.setdefault(
+    "gps_company_filter",
+    "TODAS"
+)
+
+c1, c2, c3, c4, c5 = st.columns(5)
+
+with c1:
+    if st.button(
+        "PICUS",
+        use_container_width=True
+    ):
+        st.session_state.gps_company_filter = "PICUS"
+
+with c2:
+    if st.button(
+        "LINCOLN",
+        use_container_width=True
+    ):
+        st.session_state.gps_company_filter = "LINCOLN"
+
+with c3:
+    if st.button(
+        "SET FREIGHT",
+        use_container_width=True
+    ):
+        st.session_state.gps_company_filter = "SET FREIGHT"
+
+with c4:
+    if st.button(
+        "SET LOGIS",
+        use_container_width=True
+    ):
+        st.session_state.gps_company_filter = "SET LOGIS"
+
+with c5:
+    if st.button(
+        "TODAS",
+        use_container_width=True
+    ):
+        st.session_state.gps_company_filter = "TODAS"
+
     # =========================================
     # DATA PREP
     # =========================================
@@ -432,6 +470,74 @@ if "df" in locals() and not df.empty:
         df["label"]
         .astype(str)
     )
+
+    # =========================================
+    # COMPANY FILTER
+    # =========================================
+
+    company_filter = st.session_state.get(
+        "gps_company_filter",
+        "TODAS"
+    )
+
+    if company_filter == "PICUS":
+
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("PI", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.match(r"^P\d+", na=False)
+            )
+        ]
+
+    elif company_filter == "LINCOLN":
+
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("LF", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.match(r"^L\d+", na=False)
+            )
+        ]
+
+    elif company_filter == "SET FREIGHT":
+
+        df = df[
+            df["label"]
+            .str.upper()
+            .str.contains(
+                "SET",
+                na=False
+            )
+        ]
+
+    elif company_filter == "SET LOGIS":
+
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("SPL", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("STL", na=False)
+            )
+        ]
 
     df["inst_speed"] = pd.to_numeric(
         df["inst_speed"],
