@@ -1733,6 +1733,65 @@ if "df" in locals() and not df.empty:
         axis=1
     )
 
+    # =============================================
+    # MAP STATUS FILTER
+    # =============================================
+    map_status_filter = st.selectbox(
+        "Estado en mapa",
+        [
+            "Todas",
+            "🟢 En Movimiento",
+            "🟠 Detenido < 1 Hora",
+            "🔴 Detenido 1-6 Horas",
+            "🟥 Detenido 6-24 Horas",
+            "⚫ Detenido +1 Día"
+        ],
+        key="map_status_filter"
+    )
+
+    if map_status_filter == "🟢 En Movimiento":
+
+        map_df = map_df[
+            map_df["inst_speed"] > 0
+        ]
+
+    elif map_status_filter == "🟠 Detenido < 1 Hora":
+
+        map_df = map_df[
+            (map_df["inst_speed"] <= 0)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) < 60)
+        ]
+
+    elif map_status_filter == "🔴 Detenido 1-6 Horas":
+
+        map_df = map_df[
+            (map_df["inst_speed"] <= 0)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) >= 60)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) < 360)
+        ]
+
+    elif map_status_filter == "🟥 Detenido 6-24 Horas":
+
+        map_df = map_df[
+            (map_df["inst_speed"] <= 0)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) >= 360)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) < 1440)
+        ]
+
+    elif map_status_filter == "⚫ Detenido +1 Día":
+
+        map_df = map_df[
+            (map_df["inst_speed"] <= 0)
+            &
+            (map_df["speed_label"].apply(extract_stopped_minutes) >= 1440)
+        ]
+
+
     if not map_df.empty:
 
         st.info(
