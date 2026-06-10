@@ -633,6 +633,14 @@ if "df" in locals() and not df.empty:
         "TODAS"
     )
 
+    st.write(
+        "Filtro actual:",
+        st.session_state.get(
+            "gps_company_filter",
+            "TODAS"
+        )
+    )
+
     if company_filter == "PICUS":
 
         df = df[
