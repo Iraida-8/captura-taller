@@ -170,3 +170,17 @@ st.markdown(
 # =================================
 require_login()
 require_access("ai_testing")
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard.py")
+
+st.divider()
+
+# =================================
+# HEADER
+# =================================
+
+st.title("💳  AI Tester")
