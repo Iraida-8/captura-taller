@@ -274,12 +274,15 @@ components.html(
 #==============================================================================================================
 
 @st.cache_data(ttl=300)
-def get_gps_token():
+def get_gps_token(
+    username,
+    app_token
+):
 
     auth_url = (
         "https://api.gpsinsight.com/v2/userauth/login"
-        "?username=aldodevpicus"
-        "&app_token=6a10839fe4fb6"
+        f"?username={username}"
+        f"&app_token={app_token}"
     )
 
     response = requests.get(
@@ -300,7 +303,7 @@ def get_gps_token():
     if not token:
 
         raise Exception(
-            "GPS Insight no regresó token."
+            f"No token returned for {username}"
         )
 
     return token
@@ -308,7 +311,15 @@ def get_gps_token():
 
 try:
 
-    SESSION_TOKEN = get_gps_token()
+    PICUS_TOKEN = get_gps_token(
+        "aldodevpicus",
+        "6a10839fe4fb6"
+    )
+
+    PGL_TOKEN = get_gps_token(
+        "pglfslpsf",
+        "6a289d87854a6"
+    )
 
 except Exception as e:
 
@@ -318,27 +329,66 @@ except Exception as e:
 
     st.stop()
 
-#==============================================================================================================
-# Location endpoint
-url = f"https://api.gpsinsight.com/v2/vehicle/location?session_token={SESSION_TOKEN}"
+def get_vehicle_locations(
+    session_token
+):
 
-#==============================================================================================================
+    url = (
+        "https://api.gpsinsight.com/v2/vehicle/location"
+        f"?session_token={session_token}"
+    )
 
-# =================================
-# API REQUEST
-# =================================
-try:
+    response = requests.get(
+        url,
+        timeout=30
+    )
 
-    response = requests.get(url)
     response.raise_for_status()
 
-    result = response.json()
+    return (
+        response
+        .json()
+        .get("data", [])
+    )
 
-    vehicles = result.get("data", [])
+#==============================================================================================================
+# Location endpoint
+try:
+
+    picus_vehicles = get_vehicle_locations(
+        PICUS_TOKEN
+    )
+
+    pgl_vehicles = get_vehicle_locations(
+        PGL_TOKEN
+    )
+
+    for v in picus_vehicles:
+
+        v["gps_account"] = "PICUS"
+
+    for v in pgl_vehicles:
+
+        v["gps_account"] = "PGL"
+
+    vehicles = (
+        picus_vehicles +
+        pgl_vehicles
+    )
 
     if vehicles:
 
-        df = pd.DataFrame(vehicles)
+        df = pd.DataFrame(
+            vehicles
+        )
+        st.write("PICUS:", len(picus_vehicles))
+        st.write("PGL:", len(pgl_vehicles))
+        st.write("TOTAL:", len(vehicles))
+
+        st.write(
+            df["gps_account"]
+            .value_counts()
+        )
 
         with open(
             "vehicles.json",
@@ -1492,7 +1542,7 @@ try:
 
     landmark_url = (
         "https://api.gpsinsight.com/v2/"
-        f"landmark/list?session_token={SESSION_TOKEN}"
+        f"landmark/list?session_token={PICUS_TOKEN}"
     )
 
     landmark_response = requests.get(
@@ -1706,7 +1756,7 @@ if st.button(
         test_url = (
             "https://api.gpsinsight.com/v2/"
             f"{endpoint}"
-            f"?session_token={SESSION_TOKEN}"
+            f"?session_token={PICUS_TOKEN}"
         )
 
         # =========================================
