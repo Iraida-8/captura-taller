@@ -471,73 +471,73 @@ with c5:
         .astype(str)
     )
 
-# =========================================
-# COMPANY FILTER
-# =========================================
+    # =========================================
+    # COMPANY FILTER
+    # =========================================
 
-company_filter = st.session_state.get(
-    "gps_company_filter",
-    "TODAS"
-)
+    company_filter = st.session_state.get(
+        "gps_company_filter",
+        "TODAS"
+    )
 
-if company_filter == "PICUS":
+    if company_filter == "PICUS":
 
-    df = df[
-        (
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("PI", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.match(r"^P\d+", na=False)
+            )
+        ]
+
+    elif company_filter == "LINCOLN":
+
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("LF", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.match(r"^L\d+", na=False)
+            )
+        ]
+
+    elif company_filter == "SET FREIGHT":
+
+        df = df[
             df["label"]
             .str.upper()
-            .str.contains("PI", na=False)
-        )
-        |
-        (
-            df["label"]
-            .str.upper()
-            .str.match(r"^P\d+", na=False)
-        )
-    ]
+            .str.contains(
+                "SET",
+                na=False
+            )
+        ]
 
-elif company_filter == "LINCOLN":
+    elif company_filter == "SET LOGIS":
 
-    df = df[
-        (
-            df["label"]
-            .str.upper()
-            .str.contains("LF", na=False)
-        )
-        |
-        (
-            df["label"]
-            .str.upper()
-            .str.match(r"^L\d+", na=False)
-        )
-    ]
-
-elif company_filter == "SET FREIGHT":
-
-    df = df[
-        df["label"]
-        .str.upper()
-        .str.contains(
-            "SET",
-            na=False
-        )
-    ]
-
-elif company_filter == "SET LOGIS":
-
-    df = df[
-        (
-            df["label"]
-            .str.upper()
-            .str.contains("SPL", na=False)
-        )
-        |
-        (
-            df["label"]
-            .str.upper()
-            .str.contains("STL", na=False)
-        )
-    ]
+        df = df[
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("SPL", na=False)
+            )
+            |
+            (
+                df["label"]
+                .str.upper()
+                .str.contains("STL", na=False)
+            )
+        ]
 
     df["inst_speed"] = pd.to_numeric(
         df["inst_speed"],
