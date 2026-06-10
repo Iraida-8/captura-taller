@@ -417,55 +417,56 @@ if "df" in locals() and not df.empty:
 
     st.header("📊 Dashboard Operativo GPS")
 
-# =========================================
-# COMPANY FILTERS
-# =========================================
+    # =========================================
+    # COMPANY FILTERS
+    # =========================================
 
-st.session_state.setdefault(
-    "gps_company_filter",
-    "TODAS"
-)
+    st.session_state.setdefault(
+        "gps_company_filter",
+        "TODAS"
+    )
 
-c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
-with c1:
-    if st.button(
-        "PICUS",
-        use_container_width=True
-    ):
-        st.session_state.gps_company_filter = "PICUS"
+    with c1:
+        if st.button(
+            "PICUS",
+            use_container_width=True
+        ):
+            st.session_state.gps_company_filter = "PICUS"
 
-with c2:
-    if st.button(
-        "LINCOLN",
-        use_container_width=True
-    ):
-        st.session_state.gps_company_filter = "LINCOLN"
+    with c2:
+        if st.button(
+            "LINCOLN",
+            use_container_width=True
+        ):
+            st.session_state.gps_company_filter = "LINCOLN"
 
-with c3:
-    if st.button(
-        "SET FREIGHT",
-        use_container_width=True
-    ):
-        st.session_state.gps_company_filter = "SET FREIGHT"
+    with c3:
+        if st.button(
+            "SET FREIGHT",
+            use_container_width=True
+        ):
+            st.session_state.gps_company_filter = "SET FREIGHT"
 
-with c4:
-    if st.button(
-        "SET LOGIS",
-        use_container_width=True
-    ):
-        st.session_state.gps_company_filter = "SET LOGIS"
+    with c4:
+        if st.button(
+            "SET LOGIS",
+            use_container_width=True
+        ):
+            st.session_state.gps_company_filter = "SET LOGIS"
 
-with c5:
-    if st.button(
-        "TODAS",
-        use_container_width=True
-    ):
-        st.session_state.gps_company_filter = "TODAS"
+    with c5:
+        if st.button(
+            "TODAS",
+            use_container_width=True
+        ):
+            st.session_state.gps_company_filter = "TODAS"
 
     # =========================================
     # DATA PREP
     # =========================================
+
     df["label"] = (
         df["label"]
         .astype(str)
@@ -557,6 +558,7 @@ with c5:
     # =========================================
     # UNIT CLASSIFICATION
     # =========================================
+
     cajas_df = df[
         df["label"]
         .str.lower()
@@ -578,6 +580,7 @@ with c5:
     # =========================================
     # KPI FUNCTION
     # =========================================
+
     def render_kpis(dataframe, title):
 
         total_units = len(dataframe)
@@ -620,9 +623,6 @@ with c5:
             dataframe["voltage"] < 11
         ).sum()
 
-        # =====================================
-        # PANIC BUTTON
-        # =====================================
         panic_active = 0
 
         if "inputs" in dataframe.columns:
@@ -639,14 +639,8 @@ with c5:
 
                             panic_active += 1
 
-        # =====================================
-        # SECTION TITLE
-        # =====================================
         st.subheader(title)
 
-        # =====================================
-        # FIRST ROW
-        # =====================================
         c1, c2, c3, c4, c5, c6 = st.columns(6)
 
         c1.metric(
@@ -679,9 +673,6 @@ with c5:
             f"{avg_speed} km/h"
         )
 
-        # =====================================
-        # SECOND ROW
-        # =====================================
         c7, c8, c9 = st.columns(3)
 
         c7.metric(
@@ -704,6 +695,7 @@ with c5:
     # =========================================
     # RENDER KPI SECTIONS
     # =========================================
+
     render_kpis(
         trucks_df,
         "🚛 KPIs Tractocamiones"
@@ -720,7 +712,6 @@ with c5:
     )
 
     st.divider()
-
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
