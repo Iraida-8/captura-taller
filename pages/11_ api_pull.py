@@ -830,14 +830,18 @@ if "df" in locals() and not df.empty:
         )
 
         avg_speed = round(
-            dataframe["inst_speed"].mean(),
+            dataframe["inst_speed"]
+            .fillna(0)
+            .mean(),
             1
-        )
+        ) if not dataframe.empty else 0
 
         max_speed = round(
-            dataframe["inst_speed"].max(),
+            dataframe["inst_speed"]
+            .fillna(0)
+            .max(),
             1
-        )
+        ) if not dataframe.empty else 0
 
         low_voltage = (
             dataframe["voltage"] < 11
