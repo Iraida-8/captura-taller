@@ -1,13 +1,5 @@
 import streamlit as st
-import requests
-import io
-import pandas as pd
-import json
-import pydeck as pdk
 from auth import require_login, require_access
-import streamlit.components.v1 as components
-from streamlit_autorefresh import st_autorefresh # type: ignore
-from datetime import datetime
 
 # =================================
 # Page configuration
