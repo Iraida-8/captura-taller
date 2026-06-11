@@ -1911,6 +1911,93 @@ if "df" in locals() and not df.empty:
             "No se encontraron coordenadas GPS válidas."
         )
 
+
+# =====================================================
+# BEGIN / END DAY TEST
+# =====================================================
+st.divider()
+
+st.header("🕒 Begin / End Day Debug")
+
+try:
+
+    test_vehicle = None
+
+    if "label" in df.columns and not df.empty:
+
+        test_vehicle = (
+            df["label"]
+            .dropna()
+            .astype(str)
+            .iloc[0]
+        )
+
+    start_date = "06/10/2026 00:00:00"
+    end_date = "06/11/2026"
+
+    # =========================================
+    # TEST 1 - WITH VEHICLE
+    # =========================================
+    if test_vehicle:
+
+        vehicle_url = (
+            "https://api.gpsinsight.com/v2/"
+            "vehicle/beginendday"
+            f"?session_token={PICUS_TOKEN}"
+            f"&vehicle={test_vehicle}"
+            f"&start={start_date}"
+            f"&end={end_date}"
+        )
+
+        st.subheader("🚛 Test Con Unidad")
+
+        st.code(vehicle_url)
+
+        r1 = requests.get(
+            vehicle_url,
+            timeout=60
+        )
+
+        st.write("Status:", r1.status_code)
+
+        try:
+            st.json(r1.json())
+        except:
+            st.text(r1.text)
+
+    # =========================================
+    # TEST 2 - WITHOUT VEHICLE
+    # =========================================
+    all_url = (
+        "https://api.gpsinsight.com/v2/"
+        "vehicle/beginendday"
+        f"?session_token={PICUS_TOKEN}"
+        f"&start={start_date}"
+        f"&end={end_date}"
+    )
+
+    st.subheader("🌐 Test Sin Unidad")
+
+    st.code(all_url)
+
+    r2 = requests.get(
+        all_url,
+        timeout=60
+    )
+
+    st.write("Status:", r2.status_code)
+
+    try:
+        st.json(r2.json())
+    except:
+        st.text(r2.text)
+
+except Exception as e:
+
+    st.error(
+        f"Error Begin/End Day: {e}"
+    )
+    
 # =====================================================
 # LANDMARKS
 # =====================================================
