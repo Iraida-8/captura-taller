@@ -622,16 +622,18 @@ if "df" in locals() and not df.empty:
             | otros_rows
         )
 
-        # Convert ONLY those fleets to MPH
-        df.loc[
-            kmh_rows,
-            "speed_calc"
-        ] = (
-            df.loc[
-                kmh_rows,
-                "speed_calc"
-            ].astype(float)
-            * KM_TO_MILES
+        # PICUS + OTROS are KM/H
+        kmh_rows = (
+            picus_rows
+            | otros_rows
+        )
+
+        # Convert KM/H fleets to MPH
+        df["speed_calc"] = (
+            df["speed_calc"]
+            * (
+                1 + kmh_rows.astype(float) * (KM_TO_MILES - 1)
+            )
         )
 
     elif company_filter in [
