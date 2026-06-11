@@ -1945,7 +1945,7 @@ try:
         st.write("VIN:", test_vin)
         st.write("ID:", test_id)
 
-        start_date = "06/10/2026 00:00:00"
+        start_date = "05/01/2026"
         end_date = "06/11/2026"
 
         url = (
