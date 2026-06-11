@@ -2281,6 +2281,7 @@ except Exception as e:
     )
 
 #tests
+#tests
 # =====================================================
 # GPS INSIGHT API TESTBENCH
 # =====================================================
@@ -2306,7 +2307,10 @@ endpoint_options = {
         "vehicle/list",
 
     "Vehicle Groups":
-        "vehicle/listvehiclegroups"
+        "vehicle/listvehiclegroups",
+
+    "Trips":
+        "vehicle/trips"
 }
 
 tb1, tb2 = st.columns(2)
@@ -2325,12 +2329,12 @@ endpoint = endpoint_options[selected_label]
 # =====================================================
 with tb2:
 
-    vehicle_ids = []
+    vehicle_options = []
 
-    if "id" in df.columns:
+    if "label" in df.columns:
 
-        vehicle_ids = sorted(
-            df["id"]
+        vehicle_options = sorted(
+            df["label"]
             .dropna()
             .astype(str)
             .unique()
@@ -2338,9 +2342,32 @@ with tb2:
         )
 
     tb_vehicle = st.selectbox(
-        "Unidad / Vehicle ID",
-        ["Todos"] + vehicle_ids
+        "Unidad",
+        ["Todos"] + vehicle_options
     )
+
+# =====================================================
+# DATE FILTERS (TRIPS)
+# =====================================================
+if endpoint == "vehicle/trips":
+
+    d1, d2 = st.columns(2)
+
+    with d1:
+
+        tb_start = st.date_input(
+            "Fecha Inicio",
+            value=pd.to_datetime("2026-05-01"),
+            key="tb_start"
+        )
+
+    with d2:
+
+        tb_end = st.date_input(
+            "Fecha Fin",
+            value=datetime.today(),
+            key="tb_end"
+        )
 
 # =====================================================
 # EXECUTE
@@ -2362,7 +2389,7 @@ if st.button(
         )
 
         # =========================================
-        # OPTIONAL VEHICLE FILTER
+        # VEHICLE FILTER
         # =========================================
         if tb_vehicle != "Todos":
 
@@ -2371,10 +2398,21 @@ if st.button(
             )
 
         # =========================================
+        # TRIPS DATES
+        # =========================================
+        if endpoint == "vehicle/trips":
+
+            test_url += (
+                f"&start={tb_start.strftime('%m/%d/%Y')}"
+                f"&end={tb_end.strftime('%m/%d/%Y')}"
+            )
+
+        # =========================================
         # REQUEST
         # =========================================
         tb_response = requests.get(
-            test_url
+            test_url,
+            timeout=60
         )
 
         tb_response.raise_for_status()
@@ -2425,15 +2463,17 @@ if st.button(
                         "📋 Data Table"
                     )
 
+                    st.write(
+                        "Columnas:",
+                        tb_df.columns.tolist()
+                    )
+
                     st.dataframe(
                         tb_df,
                         use_container_width=True,
                         height=500
                     )
 
-                    # =================================
-                    # EXPORT
-                    # =================================
                     export_buffer = io.BytesIO()
 
                     with pd.ExcelWriter(
