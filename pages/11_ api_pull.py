@@ -1953,6 +1953,41 @@ try:
             key="trip_history_unit"
         )
 
+        # =====================================
+        # SPEED / DISTANCE UNITS
+        # =====================================
+
+        selected_label = str(selected_unit).upper()
+
+        is_kmh_unit = (
+            "PI" in selected_label
+            or selected_label.startswith("P")
+        )
+
+        is_lincoln = (
+            "LF" in selected_label
+            or selected_label.startswith("L")
+        )
+
+        is_set_freight = (
+            "SET" in selected_label
+        )
+
+        is_set_logis = (
+            "SPL" in selected_label
+            or "STL" in selected_label
+        )
+
+        is_otros = not (
+            is_kmh_unit
+            or is_lincoln
+            or is_set_freight
+            or is_set_logis
+        )
+
+        distance_unit = "km" if (is_kmh_unit or is_otros) else "mi"
+        speed_unit = "km/h" if (is_kmh_unit or is_otros) else "mph"
+
         # =========================================
         # DATE FILTERS
         # =========================================
@@ -2087,7 +2122,7 @@ try:
                 k1, k2, k3, k4 = st.columns(4)
 
                 k1.metric(
-                    "🛣️ KM Recorridos",
+                    f"🛣️ {distance_unit.upper()} Recorridos",
                     f"{total_km:,}"
                 )
 
@@ -2098,12 +2133,12 @@ try:
 
                 k3.metric(
                     "🔥 Velocidad Máxima",
-                    f"{max_speed} km/h"
+                    f"{max_speed} {speed_unit}"
                 )
 
                 k4.metric(
                     "🏎️ Velocidad Promedio",
-                    f"{avg_speed} km/h"
+                    f"{avg_speed} {speed_unit}"
                 )
 
                 st.divider()
@@ -2124,7 +2159,7 @@ try:
                     columns={
                         "trip_start": "Inicio",
                         "trip_end": "Fin",
-                        "trip_distance": "KM",
+                        "trip_distance": distance_unit.upper(),
                         "trip_duration": "Duración (Seg)",
                         "max_speed": "Vel Máxima",
                         "avg_speed": "Vel Promedio"
@@ -2144,11 +2179,25 @@ try:
                 trip_display = trip_display[[
                     "Inicio",
                     "Fin",
-                    "KM",
+                    distance_unit.upper(),
                     "Duración",
                     "Vel Máxima",
                     "Vel Promedio"
                 ]]
+
+                trip_display["Vel Máxima"] = (
+                    trip_display["Vel Máxima"]
+                    .round(1)
+                    .astype(str)
+                    + f" {speed_unit}"
+                )
+
+                trip_display["Vel Promedio"] = (
+                    trip_display["Vel Promedio"]
+                    .round(1)
+                    .astype(str)
+                    + f" {speed_unit}"
+                )
 
                 st.subheader(
                     "🚛 Viajes Detectados"
