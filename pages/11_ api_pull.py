@@ -1246,6 +1246,27 @@ if "df" in locals() and not df.empty:
     # =====================================================
     # MODAL
     # =====================================================
+
+    # Force-close stale modal records
+    if st.session_state.get("modal_gps_unit"):
+
+        modal_label = str(
+            st.session_state.modal_gps_unit.get(
+                "label",
+                ""
+            )
+        )
+
+        valid_labels = set(
+            df_units["label"]
+            .astype(str)
+            .tolist()
+        )
+
+        if modal_label not in valid_labels:
+
+            st.session_state.modal_gps_unit = None
+
     if st.session_state.get("modal_gps_unit"):
 
         gps_row = st.session_state.modal_gps_unit
@@ -1318,7 +1339,10 @@ if "df" in locals() and not df.empty:
 
             st.json(gps_row.get("inputs", {}))
 
-            if st.button("Cerrar"):
+            if st.button(
+                "Cerrar",
+                key="close_gps_modal"
+            ):
                 st.session_state.modal_gps_unit = None
                 st.rerun()
 
