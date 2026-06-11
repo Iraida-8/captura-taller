@@ -645,40 +645,107 @@ if "df" in locals() and not df.empty:
     ]
 
     # =========================================
-    # KPI FUNCTION
-    # =========================================
-
-    # =========================================
     # SPEED DISPLAY CONFIG
     # =========================================
 
     KM_TO_MILES = 0.621371
+    MILES_TO_KM = 1.60934
 
-    show_both_units = company_filter == "TODAS"
+    # =========================================
+    # NORMALIZE SPEEDS FOR KPI CALCULATIONS
+    # =========================================
 
-    use_kmh = company_filter in [
-        "PICUS",
-        "OTROS"
-    ]
+    df["speed_calc"] = df["inst_speed"].copy()
+
+    if company_filter == "TODAS":
+
+        picus_mask = (
+            df["label"]
+            .str.upper()
+            .str.contains("PI", na=False)
+        ) | (
+            df["label"]
+            .str.upper()
+            .str.match(r"^P\d+", na=False)
+        )
+
+        lincoln_mask = (
+            df["label"]
+            .str.upper()
+            .str.contains("LF", na=False)
+        ) | (
+            df["label"]
+            .str.upper()
+            .str.match(r"^L\d+", na=False)
+        )
+
+        set_freight_mask = (
+            df["label"]
+            .str.upper()
+            .str.contains("SET", na=False)
+        )
+
+        set_logis_mask = (
+            df["label"]
+            .str.upper()
+            .str.contains("SPL", na=False)
+        ) | (
+            df["label"]
+            .str.upper()
+            .str.contains("STL", na=False)
+        )
+
+        otros_mask = ~(
+            picus_mask
+            | lincoln_mask
+            | set_freight_mask
+            | set_logis_mask
+        )
+
+        kmh_mask = (
+            picus_mask
+            | otros_mask
+        )
+
+        # convert KM/H fleets into MPH
+        df.loc[kmh_mask, "speed_calc"] = (
+            df.loc[kmh_mask, "speed_calc"]
+            * KM_TO_MILES
+        )
+
+    elif company_filter in ["PICUS", "OTROS"]:
+
+        df["speed_calc"] = df["inst_speed"]
+
+    else:
+
+        # Lincoln / Set Freight / Set Logis already MPH
+        df["speed_calc"] = df["inst_speed"]
+
 
     def format_speed(speed):
 
         speed = round(float(speed), 1)
 
-        if show_both_units:
+        if company_filter == "TODAS":
 
-            mph = round(speed * KM_TO_MILES, 1)
-
-            return (
-                f"{speed} km/h\n"
-                f"({mph} mph)"
+            kmh = round(
+                speed * MILES_TO_KM,
+                1
             )
 
-        if use_kmh:
+            return f"{speed} mph ({kmh} km/h)"
+
+        elif company_filter in [
+            "PICUS",
+            "OTROS"
+        ]:
 
             return f"{speed} km/h"
 
-        return f"{speed} mph"
+        else:
+
+            return f"{speed} mph"
 
 
     # =========================================
@@ -690,11 +757,11 @@ if "df" in locals() and not df.empty:
         total_units = len(dataframe)
 
         moving_units = (
-            dataframe["inst_speed"] > 0
+            dataframe["speed_calc"] > 0
         ).sum()
 
         stopped_units = (
-            dataframe["inst_speed"] <= 0
+            dataframe["speed_calc"] <= 0
         ).sum()
 
         ignition_on = (
@@ -714,14 +781,14 @@ if "df" in locals() and not df.empty:
         )
 
         avg_speed = round(
-            dataframe["inst_speed"]
+            dataframe["speed_calc"]
             .fillna(0)
             .mean(),
             1
         ) if not dataframe.empty else 0
 
         max_speed = round(
-            dataframe["inst_speed"]
+            dataframe["speed_calc"]
             .fillna(0)
             .max(),
             1
@@ -820,6 +887,7 @@ if "df" in locals() and not df.empty:
     )
 
     st.divider()
+
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
