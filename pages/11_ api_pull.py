@@ -1594,6 +1594,53 @@ if "df" in locals() and not df.empty:
         errors="coerce"
     ).fillna(0)
 
+    # =============================================
+    # SPEED DISPLAY
+    # =============================================
+    def get_map_speed(row):
+
+        speed = float(row.get("inst_speed", 0))
+
+        label = str(
+            row.get("label", "")
+        ).upper()
+
+        picus = (
+            "PI" in label
+            or label.startswith("P")
+        )
+
+        lincoln = (
+            "LF" in label
+            or label.startswith("L")
+        )
+
+        set_freight = (
+            "SET" in label
+        )
+
+        set_logis = (
+            "SPL" in label
+            or "STL" in label
+        )
+
+        otros = not (
+            picus
+            or lincoln
+            or set_freight
+            or set_logis
+        )
+
+        if picus or otros:
+            return f"{round(speed,1)} km/h"
+
+        return f"{round(speed,1)} mph"
+
+    map_df["speed_display"] = map_df.apply(
+        get_map_speed,
+        axis=1
+    )
+
     map_df = map_df.dropna(
         subset=["latitude", "longitude"]
     )
@@ -1797,7 +1844,7 @@ if "df" in locals() and not df.empty:
                 <b>Unidad:</b> {label} <br/>
                 <b>Latitud:</b> {latitude} <br/>
                 <b>Longitud:</b> {longitude} <br/>
-                <b>Velocidad:</b> {inst_speed} km/h <br/>
+                <b>Velocidad:</b> {speed_display} <br/>
                 <b>Ignición:</b> {ignition} <br/>
                 <b>Tiempo detenido:</b> {speed_label} <br/>
                 <b>Dirección:</b> {address}
@@ -1844,16 +1891,25 @@ if "df" in locals() and not df.empty:
             expanded=False
         ):
 
+            coords_df = map_df[[
+                "label",
+                "latitude",
+                "longitude",
+                "address",
+                "ignition",
+                "speed_display",
+                "speed_label"
+            ]].copy()
+
+            coords_df.rename(
+                columns={
+                    "speed_display": "Velocidad"
+                },
+                inplace=True
+            )
+
             st.dataframe(
-                map_df[[
-                    "label",
-                    "latitude",
-                    "longitude",
-                    "address",
-                    "ignition",
-                    "inst_speed",
-                    "speed_label"
-                ]],
+                coords_df,
                 use_container_width=True,
                 height=300
             )
