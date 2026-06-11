@@ -829,6 +829,43 @@ if "df" in locals() and not df.empty:
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
+
+def get_speed_display(row):
+
+    speed = float(
+        pd.to_numeric(
+            row.get("inst_speed", 0),
+            errors="coerce"
+        ) or 0
+    )
+
+    label = str(
+        row.get("label", "")
+    ).upper()
+
+    if (
+        "PI" in label
+        or label.startswith("P")
+    ):
+        return f"{round(speed,1)} km/h"
+
+    if (
+        "LF" in label
+        or label.startswith("L")
+    ):
+        return f"{round(speed,1)} mph"
+
+    if (
+        "SPL" in label
+        or "STL" in label
+    ):
+        return f"{round(speed,1)} mph"
+
+    if "SET" in label:
+        return f"{round(speed,1)} mph"
+
+    return f"{round(speed,1)} km/h"
+
 if "df" in locals() and not df.empty:
 
     st.header("🚛 Seguimiento Individual de Unidades")
@@ -1010,7 +1047,7 @@ if "df" in locals() and not df.empty:
 
                 unidad = str(r.get("label", "-"))
                 direccion = str(r.get("address", "-"))
-                velocidad = r.get("inst_speed", 0)
+                velocidad = get_speed_display(r)
                 ignicion = str(r.get("ignition", "-")).upper()
                 odometro = r.get("odometer", "-")
                 speed_label = str(r.get("speed_label", "-"))
@@ -1057,7 +1094,7 @@ if "df" in locals() and not df.empty:
                                 margin-top:8px;
                                 font-size:0.8rem;
                             ">
-                                <strong>Velocidad:</strong> {velocidad} km/h
+                                <strong>Velocidad:</strong> {velocidad}
                             </div>
 
                             <div style="
@@ -1119,7 +1156,9 @@ if "df" in locals() and not df.empty:
                             key=f"gps_unit_{unidad}_{idx}",
                             use_container_width=True
                         ):
+                            st.session_state.modal_gps_unit = None
                             st.session_state.modal_gps_unit = r.to_dict()
+                            st.rerun()
 
                     with b2:
 
@@ -1230,7 +1269,7 @@ if "df" in locals() and not df.empty:
             with c1:
                 st.metric(
                     "Velocidad",
-                    f"{gps_row.get('inst_speed', 0)} km/h"
+                    get_speed_display(gps_row)
                 )
 
             with c2:
