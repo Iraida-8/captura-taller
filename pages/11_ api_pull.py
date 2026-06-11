@@ -269,7 +269,6 @@ components.html(
 )
 
 #==============================================================================================================
-#==============================================================================================================
 # GPS INSIGHT AUTH
 #==============================================================================================================
 
@@ -649,6 +648,43 @@ if "df" in locals() and not df.empty:
     # KPI FUNCTION
     # =========================================
 
+    # =========================================
+    # SPEED DISPLAY CONFIG
+    # =========================================
+
+    KM_TO_MILES = 0.621371
+
+    show_both_units = company_filter == "TODAS"
+
+    use_kmh = company_filter in [
+        "PICUS",
+        "OTROS"
+    ]
+
+    def format_speed(speed):
+
+        speed = round(float(speed), 1)
+
+        if show_both_units:
+
+            mph = round(speed * KM_TO_MILES, 1)
+
+            return (
+                f"{speed} km/h\n"
+                f"({mph} mph)"
+            )
+
+        if use_kmh:
+
+            return f"{speed} km/h"
+
+        return f"{speed} mph"
+
+
+    # =========================================
+    # KPI FUNCTION
+    # =========================================
+
     def render_kpis(dataframe, title):
 
         total_units = len(dataframe)
@@ -742,14 +778,14 @@ if "df" in locals() and not df.empty:
 
         c6.metric(
             "🏎️ Vel. Promedio",
-            f"{avg_speed} km/h"
+            format_speed(avg_speed)
         )
 
         c7, c8, c9 = st.columns(3)
 
         c7.metric(
             "🔥 Velocidad Máxima",
-            f"{max_speed} km/h"
+            format_speed(max_speed)
         )
 
         c8.metric(
