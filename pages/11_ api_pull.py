@@ -2080,31 +2080,19 @@ try:
             st.divider()
 
             # =====================================
-            # TABLE
+            # DEBUG ALL COLUMNS
             # =====================================
-            display_cols = [
-                "date",
-                "trips",
-                "distance",
-                "max_speed",
-                "avg_speed",
-                "duration",
-                "trip_duration",
-                "odometer",
-                "start_time",
-                "end_time"
-            ]
 
-            available_cols = [
-                c
-                for c in display_cols
-                if c in activity_df.columns
-            ]
+            st.subheader("Columnas Disponibles")
+
+            st.write(
+                activity_df.columns.tolist()
+            )
 
             st.dataframe(
-                activity_df[available_cols],
+                activity_df,
                 use_container_width=True,
-                height=500
+                height=600
             )
 
             # =====================================
@@ -2144,6 +2132,7 @@ except Exception as e:
     st.error(
         f"Error consultando historial: {e}"
     )
+
 # =====================================================
 # LANDMARKS
 # =====================================================
