@@ -1913,11 +1913,11 @@ if "df" in locals() and not df.empty:
 
 
 # =====================================================
-# BEGIN / END DAY HISTORY
+# UNIT TRIP HISTORY
 # =====================================================
 st.divider()
 
-st.header("📈 Historial de Actividad de Unidad")
+st.header("📈 Historial de Viajes de Unidad")
 
 try:
 
@@ -1941,7 +1941,7 @@ try:
         selected_unit = st.selectbox(
             "Unidad",
             unit_options,
-            key="begin_end_unit"
+            key="trip_history_unit"
         )
 
         # =========================================
@@ -1953,19 +1953,18 @@ try:
 
             start_date = st.date_input(
                 "Fecha Inicial",
-                value=pd.to_datetime("2026-05-01")
+                value=pd.to_datetime("2026-05-01"),
+                key="trip_start"
             )
 
         with c2:
 
             end_date = st.date_input(
                 "Fecha Final",
-                value=datetime.today()
+                value=datetime.today(),
+                key="trip_end"
             )
 
-        # =========================================
-        # REQUEST
-        # =========================================
         start_str = start_date.strftime(
             "%m/%d/%Y"
         )
@@ -1974,9 +1973,12 @@ try:
             "%m/%d/%Y"
         )
 
+        # =========================================
+        # REQUEST
+        # =========================================
         url = (
             "https://api.gpsinsight.com/v2/"
-            "vehicle/beginendday"
+            "vehicle/trips"
             f"?session_token={PICUS_TOKEN}"
             f"&vehicle={selected_unit}"
             f"&start={start_str}"
@@ -2000,132 +2002,200 @@ try:
         if not data:
 
             st.warning(
-                "No se encontró actividad para la unidad seleccionada."
+                "No se encontraron viajes."
             )
-
-            st.json(result)
 
         else:
 
             activity_df = pd.DataFrame(data)
 
             # =====================================
-            # VIN INFO
+            # ONLY REAL TRIPS
             # =====================================
-            vin = activity_df.iloc[0].get(
-                "vin",
-                "-"
-            )
+            trip_df = activity_df[
+                activity_df["trip_type"] == "T"
+            ].copy()
 
-            st.info(
-                f"VIN: {vin}"
-            )
+            if trip_df.empty:
 
-            # =====================================
-            # KPIs
-            # =====================================
-            total_km = round(
-                pd.to_numeric(
-                    activity_df["distance"],
-                    errors="coerce"
-                ).fillna(0).sum(),
-                1
-            )
-
-            total_trips = int(
-                pd.to_numeric(
-                    activity_df["trips"],
-                    errors="coerce"
-                ).fillna(0).sum()
-            )
-
-            max_speed = round(
-                pd.to_numeric(
-                    activity_df["max_speed"],
-                    errors="coerce"
-                ).fillna(0).max(),
-                1
-            )
-
-            avg_speed = round(
-                pd.to_numeric(
-                    activity_df["avg_speed"],
-                    errors="coerce"
-                ).fillna(0).mean(),
-                1
-            )
-
-            k1, k2, k3, k4 = st.columns(4)
-
-            k1.metric(
-                "🛣️ KM Recorridos",
-                f"{total_km:,}"
-            )
-
-            k2.metric(
-                "🧭 Viajes",
-                total_trips
-            )
-
-            k3.metric(
-                "🔥 Velocidad Máxima",
-                f"{max_speed} km/h"
-            )
-
-            k4.metric(
-                "🚛 Velocidad Promedio",
-                f"{avg_speed} km/h"
-            )
-
-            st.divider()
-
-            # =====================================
-            # DEBUG ALL COLUMNS
-            # =====================================
-
-            st.subheader("Columnas Disponibles")
-
-            st.write(
-                activity_df.columns.tolist()
-            )
-
-            st.dataframe(
-                activity_df,
-                use_container_width=True,
-                height=600
-            )
-
-            # =====================================
-            # EXPORT
-            # =====================================
-            export_buffer = io.BytesIO()
-
-            with pd.ExcelWriter(
-                export_buffer,
-                engine="openpyxl"
-            ) as writer:
-
-                activity_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="BeginEndDay"
+                st.warning(
+                    "No se encontraron viajes tipo T."
                 )
 
-            export_buffer.seek(0)
+            else:
 
-            st.download_button(
-                label="💾 Descargar Historial",
-                data=export_buffer,
-                file_name=(
-                    f"Historial_{selected_unit}.xlsx"
-                ),
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
+                # =====================================
+                # NUMERIC CLEANUP
+                # =====================================
+                numeric_cols = [
+                    "trip_distance",
+                    "max_speed",
+                    "avg_speed",
+                    "trip_duration"
+                ]
+
+                for col in numeric_cols:
+
+                    trip_df[col] = pd.to_numeric(
+                        trip_df[col],
+                        errors="coerce"
+                    ).fillna(0)
+
+                # =====================================
+                # VIN
+                # =====================================
+                vin = trip_df.iloc[0].get(
+                    "vin",
+                    "-"
+                )
+
+                st.info(
+                    f"VIN: {vin}"
+                )
+
+                # =====================================
+                # KPIs
+                # =====================================
+                total_km = round(
+                    trip_df["trip_distance"].sum(),
+                    1
+                )
+
+                total_trips = len(
+                    trip_df
+                )
+
+                max_speed = round(
+                    trip_df["max_speed"].max(),
+                    1
+                )
+
+                avg_speed = round(
+                    trip_df["avg_speed"].mean(),
+                    1
+                )
+
+                k1, k2, k3, k4 = st.columns(4)
+
+                k1.metric(
+                    "🛣️ KM Recorridos",
+                    f"{total_km:,}"
+                )
+
+                k2.metric(
+                    "🚛 Viajes",
+                    total_trips
+                )
+
+                k3.metric(
+                    "🔥 Velocidad Máxima",
+                    f"{max_speed} km/h"
+                )
+
+                k4.metric(
+                    "🏎️ Velocidad Promedio",
+                    f"{avg_speed} km/h"
+                )
+
+                st.divider()
+
+                # =====================================
+                # DISPLAY TABLE
+                # =====================================
+                trip_display = trip_df[[
+                    "trip_start",
+                    "trip_end",
+                    "trip_distance",
+                    "trip_duration",
+                    "max_speed",
+                    "avg_speed"
+                ]].copy()
+
+                trip_display.rename(
+                    columns={
+                        "trip_start": "Inicio",
+                        "trip_end": "Fin",
+                        "trip_distance": "KM",
+                        "trip_duration": "Duración (Seg)",
+                        "max_speed": "Vel Máxima",
+                        "avg_speed": "Vel Promedio"
+                    },
+                    inplace=True
+                )
+
+                trip_display["Duración"] = (
+                    trip_display["Duración (Seg)"]
+                    .apply(
+                        lambda x:
+                        f"{int(x//3600)}h "
+                        f"{int((x%3600)//60)}m"
+                    )
+                )
+
+                trip_display = trip_display[[
+                    "Inicio",
+                    "Fin",
+                    "KM",
+                    "Duración",
+                    "Vel Máxima",
+                    "Vel Promedio"
+                ]]
+
+                st.subheader(
+                    "🚛 Viajes Detectados"
+                )
+
+                st.dataframe(
+                    trip_display,
+                    use_container_width=True,
+                    height=700
+                )
+
+                # =====================================
+                # FULL DEBUG
+                # =====================================
+                with st.expander(
+                    "🔍 Datos Completos GPS Insight",
+                    expanded=False
+                ):
+
+                    st.dataframe(
+                        trip_df,
+                        use_container_width=True,
+                        height=600
+                    )
+
+                # =====================================
+                # EXPORT
+                # =====================================
+                export_buffer = io.BytesIO()
+
+                with pd.ExcelWriter(
+                    export_buffer,
+                    engine="openpyxl"
+                ) as writer:
+
+                    trip_df.to_excel(
+                        writer,
+                        index=False,
+                        sheet_name="Trips"
+                    )
+
+                export_buffer.seek(0)
+
+                st.download_button(
+                    label="💾 Descargar Viajes",
+                    data=export_buffer,
+                    file_name=(
+                        f"Viajes_{selected_unit}.xlsx"
+                    ),
+                    mime=(
+                        "application/"
+                        "vnd.openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+                    use_container_width=True
+                )
 
 except Exception as e:
 
@@ -2280,7 +2350,6 @@ except Exception as e:
         f"Error cargando landmarks: {e}"
     )
 
-#tests
 #tests
 # =====================================================
 # GPS INSIGHT API TESTBENCH
