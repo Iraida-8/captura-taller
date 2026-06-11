@@ -1913,11 +1913,11 @@ if "df" in locals() and not df.empty:
 
 
 # =====================================================
-# BEGIN / END DAY VIN DEBUG
+# BEGIN / END DAY HISTORY
 # =====================================================
 st.divider()
 
-st.header("🧪 Begin / End Day - VIN Test")
+st.header("📈 Historial de Actividad de Unidad")
 
 try:
 
@@ -1927,64 +1927,222 @@ try:
 
     else:
 
-        test_row = df.iloc[0]
-
-        test_label = str(
-            test_row.get("label", "")
+        # =========================================
+        # UNIT SELECTOR
+        # =========================================
+        unit_options = sorted(
+            df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
         )
 
-        test_vin = str(
-            test_row.get("vin", "")
+        selected_unit = st.selectbox(
+            "Unidad",
+            unit_options,
+            key="begin_end_unit"
         )
 
-        test_id = str(
-            test_row.get("id", "")
+        # =========================================
+        # DATE FILTERS
+        # =========================================
+        c1, c2 = st.columns(2)
+
+        with c1:
+
+            start_date = st.date_input(
+                "Fecha Inicial",
+                value=pd.to_datetime("2026-05-01")
+            )
+
+        with c2:
+
+            end_date = st.date_input(
+                "Fecha Final",
+                value=datetime.today()
+            )
+
+        # =========================================
+        # REQUEST
+        # =========================================
+        start_str = start_date.strftime(
+            "%m/%d/%Y"
         )
 
-        st.write("Label:", test_label)
-        st.write("VIN:", test_vin)
-        st.write("ID:", test_id)
-
-        start_date = "05/01/2026"
-        end_date = "06/11/2026"
+        end_str = end_date.strftime(
+            "%m/%d/%Y"
+        )
 
         url = (
             "https://api.gpsinsight.com/v2/"
             "vehicle/beginendday"
             f"?session_token={PICUS_TOKEN}"
-            f"&vehicle={test_vin}"
-            f"&start={start_date}"
-            f"&end={end_date}"
+            f"&vehicle={selected_unit}"
+            f"&start={start_str}"
+            f"&end={end_str}"
         )
-
-        st.subheader("Request URL")
-
-        st.code(url)
 
         response = requests.get(
             url,
             timeout=60
         )
 
-        st.write(
-            "HTTP Status:",
-            response.status_code
+        response.raise_for_status()
+
+        result = response.json()
+
+        data = result.get(
+            "data",
+            []
         )
 
-        try:
+        if not data:
 
-            result = response.json()
+            st.warning(
+                "No se encontró actividad para la unidad seleccionada."
+            )
 
             st.json(result)
 
-        except Exception:
+        else:
 
-            st.text(response.text)
+            activity_df = pd.DataFrame(data)
+
+            # =====================================
+            # VIN INFO
+            # =====================================
+            vin = activity_df.iloc[0].get(
+                "vin",
+                "-"
+            )
+
+            st.info(
+                f"VIN: {vin}"
+            )
+
+            # =====================================
+            # KPIs
+            # =====================================
+            total_km = round(
+                pd.to_numeric(
+                    activity_df["distance"],
+                    errors="coerce"
+                ).fillna(0).sum(),
+                1
+            )
+
+            total_trips = int(
+                pd.to_numeric(
+                    activity_df["trips"],
+                    errors="coerce"
+                ).fillna(0).sum()
+            )
+
+            max_speed = round(
+                pd.to_numeric(
+                    activity_df["max_speed"],
+                    errors="coerce"
+                ).fillna(0).max(),
+                1
+            )
+
+            avg_speed = round(
+                pd.to_numeric(
+                    activity_df["avg_speed"],
+                    errors="coerce"
+                ).fillna(0).mean(),
+                1
+            )
+
+            k1, k2, k3, k4 = st.columns(4)
+
+            k1.metric(
+                "🛣️ KM Recorridos",
+                f"{total_km:,}"
+            )
+
+            k2.metric(
+                "🧭 Viajes",
+                total_trips
+            )
+
+            k3.metric(
+                "🔥 Velocidad Máxima",
+                f"{max_speed} km/h"
+            )
+
+            k4.metric(
+                "🚛 Velocidad Promedio",
+                f"{avg_speed} km/h"
+            )
+
+            st.divider()
+
+            # =====================================
+            # TABLE
+            # =====================================
+            display_cols = [
+                "date",
+                "trips",
+                "distance",
+                "max_speed",
+                "avg_speed",
+                "duration",
+                "trip_duration",
+                "odometer",
+                "start_time",
+                "end_time"
+            ]
+
+            available_cols = [
+                c
+                for c in display_cols
+                if c in activity_df.columns
+            ]
+
+            st.dataframe(
+                activity_df[available_cols],
+                use_container_width=True,
+                height=500
+            )
+
+            # =====================================
+            # EXPORT
+            # =====================================
+            export_buffer = io.BytesIO()
+
+            with pd.ExcelWriter(
+                export_buffer,
+                engine="openpyxl"
+            ) as writer:
+
+                activity_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="BeginEndDay"
+                )
+
+            export_buffer.seek(0)
+
+            st.download_button(
+                label="💾 Descargar Historial",
+                data=export_buffer,
+                file_name=(
+                    f"Historial_{selected_unit}.xlsx"
+                ),
+                mime=(
+                    "application/"
+                    "vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True
+            )
 
 except Exception as e:
 
     st.error(
-        f"Error ejecutando prueba VIN: {e}"
+        f"Error consultando historial: {e}"
     )
 # =====================================================
 # LANDMARKS
