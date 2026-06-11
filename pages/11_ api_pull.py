@@ -570,7 +570,11 @@ if "df" in locals() and not df.empty:
     KM_TO_MILES = 0.621371
     MILES_TO_KM = 1.60934
 
-    df["speed_calc"] = df["inst_speed"]
+    # Force clean numeric speeds
+    df["speed_calc"] = pd.to_numeric(
+        df["inst_speed"],
+        errors="coerce"
+    ).fillna(0.0).astype(float)
 
     if company_filter == "TODAS":
 
@@ -587,13 +591,22 @@ if "df" in locals() and not df.empty:
         )
 
         set_freight_rows = (
-            df["label"].str.upper().str.contains("SET", na=False)
+            df["label"].str.upper().str.contains(
+                "SET",
+                na=False
+            )
         )
 
         set_logis_rows = (
-            df["label"].str.upper().str.contains("SPL", na=False)
+            df["label"].str.upper().str.contains(
+                "SPL",
+                na=False
+            )
         ) | (
-            df["label"].str.upper().str.contains("STL", na=False)
+            df["label"].str.upper().str.contains(
+                "STL",
+                na=False
+            )
         )
 
         otros_rows = ~(
@@ -603,16 +616,43 @@ if "df" in locals() and not df.empty:
             | set_logis_rows
         )
 
+        # PICUS + OTROS are KM/H
         kmh_rows = (
             picus_rows
             | otros_rows
         )
 
-        # Convert KM/H fleets into MPH
-        df.loc[kmh_rows, "speed_calc"] = (
-            df.loc[kmh_rows, "speed_calc"]
+        # Convert ONLY those fleets to MPH
+        df.loc[
+            kmh_rows,
+            "speed_calc"
+        ] = (
+            df.loc[
+                kmh_rows,
+                "speed_calc"
+            ].astype(float)
             * KM_TO_MILES
         )
+
+    elif company_filter in [
+        "PICUS",
+        "OTROS"
+    ]:
+
+        # Display native KM/H
+        df["speed_calc"] = pd.to_numeric(
+            df["inst_speed"],
+            errors="coerce"
+        ).fillna(0.0).astype(float)
+
+    else:
+
+        # Lincoln / Set Freight / Set Logis
+        # already operate in MPH
+        df["speed_calc"] = pd.to_numeric(
+            df["inst_speed"],
+            errors="coerce"
+        ).fillna(0.0).astype(float)
 
     # =========================================
     # UNIT CLASSIFICATION
