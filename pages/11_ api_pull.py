@@ -487,125 +487,9 @@ if "df" in locals() and not df.empty:
     # DATA PREP
     # =========================================
 
-    df["label"] = (
-        df["label"]
-        .astype(str)
-    )
+    df = df.copy()
 
-    # =========================================
-    # COMPANY FILTER
-    # =========================================
-
-    company_filter = st.session_state.get(
-        "gps_company_filter",
-        "TODAS"
-    )
-
-    if company_filter == "PICUS":
-
-        df = df[
-            (
-                df["label"]
-                .str.upper()
-                .str.contains("PI", na=False)
-            )
-            |
-            (
-                df["label"]
-                .str.upper()
-                .str.match(r"^P\d+", na=False)
-            )
-        ]
-
-    elif company_filter == "LINCOLN":
-
-        df = df[
-            (
-                df["label"]
-                .str.upper()
-                .str.contains("LF", na=False)
-            )
-            |
-            (
-                df["label"]
-                .str.upper()
-                .str.match(r"^L\d+", na=False)
-            )
-        ]
-
-    elif company_filter == "SET FREIGHT":
-
-        df = df[
-            df["label"]
-            .str.upper()
-            .str.contains(
-                "SET",
-                na=False
-            )
-        ]
-
-    elif company_filter == "SET LOGIS":
-
-        df = df[
-            (
-                df["label"]
-                .str.upper()
-                .str.contains("SPL", na=False)
-            )
-            |
-            (
-                df["label"]
-                .str.upper()
-                .str.contains("STL", na=False)
-            )
-        ]
-    
-    elif company_filter == "OTROS":
-
-        picus_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("PI", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.match(r"^P\d+", na=False)
-        )
-
-        lincoln_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("LF", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.match(r"^L\d+", na=False)
-        )
-
-        set_freight_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("SET", na=False)
-        )
-
-        set_logis_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("SPL", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.contains("STL", na=False)
-        )
-
-        df = df[
-            ~(
-                picus_mask
-                | lincoln_mask
-                | set_freight_mask
-                | set_logis_mask
-            )
-        ]
+    df["label"] = df["label"].astype(str)
 
     df["inst_speed"] = pd.to_numeric(
         df["inst_speed"],
@@ -623,105 +507,132 @@ if "df" in locals() and not df.empty:
     ).fillna(0)
 
     # =========================================
+    # COMPANY MASKS
+    # =========================================
+
+    picus_mask = (
+        df["label"].str.upper().str.contains("PI", na=False)
+    ) | (
+        df["label"].str.upper().str.match(r"^P\d+", na=False)
+    )
+
+    lincoln_mask = (
+        df["label"].str.upper().str.contains("LF", na=False)
+    ) | (
+        df["label"].str.upper().str.match(r"^L\d+", na=False)
+    )
+
+    set_freight_mask = (
+        df["label"].str.upper().str.contains("SET", na=False)
+    )
+
+    set_logis_mask = (
+        df["label"].str.upper().str.contains("SPL", na=False)
+    ) | (
+        df["label"].str.upper().str.contains("STL", na=False)
+    )
+
+    otros_mask = ~(
+        picus_mask
+        | lincoln_mask
+        | set_freight_mask
+        | set_logis_mask
+    )
+
+    company_filter = st.session_state.get(
+        "gps_company_filter",
+        "TODAS"
+    )
+
+    # =========================================
+    # FILTER DATAFRAME
+    # =========================================
+
+    if company_filter == "PICUS":
+        df = df[picus_mask]
+
+    elif company_filter == "LINCOLN":
+        df = df[lincoln_mask]
+
+    elif company_filter == "SET FREIGHT":
+        df = df[set_freight_mask]
+
+    elif company_filter == "SET LOGIS":
+        df = df[set_logis_mask]
+
+    elif company_filter == "OTROS":
+        df = df[otros_mask]
+
+    # =========================================
+    # SPEED NORMALIZATION
+    # =========================================
+
+    KM_TO_MILES = 0.621371
+    MILES_TO_KM = 1.60934
+
+    df["speed_calc"] = df["inst_speed"]
+
+    if company_filter == "TODAS":
+
+        picus_rows = (
+            df["label"].str.upper().str.contains("PI", na=False)
+        ) | (
+            df["label"].str.upper().str.match(r"^P\d+", na=False)
+        )
+
+        lincoln_rows = (
+            df["label"].str.upper().str.contains("LF", na=False)
+        ) | (
+            df["label"].str.upper().str.match(r"^L\d+", na=False)
+        )
+
+        set_freight_rows = (
+            df["label"].str.upper().str.contains("SET", na=False)
+        )
+
+        set_logis_rows = (
+            df["label"].str.upper().str.contains("SPL", na=False)
+        ) | (
+            df["label"].str.upper().str.contains("STL", na=False)
+        )
+
+        otros_rows = ~(
+            picus_rows
+            | lincoln_rows
+            | set_freight_rows
+            | set_logis_rows
+        )
+
+        kmh_rows = (
+            picus_rows
+            | otros_rows
+        )
+
+        # Convert KM/H fleets into MPH
+        df.loc[kmh_rows, "speed_calc"] = (
+            df.loc[kmh_rows, "speed_calc"]
+            * KM_TO_MILES
+        )
+
+    # =========================================
     # UNIT CLASSIFICATION
     # =========================================
 
     cajas_df = df[
         df["label"]
         .str.lower()
-        .str.contains(
-            "caja",
-            na=False
-        )
-    ]
+        .str.contains("caja", na=False)
+    ].copy()
 
     trucks_df = df[
         ~df["label"]
         .str.lower()
-        .str.contains(
-            "caja",
-            na=False
-        )
-    ]
+        .str.contains("caja", na=False)
+    ].copy()
 
     # =========================================
-    # SPEED DISPLAY CONFIG
+    # FORMAT SPEED
     # =========================================
-
-    KM_TO_MILES = 0.621371
-    MILES_TO_KM = 1.60934
-
-    # =========================================
-    # NORMALIZE SPEEDS FOR KPI CALCULATIONS
-    # =========================================
-
-    df["speed_calc"] = df["inst_speed"].copy()
-
-    if company_filter == "TODAS":
-
-        picus_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("PI", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.match(r"^P\d+", na=False)
-        )
-
-        lincoln_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("LF", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.match(r"^L\d+", na=False)
-        )
-
-        set_freight_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("SET", na=False)
-        )
-
-        set_logis_mask = (
-            df["label"]
-            .str.upper()
-            .str.contains("SPL", na=False)
-        ) | (
-            df["label"]
-            .str.upper()
-            .str.contains("STL", na=False)
-        )
-
-        otros_mask = ~(
-            picus_mask
-            | lincoln_mask
-            | set_freight_mask
-            | set_logis_mask
-        )
-
-        kmh_mask = (
-            picus_mask
-            | otros_mask
-        )
-
-        # convert KM/H fleets into MPH
-        df.loc[kmh_mask, "speed_calc"] = (
-            df.loc[kmh_mask, "speed_calc"]
-            * KM_TO_MILES
-        )
-
-    elif company_filter in ["PICUS", "OTROS"]:
-
-        df["speed_calc"] = df["inst_speed"]
-
-    else:
-
-        # Lincoln / Set Freight / Set Logis already MPH
-        df["speed_calc"] = df["inst_speed"]
-
 
     def format_speed(speed):
 
@@ -746,7 +657,6 @@ if "df" in locals() and not df.empty:
         else:
 
             return f"{speed} mph"
-
 
     # =========================================
     # KPI FUNCTION
@@ -780,19 +690,21 @@ if "df" in locals() and not df.empty:
             .sum()
         )
 
-        avg_speed = round(
+        avg_speed = (
             dataframe["speed_calc"]
             .fillna(0)
-            .mean(),
-            1
-        ) if not dataframe.empty else 0
+            .mean()
+            if not dataframe.empty
+            else 0
+        )
 
-        max_speed = round(
+        max_speed = (
             dataframe["speed_calc"]
             .fillna(0)
-            .max(),
-            1
-        ) if not dataframe.empty else 0
+            .max()
+            if not dataframe.empty
+            else 0
+        )
 
         low_voltage = (
             dataframe["voltage"] < 11
@@ -806,42 +718,26 @@ if "df" in locals() and not df.empty:
 
                 if isinstance(val, dict):
 
-                    if "Panic Button" in val:
-
-                        if str(
-                            val["Panic Button"]
-                        ).lower() == "on":
-
-                            panic_active += 1
+                    if (
+                        str(
+                            val.get(
+                                "Panic Button",
+                                "off"
+                            )
+                        ).lower()
+                        == "on"
+                    ):
+                        panic_active += 1
 
         st.subheader(title)
 
         c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-        c1.metric(
-            "🚛 Total",
-            total_units
-        )
-
-        c2.metric(
-            "🟢 Movimiento",
-            moving_units
-        )
-
-        c3.metric(
-            "🔴 Detenidas",
-            stopped_units
-        )
-
-        c4.metric(
-            "⚡ Ignición ON",
-            ignition_on
-        )
-
-        c5.metric(
-            "⛔ Ignición OFF",
-            ignition_off
-        )
+        c1.metric("🚛 Total", total_units)
+        c2.metric("🟢 Movimiento", moving_units)
+        c3.metric("🔴 Detenidas", stopped_units)
+        c4.metric("⚡ Ignición ON", ignition_on)
+        c5.metric("⛔ Ignición OFF", ignition_off)
 
         c6.metric(
             "🏎️ Vel. Promedio",
@@ -868,7 +764,7 @@ if "df" in locals() and not df.empty:
         st.divider()
 
     # =========================================
-    # RENDER KPI SECTIONS
+    # RENDER
     # =========================================
 
     render_kpis(
@@ -887,7 +783,7 @@ if "df" in locals() and not df.empty:
     )
 
     st.divider()
-
+    
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
