@@ -241,7 +241,7 @@ elif empresa == "Picus":
 
 else:
 
-    unidades_filtradas = pd.DataFrame()
+    unidades_filtradas = unidades_df.iloc[0:0]
 
 unidad = st.selectbox(
     "Unidad",
