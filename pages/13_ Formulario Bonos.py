@@ -458,6 +458,17 @@ if st.button(
             f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
         )
 
+        st.divider()
+
+        if st.button(
+            "📧 Enviar Resultado por Correo",
+            use_container_width=True,
+            key="btn_enviar_correo_bono"
+        ):
+            st.info(
+                "Función de correo en desarrollo."
+            )
+
     st.subheader("🚨 Alertas")
 
     if alertas:
