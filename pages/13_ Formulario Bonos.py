@@ -214,7 +214,13 @@ if unidades_df.empty:
 # PARAMETROS TEMPORALES
 # ==========================================
 
-PRECIO_DIESEL = 24.01
+PRECIO_DIESEL = st.number_input(
+    "Precio Diesel ($)",
+    min_value=0.0,
+    value=24.01,
+    step=0.01,
+    format="%.2f"
+)
 
 # ==========================================
 # FORMULARIO
@@ -350,7 +356,7 @@ with col1:
 with col2:
 
     st.metric(
-        "Precio Diesel",
+        "Precio Diesel Actual",
         f"${PRECIO_DIESEL:,.2f}"
     )
 
