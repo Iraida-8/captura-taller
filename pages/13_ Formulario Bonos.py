@@ -1,11 +1,8 @@
-import re
-import io
-import unicodedata
-from typing import List, Dict, Any, Tuple
-import pandas as pd
-import pdfplumber
 import streamlit as st
+import pandas as pd
+from supabase import create_client
 from auth import require_login, require_access
+import streamlit.components.v1 as components
 
 # =================================
 # Page configuration
@@ -157,6 +154,18 @@ require_login()
 require_access("bonos_operador")
 
 # =================================
+# Page Cache and State Management
+# =================================
+@st.cache_resource
+def get_supabase_client():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase_client()
+
+# =================================
 # Navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
@@ -170,28 +179,128 @@ st.divider()
 
 st.title("💰 Bono de Operadores")
 
-# ------------------------------------------
+st.write("Loading catalog...")
+
+test = (
+    supabase
+    .table("catalogo_unidades_bonos")
+    .select("*")
+    .limit(5)
+    .execute()
+)
+
+st.dataframe(pd.DataFrame(test.data))
+
+# ==========================================
+# CATALOGO DE UNIDADES
+# ==========================================
+
+try:
+
+    unidades_response = (
+        supabase
+        .table("catalogo_unidades_bonos")
+        .select("*")
+        .order("unidad")
+        .execute()
+    )
+
+    unidades_df = pd.DataFrame(
+        unidades_response.data
+    )
+
+except Exception as e:
+
+    st.error(
+        f"Error cargando catálogo de unidades: {e}"
+    )
+    st.stop()
+
+if unidades_df.empty:
+    st.warning(
+        "No existen unidades en el catálogo."
+    )
+    st.stop()
+
+# ==========================================
 # PARAMETROS TEMPORALES
-# ------------------------------------------
+# ==========================================
 
 PRECIO_DIESEL = 24.01
-
-RENDIMIENTOS = {
-    "G00038": 2.75,
-    "G00039": 2.80,
-    "G00040": 2.65,
-}
 
 # ==========================================
 # FORMULARIO
 # ==========================================
 
+st.title("💰 Bono de Operadores")
+
 st.subheader("📋 Formulario")
 
 unidad = st.selectbox(
     "Unidad",
-    list(RENDIMIENTOS.keys())
+    unidades_df["unidad"].tolist()
 )
+
+unidad_info = unidades_df[
+    unidades_df["unidad"] == unidad
+].iloc[0]
+
+st.subheader("🚚 Información de la Unidad")
+
+c1, c2, c3, c4 = st.columns(4)
+
+with c1:
+    st.text_input(
+        "VIN",
+        value=str(unidad_info["vin"] or ""),
+        disabled=True
+    )
+
+with c2:
+    st.text_input(
+        "Placa Mex",
+        value=str(unidad_info["placa_mex"] or ""),
+        disabled=True
+    )
+
+with c3:
+    st.text_input(
+        "Marca",
+        value=str(unidad_info["marca"] or ""),
+        disabled=True
+    )
+
+with c4:
+    st.text_input(
+        "Modelo",
+        value=str(unidad_info["modelos"] or ""),
+        disabled=True
+    )
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.text_input(
+        "Motor",
+        value=str(unidad_info["motor"] or ""),
+        disabled=True
+    )
+
+with c2:
+    st.text_input(
+        "Año",
+        value=str(unidad_info["anio"] or ""),
+        disabled=True
+    )
+
+with c3:
+    st.text_input(
+        "Rendimiento Esperado",
+        value=str(unidad_info["rendimiento_esperado"] or ""),
+        disabled=True
+    )
+
+st.divider()
 
 ruta = st.text_input(
     "Ruta: Origen - Destino"
@@ -203,20 +312,54 @@ tipo_ruta = st.selectbox(
 )
 
 trafico = st.text_input(
-    "Tráfico"
+    "Número de Tráfico"
 )
 
-kilometros = st.number_input(
-    "Kilómetros",
-    min_value=0.0,
-    step=1.0
+col1, col2 = st.columns(2)
+
+with col1:
+
+    kilometros = st.number_input(
+        "Kilómetros",
+        min_value=0.0,
+        step=1.0
+    )
+
+with col2:
+
+    litros_cargados = st.number_input(
+        "Litros Cargados",
+        min_value=0.0,
+        step=1.0
+    )
+
+st.divider()
+
+st.subheader("⚙️ Parámetros de Cálculo")
+
+col1, col2 = st.columns(2)
+
+rendimiento_minimo = float(
+    unidad_info["rendimiento_minimo"]
 )
 
-litros_cargados = st.number_input(
-    "Litros Cargados",
-    min_value=0.0,
-    step=1.0
+rendimiento_esperado = float(
+    unidad_info["rendimiento_esperado"]
 )
+
+with col1:
+
+    st.metric(
+        "Rendimiento Mínimo",
+        f"{rendimiento_minimo:.2f} km/l"
+    )
+
+with col2:
+
+    st.metric(
+        "Precio Diesel",
+        f"${PRECIO_DIESEL:,.2f}"
+    )
 
 # ==========================================
 # CALCULO
@@ -227,13 +370,7 @@ if st.button(
     use_container_width=True
 ):
 
-    rendimiento_minimo = RENDIMIENTOS[unidad]
-
     alertas = []
-
-    # -------------------
-    # VALIDACIONES
-    # -------------------
 
     if kilometros > 5000:
         alertas.append(
@@ -248,23 +385,22 @@ if st.button(
     rendimiento_real = 0
 
     if litros_cargados > 0:
+
         rendimiento_real = (
             kilometros / litros_cargados
         )
 
         if rendimiento_real > 8:
+
             alertas.append(
                 f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
             )
 
         if rendimiento_real < 1:
+
             alertas.append(
                 f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
             )
-
-    # -------------------
-    # CALCULO PRINCIPAL
-    # -------------------
 
     litros_permitidos = (
         kilometros / rendimiento_minimo
@@ -278,17 +414,19 @@ if st.button(
         diferencia_litros * PRECIO_DIESEL
     )
 
-    # ==========================================
-    # RESULTADO
-    # ==========================================
-
     st.divider()
 
     st.subheader("📊 Resultado")
 
-    col1, col2 = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with col1:
+    with c1:
+
+        st.text_input(
+            "Rendimiento Real",
+            value=f"{rendimiento_real:.2f}",
+            disabled=True
+        )
 
         st.text_input(
             "Dif. a Favor o en Contra del Rendimiento",
@@ -297,32 +435,38 @@ if st.button(
         )
 
         st.text_input(
-            "Total de Litros Ahorrados o Gastados de Más",
+            "Litros Permitidos",
+            value=f"{litros_permitidos:.2f}",
+            disabled=True
+        )
+
+        st.text_input(
+            "Litros Ahorrados / Excedidos",
             value=f"{diferencia_litros:.2f}",
             disabled=True
         )
 
-    with col2:
+    with c2:
 
         if monto >= 0:
 
             st.success(
-                f"BONO A PAGAR: ${monto:,.2f}"
+                f"💰 BONO A PAGAR: ${monto:,.2f}"
             )
 
         else:
 
             st.error(
-                f"DESCUENTO: ${abs(monto):,.2f}"
+                f"🚨 DESCUENTO: ${abs(monto):,.2f}"
             )
 
         st.info(
-            f"Precio Diesel: ${PRECIO_DIESEL:,.2f}"
+            f"Precio Diesel Utilizado: ${PRECIO_DIESEL:,.2f}"
         )
 
-    # ==========================================
-    # ALERTAS
-    # ==========================================
+        st.info(
+            f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
+        )
 
     st.subheader("🚨 Alertas")
 
@@ -332,6 +476,7 @@ if st.button(
             st.warning(alerta)
 
     else:
+
         st.success(
             "Sin alertas."
         )
