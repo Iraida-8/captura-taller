@@ -179,18 +179,6 @@ st.divider()
 
 st.title("💰 Bono de Operadores")
 
-st.write("Loading catalog...")
-
-test = (
-    supabase
-    .table("catalogo_unidades_bonos")
-    .select("*")
-    .limit(5)
-    .execute()
-)
-
-st.dataframe(pd.DataFrame(test.data))
-
 # ==========================================
 # CATALOGO DE UNIDADES
 # ==========================================
@@ -231,8 +219,6 @@ PRECIO_DIESEL = 24.01
 # ==========================================
 # FORMULARIO
 # ==========================================
-
-st.title("💰 Bono de Operadores")
 
 st.subheader("📋 Formulario")
 
@@ -277,7 +263,7 @@ with c4:
         disabled=True
     )
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4)
 
 with c1:
     st.text_input(
@@ -297,6 +283,13 @@ with c3:
     st.text_input(
         "Rendimiento Esperado",
         value=str(unidad_info["rendimiento_esperado"] or ""),
+        disabled=True
+    )
+
+with c4:
+    st.text_input(
+        "Rendimiento Mínimo",
+        value=str(unidad_info["rendimiento_minimo"] or ""),
         disabled=True
     )
 
