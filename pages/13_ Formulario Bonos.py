@@ -1,3 +1,5 @@
+import io
+from datetime import datetime
 import streamlit as st
 import pandas as pd
 from supabase import create_client
@@ -328,7 +330,7 @@ with c4:
         value=clean_value(unidad_info["rendimiento_minimo"]),
         disabled=True
     )
-    
+
 st.divider()
 
 ruta = st.text_input(
@@ -446,6 +448,49 @@ if st.button(
         diferencia_litros * PRECIO_DIESEL
     )
 
+    # ==========================================
+    # EXCEL REPORT
+    # ==========================================
+
+    reporte_df = pd.DataFrame([{
+        "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Empresa": empresa,
+        "Unidad": unidad,
+        "VIN": clean_value(unidad_info["vin"]),
+        "Placa Mex": clean_value(unidad_info["placa_mex"]),
+        "Marca": clean_value(unidad_info["marca"]),
+        "Modelo": clean_value(unidad_info["modelos"]),
+        "Motor": clean_value(unidad_info["motor"]),
+        "Año": clean_value(unidad_info["anio"]),
+        "Ruta Origen-Destino": ruta,
+        "Tipo Ruta": tipo_ruta,
+        "Número de Tráfico": trafico,
+        "Kilómetros": kilometros,
+        "Litros Cargados": litros_cargados,
+        "Rendimiento Esperado": rendimiento_esperado,
+        "Rendimiento Mínimo": rendimiento_minimo,
+        "Precio Diesel": PRECIO_DIESEL,
+        "Rendimiento Real": round(rendimiento_real, 2),
+        "Litros Permitidos": round(litros_permitidos, 2),
+        "Litros Ahorrados / Excedidos": round(diferencia_litros, 2),
+        "Monto": round(monto, 2)
+    }])
+
+    excel_buffer = io.BytesIO()
+
+    with pd.ExcelWriter(
+        excel_buffer,
+        engine="openpyxl"
+    ) as writer:
+
+        reporte_df.to_excel(
+            writer,
+            sheet_name="Reporte Bono",
+            index=False
+        )
+
+    excel_data = excel_buffer.getvalue()
+
     st.divider()
 
     st.subheader("📊 Resultado")
@@ -501,6 +546,15 @@ if st.button(
         )
 
         st.divider()
+
+        st.download_button(
+            label="📥 Descargar Reporte",
+            data=excel_data,
+            file_name=f"Bono_{unidad}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key="btn_descargar_reporte_bono"
+        )
 
         if st.button(
             "📧 Enviar Resultado por Correo",
