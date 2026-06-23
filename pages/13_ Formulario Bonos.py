@@ -211,18 +211,6 @@ if unidades_df.empty:
     st.stop()
 
 # ==========================================
-# PARAMETROS TEMPORALES
-# ==========================================
-
-PRECIO_DIESEL = st.number_input(
-    "Precio Diesel ($)",
-    min_value=0.0,
-    value=24.01,
-    step=0.01,
-    format="%.2f"
-)
-
-# ==========================================
 # FORMULARIO
 # ==========================================
 
@@ -339,11 +327,11 @@ st.subheader("⚙️ Parámetros de Cálculo")
 col1, col2 = st.columns(2)
 
 rendimiento_minimo = float(
-    unidad_info["rendimiento_minimo"]
+    unidad_info["rendimiento_minimo"] or 0
 )
 
 rendimiento_esperado = float(
-    unidad_info["rendimiento_esperado"]
+    unidad_info["rendimiento_esperado"] or 0
 )
 
 with col1:
@@ -355,9 +343,12 @@ with col1:
 
 with col2:
 
-    st.metric(
-        "Precio Diesel Actual",
-        f"${PRECIO_DIESEL:,.2f}"
+    PRECIO_DIESEL = st.number_input(
+        "Precio Diesel ($)",
+        min_value=0.0,
+        value=24.01,
+        step=0.01,
+        format="%.2f"
     )
 
 # ==========================================
