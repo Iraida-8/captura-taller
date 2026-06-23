@@ -370,7 +370,7 @@ if has_access(section_audit):
             "access": "bonos_operador",
             "label": "💰 Bono de Operadores",
             "page": "pages/13_ Formulario Bonos.py",
-            "key": "btn_ai_testing"
+            "key": "btn_bonos_operador"
         }
     ])
 
