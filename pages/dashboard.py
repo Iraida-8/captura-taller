@@ -365,6 +365,12 @@ if has_access(section_audit):
             "label": "🚚  Pruebas de IA",
             "page": "pages/12_ AI_tests.py",
             "key": "btn_ai_testing"
+        },
+        {
+            "access": "bonos_operador",
+            "label": "💰 Bono de Operadores",
+            "page": "pages/13_ Formulario Bonos.py",
+            "key": "btn_ai_testing"
         }
     ])
 
