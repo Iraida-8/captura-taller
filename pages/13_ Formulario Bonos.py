@@ -252,18 +252,8 @@ unidad = st.selectbox(
     placeholder="Seleccione una empresa primero"
 )
 
-
-
-unidad = st.selectbox(
-    "Unidad",
-    unidades_df["unidad"].tolist()
-)
-
 if unidad is None:
 
-    st.stop()
-
-if unidad is None:
     st.stop()
 
 unidad_info = unidades_filtradas[
