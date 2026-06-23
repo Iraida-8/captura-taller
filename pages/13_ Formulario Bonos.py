@@ -263,6 +263,9 @@ if unidad is None:
 
     st.stop()
 
+if unidad is None:
+    st.stop()
+
 unidad_info = unidades_filtradas[
     unidades_filtradas["unidad"] == unidad
 ].iloc[0]
