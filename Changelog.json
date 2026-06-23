@@ -1,23 +1,38 @@
 [
-        {
-        "version": "1.05.15.26",
-        "date": "15/05/2026",
-        "changes": [
-            "Implementación de Solicitud de Viáticos y Reembolsos",
-            "Implementación del módulo de Gestión de Viáticos",
-            "Ajustes a fórmulas de preparación de reportes",
-            "Actualización de formato y presentación",
-            "Actualización de base de datos de refacciones",
-            "Revisión y optimización del sistema"
-        ]
-    },
-    {
-        "version": "1.04.24.26",
-        "date": "24/04/2026",
-        "changes": [
-            "Inicio del historial de cambios del sistema",
-            "Bienvenido al lanzamiento oficial del Portal de Taller",
-            "A partir de esta versión se registrarán todas las mejoras y actualizaciones"
-        ]
-    }
+{
+"version": "1.06.23.26",
+"date": "23/06/2026",
+"changes": [
+"Implementación del módulo Bono de Operadores",
+"Integración con catálogo de unidades desde Supabase",
+"Filtrado de unidades por empresa (Igloo y Picus)",
+"Carga automática de VIN, placa, marca, modelo, motor y rendimientos",
+"Cálculo automático de rendimiento real, litros permitidos y monto de bono/descuento",
+"Validación de datos y alertas operativas",
+"Precio de diésel configurable desde el formulario",
+"Generación y descarga de reporte Excel con resultados de cálculo",
+"Preparación de estructura para envío de resultados por correo electrónico"
+]
+},
+{
+"version": "1.05.15.26",
+"date": "15/05/2026",
+"changes": [
+"Implementación de Solicitud de Viáticos y Reembolsos",
+"Implementación del módulo de Gestión de Viáticos",
+"Ajustes a fórmulas de preparación de reportes",
+"Actualización de formato y presentación",
+"Actualización de base de datos de refacciones",
+"Revisión y optimización del sistema"
+]
+},
+{
+"version": "1.04.24.26",
+"date": "24/04/2026",
+"changes": [
+"Inicio del historial de cambios del sistema",
+"Bienvenido al lanzamiento oficial del Portal de Taller",
+"A partir de esta versión se registrarán todas las mejoras y actualizaciones"
+]
+}
 ]
