@@ -174,195 +174,164 @@ st.title("💰 Bono de Operadores")
 # PARAMETROS TEMPORALES
 # ------------------------------------------
 
-PRECIO_DIESEL = 10.00
+PRECIO_DIESEL = 24.01
 
 RENDIMIENTOS = {
-    "TR-001": {"min": 2.8, "max": 3.2},
-    "TR-002": {"min": 2.6, "max": 3.0},
-    "TR-003": {"min": 3.0, "max": 3.4},
+    "G00038": 2.75,
+    "G00039": 2.80,
+    "G00040": 2.65,
 }
 
-# ------------------------------------------
+# ==========================================
 # FORMULARIO
-# ------------------------------------------
+# ==========================================
 
-st.subheader("📋 Datos del Viaje")
+st.subheader("📋 Formulario")
 
-col1, col2 = st.columns(2)
+unidad = st.selectbox(
+    "Unidad",
+    list(RENDIMIENTOS.keys())
+)
 
-with col1:
-    unidad = st.selectbox(
-        "Unidad",
-        list(RENDIMIENTOS.keys())
-    )
+ruta = st.text_input(
+    "Ruta: Origen - Destino"
+)
 
-    operador = st.text_input("Operador")
+tipo_ruta = st.selectbox(
+    "Tipo Ruta",
+    ["Corta", "Larga"]
+)
 
-    origen = st.text_input("Origen")
+trafico = st.text_input(
+    "Tráfico"
+)
 
-    destino = st.text_input("Destino")
+kilometros = st.number_input(
+    "Kilómetros",
+    min_value=0.0,
+    step=1.0
+)
 
-with col2:
-    tipo_ruta = st.selectbox(
-        "Tipo de Ruta",
-        ["Corta", "Larga"]
-    )
+litros_cargados = st.number_input(
+    "Litros Cargados",
+    min_value=0.0,
+    step=1.0
+)
 
-    numero_trafico = st.text_input(
-        "Número de Tráfico"
-    )
-
-    kilometros = st.number_input(
-        "Kilómetros Recorridos",
-        min_value=0.0,
-        step=1.0
-    )
-
-    litros_cargados = st.number_input(
-        "Litros Cargados",
-        min_value=0.0,
-        step=1.0
-    )
-
-st.divider()
-
-# ------------------------------------------
-# PARAMETROS
-# ------------------------------------------
-
-st.subheader("⚙️ Parámetros")
-
-rend_min = RENDIMIENTOS[unidad]["min"]
-rend_max = RENDIMIENTOS[unidad]["max"]
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric(
-        "Rendimiento Mínimo",
-        f"{rend_min:.2f} km/l"
-    )
-
-with col2:
-    st.metric(
-        "Rendimiento Máximo",
-        f"{rend_max:.2f} km/l"
-    )
-
-with col3:
-    precio_diesel = st.number_input(
-        "Precio Diesel ($)",
-        value=PRECIO_DIESEL,
-        step=0.5
-    )
-
-st.divider()
-
-# ------------------------------------------
+# ==========================================
 # CALCULO
-# ------------------------------------------
+# ==========================================
 
 if st.button(
-    "🧮 Calcular Bono",
+    "🧮 Calcular",
     use_container_width=True
 ):
 
-    errores = []
+    rendimiento_minimo = RENDIMIENTOS[unidad]
 
-    if kilometros <= 0:
-        errores.append(
-            "Los kilómetros recorridos deben ser mayores a cero."
+    alertas = []
+
+    # -------------------
+    # VALIDACIONES
+    # -------------------
+
+    if kilometros > 5000:
+        alertas.append(
+            "⚠ Kilometraje fuera de rango."
         )
 
     if litros_cargados <= 0:
-        errores.append(
-            "Los litros cargados deben ser mayores a cero."
+        alertas.append(
+            "⚠ Litros cargados inválidos."
         )
 
-    if kilometros > 5000:
-        errores.append(
-            "Kilometraje fuera de rango."
+    rendimiento_real = 0
+
+    if litros_cargados > 0:
+        rendimiento_real = (
+            kilometros / litros_cargados
         )
 
-    rendimiento_real = (
-        kilometros / litros_cargados
-        if litros_cargados > 0
-        else 0
-    )
-
-    if rendimiento_real < 1:
-        errores.append(
-            f"Rendimiento ilógico ({rendimiento_real:.2f} km/l)."
-        )
-
-    if rendimiento_real > 8:
-        errores.append(
-            f"Rendimiento ilógico ({rendimiento_real:.2f} km/l)."
-        )
-
-    if errores:
-
-        for error in errores:
-            st.error(error)
-
-    else:
-
-        rendimiento_objetivo = (
-            rend_min + rend_max
-        ) / 2
-
-        litros_esperados = (
-            kilometros / rendimiento_objetivo
-        )
-
-        diferencia_litros = (
-            litros_esperados - litros_cargados
-        )
-
-        monto = (
-            diferencia_litros * precio_diesel
-        )
-
-        st.divider()
-
-        st.subheader("📊 Resultado")
-
-        c1, c2, c3, c4 = st.columns(4)
-
-        c1.metric(
-            "Rendimiento Real",
-            f"{rendimiento_real:.2f} km/l"
-        )
-
-        c2.metric(
-            "Litros Esperados",
-            f"{litros_esperados:.2f}"
-        )
-
-        c3.metric(
-            "Litros Reales",
-            f"{litros_cargados:.2f}"
-        )
-
-        c4.metric(
-            "Diferencia",
-            f"{diferencia_litros:.2f}"
-        )
-
-        if monto > 0:
-
-            st.success(
-                f"✅ BONO AL OPERADOR: ${monto:,.2f}"
+        if rendimiento_real > 8:
+            alertas.append(
+                f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
             )
 
-        elif monto < 0:
+        if rendimiento_real < 1:
+            alertas.append(
+                f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
+            )
 
-            st.error(
-                f"❌ COBRO AL OPERADOR: ${abs(monto):,.2f}"
+    # -------------------
+    # CALCULO PRINCIPAL
+    # -------------------
+
+    litros_permitidos = (
+        kilometros / rendimiento_minimo
+    )
+
+    diferencia_litros = (
+        litros_permitidos - litros_cargados
+    )
+
+    monto = (
+        diferencia_litros * PRECIO_DIESEL
+    )
+
+    # ==========================================
+    # RESULTADO
+    # ==========================================
+
+    st.divider()
+
+    st.subheader("📊 Resultado")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.text_input(
+            "Dif. a Favor o en Contra del Rendimiento",
+            value=f"{rendimiento_real - rendimiento_minimo:.2f}",
+            disabled=True
+        )
+
+        st.text_input(
+            "Total de Litros Ahorrados o Gastados de Más",
+            value=f"{diferencia_litros:.2f}",
+            disabled=True
+        )
+
+    with col2:
+
+        if monto >= 0:
+
+            st.success(
+                f"BONO A PAGAR: ${monto:,.2f}"
             )
 
         else:
 
-            st.info(
-                "Sin bono ni cobro."
+            st.error(
+                f"DESCUENTO: ${abs(monto):,.2f}"
             )
+
+        st.info(
+            f"Precio Diesel: ${PRECIO_DIESEL:,.2f}"
+        )
+
+    # ==========================================
+    # ALERTAS
+    # ==========================================
+
+    st.subheader("🚨 Alertas")
+
+    if alertas:
+
+        for alerta in alertas:
+            st.warning(alerta)
+
+    else:
+        st.success(
+            "Sin alertas."
+        )
