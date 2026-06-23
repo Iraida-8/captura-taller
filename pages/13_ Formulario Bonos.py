@@ -216,13 +216,55 @@ if unidades_df.empty:
 
 st.subheader("📋 Formulario")
 
+empresa = st.selectbox(
+    "Empresa",
+    ["", "Igloo", "Picus"],
+    index=0
+)
+
+if empresa == "Igloo":
+
+    unidades_filtradas = unidades_df[
+        unidades_df["unidad"].str.startswith("G", na=False)
+    ]
+
+elif empresa == "Picus":
+
+    unidades_filtradas = unidades_df[
+        (
+            unidades_df["unidad"].str.startswith("P", na=False)
+        ) |
+        (
+            unidades_df["unidad"].str.startswith("A", na=False)
+        )
+    ]
+
+else:
+
+    unidades_filtradas = pd.DataFrame()
+
+unidad = st.selectbox(
+    "Unidad",
+    unidades_filtradas["unidad"].tolist()
+    if not unidades_filtradas.empty
+    else [],
+    index=None,
+    placeholder="Seleccione una empresa primero"
+)
+
+
+
 unidad = st.selectbox(
     "Unidad",
     unidades_df["unidad"].tolist()
 )
 
-unidad_info = unidades_df[
-    unidades_df["unidad"] == unidad
+if unidad is None:
+
+    st.stop()
+
+unidad_info = unidades_filtradas[
+    unidades_filtradas["unidad"] == unidad
 ].iloc[0]
 
 st.subheader("🚚 Información de la Unidad")
