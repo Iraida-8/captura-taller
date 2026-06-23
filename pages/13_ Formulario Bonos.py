@@ -218,7 +218,7 @@ st.subheader("📋 Formulario")
 
 empresa = st.selectbox(
     "Empresa",
-    ["", "Igloo", "Picus"],
+    ["Selecciona Empresa", "Igloo", "Picus"],
     index=0
 )
 
@@ -260,35 +260,42 @@ unidad_info = unidades_filtradas[
     unidades_filtradas["unidad"] == unidad
 ].iloc[0]
 
+# ==========================================
+# Unidad Info
+# ==========================================
+
 st.subheader("🚚 Información de la Unidad")
+
+def clean_value(value):
+    return "" if pd.isna(value) else str(value)
 
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
     st.text_input(
         "VIN",
-        value=str(unidad_info["vin"] or ""),
+        value=clean_value(unidad_info["vin"]),
         disabled=True
     )
 
 with c2:
     st.text_input(
         "Placa Mex",
-        value=str(unidad_info["placa_mex"] or ""),
+        value=clean_value(unidad_info["placa_mex"]),
         disabled=True
     )
 
 with c3:
     st.text_input(
         "Marca",
-        value=str(unidad_info["marca"] or ""),
+        value=clean_value(unidad_info["marca"]),
         disabled=True
     )
 
 with c4:
     st.text_input(
         "Modelo",
-        value=str(unidad_info["modelos"] or ""),
+        value=clean_value(unidad_info["modelos"]),
         disabled=True
     )
 
@@ -297,31 +304,31 @@ c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.text_input(
         "Motor",
-        value=str(unidad_info["motor"] or ""),
+        value=clean_value(unidad_info["motor"]),
         disabled=True
     )
 
 with c2:
     st.text_input(
         "Año",
-        value=str(unidad_info["anio"] or ""),
+        value=clean_value(unidad_info["anio"]),
         disabled=True
     )
 
 with c3:
     st.text_input(
         "Rendimiento Esperado",
-        value=str(unidad_info["rendimiento_esperado"] or ""),
+        value=clean_value(unidad_info["rendimiento_esperado"]),
         disabled=True
     )
 
 with c4:
     st.text_input(
         "Rendimiento Mínimo",
-        value=str(unidad_info["rendimiento_minimo"] or ""),
+        value=clean_value(unidad_info["rendimiento_minimo"]),
         disabled=True
     )
-
+    
 st.divider()
 
 ruta = st.text_input(
