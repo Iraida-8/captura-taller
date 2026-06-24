@@ -21,7 +21,7 @@ st.set_page_config(
 # Security gates
 # =================================
 require_login()
-require_access("solicitud_viaticos")
+require_access("solicitud_viaticos_D")
 
 # =================================
 # SUPABASE CONFIGURATION

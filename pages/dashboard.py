@@ -232,7 +232,7 @@ if has_access(section_generacion):
             "key": "btn_pase_taller"
         },
         {
-            "access": "solicitud_viaticos",
+            "access": "solicitud_viaticos_D",
             "label": "💳  Solicitud de Viáticos y Reembolsos",
             "page": "pages/9_ Viaticos.py",
             "key": "btn_viaticos"
