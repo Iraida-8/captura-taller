@@ -32,6 +32,17 @@ def get_supabase():
 
 supabase = get_supabase()
 
+#COTIZADORES DATA
+
+@st.cache_resource
+def get_cotizadores_supabase():
+    return create_client(
+        st.secrets["COTIZADORES_SUPABASE_URL"],
+        st.secrets["COTIZADORES_SUPABASE_KEY"]
+    )
+
+supabase_cotizadores = get_cotizadores_supabase()
+
 # =================================
 # RESEND CONFIG
 # =================================
@@ -487,7 +498,7 @@ def cargar_solicitudes():
     while True:
 
         response = (
-            supabase
+            supabase_cotizadores
             .table("solicitud_viaje")
             .select("*")
             .order("created_at", desc=True)
@@ -524,7 +535,7 @@ def cargar_comprobaciones():
     while True:
 
         response = (
-            supabase
+            supabase_cotizadores
             .table("comprobacion_viaje")
             .select("*")
             .order("created_at", desc=True)
