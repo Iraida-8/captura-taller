@@ -229,6 +229,47 @@ vehicle_df = pd.DataFrame(
 )
 
 # ==========================================
+# MERGE BOTH TABLES
+# ==========================================
+
+def normalize_unit(unit):
+
+    if pd.isna(unit):
+        return ""
+
+    unit = str(unit).strip().upper()
+
+    # IGT74 -> G00074
+    if unit.startswith("IGT"):
+        return f"G{int(unit[3:]):05d}"
+
+    # G00074 -> G00074
+    if unit.startswith("G"):
+        return f"G{int(unit[1:]):05d}"
+
+    # P166 -> P00166
+    if unit.startswith("P"):
+        return f"P{int(unit[1:]):05d}"
+
+    # A12 -> A00012
+    if unit.startswith("A"):
+        return f"A{int(unit[1:]):05d}"
+
+    return unit
+
+
+vehicle_df["join_key"] = vehicle_df["unidad"].apply(normalize_unit)
+
+unidades_df["join_key"] = unidades_df["unidad"].apply(normalize_unit)
+
+unidades_df = vehicle_df.merge(
+    unidades_df,
+    on="join_key",
+    how="left",
+    suffixes=("", "_bono")
+)
+
+# ==========================================
 # FORMULARIO
 # ==========================================
 
