@@ -213,6 +213,22 @@ if unidades_df.empty:
     st.stop()
 
 # ==========================================
+# VEHICLE UNITS TABLE
+# ==========================================
+
+vehicle_response = (
+    supabase
+    .table("vehicle_units")
+    .select("*")
+    .order("unidad")
+    .execute()
+)
+
+vehicle_df = pd.DataFrame(
+    vehicle_response.data
+)
+
+# ==========================================
 # FORMULARIO
 # ==========================================
 
