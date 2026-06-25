@@ -374,16 +374,7 @@ with col_form:
         step=1.0
     )
 
-    calcular = st.button(
-        "🧮 Calcular",
-        use_container_width=True
-    )
-
-# ==========================================
-# RIGHT COLUMN
-# ==========================================
-
-with col_calc:
+    st.divider()
 
     st.subheader("⚙️ Parámetros de Cálculo")
 
@@ -408,106 +399,64 @@ with col_calc:
         format="%.2f"
     )
 
+    calcular = st.button(
+        "🧮 Calcular",
+        use_container_width=True
+    )
+
 # ==========================================
-# CALCULO
+# RIGHT COLUMN
 # ==========================================
 
-if calcular:
+with col_calc:
 
-    alertas = []
+    if calcular:
 
-    if kilometros > 5000:
-        alertas.append(
-            "⚠ Kilometraje fuera de rango."
-        )
+        alertas = []
 
-    if litros_cargados <= 0:
-        alertas.append(
-            "⚠ Litros cargados inválidos."
-        )
-
-    rendimiento_real = 0
-
-    if litros_cargados > 0:
-
-        rendimiento_real = (
-            kilometros / litros_cargados
-        )
-
-        if rendimiento_real > 8:
-
+        if kilometros > 5000:
             alertas.append(
-                f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
+                "⚠ Kilometraje fuera de rango."
             )
 
-        if rendimiento_real < 1:
-
+        if litros_cargados <= 0:
             alertas.append(
-                f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
+                "⚠ Litros cargados inválidos."
             )
 
-    litros_permitidos = (
-        kilometros / rendimiento_minimo
-    )
+        rendimiento_real = 0
 
-    diferencia_litros = (
-        litros_permitidos - litros_cargados
-    )
+        if litros_cargados > 0:
 
-    monto = (
-        diferencia_litros * PRECIO_DIESEL
-    )
+            rendimiento_real = (
+                kilometros / litros_cargados
+            )
 
-    # ==========================================
-    # EXCEL REPORT
-    # ==========================================
+            if rendimiento_real > 8:
 
-    reporte_df = pd.DataFrame([{
-        "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Empresa": empresa,
-        "Unidad": unidad,
-        "VIN": clean_value(unidad_info["vin"]),
-        "Placa Mex": clean_value(unidad_info["placa_mex"]),
-        "Marca": clean_value(unidad_info["marca"]),
-        "Modelo": clean_value(unidad_info["modelos"]),
-        "Motor": clean_value(unidad_info["motor"]),
-        "Año": clean_value(unidad_info["anio"]),
-        "Ruta Origen-Destino": ruta,
-        "Tipo Ruta": tipo_ruta,
-        "Número de Tráfico": trafico,
-        "Kilómetros": kilometros,
-        "Litros Cargados": litros_cargados,
-        "Rendimiento Esperado": rendimiento_esperado,
-        "Rendimiento Mínimo": rendimiento_minimo,
-        "Precio Diesel": PRECIO_DIESEL,
-        "Rendimiento Real": round(rendimiento_real, 2),
-        "Litros Permitidos": round(litros_permitidos, 2),
-        "Litros Ahorrados / Excedidos": round(diferencia_litros, 2),
-        "Monto": round(monto, 2)
-    }])
+                alertas.append(
+                    f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
+                )
 
-    excel_buffer = io.BytesIO()
+            if rendimiento_real < 1:
 
-    with pd.ExcelWriter(
-        excel_buffer,
-        engine="openpyxl"
-    ) as writer:
+                alertas.append(
+                    f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
+                )
 
-        reporte_df.to_excel(
-            writer,
-            sheet_name="Reporte Bono",
-            index=False
+        litros_permitidos = (
+            kilometros / rendimiento_minimo
         )
 
-    excel_data = excel_buffer.getvalue()
+        diferencia_litros = (
+            litros_permitidos - litros_cargados
+        )
 
-    st.divider()
+        monto = (
+            diferencia_litros * PRECIO_DIESEL
+        )
 
-    st.subheader("📊 Resultado")
-
-    c1, c2 = st.columns(2)
-
-    with c1:
+        st.subheader("📊 Resultado")
 
         st.text_input(
             "Rendimiento Real",
@@ -533,8 +482,6 @@ if calcular:
             disabled=True
         )
 
-    with c2:
-
         if monto >= 0:
 
             st.success(
@@ -557,33 +504,15 @@ if calcular:
 
         st.divider()
 
-        st.download_button(
-            label="📥 Descargar Reporte",
-            data=excel_data,
-            file_name=f"Bono_{unidad}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            key="btn_descargar_reporte_bono"
-        )
+        st.subheader("🚨 Alertas")
 
-        if st.button(
-            "📧 Enviar Resultado por Correo",
-            use_container_width=True,
-            key="btn_enviar_correo_bono"
-        ):
-            st.info(
-                "Función de correo en desarrollo."
+        if alertas:
+
+            for alerta in alertas:
+                st.warning(alerta)
+
+        else:
+
+            st.success(
+                "Sin alertas."
             )
-
-    st.subheader("🚨 Alertas")
-
-    if alertas:
-
-        for alerta in alertas:
-            st.warning(alerta)
-
-    else:
-
-        st.success(
-            "Sin alertas."
-        )
