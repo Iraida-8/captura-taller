@@ -374,9 +374,21 @@ with col_form:
         step=1.0
     )
 
-    rendimiento_minimo = float(
-        unidad_info["rendimiento_minimo"] or 0
+    rendimiento_minimo = pd.to_numeric(
+        unidad_info["rendimiento_minimo"],
+        errors="coerce"
     )
+
+    if pd.isna(rendimiento_minimo):
+        rendimiento_minimo = 0.0
+
+    rendimiento_esperado = pd.to_numeric(
+        unidad_info["rendimiento_esperado"],
+        errors="coerce"
+    )
+
+    if pd.isna(rendimiento_esperado):
+        rendimiento_esperado = 0.0
 
     rendimiento_esperado = float(
         unidad_info["rendimiento_esperado"] or 0
