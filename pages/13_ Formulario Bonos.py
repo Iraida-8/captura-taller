@@ -348,203 +348,195 @@ rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
 
 st.divider()
 
-st.markdown(
-    '<div class="form-container">',
-    unsafe_allow_html=True
-)
+with st.container(border=True):
 
-col_form, col_calc = st.columns([1, 1])
+    col_form, col_calc = st.columns([1,1])
 
-# ==========================================
-# LEFT COLUMN - FORM
-# ==========================================
+    # ==========================================
+    # LEFT COLUMN - FORM
+    # ==========================================
 
-with col_form:
+    with col_form:
 
-    st.subheader("📝 Información del Viaje")
+        st.subheader("📝 Información del Viaje")
 
-    ruta = st.text_input(
-        "Ruta: Origen - Destino"
-    )
-
-    tipo_ruta = st.selectbox(
-        "Tipo Ruta",
-        ["Corta", "Larga"]
-    )
-
-    trafico = st.text_input(
-        "Número de Tráfico"
-    )
-
-    kilometros = st.number_input(
-        "Kilómetros",
-        min_value=0.0,
-        step=1.0
-    )
-
-    litros_cargados = st.number_input(
-        "Litros Cargados",
-        min_value=0.0,
-        step=1.0
-    )
-
-    rendimiento_minimo = pd.to_numeric(
-        unidad_info["rendimiento_minimo"],
-        errors="coerce"
-    )
-
-    if pd.isna(rendimiento_minimo):
-        rendimiento_minimo = 0.0
-
-    rendimiento_esperado = pd.to_numeric(
-        unidad_info["rendimiento_esperado"],
-        errors="coerce"
-    )
-
-    if pd.isna(rendimiento_esperado):
-        rendimiento_esperado = 0.0
-
-    rendimiento_esperado = float(
-        unidad_info["rendimiento_esperado"] or 0
-    )
-
-    param1, param2 = st.columns([1, 1])
-
-    with param1:
-        st.metric(
-            "Rendimiento Mínimo",
-            f"{rendimiento_minimo:.2f} km/l"
+        ruta = st.text_input(
+            "Ruta: Origen - Destino"
         )
 
-    with param2:
-        PRECIO_DIESEL = st.number_input(
-            "Precio Diesel ($)",
+        tipo_ruta = st.selectbox(
+            "Tipo Ruta",
+            ["Corta", "Larga"]
+        )
+
+        trafico = st.text_input(
+            "Número de Tráfico"
+        )
+
+        kilometros = st.number_input(
+            "Kilómetros",
             min_value=0.0,
-            value=10.55,
-            step=0.01,
-            format="%.2f",
-            key="precio_diesel"
+            step=1.0
         )
 
-    calcular = st.button(
-        "🧮 Calcular",
-        use_container_width=True
-    )
+        litros_cargados = st.number_input(
+            "Litros Cargados",
+            min_value=0.0,
+            step=1.0
+        )
 
-# ==========================================
-# RIGHT COLUMN
-# ==========================================
+        rendimiento_minimo = pd.to_numeric(
+            unidad_info["rendimiento_minimo"],
+            errors="coerce"
+        )
 
-with col_calc:
+        if pd.isna(rendimiento_minimo):
+            rendimiento_minimo = 0.0
 
-    if calcular:
+        rendimiento_esperado = pd.to_numeric(
+            unidad_info["rendimiento_esperado"],
+            errors="coerce"
+        )
 
-        alertas = []
+        if pd.isna(rendimiento_esperado):
+            rendimiento_esperado = 0.0
 
-        if kilometros > 5000:
-            alertas.append(
-                "⚠ Kilometraje fuera de rango."
+        rendimiento_esperado = float(
+            unidad_info["rendimiento_esperado"] or 0
+        )
+
+        param1, param2 = st.columns([1, 1])
+
+        with param1:
+            st.metric(
+                "Rendimiento Mínimo",
+                f"{rendimiento_minimo:.2f} km/l"
             )
 
-        if litros_cargados <= 0:
-            alertas.append(
-                "⚠ Litros cargados inválidos."
+        with param2:
+            PRECIO_DIESEL = st.number_input(
+                "Precio Diesel ($)",
+                min_value=0.0,
+                value=10.55,
+                step=0.01,
+                format="%.2f",
+                key="precio_diesel"
             )
 
-        rendimiento_real = 0
+        calcular = st.button(
+            "🧮 Calcular",
+            use_container_width=True
+        )
 
-        if litros_cargados > 0:
+    # ==========================================
+    # RIGHT COLUMN
+    # ==========================================
 
-            rendimiento_real = (
-                kilometros / litros_cargados
-            )
+    with col_calc:
 
-            if rendimiento_real > 8:
+        if calcular:
 
+            alertas = []
+
+            if kilometros > 5000:
                 alertas.append(
-                    f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
+                    "⚠ Kilometraje fuera de rango."
                 )
 
-            if rendimiento_real < 1:
-
+            if litros_cargados <= 0:
                 alertas.append(
-                    f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
+                    "⚠ Litros cargados inválidos."
                 )
 
-        litros_permitidos = (
-            kilometros / rendimiento_minimo
-        )
+            rendimiento_real = 0
 
-        diferencia_litros = (
-            litros_permitidos - litros_cargados
-        )
+            if litros_cargados > 0:
 
-        monto = (
-            diferencia_litros * PRECIO_DIESEL
-        )
+                rendimiento_real = (
+                    kilometros / litros_cargados
+                )
 
-        st.subheader("📊 Resultado")
+                if rendimiento_real > 8:
 
-        st.text_input(
-            "Rendimiento Real",
-            value=f"{rendimiento_real:.2f}",
-            disabled=True
-        )
+                    alertas.append(
+                        f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
+                    )
 
-        st.text_input(
-            "Dif. a Favor o en Contra del Rendimiento",
-            value=f"{rendimiento_real - rendimiento_minimo:.2f}",
-            disabled=True
-        )
+                if rendimiento_real < 1:
 
-        st.text_input(
-            "Litros Permitidos",
-            value=f"{litros_permitidos:.2f}",
-            disabled=True
-        )
+                    alertas.append(
+                        f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
+                    )
 
-        st.text_input(
-            "Litros Ahorrados / Excedidos",
-            value=f"{diferencia_litros:.2f}",
-            disabled=True
-        )
-
-        if monto >= 0:
-
-            st.success(
-                f"💰 BONO A PAGAR: ${monto:,.2f}"
+            litros_permitidos = (
+                kilometros / rendimiento_minimo
             )
 
-        else:
-
-            st.error(
-                f"🚨 DESCUENTO: ${abs(monto):,.2f}"
+            diferencia_litros = (
+                litros_permitidos - litros_cargados
             )
 
-        st.info(
-            f"Precio Diesel Utilizado: ${PRECIO_DIESEL:,.2f}"
-        )
-
-        st.info(
-            f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
-        )
-
-        st.divider()
-
-        st.subheader("🚨 Alertas")
-
-        if alertas:
-
-            for alerta in alertas:
-                st.warning(alerta)
-
-        else:
-
-            st.success(
-                "Sin alertas."
+            monto = (
+                diferencia_litros * PRECIO_DIESEL
             )
 
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+            st.subheader("📊 Resultado")
+
+            st.text_input(
+                "Rendimiento Real",
+                value=f"{rendimiento_real:.2f}",
+                disabled=True
+            )
+
+            st.text_input(
+                "Dif. a Favor o en Contra del Rendimiento",
+                value=f"{rendimiento_real - rendimiento_minimo:.2f}",
+                disabled=True
+            )
+
+            st.text_input(
+                "Litros Permitidos",
+                value=f"{litros_permitidos:.2f}",
+                disabled=True
+            )
+
+            st.text_input(
+                "Litros Ahorrados / Excedidos",
+                value=f"{diferencia_litros:.2f}",
+                disabled=True
+            )
+
+            if monto >= 0:
+
+                st.success(
+                    f"💰 BONO A PAGAR: ${monto:,.2f}"
+                )
+
+            else:
+
+                st.error(
+                    f"🚨 DESCUENTO: ${abs(monto):,.2f}"
+                )
+
+            st.info(
+                f"Precio Diesel Utilizado: ${PRECIO_DIESEL:,.2f}"
+            )
+
+            st.info(
+                f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
+            )
+
+            st.divider()
+
+            st.subheader("🚨 Alertas")
+
+            if alertas:
+
+                for alerta in alertas:
+                    st.warning(alerta)
+
+            else:
+
+                st.success(
+                    "Sin alertas."
+                )
