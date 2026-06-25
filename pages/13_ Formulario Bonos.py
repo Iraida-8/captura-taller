@@ -163,6 +163,11 @@ require_login()
 require_access("bonos_operador")
 
 # =================================
+# USER
+# =================================
+user = st.session_state.user
+
+# =================================
 # Page Cache and State Management
 # =================================
 @st.cache_resource
@@ -501,7 +506,7 @@ with st.container(border=True, key="bono_form"):
 
             supabase.table("bonos_operadores").insert({
 
-                "usuario": user["name"],
+                "usuario": st.session_state["user"]["name"],
                 "empresa": empresa,
                 "unidad": unidad,
 
