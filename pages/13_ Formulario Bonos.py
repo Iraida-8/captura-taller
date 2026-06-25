@@ -331,39 +331,6 @@ unidad_info = unidades_filtradas[
 ].iloc[0]
 
 # ==========================================
-# ALERTAS (TOP)
-# ==========================================
-
-alertas = []
-
-rendimiento_minimo_tmp = pd.to_numeric(
-    unidad_info["rendimiento_minimo"],
-    errors="coerce"
-)
-
-if pd.isna(rendimiento_minimo_tmp) or rendimiento_minimo_tmp <= 0:
-    alertas.append(
-        "⚠ La unidad no tiene Rendimiento Mínimo configurado."
-    )
-
-rendimiento_esperado_tmp = pd.to_numeric(
-    unidad_info["rendimiento_esperado"],
-    errors="coerce"
-)
-
-if pd.isna(rendimiento_esperado_tmp) or rendimiento_esperado_tmp <= 0:
-    alertas.append(
-        "⚠ La unidad no tiene Rendimiento Esperado configurado."
-    )
-
-if alertas:
-
-    st.subheader("🚨 Alertas")
-
-    for alerta in alertas:
-        st.warning(alerta)
-
-# ==========================================
 # Unidad Info (Hidden)
 # ==========================================
 
@@ -383,7 +350,7 @@ st.divider()
 
 with st.container(border=True):
 
-    col_form, col_calc = st.columns([1,1])
+    col_form, col_calc = st.columns([1, 1])
 
     # ==========================================
     # LEFT COLUMN - FORM
@@ -423,22 +390,18 @@ with st.container(border=True):
             errors="coerce"
         )
 
-        if pd.isna(rendimiento_minimo):
-            rendimiento_minimo = 0.0
-
         rendimiento_esperado = pd.to_numeric(
             unidad_info["rendimiento_esperado"],
             errors="coerce"
         )
 
+        if pd.isna(rendimiento_minimo):
+            rendimiento_minimo = 0.0
+
         if pd.isna(rendimiento_esperado):
             rendimiento_esperado = 0.0
 
-        rendimiento_esperado = float(
-            unidad_info["rendimiento_esperado"] or 0
-        )
-
-        param1, param2 = st.columns([1, 1])
+        param1, param2 = st.columns(2)
 
         with param1:
             st.metric(
@@ -462,47 +425,23 @@ with st.container(border=True):
         )
 
     # ==========================================
-    # RIGHT COLUMN
+    # RIGHT COLUMN - RESULTADO
     # ==========================================
 
     with col_calc:
 
         if calcular:
 
-            alertas = []
-
-            if kilometros > 5000:
-                alertas.append(
-                    "⚠ Kilometraje fuera de rango."
-                )
-
-            if litros_cargados <= 0:
-                alertas.append(
-                    "⚠ Litros cargados inválidos."
-                )
-
-            rendimiento_real = 0
-
-            if litros_cargados > 0:
-
-                rendimiento_real = (
-                    kilometros / litros_cargados
-                )
-
-                if rendimiento_real > 8:
-
-                    alertas.append(
-                        f"⚠ Rendimiento ilógico ({rendimiento_real:.2f} km/l)"
-                    )
-
-                if rendimiento_real < 1:
-
-                    alertas.append(
-                        f"⚠ Rendimiento extremadamente bajo ({rendimiento_real:.2f} km/l)"
-                    )
+            rendimiento_real = (
+                kilometros / litros_cargados
+                if litros_cargados > 0
+                else 0
+            )
 
             litros_permitidos = (
                 kilometros / rendimiento_minimo
+                if rendimiento_minimo > 0
+                else 0
             )
 
             diferencia_litros = (
@@ -540,13 +479,10 @@ with st.container(border=True):
             )
 
             if monto >= 0:
-
                 st.success(
                     f"💰 BONO A PAGAR: ${monto:,.2f}"
                 )
-
             else:
-
                 st.error(
                     f"🚨 DESCUENTO: ${abs(monto):,.2f}"
                 )
@@ -558,5 +494,3 @@ with st.container(border=True):
             st.info(
                 f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
             )
-
-            st.divider()
