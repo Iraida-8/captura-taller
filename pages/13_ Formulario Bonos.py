@@ -322,73 +322,20 @@ unidad_info = unidades_filtradas[
 ].iloc[0]
 
 # ==========================================
-# Unidad Info
+# Unidad Info (Hidden)
 # ==========================================
 
-with st.expander("🚚 Información de la Unidad", expanded=False):
+def clean_value(value):
+    return "" if pd.isna(value) else str(value)
 
-    def clean_value(value):
-        return "" if pd.isna(value) else str(value)
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        st.text_input(
-            "VIN",
-            value=clean_value(unidad_info["vin"]),
-            disabled=True
-        )
-
-    with c2:
-        st.text_input(
-            "Placa Mex",
-            value=clean_value(unidad_info["placa_mex"]),
-            disabled=True
-        )
-
-    with c3:
-        st.text_input(
-            "Marca",
-            value=clean_value(unidad_info["marca"]),
-            disabled=True
-        )
-
-    with c4:
-        st.text_input(
-            "Modelo",
-            value=clean_value(unidad_info["modelos"]),
-            disabled=True
-        )
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        st.text_input(
-            "Motor",
-            value=clean_value(unidad_info["motor"]),
-            disabled=True
-        )
-
-    with c2:
-        st.text_input(
-            "Año",
-            value=clean_value(unidad_info["anio"]),
-            disabled=True
-        )
-
-    with c3:
-        st.text_input(
-            "Rendimiento Esperado",
-            value=clean_value(unidad_info["rendimiento_esperado"]),
-            disabled=True
-        )
-
-    with c4:
-        st.text_input(
-            "Rendimiento Mínimo",
-            value=clean_value(unidad_info["rendimiento_minimo"]),
-            disabled=True
-        )
+vin = clean_value(unidad_info["vin"])
+placa_mex = clean_value(unidad_info["placa_mex"])
+marca = clean_value(unidad_info["marca"])
+modelo = clean_value(unidad_info["modelo"])
+motor = clean_value(unidad_info["motor"])
+anio = clean_value(unidad_info["anio"])
+rendimiento_esperado_txt = clean_value(unidad_info["rendimiento_esperado"])
+rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
 
 st.divider()
 
