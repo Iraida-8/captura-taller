@@ -532,7 +532,11 @@ with st.container(border=True, key="bono_form"):
                 "placa_mex": clean_value(unidad_info["placa_mex"]),
                 "marca": clean_value(unidad_info["marca"]),
                 "modelo": clean_value(unidad_info["modelos"]),
-                "anio": clean_value(unidad_info["anio"]),
+                "anio": (
+                    int(float(unidad_info["anio"]))
+                    if pd.notna(unidad_info["anio"])
+                    else None
+                ),
                 "motor": clean_value(unidad_info["motor"]),
 
                 "rendimiento_esperado": rendimiento_esperado,
