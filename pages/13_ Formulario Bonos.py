@@ -331,6 +331,39 @@ unidad_info = unidades_filtradas[
 ].iloc[0]
 
 # ==========================================
+# ALERTAS (TOP)
+# ==========================================
+
+alertas = []
+
+rendimiento_minimo_tmp = pd.to_numeric(
+    unidad_info["rendimiento_minimo"],
+    errors="coerce"
+)
+
+if pd.isna(rendimiento_minimo_tmp) or rendimiento_minimo_tmp <= 0:
+    alertas.append(
+        "⚠ La unidad no tiene Rendimiento Mínimo configurado."
+    )
+
+rendimiento_esperado_tmp = pd.to_numeric(
+    unidad_info["rendimiento_esperado"],
+    errors="coerce"
+)
+
+if pd.isna(rendimiento_esperado_tmp) or rendimiento_esperado_tmp <= 0:
+    alertas.append(
+        "⚠ La unidad no tiene Rendimiento Esperado configurado."
+    )
+
+if alertas:
+
+    st.subheader("🚨 Alertas")
+
+    for alerta in alertas:
+        st.warning(alerta)
+
+# ==========================================
 # Unidad Info (Hidden)
 # ==========================================
 
@@ -527,16 +560,3 @@ with st.container(border=True):
             )
 
             st.divider()
-
-            st.subheader("🚨 Alertas")
-
-            if alertas:
-
-                for alerta in alertas:
-                    st.warning(alerta)
-
-            else:
-
-                st.success(
-                    "Sin alertas."
-                )
