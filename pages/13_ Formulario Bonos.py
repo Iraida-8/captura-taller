@@ -339,22 +339,28 @@ rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
 
 st.divider()
 
-ruta = st.text_input(
-    "Ruta: Origen - Destino"
-)
+col_form, col_calc = st.columns([1, 1])
 
-tipo_ruta = st.selectbox(
-    "Tipo Ruta",
-    ["Corta", "Larga"]
-)
+# ==========================================
+# LEFT COLUMN - FORM
+# ==========================================
 
-trafico = st.text_input(
-    "Número de Tráfico"
-)
+with col_form:
 
-col1, col2 = st.columns(2)
+    st.subheader("📝 Información del Viaje")
 
-with col1:
+    ruta = st.text_input(
+        "Ruta: Origen - Destino"
+    )
+
+    tipo_ruta = st.selectbox(
+        "Tipo Ruta",
+        ["Corta", "Larga"]
+    )
+
+    trafico = st.text_input(
+        "Número de Tráfico"
+    )
 
     kilometros = st.number_input(
         "Kilómetros",
@@ -362,45 +368,46 @@ with col1:
         step=1.0
     )
 
-with col2:
-
     litros_cargados = st.number_input(
         "Litros Cargados",
         min_value=0.0,
         step=1.0
     )
 
-st.divider()
+    calcular = st.button(
+        "🧮 Calcular",
+        use_container_width=True
+    )
 
-st.subheader("⚙️ Parámetros de Cálculo")
+# ==========================================
+# RIGHT COLUMN
+# ==========================================
 
-col1, col2 = st.columns(2)
+with col_calc:
 
-rendimiento_minimo = float(
-    unidad_info["rendimiento_minimo"] or 0
-)
+    st.subheader("⚙️ Parámetros de Cálculo")
 
-rendimiento_esperado = float(
-    unidad_info["rendimiento_esperado"] or 0
-)
+    rendimiento_minimo = float(
+        unidad_info["rendimiento_minimo"] or 0
+    )
 
-with col1:
+    rendimiento_esperado = float(
+        unidad_info["rendimiento_esperado"] or 0
+    )
 
     st.metric(
         "Rendimiento Mínimo",
         f"{rendimiento_minimo:.2f} km/l"
     )
 
-with col2:
-
     PRECIO_DIESEL = st.number_input(
         "Precio Diesel ($)",
         min_value=0.0,
-        value=24.01,
+        value=10.55,
         step=0.01,
         format="%.2f"
     )
-
+    
 # ==========================================
 # CALCULO
 # ==========================================
