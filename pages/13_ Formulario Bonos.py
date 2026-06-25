@@ -374,8 +374,6 @@ with col_form:
         step=1.0
     )
 
-    st.divider()
-
     rendimiento_minimo = float(
         unidad_info["rendimiento_minimo"] or 0
     )
