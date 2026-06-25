@@ -394,18 +394,23 @@ with col_form:
         unidad_info["rendimiento_esperado"] or 0
     )
 
-    st.metric(
-        "Rendimiento Mínimo",
-        f"{rendimiento_minimo:.2f} km/l"
-    )
+    param1, param2 = st.columns([1, 1])
 
-    PRECIO_DIESEL = st.number_input(
-        "Precio Diesel ($)",
-        min_value=0.0,
-        value=10.55,
-        step=0.01,
-        format="%.2f"
-    )
+    with param1:
+        st.metric(
+            "Rendimiento Mínimo",
+            f"{rendimiento_minimo:.2f} km/l"
+        )
+
+    with param2:
+        PRECIO_DIESEL = st.number_input(
+            "Precio Diesel ($)",
+            min_value=0.0,
+            value=10.55,
+            step=0.01,
+            format="%.2f",
+            key="precio_diesel"
+        )
 
     calcular = st.button(
         "🧮 Calcular",
