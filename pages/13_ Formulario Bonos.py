@@ -407,15 +407,12 @@ with col_calc:
         step=0.01,
         format="%.2f"
     )
-    
+
 # ==========================================
 # CALCULO
 # ==========================================
 
-if st.button(
-    "🧮 Calcular",
-    use_container_width=True
-):
+if calcular:
 
     alertas = []
 
