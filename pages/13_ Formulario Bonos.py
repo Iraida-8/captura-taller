@@ -249,7 +249,7 @@ def normalize_unit(unit):
 
     number = int(numbers[0])
 
-    if unit.startswith("IGT"):
+    if unit.startswith("IG-"):
         return f"G{number:05d}"
 
     if unit.startswith("G"):
