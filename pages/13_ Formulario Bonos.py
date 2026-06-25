@@ -232,6 +232,8 @@ vehicle_df = pd.DataFrame(
 # MERGE BOTH TABLES
 # ==========================================
 
+import re
+
 def normalize_unit(unit):
 
     if pd.isna(unit):
@@ -239,22 +241,27 @@ def normalize_unit(unit):
 
     unit = str(unit).strip().upper()
 
-    # IGT74 -> G00074
+    # Extract only the numeric part
+    numbers = re.findall(r"\d+", unit)
+
+    if not numbers:
+        return unit
+
+    number = int(numbers[0])
+
     if unit.startswith("IGT"):
-        return f"G{int(unit[3:]):05d}"
+        return f"G{number:05d}"
 
-    # G00074 -> G00074
     if unit.startswith("G"):
-        return f"G{int(unit[1:]):05d}"
+        return f"G{number:05d}"
 
-    # P166 -> P00166
     if unit.startswith("P"):
-        return f"P{int(unit[1:]):05d}"
+        return f"P{number:05d}"
 
-    # A12 -> A00012
     if unit.startswith("A"):
-        return f"A{int(unit[1:]):05d}"
+        return f"A{number:05d}"
 
+    return unit
     return unit
 
 
