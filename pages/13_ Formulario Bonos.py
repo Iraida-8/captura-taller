@@ -561,6 +561,7 @@ with st.container(border=True, key="bono_form"):
             }).execute()
 
             st.session_state["mostrar_popup_envio"] = True
+            st.rerun()
 
         except Exception as e:
 
