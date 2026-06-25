@@ -566,3 +566,24 @@ with st.container(border=True, key="bono_form"):
         except Exception as e:
 
             st.error(f"Error guardando formulario: {e}")
+
+    # ==========================================
+    # SUCCESS POPUP
+    # ==========================================
+
+    if st.session_state.get("mostrar_popup_envio", False):
+
+        @st.dialog("Formulario Enviado")
+        def popup_envio():
+
+            st.success("✅ Formulario enviado correctamente.")
+
+            if st.button(
+                "OK",
+                use_container_width=True,
+                key="btn_ok_popup"
+            ):
+                st.session_state["mostrar_popup_envio"] = False
+                st.switch_page("pages/dashboard.py")
+
+        popup_envio()
