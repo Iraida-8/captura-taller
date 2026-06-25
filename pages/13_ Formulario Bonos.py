@@ -269,14 +269,6 @@ vehicle_df["join_key"] = vehicle_df["unidad"].apply(normalize_unit)
 
 unidades_df["join_key"] = unidades_df["unidad"].apply(normalize_unit)
 
-st.write("Vehicle:")
-st.dataframe(vehicle_df[["unidad", "join_key"]].head(20))
-
-st.write("Bonos:")
-st.dataframe(unidades_df[["unidad", "join_key"]].head(20))
-
-st.stop()
-
 unidades_df = vehicle_df.merge(
     unidades_df,
     on="join_key",
