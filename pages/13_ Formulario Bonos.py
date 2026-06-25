@@ -409,7 +409,7 @@ with st.container(border=True, key="bono_form"):
             PRECIO_DIESEL = st.number_input(
                 "Precio Diesel ($)",
                 min_value=0.0,
-                value=10.55,
+                value=10.50,
                 step=0.01,
                 format="%.2f",
                 key="precio_diesel"
