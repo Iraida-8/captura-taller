@@ -496,4 +496,45 @@ with st.container(border=True, key="bono_form"):
         use_container_width=True,
         key="btn_enviar_formulario"
     ):
-        st.info("Función en desarrollo.")
+
+        try:
+
+            supabase.table("bonos_operadores").insert({
+
+                "usuario": user["name"],
+                "empresa": empresa,
+                "unidad": unidad,
+
+                "vin": clean_value(unidad_info["vin"]),
+                "placa_mex": clean_value(unidad_info["placa_mex"]),
+                "marca": clean_value(unidad_info["marca"]),
+                "modelo": clean_value(unidad_info["modelos"]),
+                "anio": clean_value(unidad_info["anio"]),
+                "motor": clean_value(unidad_info["motor"]),
+
+                "rendimiento_esperado": rendimiento_esperado,
+                "rendimiento_minimo": rendimiento_minimo,
+
+                "ruta": ruta,
+                "tipo_ruta": tipo_ruta,
+                "numero_trafico": trafico,
+
+                "kilometros": kilometros,
+                "litros_cargados": litros_cargados,
+                "precio_diesel": PRECIO_DIESEL,
+
+                "rendimiento_real": rendimiento_real,
+                "diferencia_rendimiento": (
+                    rendimiento_real - rendimiento_minimo
+                ),
+                "litros_permitidos": litros_permitidos,
+                "diferencia_litros": diferencia_litros,
+                "monto": monto
+
+            }).execute()
+
+            st.session_state["mostrar_popup_envio"] = True
+
+        except Exception as e:
+
+            st.error(f"Error guardando formulario: {e}")
