@@ -291,18 +291,13 @@ empresa = st.selectbox(
 if empresa == "Igloo":
 
     unidades_filtradas = unidades_df[
-        unidades_df["unidad"].str.startswith("G", na=False)
+        unidades_df["empresa"] == "IGT"
     ]
 
 elif empresa == "Picus":
 
     unidades_filtradas = unidades_df[
-        (
-            unidades_df["unidad"].str.startswith("P", na=False)
-        ) |
-        (
-            unidades_df["unidad"].str.startswith("A", na=False)
-        )
+        unidades_df["empresa"] == "PIC"
     ]
 
 else:
