@@ -376,8 +376,6 @@ with col_form:
 
     st.divider()
 
-    st.subheader("⚙️ Parámetros de Cálculo")
-
     rendimiento_minimo = float(
         unidad_info["rendimiento_minimo"] or 0
     )
