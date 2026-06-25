@@ -144,6 +144,15 @@ st.markdown(
         border-radius: 14px;
     }
 
+    .form-container{
+        background:#1B267A;
+        border:1px solid rgba(191,167,95,.25);
+        border-radius:18px;
+        padding:24px;
+        margin-top:10px;
+        box-shadow:0 8px 24px rgba(0,0,0,.18);
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -339,6 +348,11 @@ rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
 
 st.divider()
 
+st.markdown(
+    '<div class="form-container">',
+    unsafe_allow_html=True
+)
+
 col_form, col_calc = st.columns([1, 1])
 
 # ==========================================
@@ -529,3 +543,8 @@ with col_calc:
             st.success(
                 "Sin alertas."
             )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
