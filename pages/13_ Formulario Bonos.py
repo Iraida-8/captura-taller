@@ -453,6 +453,13 @@ with st.container(border=True, key="bono_form"):
                 diferencia_litros * PRECIO_DIESEL
             )
 
+            st.session_state["resultado_bono"] = {
+                "rendimiento_real": rendimiento_real,
+                "litros_permitidos": litros_permitidos,
+                "diferencia_litros": diferencia_litros,
+                "monto": monto
+            }
+
             st.subheader("📊 Resultado")
 
             st.text_input(
@@ -501,6 +508,17 @@ with st.container(border=True, key="bono_form"):
         use_container_width=True,
         key="btn_enviar_formulario"
     ):
+
+        resultado = st.session_state.get("resultado_bono")
+
+        if resultado is None:
+            st.error("Primero debes calcular el bono.")
+            st.stop()
+
+        rendimiento_real = resultado["rendimiento_real"]
+        litros_permitidos = resultado["litros_permitidos"]
+        diferencia_litros = resultado["diferencia_litros"]
+        monto = resultado["monto"]
 
         try:
 
