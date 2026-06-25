@@ -344,15 +344,7 @@ anio = clean_value(unidad_info["anio"])
 rendimiento_esperado_txt = clean_value(unidad_info["rendimiento_esperado"])
 rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
 
-st.markdown("### 📋 Formulario de Bonos")
-
-st.divider()
-
-outer_left, outer_center, outer_right = st.columns([0.03, 1, 0.03])
-
-with outer_center:
-
-    col_form, col_calc = st.columns([1.1, 0.9], gap="large")
+with st.container(border=True, key="bono_form"):
 
     col_form, col_calc = st.columns([1, 1])
 
