@@ -490,3 +490,12 @@ with st.container(border=True, key="bono_form"):
             st.info(
                 f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
             )
+
+        st.divider()
+
+if st.button(
+    "📨 Enviar Formulario",
+    use_container_width=True,
+    key="btn_enviar_formulario"
+):
+    st.info("Función en desarrollo.")
