@@ -2238,16 +2238,15 @@ try:
                 # =====================================
                 export_df = trip_df.copy()
 
-                # Add summary columns ONLY.
-                # Do not modify or rename any existing GPS Insight columns.
+                # Add ONLY new summary columns.
+                # Do NOT duplicate existing fields like VIN, max_speed, avg_speed, etc.
                 export_df.insert(0, "Unidad", selected_unit)
-                export_df.insert(1, "VIN Unidad", vin)
-                export_df.insert(2, "Reporte Fecha Inicial", start_str)
-                export_df.insert(3, "Reporte Fecha Final", end_str)
-                export_df.insert(4, "Reporte Total Viajes", total_trips)
-                export_df.insert(5, f"Reporte Total {distance_unit.upper()}", total_km)
-                export_df.insert(6, f"Reporte Velocidad Máxima ({speed_unit})", max_speed)
-                export_df.insert(7, f"Reporte Velocidad Promedio ({speed_unit})", avg_speed)
+                export_df.insert(1, "Reporte Fecha Inicial", start_str)
+                export_df.insert(2, "Reporte Fecha Final", end_str)
+                export_df.insert(3, "Reporte Total Viajes", total_trips)
+                export_df.insert(4, f"Reporte Total {distance_unit.upper()}", total_km)
+                export_df.insert(5, f"Reporte Velocidad Máxima ({speed_unit})", max_speed)
+                export_df.insert(6, f"Reporte Velocidad Promedio ({speed_unit})", avg_speed)
 
                 export_buffer = io.BytesIO()
 
