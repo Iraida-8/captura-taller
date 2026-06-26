@@ -2238,24 +2238,27 @@ try:
                 # =====================================
                 export_df = trip_df.copy()
 
-                # Summary fields repeated on every row
+                # Summary fields
                 export_df.insert(0, "Unidad", selected_unit)
-                export_df.insert(1, "VIN", vin)
-                export_df.insert(2, "Fecha Inicial", start_str)
-                export_df.insert(3, "Fecha Final", end_str)
-                export_df.insert(4, "Total Viajes", total_trips)
-                export_df.insert(5, f"Total {distance_unit.upper()}", total_km)
-                export_df.insert(6, f"Velocidad Máxima ({speed_unit})", max_speed)
-                export_df.insert(7, f"Velocidad Promedio ({speed_unit})", avg_speed)
+                export_df.insert(1, "Fecha Inicial", start_str)
+                export_df.insert(2, "Fecha Final", end_str)
+                export_df.insert(3, "Total Viajes", total_trips)
+                export_df.insert(4, f"Total {distance_unit.upper()}", total_km)
+
+                # Overwrite existing GPS columns instead of creating duplicates
+                export_df["vin"] = vin
+                export_df["max_speed"] = max_speed
+                export_df["avg_speed"] = avg_speed
 
                 # Friendly duration
                 export_df["Duración"] = export_df["trip_duration"].apply(
                     lambda x: f"{int(x//3600)}h {int((x%3600)//60)}m"
                 )
 
-                # Rename GPS columns
+                # Rename ONCE
                 export_df.rename(
                     columns={
+                        "vin": "VIN",
                         "trip_start": "Inicio",
                         "trip_end": "Fin",
                         "trip_distance": f"Distancia ({distance_unit})",
@@ -2267,7 +2270,6 @@ try:
                     inplace=True
                 )
 
-                # Put important columns first
                 preferred_columns = [
                     "Unidad",
                     "VIN",
@@ -2282,8 +2284,6 @@ try:
                     f"Distancia ({distance_unit})",
                     "Duración",
                     "Duración (Seg)",
-                    f"Velocidad Máxima ({speed_unit})",
-                    f"Velocidad Promedio ({speed_unit})",
                 ]
 
                 remaining = [
