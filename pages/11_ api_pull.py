@@ -2020,28 +2020,25 @@ try:
         # =========================================
         # REQUEST
         # =========================================
-
-        # Selected vehicle record
         vehicle_row = df[df["label"] == selected_unit].iloc[0]
 
-        # Correct GPS account token
         token = (
             PICUS_TOKEN
             if vehicle_row["gps_account"] == "PICUS"
             else PGL_TOKEN
         )
 
-        # GPS Insight expects the vehicle ID, not the label
-        vehicle_id = vehicle_row["id"]
-
         url = (
             "https://api.gpsinsight.com/v2/"
             "vehicle/trips"
             f"?session_token={token}"
-            f"&vehicle={vehicle_id}"
+            f"&vehicle={selected_unit}"
             f"&start={start_str}"
             f"&end={end_str}"
         )
+
+        st.code(url)      # temporary debug
+        st.json(vehicle_row.to_dict())   # temporary debug
 
         response = requests.get(
             url,
