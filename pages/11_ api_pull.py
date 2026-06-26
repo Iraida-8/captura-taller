@@ -2238,7 +2238,8 @@ try:
                 # =====================================
                 export_df = trip_df.copy()
 
-                # Summary fields (added only)
+                # Add summary columns ONLY.
+                # Do not modify or rename any existing GPS Insight columns.
                 export_df.insert(0, "Unidad", selected_unit)
                 export_df.insert(1, "VIN Unidad", vin)
                 export_df.insert(2, "Reporte Fecha Inicial", start_str)
@@ -2270,6 +2271,12 @@ try:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
+
+except Exception as e:
+
+    st.error(
+        f"Error consultando historial: {e}"
+    )
 
 # =====================================================
 # LANDMARKS
