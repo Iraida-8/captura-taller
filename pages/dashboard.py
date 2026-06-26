@@ -217,7 +217,8 @@ def render_button_grid(buttons, columns_per_row=2):
 # =============================
 section_generacion = [
     "pase_taller",
-    "solicitud_viaticos"
+    "solicitud_viaticos",
+    "bonos_operador"
 ]
 
 if has_access(section_generacion):
@@ -236,6 +237,12 @@ if has_access(section_generacion):
             "label": "💳  Solicitud de Viáticos y Reembolsos",
             "page": "pages/9_ Viaticos.py",
             "key": "btn_viaticos"
+        },
+        {
+            "access": "bonos_operador",
+            "label": "💰  Bono de Operadores",
+            "page": "pages/13_ Formulario Bonos.py",
+            "key": "btn_bonos_operador"
         }
     ])
 
@@ -276,7 +283,7 @@ if has_access(section_gestion):
 section_consultas = [
     "consultar_reparacion",
     "consulta_reportes",
-    "section_consultas"
+    "consulta_bonos_operador"
 ]
 
 if has_access(section_consultas):
@@ -372,12 +379,6 @@ if has_access(section_audit):
             "label": "🚚  Pruebas de IA",
             "page": "pages/12_ AI_tests.py",
             "key": "btn_ai_testing"
-        },
-        {
-            "access": "bonos_operador",
-            "label": "💰 Bono de Operadores",
-            "page": "pages/13_ Formulario Bonos.py",
-            "key": "btn_bonos_operador"
         }
     ])
 
