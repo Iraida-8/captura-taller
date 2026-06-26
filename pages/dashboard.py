@@ -294,6 +294,12 @@ if has_access(section_consultas):
             "label": "📊  Consulta de Pases de Taller",
             "page": "pages/6_ Consulta Reportes.py",
             "key": "btn_consulta_reportes"
+        },
+        {
+            "access": "consulta_bonos_operador",
+            "label": "💰 Consultas y Reportes para Bono de Operadores",
+            "page": "pages/14_ Consulta Bonos.py",
+            "key": "btn_consulta_bonos_operador",
         }
     ])
 
