@@ -275,7 +275,8 @@ if has_access(section_gestion):
 # =============================
 section_consultas = [
     "consultar_reparacion",
-    "consulta_reportes"
+    "consulta_reportes",
+    "section_consultas"
 ]
 
 if has_access(section_consultas):
