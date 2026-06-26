@@ -309,6 +309,17 @@ evento = st.dataframe(
 
 st.divider()
 
+excel_df = filtered.copy()
+
+if "fecha_registro" in excel_df.columns:
+
+    excel_df["fecha_registro"] = (
+        pd.to_datetime(
+            excel_df["fecha_registro"]
+        )
+        .dt.tz_localize(None)
+    )
+
 excel_buffer = io.BytesIO()
 
 with pd.ExcelWriter(
@@ -316,7 +327,7 @@ with pd.ExcelWriter(
     engine="openpyxl"
 ) as writer:
 
-    filtered.to_excel(
+    excel_df.to_excel(
         writer,
         sheet_name="Bonos",
         index=False
