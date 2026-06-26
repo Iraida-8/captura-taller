@@ -2238,62 +2238,15 @@ try:
                 # =====================================
                 export_df = trip_df.copy()
 
-                # Summary fields
+                # Summary fields (added only)
                 export_df.insert(0, "Unidad", selected_unit)
-                export_df.insert(1, "Fecha Inicial", start_str)
-                export_df.insert(2, "Fecha Final", end_str)
-                export_df.insert(3, "Total Viajes", total_trips)
-                export_df.insert(4, f"Total {distance_unit.upper()}", total_km)
-
-                # Overwrite existing GPS columns instead of creating duplicates
-                export_df["vin"] = vin
-                export_df["max_speed"] = max_speed
-                export_df["avg_speed"] = avg_speed
-
-                # Friendly duration
-                export_df["Duración"] = export_df["trip_duration"].apply(
-                    lambda x: f"{int(x//3600)}h {int((x%3600)//60)}m"
-                )
-
-                # Rename ONCE
-                export_df.rename(
-                    columns={
-                        "vin": "VIN",
-                        "trip_start": "Inicio",
-                        "trip_end": "Fin",
-                        "trip_distance": f"Distancia ({distance_unit})",
-                        "trip_duration": "Duración (Seg)",
-                        "max_speed": f"Velocidad Máxima ({speed_unit})",
-                        "avg_speed": f"Velocidad Promedio ({speed_unit})",
-                        "trip_type": "Tipo Viaje"
-                    },
-                    inplace=True
-                )
-
-                preferred_columns = [
-                    "Unidad",
-                    "VIN",
-                    "Fecha Inicial",
-                    "Fecha Final",
-                    "Total Viajes",
-                    f"Total {distance_unit.upper()}",
-                    f"Velocidad Máxima ({speed_unit})",
-                    f"Velocidad Promedio ({speed_unit})",
-                    "Inicio",
-                    "Fin",
-                    f"Distancia ({distance_unit})",
-                    "Duración",
-                    "Duración (Seg)",
-                ]
-
-                remaining = [
-                    c for c in export_df.columns
-                    if c not in preferred_columns
-                ]
-
-                export_df = export_df[
-                    preferred_columns + remaining
-                ]
+                export_df.insert(1, "VIN Unidad", vin)
+                export_df.insert(2, "Reporte Fecha Inicial", start_str)
+                export_df.insert(3, "Reporte Fecha Final", end_str)
+                export_df.insert(4, "Reporte Total Viajes", total_trips)
+                export_df.insert(5, f"Reporte Total {distance_unit.upper()}", total_km)
+                export_df.insert(6, f"Reporte Velocidad Máxima ({speed_unit})", max_speed)
+                export_df.insert(7, f"Reporte Velocidad Promedio ({speed_unit})", avg_speed)
 
                 export_buffer = io.BytesIO()
 
@@ -2317,12 +2270,6 @@ try:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
-
-except Exception as e:
-
-    st.error(
-        f"Error consultando historial: {e}"
-    )
 
 # =====================================================
 # LANDMARKS
