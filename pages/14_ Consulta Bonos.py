@@ -4,191 +4,629 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
-import streamlit.components.v1 as components
 
 # =================================
 # Page configuration
 # =================================
-st.set_page_config(page_title="Lector Facturas PDF → Excel", layout="wide")
-
-# =================================
-# CSS THEME — BLUE + YELLOW
-# =================================
-st.markdown(
-    """
-    <style>
-
-    /* Hide sidebar */
-    [data-testid="stSidebar"] {
-        display: none;
-    }
-
-    /* Main background */
-    .stApp {
-        background-color: #151F6D;
-    }
-
-    /* Main container */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-    }
-
-    /* Titles */
-    h1 {
-        color: #FFFFFF;
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    h2, h3 {
-        color: #BFA75F;
-        font-weight: 600;
-    }
-
-    /* General text */
-    p, label, span {
-        color: #F5F5F5 !important;
-    }
-
-    /* Caption text */
-    .stCaption {
-        color: #D9D9D9 !important;
-    }
-
-    /* Divider */
-    hr {
-        border-color: rgba(191, 167, 95, 0.25);
-    }
-
-    /* File uploader */
-    [data-testid="stFileUploader"] {
-        background-color: #1B267A;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        border-radius: 14px;
-        padding: 1rem;
-    }
-
-    /* Checkbox labels */
-    .stCheckbox label {
-        color: #FFFFFF !important;
-    }
-
-    /* Buttons */
-    div.stButton > button,
-    div[data-testid="stDownloadButton"] > button {
-        border-radius: 12px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        border: none;
-    }
-
-    /* Standard buttons */
-    div.stButton > button {
-        background-color: #1B267A;
-        color: white;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        height: 42px;
-    }
-
-    div.stButton > button:hover {
-        background-color: #24338C;
-        border-color: #BFA75F;
-        color: #BFA75F;
-        transform: translateY(-1px);
-    }
-
-    /* Download button */
-    div[data-testid="stDownloadButton"] > button {
-        background-color: #BFA75F;
-        color: #151F6D;
-        box-shadow: 0 4px 12px rgba(191, 167, 95, 0.20);
-    }
-
-    div[data-testid="stDownloadButton"] > button:hover {
-        background-color: #d4bc73;
-        color: #151F6D;
-        transform: translateY(-1px);
-    }
-
-    /* Secondary nav button */
-    button[kind="secondary"] {
-        background-color: transparent !important;
-        color: #BFA75F !important;
-        border: 1px solid #BFA75F !important;
-    }
-
-    button[kind="secondary"]:hover {
-        background-color: #BFA75F !important;
-        color: #151F6D !important;
-    }
-
-    /* Dataframes */
-    [data-testid="stDataFrame"] {
-        border: 1px solid rgba(191, 167, 95, 0.20);
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    /* Success / warning / info messages */
-    div[data-baseweb="notification"] {
-        border-radius: 12px;
-    }
-
-    /* Metric containers if used later */
-    [data-testid="metric-container"] {
-        background-color: #1B267A;
-        border: 1px solid rgba(191, 167, 95, 0.20);
-        padding: 1rem;
-        border-radius: 14px;
-    }
-
-    div[data-testid="stVerticalBlockBorderWrapper"]{
-        background-color:#27348F !important;
-        border:1px solid rgba(191,167,95,.25) !important;
-        border-radius:18px !important;
-        padding:24px !important;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
+st.set_page_config(
+    page_title="Consulta Bono Operadores",
+    layout="wide"
 )
 
 # =================================
-# Security gates
+# CSS
 # =================================
+st.markdown("""
+<style>
+
+[data-testid="stSidebar"]{
+    display:none;
+}
+
+.stApp{
+    background:#151F6D;
+}
+
+.block-container{
+    padding-top:2rem;
+    padding-bottom:3rem;
+}
+
+h1{
+    color:white;
+}
+
+h2,h3{
+    color:#BFA75F;
+}
+
+p,label,span{
+    color:white !important;
+}
+
+div.stButton>button{
+    background:#1B267A;
+    color:white;
+    border-radius:12px;
+    border:1px solid rgba(191,167,95,.25);
+}
+
+div.stButton>button:hover{
+    border-color:#BFA75F;
+    color:#BFA75F;
+}
+
+div[data-testid="stDownloadButton"]>button{
+    background:#BFA75F;
+    color:#151F6D;
+}
+
+[data-testid="metric-container"]{
+    background:#1B267A;
+    border-radius:14px;
+    border:1px solid rgba(191,167,95,.2);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =================================
+# SECURITY
+# =================================
+
 require_login()
 require_access("consulta_bonos_operador")
 
-# =================================
-# USER
-# =================================
 user = st.session_state.user
 
 # =================================
-# Page Cache and State Management
+# SUPABASE
 # =================================
+
 @st.cache_resource
-def get_supabase_client():
+def get_supabase():
+
     return create_client(
         st.secrets["SUPABASE_URL"],
         st.secrets["SUPABASE_SERVICE_KEY"]
     )
 
-supabase = get_supabase_client()
+supabase = get_supabase()
 
 # =================================
-# Navigation
+# NAVIGATION
 # =================================
+
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard.py")
 
 st.divider()
 
+# =================================
+# TITLE
+# =================================
+
+st.title("💰 Consulta y Reportes Bono de Operadores")
+
+# =================================
+# LOAD DATA
+# =================================
+
+try:
+
+    response = (
+        supabase
+        .table("bonos_operadores")
+        .select("*")
+        .order("fecha_registro", desc=True)
+        .execute()
+    )
+
+    df = pd.DataFrame(response.data)
+
+except Exception as e:
+
+    st.error(f"Error cargando registros: {e}")
+    st.stop()
+
+if df.empty:
+
+    st.warning("No existen formularios registrados.")
+    st.stop()
+
+# =================================
+# KPIs
+# =================================
+
+bonos = df[df["monto"] >= 0]["monto"].sum()
+
+descuentos = abs(
+    df[df["monto"] < 0]["monto"].sum()
+)
+
+promedio = df["rendimiento_real"].mean()
+
+k1,k2,k3,k4 = st.columns(4)
+
+k1.metric(
+    "Formularios",
+    len(df)
+)
+
+k2.metric(
+    "Bonos",
+    f"${bonos:,.2f}"
+)
+
+k3.metric(
+    "Descuentos",
+    f"${descuentos:,.2f}"
+)
+
+k4.metric(
+    "Rend. Promedio",
+    f"{promedio:.2f} km/l"
+)
+
+st.divider()
+
+# =================================
+# FILTROS
+# =================================
+
+st.subheader("🔎 Filtros")
+
+f1,f2,f3 = st.columns(3)
+
+with f1:
+
+    empresa = st.selectbox(
+        "Empresa",
+        ["Todas"] +
+        sorted(df["empresa"].dropna().unique().tolist())
+    )
+
+with f2:
+
+    unidad = st.selectbox(
+        "Unidad",
+        ["Todas"] +
+        sorted(df["unidad"].dropna().unique().tolist())
+    )
+
+with f3:
+
+    usuario = st.selectbox(
+        "Usuario",
+        ["Todos"] +
+        sorted(df["usuario"].dropna().unique().tolist())
+    )
+
+f4,f5 = st.columns(2)
+
+with f4:
+
+    fecha_inicio = st.date_input(
+        "Fecha Desde",
+        value=pd.to_datetime(
+            df["fecha_registro"]
+        ).min()
+    )
+
+with f5:
+
+    fecha_fin = st.date_input(
+        "Fecha Hasta",
+        value=pd.to_datetime(
+            df["fecha_registro"]
+        ).max()
+    )
+
+st.divider()
+
+# =================================
+# APPLY FILTERS
+# =================================
+
+filtered = df.copy()
+
+filtered["fecha_registro"] = pd.to_datetime(
+    filtered["fecha_registro"]
+)
+
+if empresa != "Todas":
+    filtered = filtered[
+        filtered["empresa"] == empresa
+    ]
+
+if unidad != "Todas":
+    filtered = filtered[
+        filtered["unidad"] == unidad
+    ]
+
+if usuario != "Todos":
+    filtered = filtered[
+        filtered["usuario"] == usuario
+    ]
+
+filtered = filtered[
+    (
+        filtered["fecha_registro"].dt.date
+        >= fecha_inicio
+    )
+    &
+    (
+        filtered["fecha_registro"].dt.date
+        <= fecha_fin
+    )
+]
+
+# =================================
+# TABLE TO DISPLAY
+# =================================
+
+tabla = filtered[[
+    "fecha_registro",
+    "empresa",
+    "unidad",
+    "usuario",
+    "ruta",
+    "tipo_ruta",
+    "numero_trafico",
+    "kilometros",
+    "litros_cargados",
+    "rendimiento_real",
+    "monto"
+]].copy()
+
+tabla.columns = [
+    "Fecha",
+    "Empresa",
+    "Unidad",
+    "Usuario",
+    "Ruta",
+    "Tipo Ruta",
+    "Tráfico",
+    "Kilómetros",
+    "Litros",
+    "Rendimiento",
+    "Monto"
+]
+
+st.subheader("📋 Formularios Registrados")
+
+evento = st.dataframe(
+    tabla,
+    use_container_width=True,
+    hide_index=True,
+    on_select="rerun",
+    selection_mode="single-row"
+)
+
+# =================================
+# DOWNLOAD REPORT
+# =================================
+
+st.divider()
+
+excel_buffer = io.BytesIO()
+
+with pd.ExcelWriter(
+    excel_buffer,
+    engine="openpyxl"
+) as writer:
+
+    filtered.to_excel(
+        writer,
+        sheet_name="Bonos",
+        index=False
+    )
+
+st.download_button(
+    "📥 Descargar Reporte",
+    data=excel_buffer.getvalue(),
+    file_name=f"Bonos_Operadores_{datetime.now():%Y%m%d}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    use_container_width=True
+)
+
+# =================================
+# DETALLE DEL REGISTRO
+# =================================
+
+if (
+    evento.selection is not None
+    and len(evento.selection["rows"]) > 0
+):
+
+    indice = evento.selection["rows"][0]
+
+    registro = filtered.iloc[indice]
+
+    st.divider()
+
+    st.subheader("📄 Información del Registro")
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+
+        st.text_input(
+            "Fecha",
+            value=str(registro["fecha_registro"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Usuario",
+            value=str(registro["usuario"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Empresa",
+            value=str(registro["empresa"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Unidad",
+            value=str(registro["unidad"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "VIN",
+            value=str(registro["vin"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Placa",
+            value=str(registro["placa_mex"]),
+            disabled=True
+        )
+
+    with c2:
+
+        st.text_input(
+            "Marca",
+            value=str(registro["marca"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Modelo",
+            value=str(registro["modelo"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Motor",
+            value=str(registro["motor"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Año",
+            value=str(registro["anio"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Ruta",
+            value=str(registro["ruta"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Tipo Ruta",
+            value=str(registro["tipo_ruta"]),
+            disabled=True
+        )
+
+    with c3:
+
+        st.text_input(
+            "Número Tráfico",
+            value=str(registro["numero_trafico"]),
+            disabled=True
+        )
+
+        st.text_input(
+            "Kilómetros",
+            value=f"{registro['kilometros']:,.2f}",
+            disabled=True
+        )
+
+        st.text_input(
+            "Litros Cargados",
+            value=f"{registro['litros_cargados']:,.2f}",
+            disabled=True
+        )
+
+        st.text_input(
+            "Precio Diesel",
+            value=f"${registro['precio_diesel']:,.2f}",
+            disabled=True
+        )
+
+        st.text_input(
+            "Monto",
+            value=f"${registro['monto']:,.2f}",
+            disabled=True
+        )
+
+st.divider()
+
+st.subheader("📄 Información del Registro")
+
+left, right = st.columns(2)
+
 # ==========================================
-# BONO DE OPERADORES
+# LEFT
 # ==========================================
 
-st.title("💰 Consultas y Reportes para Bono de Operadores")
+with left:
+
+    st.markdown("#### 🚚 Información General")
+
+    st.text_input(
+        "Fecha",
+        value=str(registro["fecha_registro"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Usuario",
+        value=str(registro["usuario"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Empresa",
+        value=str(registro["empresa"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Unidad",
+        value=str(registro["unidad"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "VIN",
+        value=str(registro["vin"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Placa",
+        value=str(registro["placa_mex"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Marca",
+        value=str(registro["marca"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Modelo",
+        value=str(registro["modelo"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Motor",
+        value=str(registro["motor"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Año",
+        value=str(registro["anio"]),
+        disabled=True
+    )
+
+    st.markdown("---")
+
+    st.markdown("#### 🛣️ Información del Viaje")
+
+    st.text_input(
+        "Ruta",
+        value=str(registro["ruta"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Tipo Ruta",
+        value=str(registro["tipo_ruta"]),
+        disabled=True
+    )
+
+    st.text_input(
+        "Número Tráfico",
+        value=str(registro["numero_trafico"]),
+        disabled=True
+    )
+
+# ==========================================
+# RIGHT
+# ==========================================
+
+with right:
+
+    st.markdown("#### ⚙️ Parámetros")
+
+    k1, k2 = st.columns(2)
+
+    with k1:
+
+        st.metric(
+            "Rend. Esperado",
+            f"{registro['rendimiento_esperado']:.2f}"
+        )
+
+        st.metric(
+            "Rend. Mínimo",
+            f"{registro['rendimiento_minimo']:.2f}"
+        )
+
+        st.metric(
+            "Precio Diesel",
+            f"${registro['precio_diesel']:.2f}"
+        )
+
+    with k2:
+
+        st.metric(
+            "Kilómetros",
+            f"{registro['kilometros']:,.0f}"
+        )
+
+        st.metric(
+            "Litros",
+            f"{registro['litros_cargados']:,.2f}"
+        )
+
+        st.metric(
+            "Rend. Real",
+            f"{registro['rendimiento_real']:.2f}"
+        )
+
+    st.markdown("---")
+
+    st.markdown("#### 📊 Resultado")
+
+    st.text_input(
+        "Diferencia Rendimiento",
+        value=f"{registro['diferencia_rendimiento']:.2f}",
+        disabled=True
+    )
+
+    st.text_input(
+        "Litros Permitidos",
+        value=f"{registro['litros_permitidos']:.2f}",
+        disabled=True
+    )
+
+    st.text_input(
+        "Litros Ahorrados / Excedidos",
+        value=f"{registro['diferencia_litros']:.2f}",
+        disabled=True
+    )
+
+    if registro["monto"] >= 0:
+
+        st.success(
+            f"💰 BONO: ${registro['monto']:,.2f}"
+        )
+
+    else:
+
+        st.error(
+            f"🚨 DESCUENTO: ${abs(registro['monto']):,.2f}"
+        )
