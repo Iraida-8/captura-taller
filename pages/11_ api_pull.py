@@ -363,12 +363,12 @@ try:
     )
 
     for v in picus_vehicles:
-
         v["gps_account"] = "PICUS"
+        v["session_token"] = PICUS_TOKEN
 
     for v in pgl_vehicles:
-
         v["gps_account"] = "PGL"
+        v["session_token"] = PGL_TOKEN
 
     vehicles = (
         picus_vehicles +
@@ -2020,13 +2020,12 @@ try:
         # =========================================
         # REQUEST
         # =========================================
-        vehicle_row = df[df["label"] == selected_unit].iloc[0]
-
-        token = (
-            PICUS_TOKEN
-            if vehicle_row["gps_account"] == "PICUS"
-            else PGL_TOKEN
+        vehicle_row = (
+            df.loc[df["label"] == selected_unit]
+            .iloc[0]
         )
+
+        token = vehicle_row["session_token"]
 
         url = (
             "https://api.gpsinsight.com/v2/"
