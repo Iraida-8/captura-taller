@@ -2236,6 +2236,65 @@ try:
                 # =====================================
                 # EXPORT
                 # =====================================
+                export_df = trip_df.copy()
+
+                # Summary fields repeated on every row
+                export_df.insert(0, "Unidad", selected_unit)
+                export_df.insert(1, "VIN", vin)
+                export_df.insert(2, "Fecha Inicial", start_str)
+                export_df.insert(3, "Fecha Final", end_str)
+                export_df.insert(4, "Total Viajes", total_trips)
+                export_df.insert(5, f"Total {distance_unit.upper()}", total_km)
+                export_df.insert(6, f"Velocidad Máxima ({speed_unit})", max_speed)
+                export_df.insert(7, f"Velocidad Promedio ({speed_unit})", avg_speed)
+
+                # Friendly duration
+                export_df["Duración"] = export_df["trip_duration"].apply(
+                    lambda x: f"{int(x//3600)}h {int((x%3600)//60)}m"
+                )
+
+                # Rename GPS columns
+                export_df.rename(
+                    columns={
+                        "trip_start": "Inicio",
+                        "trip_end": "Fin",
+                        "trip_distance": f"Distancia ({distance_unit})",
+                        "trip_duration": "Duración (Seg)",
+                        "max_speed": f"Velocidad Máxima ({speed_unit})",
+                        "avg_speed": f"Velocidad Promedio ({speed_unit})",
+                        "trip_type": "Tipo Viaje"
+                    },
+                    inplace=True
+                )
+
+                # Put important columns first
+                preferred_columns = [
+                    "Unidad",
+                    "VIN",
+                    "Fecha Inicial",
+                    "Fecha Final",
+                    "Total Viajes",
+                    f"Total {distance_unit.upper()}",
+                    f"Velocidad Máxima ({speed_unit})",
+                    f"Velocidad Promedio ({speed_unit})",
+                    "Inicio",
+                    "Fin",
+                    f"Distancia ({distance_unit})",
+                    "Duración",
+                    "Duración (Seg)",
+                    f"Velocidad Máxima ({speed_unit})",
+                    f"Velocidad Promedio ({speed_unit})",
+                ]
+
+                remaining = [
+                    c for c in export_df.columns
+                    if c not in preferred_columns
+                ]
+
+                export_df = export_df[
+                    preferred_columns + remaining
+                ]
+
                 export_buffer = io.BytesIO()
 
                 with pd.ExcelWriter(
@@ -2243,25 +2302,19 @@ try:
                     engine="openpyxl"
                 ) as writer:
 
-                    trip_df.to_excel(
+                    export_df.to_excel(
                         writer,
                         index=False,
-                        sheet_name="Trips"
+                        sheet_name="Historial Viajes"
                     )
 
                 export_buffer.seek(0)
 
                 st.download_button(
-                    label="💾 Descargar Viajes",
+                    label="💾 Descargar Reporte Completo",
                     data=export_buffer,
-                    file_name=(
-                        f"Viajes_{selected_unit}.xlsx"
-                    ),
-                    mime=(
-                        "application/"
-                        "vnd.openxmlformats-officedocument."
-                        "spreadsheetml.sheet"
-                    ),
+                    file_name=f"Historial_{selected_unit}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
 
