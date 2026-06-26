@@ -2020,14 +2020,25 @@ try:
         # =========================================
         # REQUEST
         # =========================================
+        vehicle_row = df[df["label"] == selected_unit].iloc[0]
+
+        token = (
+            PICUS_TOKEN
+            if vehicle_row["gps_account"] == "PICUS"
+            else PGL_TOKEN
+        )
+
         url = (
             "https://api.gpsinsight.com/v2/"
             "vehicle/trips"
-            f"?session_token={PICUS_TOKEN}"
+            f"?session_token={token}"
             f"&vehicle={selected_unit}"
             f"&start={start_str}"
             f"&end={end_str}"
         )
+
+        st.code(url)      # temporary debug
+        st.json(vehicle_row.to_dict())   # temporary debug
 
         response = requests.get(
             url,
