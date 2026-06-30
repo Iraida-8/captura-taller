@@ -2736,370 +2736,364 @@ if "created_at" in df_finalizadas.columns:
 # DESCARGAR REPORTE
 # =================================
 
-if st.button(
-    "📥 Descargar reporte de Solicitudes",
+reporte_rows = []
+
+for _, row in df_finalizadas.iterrows():
+
+    solicitud_match = df_solicitudes[
+        df_solicitudes["folio_solicitud"]
+        .astype(str)
+        ==
+        str(row.get("folio_solicitud", ""))
+    ]
+
+    if not solicitud_match.empty:
+
+        solicitud_row = (
+            solicitud_match
+            .iloc[0]
+            .to_dict()
+        )
+
+    else:
+
+        solicitud_row = {}
+
+    # =================================
+    # CONCEPTOS SOLICITUD
+    # =================================
+
+    conceptos_solicitud = solicitud_row.get("conceptos")
+
+    if not isinstance(conceptos_solicitud, list):
+        conceptos_solicitud = []
+
+    if len(conceptos_solicitud) == 0:
+        conceptos_solicitud = [{}]
+
+    # =================================
+    # CONCEPTOS COMPROBACION
+    # =================================
+
+    conceptos_comprobacion = row.get("conceptos")
+
+    if not isinstance(conceptos_comprobacion, list):
+        conceptos_comprobacion = []
+
+    if len(conceptos_comprobacion) == 0:
+        conceptos_comprobacion = [{}]
+
+    max_len = max(
+        len(conceptos_solicitud),
+        len(conceptos_comprobacion)
+    )
+
+    for i in range(max_len):
+
+        concepto_sol = (
+            conceptos_solicitud[i]
+            if i < len(conceptos_solicitud)
+            else {}
+        )
+
+        concepto_comp = (
+            conceptos_comprobacion[i]
+            if i < len(conceptos_comprobacion)
+            else {}
+        )
+
+        reporte_rows.append({
+
+            # =================================
+            # GENERAL
+            # =================================
+
+            "Folio Solicitud":
+                solicitud_row.get(
+                    "folio_solicitud",
+                    ""
+                ),
+
+            "Folio Comprobacion":
+                row.get(
+                    "folio_comprobacion",
+                    ""
+                ),
+
+            "Estatus":
+                row.get(
+                    "estatus",
+                    ""
+                ),
+
+            "Empleado Solicita":
+                solicitud_row.get(
+                    "nombre_empleado_solicita",
+                    ""
+                ),
+
+            "Fecha Solicitud":
+                solicitud_row.get(
+                    "fecha_solicitud",
+                    ""
+                ),
+
+            "Fecha Comprobacion":
+                row.get(
+                    "created_at",
+                    ""
+                ),
+
+            "Fecha Inicio":
+                solicitud_row.get(
+                    "fecha_inicio",
+                    ""
+                ),
+
+            "Fecha Fin":
+                solicitud_row.get(
+                    "fecha_fin",
+                    ""
+                ),
+
+            "Empresa Brinda Servicio":
+                solicitud_row.get(
+                    "empresa_brinda_servicio",
+                    ""
+                ),
+
+            "Empresa Cargo Gastos":
+                solicitud_row.get(
+                    "empresa_cargo_gastos",
+                    ""
+                ),
+
+            "Unidad Negocio":
+                solicitud_row.get(
+                    "unidad_negocio",
+                    ""
+                ),
+
+            "Sucursal":
+                solicitud_row.get(
+                    "sucursal",
+                    ""
+                ),
+
+            "Sucursal Especificar":
+                solicitud_row.get(
+                    "sucursal_especificar",
+                    ""
+                ),
+
+            "Nombre Cliente":
+                solicitud_row.get(
+                    "nombre_cliente",
+                    ""
+                ),
+
+            "Registro SAC Ventas":
+                solicitud_row.get(
+                    "folio_sac",
+                    ""
+                ),
+
+            "Motivo Viaje":
+                solicitud_row.get(
+                    "motivo_viaje",
+                    ""
+                ),
+
+            "Observaciones Solicitud":
+                solicitud_row.get(
+                    "observaciones",
+                    ""
+                ),
+
+            "Observaciones Comprobacion":
+                row.get(
+                    "observaciones",
+                    ""
+                ),
+
+            # =================================
+            # TOTALES
+            # =================================
+
+            "Monto Solicitado":
+                solicitud_row.get(
+                    "total_estimado",
+                    0
+                ),
+
+            "Total Comprobado":
+                row.get(
+                    "total_comprobado",
+                    0
+                ),
+
+            "Anticipo Viaje":
+                row.get(
+                    "anticipo_viaje",
+                    0
+                ),
+
+            "Diferencia Cargo Favor":
+                row.get(
+                    "diferencia_cargo_favor",
+                    0
+                ),
+
+            # =================================
+            # CONCEPTOS SOLICITUD
+            # =================================
+
+            "Solicitud Tipo":
+                concepto_sol.get(
+                    "Tipo",
+                    ""
+                ),
+
+            "Solicitud Descripcion":
+                concepto_sol.get(
+                    "Descripcion",
+                    ""
+                ),
+
+            "Solicitud Monto":
+                concepto_sol.get(
+                    "Monto",
+                    ""
+                ),
+
+            "Solicitud Tipo Cambio":
+                concepto_sol.get(
+                    "Tipo Cambio",
+                    ""
+                ),
+
+            "Solicitud Aprobado":
+                concepto_sol.get(
+                    "Aprobado",
+                    ""
+                ),
+
+            "Solicitud Razon":
+                concepto_sol.get(
+                    "Razon",
+                    ""
+                ),
+
+            # =================================
+            # CONCEPTOS COMPROBACION
+            # =================================
+
+            "Comprobacion Tipo":
+                concepto_comp.get(
+                    "Tipo",
+                    ""
+                ),
+
+            "Comprobacion Descripcion":
+                concepto_comp.get(
+                    "Descripcion",
+                    ""
+                ),
+
+            "Comprobacion Fecha Factura":
+                concepto_comp.get(
+                    "Fecha Factura",
+                    ""
+                ),
+
+            "Comprobacion Folio":
+                concepto_comp.get(
+                    "Folio",
+                    ""
+                ),
+
+            "Comprobacion Proveedor":
+                concepto_comp.get(
+                    "Proveedor",
+                    ""
+                ),
+
+            "Comprobacion Moneda":
+                concepto_comp.get(
+                    "Moneda",
+                    ""
+                ),
+
+            "Comprobacion Monto":
+                concepto_comp.get(
+                    "Monto",
+                    ""
+                ),
+
+            "Comprobacion Comprobante":
+                concepto_comp.get(
+                    "Comprobante",
+                    ""
+                ),
+
+            "Comprobacion Aplica IVA":
+                concepto_comp.get(
+                    "Aplica IVA",
+                    ""
+                ),
+
+            "Comprobacion IVA %":
+                concepto_comp.get(
+                    "IVA %",
+                    ""
+                ),
+
+            "Comprobacion Aplica Retencion":
+                concepto_comp.get(
+                    "Aplica Retencion",
+                    ""
+                ),
+
+            "Comprobacion Impuesto Acreditable":
+                concepto_comp.get(
+                    "Impuesto Acreditable",
+                    ""
+                ),
+
+            "Comprobacion Total Comprobado":
+                concepto_comp.get(
+                    "Total Comprobado",
+                    ""
+                )
+        })
+
+df_reporte = pd.DataFrame(
+    reporte_rows
+)
+
+output = BytesIO()
+
+with pd.ExcelWriter(
+    output,
+    engine="openpyxl"
+) as writer:
+
+    df_reporte.to_excel(
+        writer,
+        index=False,
+        sheet_name="Solicitudes"
+    )
+
+output.seek(0)
+
+st.download_button(
+    label="📥 Descargar reporte de Solicitudes",
+    data=output.getvalue(),
+    file_name="Reporte_Solicitudes_Finalizadas.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     use_container_width=False,
-    key="descargar_reporte_solicitudes"
-):
-
-    reporte_rows = []
-
-    for _, row in df_finalizadas.iterrows():
-
-        solicitud_match = df_solicitudes[
-            df_solicitudes["folio_solicitud"]
-            .astype(str)
-            ==
-            str(row.get("folio_solicitud", ""))
-        ]
-
-        if not solicitud_match.empty:
-
-            solicitud_row = (
-                solicitud_match
-                .iloc[0]
-                .to_dict()
-            )
-
-        else:
-
-            solicitud_row = {}
-
-        # =================================
-        # CONCEPTOS SOLICITUD
-        # =================================
-
-        conceptos_solicitud = solicitud_row.get("conceptos")
-
-        if not isinstance(conceptos_solicitud, list):
-            conceptos_solicitud = []
-
-        if len(conceptos_solicitud) == 0:
-            conceptos_solicitud = [{}]
-
-        # =================================
-        # CONCEPTOS COMPROBACION
-        # =================================
-
-        conceptos_comprobacion = row.get("conceptos")
-
-        if not isinstance(conceptos_comprobacion, list):
-            conceptos_comprobacion = []
-
-        if len(conceptos_comprobacion) == 0:
-            conceptos_comprobacion = [{}]
-
-        max_len = max(
-            len(conceptos_solicitud),
-            len(conceptos_comprobacion)
-        )
-
-        for i in range(max_len):
-
-            concepto_sol = (
-                conceptos_solicitud[i]
-                if i < len(conceptos_solicitud)
-                else {}
-            )
-
-            concepto_comp = (
-                conceptos_comprobacion[i]
-                if i < len(conceptos_comprobacion)
-                else {}
-            )
-
-            reporte_rows.append({
-
-                # =================================
-                # GENERAL
-                # =================================
-
-                "Folio Solicitud":
-                    solicitud_row.get(
-                        "folio_solicitud",
-                        ""
-                    ),
-
-                "Folio Comprobacion":
-                    row.get(
-                        "folio_comprobacion",
-                        ""
-                    ),
-
-                "Estatus":
-                    row.get(
-                        "estatus",
-                        ""
-                    ),
-
-                "Empleado Solicita":
-                    solicitud_row.get(
-                        "nombre_empleado_solicita",
-                        ""
-                    ),
-
-                "Fecha Solicitud":
-                    solicitud_row.get(
-                        "fecha_solicitud",
-                        ""
-                    ),
-
-                "Fecha Comprobacion":
-                    row.get(
-                        "created_at",
-                        ""
-                    ),
-
-                "Fecha Inicio":
-                    solicitud_row.get(
-                        "fecha_inicio",
-                        ""
-                    ),
-
-                "Fecha Fin":
-                    solicitud_row.get(
-                        "fecha_fin",
-                        ""
-                    ),
-
-                "Empresa Brinda Servicio":
-                    solicitud_row.get(
-                        "empresa_brinda_servicio",
-                        ""
-                    ),
-
-                "Empresa Cargo Gastos":
-                    solicitud_row.get(
-                        "empresa_cargo_gastos",
-                        ""
-                    ),
-
-                "Unidad Negocio":
-                    solicitud_row.get(
-                        "unidad_negocio",
-                        ""
-                    ),
-
-                "Sucursal":
-                    solicitud_row.get(
-                        "sucursal",
-                        ""
-                    ),
-
-                "Sucursal Especificar":
-                    solicitud_row.get(
-                        "sucursal_especificar",
-                        ""
-                    ),
-
-                "Nombre Cliente":
-                    solicitud_row.get(
-                        "nombre_cliente",
-                        ""
-                    ),
-
-                "Registro SAC Ventas":
-                    solicitud_row.get(
-                        "folio_sac",
-                        ""
-                    ),
-
-                "Motivo Viaje":
-                    solicitud_row.get(
-                        "motivo_viaje",
-                        ""
-                    ),
-
-                "Observaciones Solicitud":
-                    solicitud_row.get(
-                        "observaciones",
-                        ""
-                    ),
-
-                "Observaciones Comprobacion":
-                    row.get(
-                        "observaciones",
-                        ""
-                    ),
-
-                # =================================
-                # TOTALES
-                # =================================
-
-                "Monto Solicitado":
-                    solicitud_row.get(
-                        "total_estimado",
-                        0
-                    ),
-
-                "Total Comprobado":
-                    row.get(
-                        "total_comprobado",
-                        0
-                    ),
-
-                "Anticipo Viaje":
-                    row.get(
-                        "anticipo_viaje",
-                        0
-                    ),
-
-                "Diferencia Cargo Favor":
-                    row.get(
-                        "diferencia_cargo_favor",
-                        0
-                    ),
-
-                # =================================
-                # CONCEPTOS SOLICITUD
-                # =================================
-
-                "Solicitud Tipo":
-                    concepto_sol.get(
-                        "Tipo",
-                        ""
-                    ),
-
-                "Solicitud Descripcion":
-                    concepto_sol.get(
-                        "Descripcion",
-                        ""
-                    ),
-
-                "Solicitud Monto":
-                    concepto_sol.get(
-                        "Monto",
-                        ""
-                    ),
-
-                "Solicitud Tipo Cambio":
-                    concepto_sol.get(
-                        "Tipo Cambio",
-                        ""
-                    ),
-
-                "Solicitud Aprobado":
-                    concepto_sol.get(
-                        "Aprobado",
-                        ""
-                    ),
-
-                "Solicitud Razon":
-                    concepto_sol.get(
-                        "Razon",
-                        ""
-                    ),
-
-                # =================================
-                # CONCEPTOS COMPROBACION
-                # =================================
-
-                "Comprobacion Tipo":
-                    concepto_comp.get(
-                        "Tipo",
-                        ""
-                    ),
-
-                "Comprobacion Descripcion":
-                    concepto_comp.get(
-                        "Descripcion",
-                        ""
-                    ),
-
-                "Comprobacion Fecha Factura":
-                    concepto_comp.get(
-                        "Fecha Factura",
-                        ""
-                    ),
-
-                "Comprobacion Folio":
-                    concepto_comp.get(
-                        "Folio",
-                        ""
-                    ),
-
-                "Comprobacion Proveedor":
-                    concepto_comp.get(
-                        "Proveedor",
-                        ""
-                    ),
-
-                "Comprobacion Moneda":
-                    concepto_comp.get(
-                        "Moneda",
-                        ""
-                    ),
-
-                "Comprobacion Monto":
-                    concepto_comp.get(
-                        "Monto",
-                        ""
-                    ),
-
-                "Comprobacion Comprobante":
-                    concepto_comp.get(
-                        "Comprobante",
-                        ""
-                    ),
-
-                "Comprobacion Aplica IVA":
-                    concepto_comp.get(
-                        "Aplica IVA",
-                        ""
-                    ),
-
-                "Comprobacion IVA %":
-                    concepto_comp.get(
-                        "IVA %",
-                        ""
-                    ),
-
-                "Comprobacion Aplica Retencion":
-                    concepto_comp.get(
-                        "Aplica Retencion",
-                        ""
-                    ),
-
-                "Comprobacion Impuesto Acreditable":
-                    concepto_comp.get(
-                        "Impuesto Acreditable",
-                        ""
-                    ),
-
-                "Comprobacion Total Comprobado":
-                    concepto_comp.get(
-                        "Total Comprobado",
-                        ""
-                    )
-            })
-
-    df_reporte = pd.DataFrame(
-        reporte_rows
-    )
-
-    output = BytesIO()
-
-    with pd.ExcelWriter(
-        output,
-        engine="openpyxl"
-    ) as writer:
-
-        df_reporte.to_excel(
-            writer,
-            index=False,
-            sheet_name="Solicitudes"
-        )
-
-    output.seek(0)
-
-    st.download_button(
-        label="📥 Descargar reporte de Solicitudes",
-        data=output.getvalue(),
-        file_name="Reporte_Solicitudes_Finalizadas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=False,
-        key="descargar_reporte_final"
-    )
+    key="descargar_reporte_final"
+)
 
 # =================================
 # PAGINATION
