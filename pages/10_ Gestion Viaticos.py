@@ -2768,26 +2768,24 @@ if st.button(
         # CONCEPTOS SOLICITUD
         # =================================
 
-        conceptos_solicitud = solicitud_row.get(
-            "conceptos",
-            []
-        )
+        conceptos_solicitud = solicitud_row.get("conceptos")
 
-        if not conceptos_solicitud:
+        if not isinstance(conceptos_solicitud, list):
+            conceptos_solicitud = []
 
+        if len(conceptos_solicitud) == 0:
             conceptos_solicitud = [{}]
 
         # =================================
         # CONCEPTOS COMPROBACION
         # =================================
 
-        conceptos_comprobacion = row.get(
-            "conceptos",
-            []
-        )
+        conceptos_comprobacion = row.get("conceptos")
 
-        if not conceptos_comprobacion:
+        if not isinstance(conceptos_comprobacion, list):
+            conceptos_comprobacion = []
 
+        if len(conceptos_comprobacion) == 0:
             conceptos_comprobacion = [{}]
 
         max_len = max(
