@@ -5,6 +5,7 @@ from supabase import create_client
 from datetime import datetime, timezone
 from auth import require_login, require_access
 import resend # type: ignore
+from io import BytesIO
 
 # =================================
 # Page configuration
@@ -3076,12 +3077,10 @@ if st.button(
         reporte_rows
     )
 
-    excel_path = (
-        "Reporte_Solicitudes_Finalizadas.xlsx"
-    )
+    output = BytesIO()
 
     with pd.ExcelWriter(
-        excel_path,
+        output,
         engine="openpyxl"
     ) as writer:
 
@@ -3091,16 +3090,16 @@ if st.button(
             sheet_name="Solicitudes"
         )
 
-    with open(excel_path, "rb") as file:
+    output.seek(0)
 
-        st.download_button(
-            label="⬇ Descargar Excel",
-            data=file,
-            file_name=excel_path,
-            mime=(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        )
+    st.download_button(
+        label="📥 Descargar reporte de Solicitudes",
+        data=output.getvalue(),
+        file_name="Reporte_Solicitudes_Finalizadas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=False,
+        key="descargar_reporte_final"
+    )
 
 # =================================
 # PAGINATION
