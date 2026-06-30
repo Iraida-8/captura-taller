@@ -266,6 +266,16 @@ def cargar_pases():
     for col in ["Fecha de Captura", "Fecha de Reporte"]:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
+    
+    df["Folio"] = df["Folio"].astype(str)
+
+    if "No. de Reporte" in df.columns:
+        df["No. de Reporte"] = (
+            pd.to_numeric(df["No. de Reporte"], errors="coerce")
+            .astype("Int64")
+            .astype(str)
+            .replace("<NA>", "")
+        )
 
     return df
 
