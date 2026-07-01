@@ -1516,6 +1516,15 @@ if "df" in locals() and not df.empty:
         # =====================================
         display_df = df.copy()
 
+        display_df.drop(
+            columns=[
+                "session_token",
+                "gps_account",
+            ],
+            inplace=True,
+            errors="ignore"
+        )
+
         for col in display_df.columns:
 
             display_df[col] = display_df[col].apply(
