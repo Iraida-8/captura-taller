@@ -1596,35 +1596,39 @@ if "df" in locals() and not df.empty:
 
         for account_name, token in accounts:
 
-            landmark_url = (
-                "https://api.gpsinsight.com/v2/"
-                f"landmark/list?session_token={token}"
-            )
+            try:
 
-            response = requests.get(
-                landmark_url,
-                timeout=30
-            )
-
-            response.raise_for_status()
-
-            landmark_json = response.json()
-
-            landmarks = landmark_json.get(
-                "data",
-                []
-            )
-
-            if landmarks:
-
-                df_tmp = pd.DataFrame(
-                    landmarks
+                landmark_url = (
+                    "https://api.gpsinsight.com/v2/"
+                    f"landmark/list?session_token={token}"
                 )
 
-                df_tmp["gps_account"] = account_name
+                response = requests.get(
+                    landmark_url,
+                    timeout=30
+                )
 
-                all_landmarks.append(
-                    df_tmp
+                response.raise_for_status()
+
+                landmark_json = response.json()
+
+                landmarks = landmark_json.get(
+                    "data",
+                    []
+                )
+
+                if landmarks:
+
+                    df_tmp = pd.DataFrame(landmarks)
+
+                    df_tmp["gps_account"] = account_name
+
+                    all_landmarks.append(df_tmp)
+
+            except Exception as e:
+
+                st.warning(
+                    f"{account_name}: no fue posible cargar landmarks ({e})"
                 )
 
         if all_landmarks:
