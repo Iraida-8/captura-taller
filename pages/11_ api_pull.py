@@ -1587,44 +1587,57 @@ if "df" in locals() and not df.empty:
 
     try:
 
-        landmark_url = (
-            "https://api.gpsinsight.com/v2/"
-            f"landmark/list?session_token={PICUS_TOKEN}"
-        )
+        all_landmarks = []
 
-        landmark_response = requests.get(
-            landmark_url,
-            timeout=30
-        )
+        accounts = [
+            ("PICUS", PICUS_TOKEN),
+            ("PGL", PGL_TOKEN)
+        ]
 
-        landmark_response.raise_for_status()
+        for account_name, token in accounts:
 
-        landmark_json = landmark_response.json()
+            landmark_url = (
+                "https://api.gpsinsight.com/v2/"
+                f"landmark/list?session_token={token}"
+            )
 
-        st.subheader("Landmark Debug")
+            response = requests.get(
+                landmark_url,
+                timeout=30
+            )
 
-        st.write(
-            "Status:",
-            landmark_json.get("head", {})
-        )
+            response.raise_for_status()
 
-        st.json(landmark_json)
+            landmark_json = response.json()
 
-        landmarks = landmark_json.get(
-            "data",
-            []
-        )
+            landmarks = landmark_json.get(
+                "data",
+                []
+            )
 
-        if landmarks:
+            if landmarks:
 
-            landmark_df = pd.DataFrame(
-                landmarks
+                df_tmp = pd.DataFrame(
+                    landmarks
+                )
+
+                df_tmp["gps_account"] = account_name
+
+                all_landmarks.append(
+                    df_tmp
+                )
+
+        if all_landmarks:
+
+            landmark_df = pd.concat(
+                all_landmarks,
+                ignore_index=True
             )
 
             # =====================================
             # KPIs
             # =====================================
-            k1, k2, k3 = st.columns(3)
+            k1, k2, k3, k4 = st.columns(4)
 
             with k1:
 
@@ -1636,20 +1649,27 @@ if "df" in locals() and not df.empty:
             with k2:
 
                 st.metric(
-                    "⭕ Circulares",
+                    "PICUS",
                     (
-                        landmark_df["polygon"] == 0
+                        landmark_df["gps_account"] == "PICUS"
                     ).sum()
-                    if "polygon" in landmark_df.columns
-                    else 0
                 )
 
             with k3:
 
                 st.metric(
-                    "🔺 Polígonos",
+                    "PGL",
                     (
-                        landmark_df["polygon"] == 1
+                        landmark_df["gps_account"] == "PGL"
+                    ).sum()
+                )
+
+            with k4:
+
+                st.metric(
+                    "⭕ Circulares",
+                    (
+                        landmark_df["polygon"] == 0
                     ).sum()
                     if "polygon" in landmark_df.columns
                     else 0
@@ -1700,18 +1720,6 @@ if "df" in locals() and not df.empty:
                 ),
                 use_container_width=True
             )
-
-            # =====================================
-            # RAW RESPONSE
-            # =====================================
-            with st.expander(
-                "📦 Raw Landmark Response",
-                expanded=False
-            ):
-
-                st.json(
-                    landmark_json
-                )
 
         else:
 
