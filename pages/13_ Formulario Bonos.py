@@ -381,21 +381,21 @@ with st.container(border=True, key="bono_form"):
             "Ruta: Origen - Destino"
         )
 
-    if empresa == "Picus":
+        if empresa == "Picus":
 
-        tipo_ruta = st.selectbox(
-            "Tipo Ruta",
-            ["Corta", "Larga"]
-        )
+            tipo_ruta = st.selectbox(
+                "Tipo Ruta",
+                ["Corta", "Larga"]
+            )
 
-    else:
+        else:
 
-        # Igloo doesn't use this field
-        tipo_ruta = "No Aplica"
+            # Igloo doesn't use this field
+            tipo_ruta = "No Aplica"
 
-        trafico = st.text_input(
-            "Número de Tráfico"
-        )
+            trafico = st.text_input(
+                "Número de Tráfico"
+            )
 
         kilometros = st.number_input(
             "Kilómetros",
