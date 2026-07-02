@@ -294,27 +294,43 @@ unidades_df = vehicle_df.merge(
 
 st.subheader("📋 Formulario")
 
-empresa = st.selectbox(
-    "Empresa",
-    ["Selecciona Empresa", "Igloo", "Picus"],
-    index=0
-)
+# ==========================================
+# COMPANY ACCESS
+# ==========================================
 
-if empresa == "Igloo":
+permissions = st.session_state["user"].get("access", [])
 
-    unidades_filtradas = unidades_df[
-        unidades_df["empresa"] == "IGT"
-    ]
+available_companies = []
 
-elif empresa == "Picus":
+if "igloo" in permissions:
+    available_companies.append(("Igloo", "IGT"))
 
-    unidades_filtradas = unidades_df[
-        unidades_df["empresa"] == "PIC"
-    ]
+if "picus" in permissions:
+    available_companies.append(("Picus", "PIC"))
 
+if not available_companies:
+    st.error("No tienes acceso a ninguna empresa.")
+    st.stop()
+
+# Only one company -> hide dropdown
+if len(available_companies) == 1:
+
+    empresa, empresa_codigo = available_companies[0]
+
+# More than one company -> show dropdown
 else:
 
-    unidades_filtradas = unidades_df.iloc[0:0]
+    empresa = st.selectbox(
+        "Empresa",
+        [c[0] for c in available_companies]
+    )
+
+    empresa_codigo = dict(available_companies)[empresa]
+
+# Filter units
+unidades_filtradas = unidades_df[
+    unidades_df["empresa"] == empresa_codigo
+]
 
 unidad = st.selectbox(
     "Unidad",
