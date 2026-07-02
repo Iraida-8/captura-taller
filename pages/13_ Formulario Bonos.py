@@ -338,7 +338,7 @@ unidad = st.selectbox(
     if not unidades_filtradas.empty
     else [],
     index=None,
-    placeholder="Seleccione una empresa primero"
+    placeholder="Seleccione una Unidad primero"
 )
 
 if unidad is None:
