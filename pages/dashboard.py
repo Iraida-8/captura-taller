@@ -353,118 +353,168 @@ latest_version = (
     else "0.00.00.00"
 )
 
-# -------------------------------
-# MODERN TOP NAVIGATION
-# -------------------------------
+# --------------------------------------------------------
+# MODERN HEADER
+# --------------------------------------------------------
 
 assets_dir = Path(__file__).parent.parent / "assets"
 logo_path = assets_dir / "white_pgl.png"
 
-st.markdown("""
-<div class="navbar">
+top_left, top_center, top_right = st.columns([2,8,2])
 
-    <div class="nav-left">
-
-        <div class="logo-title">
-            Palos Garza Logistics
-        </div>
-
-        <div class="nav-menu">
-
-            <div class="menu-item">🏠 Principal</div>
-
-            <div class="menu-item">🏭 Solicitudes ▼</div>
-
-            <div class="menu-item">📋 Gestión ▼</div>
-
-            <div class="menu-item">🔍 Consultas ▼</div>
-
-            <div class="menu-item">⚙ Extras ▼</div>
-
-            <div class="menu-item">🧾 Audit ▼</div>
-
-        </div>
-
-    </div>
-
-    <div class="user-panel">
-
-        <div>
-
-            <div class="user-name">
-"""+(user["name"] or user["email"])+"""
-            </div>
-
-            <div class="user-role">
-
-                Sistema de Gestión
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-""", unsafe_allow_html=True)
-
-st.write("")
-
-# ----------------------------------------------------
-# HERO
-# ----------------------------------------------------
-
-hero_left, hero_right = st.columns([3,1])
-
-with hero_left:
-
-    st.markdown(f"""
-    <div class="hero">
-
-        <h1>Bienvenido</h1>
-
-        <p>
-
-        Bienvenido nuevamente al Portal Corporativo.
-
-        Desde aquí podrás acceder a todos los módulos del sistema.
-
-        </p>
-
-        <div class="badge">
-
-        SYS VER {latest_version}
-
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
-with hero_right:
+with top_left:
 
     if logo_path.exists():
-
-        img = Image.open(logo_path)
-
         st.image(
-            img,
-            use_container_width=True
+            Image.open(logo_path),
+            width=170
         )
 
-    st.write("")
+with top_center:
 
-    st.caption(
-        datetime.now().strftime("%A, %d %B %Y")
-    )
+    menu = st.columns(6)
+
+    with menu[0]:
+        st.button(
+            "🏠 Principal",
+            use_container_width=True,
+            disabled=True
+        )
+
+    with menu[1]:
+        with st.popover("🏭 Solicitudes"):
+
+            if "pase_taller" in access:
+                if st.button(
+                    "Generar Pase",
+                    use_container_width=True,
+                    key="nav_pase"
+                ):
+                    st.switch_page("pages/3_ Pase a Taller.py")
+
+            if "solicitud_viaticos_D" in access:
+                if st.button(
+                    "Solicitud Viáticos",
+                    use_container_width=True,
+                    key="nav_viaticos"
+                ):
+                    st.switch_page("pages/9_ Viaticos.py")
+
+            if "bonos_operador" in access:
+                if st.button(
+                    "Bono Operadores",
+                    use_container_width=True,
+                    key="nav_bonos"
+                ):
+                    st.switch_page("pages/13_ Formulario Bonos.py")
+
+    with menu[2]:
+        with st.popover("📋 Gestión"):
+
+            if "autorizacion" in access:
+                if st.button(
+                    "Autorización",
+                    key="nav_auto",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/4_ Autorizacion.py")
+
+            if "gestion_viaticos" in access:
+                if st.button(
+                    "Gestión Viáticos",
+                    key="nav_gestion",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/10_ Gestion Viaticos.py")
+
+    with menu[3]:
+        with st.popover("🔍 Consultas"):
+
+            if "consultar_reparacion" in access:
+                if st.button(
+                    "Historial Reparación",
+                    key="nav_historial",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/1_ Consultar Reparacion.py")
+
+            if "consulta_reportes" in access:
+                if st.button(
+                    "Consulta Pases",
+                    key="nav_reportes",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/6_ Consulta Reportes.py")
+
+    with menu[4]:
+        with st.popover("⚙ Extras"):
+
+            if "ifuel" in access:
+                if st.button(
+                    "Reporte iFuel",
+                    key="nav_ifuel",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/5_ Reporte iFuel.py")
+
+            if "lector_pdf" in access:
+                if st.button(
+                    "Lector PDF",
+                    key="nav_pdf",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/2_ Lector PDF.py")
+
+            if "gps_tracking" in access:
+                if st.button(
+                    "GPS",
+                    key="nav_gps",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/11_ api_pull.py")
+
+    with menu[5]:
+        with st.popover("🧾 Audit"):
+
+            if "prepara_reportes" in access:
+                if st.button(
+                    "Preparación Reportes",
+                    key="nav_prepara",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/7_ Preparacion de Reportes.py")
+
+            if "gestion_unidades" in access:
+                if st.button(
+                    "Gestión Unidades",
+                    key="nav_unidades",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/8_ Gestion de Unidades.py")
+
+            if "ai_testing" in access:
+                if st.button(
+                    "Pruebas IA",
+                    key="nav_ai",
+                    use_container_width=True
+                ):
+                    st.switch_page("pages/12_ AI_tests.py")
+
+with top_right:
+
+    st.markdown(f"""
+### 👤 {user["name"]}
+
+<small>{datetime.now().strftime("%d/%m/%Y")}</small>
+""", unsafe_allow_html=True)
 
     if st.button(
         "Cerrar sesión",
-        type="secondary",
         use_container_width=True,
-        key="logout_top"
+        type="secondary"
     ):
-        st.session_state.logged_in = False
-        st.session_state.user = None
+        st.session_state.logged_in=False
+        st.session_state.user=None
         st.switch_page("Home.py")
 
 # -------------------------------
