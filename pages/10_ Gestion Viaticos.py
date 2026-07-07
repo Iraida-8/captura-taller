@@ -1785,6 +1785,8 @@ else:
 
                     solicitud_row = {}
 
+                comprobacion_row = row.to_dict()
+
                 @st.dialog("Detalle de Comprobación")
                 def modal_verificacion():
 
@@ -1807,12 +1809,12 @@ else:
 
                         st.write(
                             f"**Folio Comprobación:** "
-                            f"{row.get('folio_comprobacion', '')}"
+                            f"{comprobacion_row.get('folio_comprobacion', '')}"
                         )
 
                         st.write(
                             f"**Estatus:** "
-                            f"{row.get('estatus', '')}"
+                            f"{comprobacion_row.get('estatus', '')}"
                         )
 
                         st.write(
@@ -1827,7 +1829,7 @@ else:
 
                         st.write(
                             f"**Fecha Comprobación:** "
-                            f"{row.get('created_at', '')}"
+                            f"{comprobacion_row.get('created_at', '')}"
                         )
 
                         st.write(
@@ -1954,7 +1956,7 @@ else:
                             font-size:18px;
                             font-weight:600;
                         '>
-                            {row.get('nombre_empleado_solicita', '')}
+                            {comprobacion_row.get('nombre_empleado_solicita', '')}
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -1974,110 +1976,11 @@ else:
                             margin-bottom:20px;
                             white-space:pre-wrap;
                         '>
-                            {row.get('observaciones', '')}
+                            {comprobacion_row.get('observaciones', '')}
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-
-                    # =================================
-                    # CONCEPTOS SOLICITUD
-                    # =================================
-
-                    st.markdown("---")
-
-                    st.markdown(
-                        "## 💰 Conceptos Solicitud"
-                    )
-
-                    conceptos_solicitud = (
-                        solicitud_row.get(
-                            "conceptos",
-                            []
-                        )
-                    )
-
-                    total_estimado = (
-                        solicitud_row.get(
-                            "total_estimado",
-                            0
-                        )
-                    )
-
-                    try:
-                        total_estimado = float(
-                            total_estimado
-                        )
-                    except:
-                        total_estimado = 0
-
-                    st.markdown(
-                        f"""
-                        <div style='
-                            font-size:22px;
-                            font-weight:700;
-                            color:#BFA75F;
-                            margin-bottom:15px;
-                        '>
-                            Solicitud:
-                            ${total_estimado:,.2f}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                    if conceptos_solicitud:
-
-                        df_sol = pd.DataFrame(
-                            conceptos_solicitud
-                        )
-
-                        columnas_solicitud = [
-                            "Tipo",
-                            "Descripcion",
-                            "Monto",
-                            "Tipo Cambio",
-                            "Aprobado",
-                            "Razon"
-                        ]
-
-                        for col_name in columnas_solicitud:
-
-                            if col_name not in df_sol.columns:
-
-                                df_sol[col_name] = ""
-
-                        df_sol = df_sol[
-                            columnas_solicitud
-                        ]
-
-                        if "Monto" in df_sol.columns:
-
-                            df_sol["Monto"] = (
-                                pd.to_numeric(
-                                    df_sol["Monto"],
-                                    errors="coerce"
-                                )
-                                .fillna(0)
-                                .apply(
-                                    lambda x:
-                                    f"${x:,.2f}"
-                                )
-                            )
-
-                        st.data_editor(
-                            df_sol,
-                            use_container_width=True,
-                            hide_index=True,
-                            disabled=True,
-                            height=300
-                        )
-
-                    else:
-
-                        st.info(
-                            "No hay conceptos en solicitud."
-                        )
 
                     # =================================
                     # CONCEPTOS COMPROBACION
@@ -2090,14 +1993,14 @@ else:
                     )
 
                     conceptos_comprobacion = (
-                        row.get(
+                        comprobacion_row.get(
                             "conceptos",
                             []
                         )
                     )
 
                     total_comprobado = (
-                        row.get(
+                        comprobacion_row.get(
                             "total_comprobado",
                             0
                         )
@@ -2131,7 +2034,6 @@ else:
                             conceptos_comprobacion
                         )
 
-                        # REMOVE INTERNAL COLUMN
                         if "Eliminar" in df_comp.columns:
 
                             df_comp = df_comp.drop(
@@ -2141,29 +2043,17 @@ else:
                         columnas_comprobacion = [
 
                             "Tipo",
-
                             "Descripcion",
-
                             "Fecha Factura",
-
                             "Folio",
-
                             "Proveedor",
-
                             "Moneda",
-
                             "Monto",
-
                             "Comprobante",
-
                             "Aplica IVA",
-
                             "IVA %",
-
                             "Aplica Retencion",
-
                             "Impuesto Acreditable",
-
                             "Total Comprobado"
                         ]
 
@@ -2194,8 +2084,7 @@ else:
                                     )
                                     .fillna(0)
                                     .apply(
-                                        lambda x:
-                                        f"${x:,.2f}"
+                                        lambda x: f"${x:,.2f}"
                                     )
                                 )
 
@@ -2212,23 +2101,24 @@ else:
                         st.info(
                             "No hay conceptos comprobados."
                         )
+
                     # =================================
                     # TOTALES COMPROBACION
                     # =================================
 
                     st.markdown("---")
 
-                    total_comp = row.get(
+                    total_comp = comprobacion_row.get(
                         "total_comprobado",
                         0
                     )
 
-                    anticipo = row.get(
+                    anticipo = comprobacion_row.get(
                         "anticipo_viaje",
                         0
                     )
 
-                    diferencia = row.get(
+                    diferencia = comprobacion_row.get(
                         "diferencia_cargo_favor",
                         0
                     )
