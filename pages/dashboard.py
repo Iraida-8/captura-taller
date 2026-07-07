@@ -16,98 +16,319 @@ st.set_page_config(
 )
 
 # -------------------------------
-# CSS
+# MODERN DASHBOARD CSS
 # -------------------------------
-st.markdown(
-    """
-    <style>
-    /* Hide sidebar */
-    [data-testid="stSidebar"] {
-        display: none;
-    }
+st.markdown("""
+<style>
 
-    /* App background */
-    .stApp {
-        background-color: #151F6D;
-    }
+/* -------------------------------------------------- */
+/* PAGE */
+/* -------------------------------------------------- */
 
-    /* Give page breathing room */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-    }
+[data-testid="stSidebar"]{
+    display:none;
+}
 
-    /* =========================
-       HEADER STYLE
-       ========================= */
-    h1 {
-        font-size: 1.9rem;
-        margin-bottom: 0.2rem;
-        color: #FFFFFF;
-    }
+.stApp{
+    background:#F4F6FB;
+}
 
-    h2, h3 {
-        margin-top: 0.5rem;
-        color: #BFA75F;
-    }
+.block-container{
+    padding-top:0rem;
+    padding-left:2rem;
+    padding-right:2rem;
+    padding-bottom:2rem;
+    max-width:100%;
+}
 
-    /* =========================
-       BIG MODULE BUTTONS
-       ========================= */
-    div.stButton > button {
-        height: 95px;
-        border-radius: 16px;
-        padding: 1.2rem;
-    }
+/* hide streamlit header */
 
-    div.stButton > button p,
-    div.stButton > button span {
-        font-size: 1.4rem !important;
-        font-weight: 700 !important;
-    }
+header{
+    visibility:hidden;
+}
 
-        background-color: #1B267A;
-        color: #FFFFFF;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-        transition: all 0.2s ease-in-out;
-    }
+footer{
+    visibility:hidden;
+}
 
-    /* Hover */
-    div.stButton > button:hover {
-        transform: translateY(-2px);
-        background-color: #24338C;
-        border-color: #BFA75F;
-        color: #BFA75F;
-    }
+/* -------------------------------------------------- */
+/* NAVBAR */
+/* -------------------------------------------------- */
 
-    /* =========================
-       LOGOUT BUTTON
-       ========================= */
-    button[kind="secondary"] {
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        border-radius: 12px;
-        background-color: transparent;
-        color: #BFA75F;
-        border: 1px solid #BFA75F;
-        font-weight: 600;
-    }
+.navbar{
 
-    button[kind="secondary"]:hover {
-        background-color: #BFA75F;
-        color: #151F6D;
-    }
+    position:sticky;
+    top:0;
 
-    /* Text */
-    p, label, span {
-        color: #F5F5F5;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    z-index:999;
+
+    margin-left:-2rem;
+    margin-right:-2rem;
+    margin-top:-1rem;
+
+    height:72px;
+
+    background:#202A78;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding-left:30px;
+    padding-right:30px;
+
+    box-shadow:
+
+        0 5px 18px rgba(0,0,0,.18);
+
+}
+
+/* logo */
+
+.nav-left{
+
+    display:flex;
+    align-items:center;
+    gap:40px;
+
+}
+
+.logo-title{
+
+    color:white;
+
+    font-size:28px;
+
+    font-weight:700;
+
+}
+
+/* menus */
+
+.nav-menu{
+
+    display:flex;
+
+    gap:10px;
+
+    align-items:center;
+
+}
+
+.menu-item{
+
+    color:white;
+
+    padding:
+
+        12px 18px;
+
+    border-radius:12px;
+
+    transition:.25s;
+
+    cursor:pointer;
+
+    font-size:17px;
+
+    font-weight:500;
+
+}
+
+.menu-item:hover{
+
+    background:rgba(255,255,255,.12);
+
+}
+
+/* user */
+
+.user-panel{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    color:white;
+
+}
+
+.user-name{
+
+    font-weight:700;
+
+    font-size:18px;
+
+}
+
+.user-role{
+
+    font-size:13px;
+
+    opacity:.8;
+
+}
+
+/* -------------------------------------------------- */
+/* HERO */
+/* -------------------------------------------------- */
+
+.hero{
+
+    margin-top:35px;
+
+    border-radius:26px;
+
+    background:
+
+        linear-gradient(
+        135deg,
+        #24338C,
+        #202A78);
+
+    padding:45px;
+
+    color:white;
+
+    box-shadow:
+
+        0 12px 40px rgba(25,35,90,.22);
+
+}
+
+.hero h1{
+
+    color:white;
+
+    margin-bottom:10px;
+
+    font-size:48px;
+
+}
+
+.hero p{
+
+    color:#D5DBFF;
+
+    font-size:18px;
+
+}
+
+.badge{
+
+    display:inline-block;
+
+    margin-top:18px;
+
+    background:white;
+
+    color:#202A78;
+
+    padding:
+
+        8px 20px;
+
+    border-radius:50px;
+
+    font-weight:700;
+
+    font-size:14px;
+
+}
+
+/* -------------------------------------------------- */
+/* SECTION TITLES */
+/* -------------------------------------------------- */
+
+.section-title{
+
+    margin-top:45px;
+
+    margin-bottom:20px;
+
+    color:#202A78;
+
+    font-size:34px;
+
+    font-weight:700;
+
+}
+
+/* -------------------------------------------------- */
+/* BUTTONS */
+/* -------------------------------------------------- */
+
+div.stButton>button{
+
+    height:82px;
+
+    border-radius:18px;
+
+    background:white;
+
+    border:none;
+
+    color:#202A78;
+
+    font-size:18px !important;
+
+    font-weight:700;
+
+    box-shadow:
+
+        0 8px 24px rgba(0,0,0,.08);
+
+    transition:.25s;
+
+}
+
+div.stButton>button:hover{
+
+    transform:
+
+        translateY(-4px);
+
+    box-shadow:
+
+        0 18px 36px rgba(0,0,0,.15);
+
+    border:none;
+
+    color:#202A78;
+
+}
+
+/* logout */
+
+button[kind="secondary"]{
+
+    border-radius:10px;
+
+    background:#D72638;
+
+    color:white;
+
+    border:none;
+
+    font-weight:700;
+
+}
+
+button[kind="secondary"]:hover{
+
+    background:#B31928;
+
+    color:white;
+
+}
+
+</style>
+
+""", unsafe_allow_html=True)
 
 # -------------------------------
 # USER / ACCESS
@@ -133,124 +354,211 @@ latest_version = (
 )
 
 # -------------------------------
-# HEADER
+# MODERN TOP NAVIGATION
 # -------------------------------
+
 assets_dir = Path(__file__).parent.parent / "assets"
 logo_path = assets_dir / "white_pgl.png"
 
-col_info, col_logo, col_logout = st.columns([5, 3, 1])
+st.markdown("""
+<div class="navbar">
 
-with col_info:
-    st.title("📊 Menu Principal")
+    <div class="nav-left">
 
-    st.caption(f"SYS. VER {latest_version}")
+        <div class="logo-title">
+            Palos Garza Logistics
+        </div>
 
-    st.caption(
-        f"{user['name'] or user['email']}"
-    )
+        <div class="nav-menu">
 
-    # live date / time
-    clock_placeholder = st.empty()
+            <div class="menu-item">🏠 Principal</div>
 
-    clock_placeholder.caption(
-        datetime.now().strftime("%A, %d %B %Y")
-    )
+            <div class="menu-item">🏭 Solicitudes ▼</div>
 
-with col_logo:
-    st.markdown(
-        "<div style='margin-top: 35px;'></div>",
-        unsafe_allow_html=True
-    )
+            <div class="menu-item">📋 Gestión ▼</div>
+
+            <div class="menu-item">🔍 Consultas ▼</div>
+
+            <div class="menu-item">⚙ Extras ▼</div>
+
+            <div class="menu-item">🧾 Audit ▼</div>
+
+        </div>
+
+    </div>
+
+    <div class="user-panel">
+
+        <div>
+
+            <div class="user-name">
+"""+(user["name"] or user["email"])+"""
+            </div>
+
+            <div class="user-role">
+
+                Sistema de Gestión
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+""", unsafe_allow_html=True)
+
+st.write("")
+
+# ----------------------------------------------------
+# HERO
+# ----------------------------------------------------
+
+hero_left, hero_right = st.columns([3,1])
+
+with hero_left:
+
+    st.markdown(f"""
+    <div class="hero">
+
+        <h1>Bienvenido</h1>
+
+        <p>
+
+        Bienvenido nuevamente al Portal Corporativo.
+
+        Desde aquí podrás acceder a todos los módulos del sistema.
+
+        </p>
+
+        <div class="badge">
+
+        SYS VER {latest_version}
+
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+with hero_right:
 
     if logo_path.exists():
+
         img = Image.open(logo_path)
 
         st.image(
             img,
-            width=300
+            use_container_width=True
         )
 
-with col_logout:
+    st.write("")
+
+    st.caption(
+        datetime.now().strftime("%A, %d %B %Y")
+    )
+
     if st.button(
         "Cerrar sesión",
         type="secondary",
-        key="btn_logout_top"
+        use_container_width=True,
+        key="logout_top"
     ):
         st.session_state.logged_in = False
         st.session_state.user = None
         st.switch_page("Home.py")
 
-st.divider()
-
 # -------------------------------
 # HELPERS
 # -------------------------------
+
 def has_access(keys):
     return any(k in access for k in keys)
 
-def render_button_grid(buttons, columns_per_row=2):
 
-    visible_buttons = [
+def render_module_section(title, buttons, columns=3):
+    """
+    Modern dashboard card layout.
+    Preserves all existing access control and navigation.
+    """
+
+    visible = [
         b for b in buttons
         if b["access"] in access
     ]
 
-    for i in range(0, len(visible_buttons), columns_per_row):
+    if not visible:
+        return
 
-        row_buttons = visible_buttons[i:i + columns_per_row]
+    st.markdown(
+        f"<div class='section-title'>{title}</div>",
+        unsafe_allow_html=True
+    )
 
-        cols = st.columns(columns_per_row)
+    rows = [
+        visible[i:i + columns]
+        for i in range(0, len(visible), columns)
+    ]
 
-        for idx, btn in enumerate(row_buttons):
+    for row in rows:
 
-            with cols[idx]:
+        cols = st.columns(columns)
+
+        for i, btn in enumerate(row):
+
+            with cols[i]:
 
                 if st.button(
                     btn["label"],
-                    use_container_width=True,
-                    key=btn["key"]
+                    key=btn["key"],
+                    use_container_width=True
                 ):
                     st.switch_page(btn["page"])
 
-# =============================
-# 1. GENERACION DE PASES Y SOLICITUDES
-# =============================
+        st.write("")
+
+    st.divider()
+
+# ============================================================
+# SOLICITUDES
+# ============================================================
+
 section_generacion = [
     "pase_taller",
-    "solicitud_viaticos",
+    "solicitud_viaticos_D",
     "bonos_operador"
 ]
 
 if has_access(section_generacion):
 
-    st.subheader("🏭 Generación de Pases y Solicitudes")
+    render_module_section(
+        "🏭 Solicitudes",
+        [
+            {
+                "access": "pase_taller",
+                "label": "🏭\nGenerar Pase a Taller",
+                "page": "pages/3_ Pase a Taller.py",
+                "key": "btn_pase_taller"
+            },
+            {
+                "access": "solicitud_viaticos_D",
+                "label": "💳\nViáticos y Reembolsos",
+                "page": "pages/9_ Viaticos.py",
+                "key": "btn_viaticos"
+            },
+            {
+                "access": "bonos_operador",
+                "label": "💰\nBono Operadores",
+                "page": "pages/13_ Formulario Bonos.py",
+                "key": "btn_bonos"
+            }
+        ]
+    )
 
-    render_button_grid([
-        {
-            "access": "pase_taller",
-            "label": "🏭  Generar nuevo Pase a Taller",
-            "page": "pages/3_ Pase a Taller.py",
-            "key": "btn_pase_taller"
-        },
-        {
-            "access": "solicitud_viaticos_D",
-            "label": "💳  Solicitud de Viáticos y Reembolsos",
-            "page": "pages/9_ Viaticos.py",
-            "key": "btn_viaticos"
-        },
-        {
-            "access": "bonos_operador",
-            "label": "💰  Bono de Operadores",
-            "page": "pages/13_ Formulario Bonos.py",
-            "key": "btn_bonos_operador"
-        }
-    ])
 
-    st.divider()
+# ============================================================
+# GESTIÓN
+# ============================================================
 
-# =============================
-# 2. GESTION DE ORDENES Y PASES
-# =============================
 section_gestion = [
     "autorizacion",
     "gestion_viaticos"
@@ -258,28 +566,29 @@ section_gestion = [
 
 if has_access(section_gestion):
 
-    st.subheader("📋 Gestión de Órdenes y Pases")
+    render_module_section(
+        "📋 Gestión",
+        [
+            {
+                "access": "autorizacion",
+                "label": "✅\nAutorización",
+                "page": "pages/4_ Autorizacion.py",
+                "key": "btn_autorizacion"
+            },
+            {
+                "access": "gestion_viaticos",
+                "label": "💼\nGestión Viáticos",
+                "page": "pages/10_ Gestion Viaticos.py",
+                "key": "btn_gestion_viaticos"
+            }
+        ]
+    )
 
-    render_button_grid([
-        {
-            "access": "autorizacion",
-            "label": "✅  Autorización y Gestión de Pases de Taller",
-            "page": "pages/4_ Autorizacion.py",
-            "key": "btn_autorizacion"
-        },
-        {
-            "access": "gestion_viaticos",
-            "label": "💼  Gestión de Viáticos",
-            "page": "pages/10_ Gestion Viaticos.py",
-            "key": "btn_gestion_viaticos"
-        }
-    ])
 
-    st.divider()
+# ============================================================
+# CONSULTAS
+# ============================================================
 
-# =============================
-# 3. CONSULTAS
-# =============================
 section_consultas = [
     "consultar_reparacion",
     "consulta_reportes",
@@ -288,34 +597,35 @@ section_consultas = [
 
 if has_access(section_consultas):
 
-    st.subheader("🔍 Consultas de Reparación y Reportes")
+    render_module_section(
+        "🔍 Consultas",
+        [
+            {
+                "access": "consultar_reparacion",
+                "label": "🔍\nHistorial Reparación",
+                "page": "pages/1_ Consultar Reparacion.py",
+                "key": "btn_consultar_reparacion"
+            },
+            {
+                "access": "consulta_reportes",
+                "label": "📊\nConsulta Pases",
+                "page": "pages/6_ Consulta Reportes.py",
+                "key": "btn_consulta_reportes"
+            },
+            {
+                "access": "consulta_bonos_operador",
+                "label": "💰\nConsulta Bonos",
+                "page": "pages/14_ Consulta Bonos.py",
+                "key": "btn_consulta_bonos"
+            }
+        ]
+    )
 
-    render_button_grid([
-        {
-            "access": "consultar_reparacion",
-            "label": "🔍  Consultar Historial de Reparación",
-            "page": "pages/1_ Consultar Reparacion.py",
-            "key": "btn_consultar_reparacion"
-        },
-        {
-            "access": "consulta_reportes",
-            "label": "📊  Consulta de Pases de Taller",
-            "page": "pages/6_ Consulta Reportes.py",
-            "key": "btn_consulta_reportes"
-        },
-        {
-            "access": "consulta_bonos_operador",
-            "label": "💰 Consultas y Reportes para Bono de Operadores",
-            "page": "pages/14_ Consulta Bonos.py",
-            "key": "btn_consulta_bonos_operador",
-        }
-    ])
 
-    st.divider()
+# ============================================================
+# EXTRAS
+# ============================================================
 
-# =============================
-# 4. EXTRAS
-# =============================
 section_extras = [
     "ifuel",
     "lector_pdf",
@@ -324,62 +634,63 @@ section_extras = [
 
 if has_access(section_extras):
 
-    st.subheader("⚙️ Extras")
+    render_module_section(
+        "⚙ Extras",
+        [
+            {
+                "access": "ifuel",
+                "label": "⛽\niFuel",
+                "page": "pages/5_ Reporte iFuel.py",
+                "key": "btn_ifuel"
+            },
+            {
+                "access": "lector_pdf",
+                "label": "📄\nLector PDF",
+                "page": "pages/2_ Lector PDF.py",
+                "key": "btn_pdf"
+            },
+            {
+                "access": "gps_tracking",
+                "label": "🛰️\nGPS",
+                "page": "pages/11_ api_pull.py",
+                "key": "btn_gps"
+            }
+        ]
+    )
 
-    render_button_grid([
-        {
-            "access": "ifuel",
-            "label": "⛽  Reporte iFuel",
-            "page": "pages/5_ Reporte iFuel.py",
-            "key": "btn_ifuel"
-        },
-        {
-            "access": "lector_pdf",
-            "label": "📄  Lector PDF",
-            "page": "pages/2_ Lector PDF.py",
-            "key": "btn_lector_pdf"
-        },
-        {
-            "access": "gps_tracking",
-            "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-            "page": "pages/11_ api_pull.py",
-            "key": "btn_gps_tracking"
-        }
-    ])
 
-    st.divider()
+# ============================================================
+# AUDIT
+# ============================================================
 
-# =============================
-# 5. AUDIT
-# =============================
 section_audit = [
     "prepara_reportes",
-    "gestion_unidades"
+    "gestion_unidades",
+    "ai_testing"
 ]
 
 if has_access(section_audit):
 
-    st.subheader("🧾 Audit")
-
-    render_button_grid([
-        {
-            "access": "prepara_reportes",
-            "label": "🛠️  Preparación de Reportes",
-            "page": "pages/7_ Preparacion de Reportes.py",
-            "key": "btn_prepara_reportes"
-        },
-        {
-            "access": "gestion_unidades",
-            "label": "🚚  Gestión de Unidades",
-            "page": "pages/8_ Gestion de Unidades.py",
-            "key": "btn_gestion_unidades"
-        },
-        {
-            "access": "ai_testing",
-            "label": "🚚  Pruebas de IA",
-            "page": "pages/12_ AI_tests.py",
-            "key": "btn_ai_testing"
-        }
-    ])
-
-    st.divider()
+    render_module_section(
+        "🧾 Audit",
+        [
+            {
+                "access": "prepara_reportes",
+                "label": "🛠️\nPreparación Reportes",
+                "page": "pages/7_ Preparacion de Reportes.py",
+                "key": "btn_prepara"
+            },
+            {
+                "access": "gestion_unidades",
+                "label": "🚚\nGestión Unidades",
+                "page": "pages/8_ Gestion de Unidades.py",
+                "key": "btn_unidades"
+            },
+            {
+                "access": "ai_testing",
+                "label": "🤖\nPruebas IA",
+                "page": "pages/12_ AI_tests.py",
+                "key": "btn_ai"
+            }
+        ]
+    )
