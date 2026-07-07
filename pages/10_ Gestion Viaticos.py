@@ -2297,16 +2297,19 @@ else:
                             use_container_width=True
                         ):
 
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "estatus": "Concluido",
-                                }
-                            ).eq(
-                                "folio_solicitud",
-                                folio_actual
-                            ).execute()
+                            try:
+                                result = (
+                                    supabase.table("solicitud_viaje")
+                                    .update({"estatus": "Concluido"})
+                                    .eq("folio_solicitud", folio_actual)
+                                    .execute()
+                                )
+
+                                st.write(result)
+
+                            except Exception as e:
+                                st.exception(e)
+                                st.stop()
 
                             supabase.table(
                                 "comprobacion_viaje"
