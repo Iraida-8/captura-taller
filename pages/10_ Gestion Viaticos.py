@@ -2096,10 +2096,7 @@ else:
                         )
                     )
 
-                    st.write("TIPO:")
                     st.write(type(conceptos_comprobacion))
-
-                    st.write("CONCEPTOS:")
                     st.write(conceptos_comprobacion)
 
                     total_comprobado = (
@@ -2297,19 +2294,16 @@ else:
                             use_container_width=True
                         ):
 
-                            try:
-                                result = (
-                                    supabase.table("solicitud_viaje")
-                                    .update({"estatus": "Concluido"})
-                                    .eq("folio_solicitud", folio_actual)
-                                    .execute()
-                                )
-
-                                st.write(result)
-
-                            except Exception as e:
-                                st.exception(e)
-                                st.stop()
+                            supabase.table(
+                                "solicitud_viaje"
+                            ).update(
+                                {
+                                    "estatus": "Concluido",
+                                }
+                            ).eq(
+                                "folio_solicitud",
+                                folio_actual
+                            ).execute()
 
                             supabase.table(
                                 "comprobacion_viaje"
