@@ -2096,6 +2096,9 @@ else:
                         )
                     )
 
+                    st.write(type(conceptos_comprobacion))
+                    st.write(conceptos_comprobacion)
+
                     total_comprobado = (
                         row.get(
                             "total_comprobado",
