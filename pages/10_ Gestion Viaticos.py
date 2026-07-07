@@ -2504,8 +2504,8 @@ else:
                                 "Solicitud rechazada"
                             )
 
-                            st.cache_data.clear()
-                            st.rerun()    
+                            #st.cache_data.clear()
+                            #st.rerun()    
 
 
                 modal_verificacion()
