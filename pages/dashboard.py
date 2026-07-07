@@ -4,7 +4,7 @@ from auth import require_login
 from pathlib import Path
 from PIL import Image
 import json
-
+#heregoesbackup
 # -------------------------------
 # Security gate
 # -------------------------------
@@ -383,5 +383,3 @@ if has_access(section_audit):
     ])
 
     st.divider()
-
-    
