@@ -2100,7 +2100,7 @@ else:
                     st.write(type(conceptos_comprobacion))
 
                     st.write("CONCEPTOS:")
-                    st.write(conceptos_comprobacion
+                    st.write(conceptos_comprobacion)
 
                     total_comprobado = (
                         row.get(
