@@ -456,6 +456,43 @@ with st.container(border=True, key="bono_form"):
 
         if calcular:
 
+            # -----------------------------
+            # Required field validation
+            # -----------------------------
+            errores = []
+
+            if not ruta.strip():
+                errores.append("Debes capturar la Ruta.")
+
+            if empresa == "Picus" and not tipo_ruta:
+                errores.append("Debes seleccionar el Tipo de Ruta.")
+
+            if not trafico.strip():
+                errores.append("Debes capturar el Número de Tráfico.")
+
+            if kilometros <= 0:
+                errores.append("Los Kilómetros deben ser mayores a 0.")
+
+            if litros_cargados <= 0:
+                errores.append("Los Litros Cargados deben ser mayores a 0.")
+
+            if PRECIO_DIESEL <= 0:
+                errores.append("El Precio Diesel debe ser mayor a 0.")
+
+            if errores:
+
+                st.session_state["validacion_ok"] = False
+
+                st.error("No es posible realizar el cálculo.")
+
+                for e in errores:
+                    st.warning(e)
+
+                st.stop()
+
+            # -----------------------------
+            # Calculate
+            # -----------------------------
             rendimiento_real = (
                 kilometros / litros_cargados
                 if litros_cargados > 0
@@ -476,12 +513,62 @@ with st.container(border=True, key="bono_form"):
                 diferencia_litros * PRECIO_DIESEL
             )
 
+            # -----------------------------
+            # Business validation
+            # -----------------------------
+            errores = []
+
+            if rendimiento_real < rendimiento_minimo:
+                errores.append(
+                    f"El rendimiento real ({rendimiento_real:.2f}) "
+                    f"está por debajo del mínimo permitido "
+                    f"({rendimiento_minimo:.2f})."
+                )
+
+            if rendimiento_real > (rendimiento_esperado * 1.20):
+                errores.append(
+                    "El rendimiento es muy superior al esperado. "
+                    "Verifica kilómetros y litros capturados."
+                )
+
+            if litros_cargados > (litros_permitidos * 1.20):
+                errores.append(
+                    "Los litros cargados exceden considerablemente "
+                    "los litros permitidos."
+                )
+
+            # If the calculated performance is below the minimum allowed
+            if rendimiento_real < rendimiento_minimo:
+                errores.append(
+                    f"El rendimiento real ({rendimiento_real:.2f} km/l) "
+                    f"está por debajo del mínimo permitido "
+                    f"({rendimiento_minimo:.2f} km/l)."
+                )
+
+            # If it's unrealistically better than expected
+            if rendimiento_real > (rendimiento_esperado * 1.20):
+                errores.append(
+                    f"El rendimiento real ({rendimiento_real:.2f} km/l) "
+                    f"es más de un 20% superior al esperado "
+                    f"({rendimiento_esperado:.2f} km/l). "
+                    "Verifica los kilómetros y los litros capturados."
+                )
+
+            # If the amount of fuel is inconsistent
+            if litros_cargados > (litros_permitidos * 1.20):
+                errores.append(
+                    "Los litros cargados exceden significativamente "
+                    "los litros permitidos para este recorrido."
+                )
+
             st.session_state["resultado_bono"] = {
                 "rendimiento_real": rendimiento_real,
                 "litros_permitidos": litros_permitidos,
                 "diferencia_litros": diferencia_litros,
                 "monto": monto
             }
+
+            st.session_state["validacion_ok"] = len(errores) == 0
 
             st.subheader("📊 Resultado")
 
@@ -526,6 +613,22 @@ with st.container(border=True, key="bono_form"):
                 f"Rendimiento Esperado: {rendimiento_esperado:.2f} km/l"
             )
 
+            if errores:
+
+                st.error(
+                    "⚠ Se detectaron inconsistencias. "
+                    "Corrige la información y vuelve a calcular."
+                )
+
+                for e in errores:
+                    st.warning(e)
+
+            else:
+
+                st.success(
+                    "✅ Validación completada correctamente."
+                )
+
     if st.button(
         "📨 Enviar Formulario",
         use_container_width=True,
@@ -536,6 +639,12 @@ with st.container(border=True, key="bono_form"):
 
         if resultado is None:
             st.error("Primero debes calcular el bono.")
+            st.stop()
+
+        if not st.session_state.get("validacion_ok", False):
+            st.error(
+                "Debes corregir las inconsistencias y volver a calcular antes de enviar."
+            )
             st.stop()
 
         rendimiento_real = resultado["rendimiento_real"]
