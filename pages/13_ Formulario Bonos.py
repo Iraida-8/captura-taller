@@ -381,6 +381,9 @@ with st.container(border=True, key="bono_form"):
             "Ruta: Origen - Destino"
         )
 
+        # Always initialize so the variable exists
+        trafico = ""
+
         if empresa == "Picus":
 
             tipo_ruta = st.selectbox(
@@ -390,7 +393,7 @@ with st.container(border=True, key="bono_form"):
 
         else:
 
-            # Igloo doesn't use this field
+            # Igloo doesn't use Tipo Ruta
             tipo_ruta = "No Aplica"
 
             trafico = st.text_input(
@@ -467,7 +470,7 @@ with st.container(border=True, key="bono_form"):
             if empresa == "Picus" and not tipo_ruta:
                 errores.append("Debes seleccionar el Tipo de Ruta.")
 
-            if not trafico.strip():
+            if empresa == "Igloo" and not trafico.strip():
                 errores.append("Debes capturar el Número de Tráfico.")
 
             if kilometros <= 0:
