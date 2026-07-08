@@ -383,6 +383,23 @@ if st.session_state.auth_view == "login":
                 else {}
             )
 
+            access = profile_data.get("access", [])
+
+            extended_res = (
+                supabase
+                .table("extended profiles")
+                .select("access")
+                .eq("id", user_id)
+                .maybe_single()
+                .execute()
+            )
+
+            extended_data = (
+                extended_res.data
+                if extended_res and extended_res.data
+                else {}
+            )
+
             st.session_state.logged_in = True
             st.session_state.user = {
                 "id": user_id,
@@ -390,10 +407,13 @@ if st.session_state.auth_view == "login":
                 "name": profile_data.get("full_name"),
                 "login_count": profile_data.get("login_count", 0),
                 "role": profile_data.get("role", "user"),
-                "access": profile_data.get("access", [])
+                "access": access
             }
 
-            st.switch_page("pages/dashboard.py")
+            if "beta" in access:
+                st.switch_page("pages_beta/dashboard_beta.py")
+            else:
+                st.switch_page("pages/dashboard.py")
 
         except Exception as e:
             st.error(str(e))
