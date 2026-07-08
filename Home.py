@@ -385,21 +385,6 @@ if st.session_state.auth_view == "login":
 
             access = profile_data.get("access", [])
 
-            extended_res = (
-                supabase
-                .table("extended profiles")
-                .select("access")
-                .eq("id", user_id)
-                .maybe_single()
-                .execute()
-            )
-
-            extended_data = (
-                extended_res.data
-                if extended_res and extended_res.data
-                else {}
-            )
-
             st.session_state.logged_in = True
             st.session_state.user = {
                 "id": user_id,
