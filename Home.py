@@ -10,7 +10,7 @@ import json
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Portal de Taller",
+    page_title="Portal OMEGA",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -317,7 +317,7 @@ def show_changelog():
 # =================================
 if st.session_state.auth_view == "login":
 
-    st.title("Portal de Taller")
+    st.title("OMEGA")
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
