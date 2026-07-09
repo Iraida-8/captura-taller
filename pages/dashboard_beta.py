@@ -327,7 +327,7 @@ else:
 <div class="hero-card">
 
 <div class="hero-welcome">
-Bienvenido de vuelta
+Bienvenid@
 </div>
 
 <div class="hero-name">
@@ -339,7 +339,7 @@ Bienvenido de vuelta
 </div>
 
 <div class="hero-footer">
-Portal de Palos Garza Logistics
+OMEGA · SYS. VER {latest_version}
 </div>
 
 </div>
