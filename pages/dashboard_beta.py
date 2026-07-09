@@ -586,6 +586,8 @@ if role == "field_user":
 
 else:
 
+    import streamlit.components.v1 as components
+
     st.markdown("## 📊 Resumen General")
 
     modules = [
@@ -611,58 +613,56 @@ else:
         if m["access"] in access
     ]
 
-    CARDS_PER_ROW = 3
+    cols = st.columns(3)
 
-    for i in range(0, len(visible_modules), CARDS_PER_ROW):
+    for i, module in enumerate(visible_modules):
 
-        cols = st.columns(CARDS_PER_ROW)
+        with cols[i % 3]:
 
-        for col, module in zip(cols, visible_modules[i:i + CARDS_PER_ROW]):
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#FFF7D6;
+                    padding:20px;
+                    border-radius:18px;
+                    box-shadow:0 4px 10px rgba(0,0,0,.10);
+                    min-height:185px;
+                    color:#111;
+                    font-family:sans-serif;
+                ">
 
-            with col:
-
-                st.markdown(
-                    f"""
                     <div style="
-                        background:#F7F1D7;
-                        border:2px solid #D9C785;
-                        border-radius:18px;
-                        padding:22px;
-                        min-height:210px;
-                        box-shadow:0 4px 10px rgba(0,0,0,.15);
+                        color:#666666;
+                        font-size:15px;
+                        font-weight:600;
                     ">
-
-                        <div style="
-                            color:#666666;
-                            font-size:15px;
-                            font-weight:600;
-                        ">
-                            Total registros para
-                        </div>
-
-                        <div style="
-                            color:#111111;
-                            font-size:28px;
-                            font-weight:700;
-                            margin-top:18px;
-                            line-height:1.25;
-                        ">
-                            {module["name"]}
-                        </div>
-
-                        <div style="
-                            text-align:center;
-                            color:#111111;
-                            font-size:58px;
-                            font-weight:800;
-                            margin-top:42px;
-                        ">
-                            {module["total"]}
-                        </div>
-
+                        Total registros para
                     </div>
-                    """,
-                    unsafe_allow_html=True
-                )
 
-        st.write("")
+                    <div style="
+                        color:#111111;
+                        font-size:28px;
+                        font-weight:700;
+                        margin-top:18px;
+                        line-height:1.25;
+                    ">
+                        {module['name']}
+                    </div>
+
+                    <div style="
+                        text-align:center;
+                        color:#111111;
+                        font-size:58px;
+                        font-weight:800;
+                        margin-top:42px;
+                    ">
+                        {module['total']}
+                    </div>
+
+                </div>
+            </div>
+            """
+
+            components.html(html, height=235)
+
+    st.write("")
