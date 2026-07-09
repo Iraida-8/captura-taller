@@ -433,7 +433,7 @@ if role == "field_user":
                 "key": "btn_pase_taller"
             },
             {
-                "access": "solicitud_viaticos",
+                "access": "solicitud_viaticos_D",
                 "label": "💳  Solicitud de Viáticos y Reembolsos",
                 "page": "pages/9_ Viaticos.py",
                 "key": "btn_viaticos"
@@ -596,7 +596,7 @@ else:
             "total": 0,
         },
         {
-            "access": "solicitud_viaticos_D",
+            "access": "solicitud_viaticos",
             "name": "Solicitud de Viáticos",
             "total": 0,
         },
