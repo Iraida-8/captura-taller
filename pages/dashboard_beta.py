@@ -4,7 +4,8 @@ from auth import require_login
 from pathlib import Path
 from PIL import Image
 import json
-#heregoesbackup
+from supabase import create_client
+
 # -------------------------------
 # Security gate
 # -------------------------------
@@ -14,6 +15,15 @@ st.set_page_config(
     page_title="Dashboard - BETA",
     layout="wide"
 )
+
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase()
 
 # -------------------------------
 # CSS
@@ -590,21 +600,63 @@ else:
 
     st.markdown("## 📊 Resumen General")
 
+    # =====================================================
+    # KPI TOTALS
+    # =====================================================
+
+    total_viaticos = (
+        supabase.table("solicitud_viaje")
+        .select("*", count="exact", head=True)
+        .execute()
+        .count
+    )
+
+    total_bonos = (
+        supabase.table("bonos_operadores")
+        .select("*", count="exact", head=True)
+        .execute()
+        .count
+    )
+
+    pase_tables = [
+        "IGLOO",
+        "LINCOLN",
+        "PICUS",
+        "SFI",
+        "SLP",
+    ]
+
+    total_pases = 0
+
+    for table in pase_tables:
+
+        response = (
+            supabase.table(table)
+            .select("*", count="exact", head=True)
+            .execute()
+        )
+
+        total_pases += response.count or 0
+
+    # =====================================================
+    # MODULES
+    # =====================================================
+
     modules = [
         {
             "access": "pase_taller",
             "name": "Pase a Taller",
-            "total": 0,
+            "total": total_pases,
         },
         {
             "access": "solicitud_viaticos",
             "name": "Solicitud de Viáticos",
-            "total": 0,
+            "total": total_viaticos,
         },
         {
             "access": "bonos_operador",
             "name": "Bono de Operadores",
-            "total": 0,
+            "total": total_bonos,
         },
     ]
 
@@ -656,7 +708,7 @@ else:
                         font-weight:800;
                         margin-top:42px;
                     ">
-                        {module['total']}
+                        {module['total']:,}
                     </div>
 
                 </div>
