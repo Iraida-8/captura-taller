@@ -176,7 +176,7 @@ if role == "field_user":
 
             st.image(
                 img,
-                width=220
+                width=300
             )
 
     with col_logout:
@@ -210,7 +210,7 @@ else:
 
             st.image(
                 img,
-                width=300
+                width=220
             )
 
     with col_logout:
@@ -222,17 +222,28 @@ else:
             div.stButton > button[kind="secondary"]{
                 width:100%;
                 height:48px;
-                border-radius:10px !important;
+
                 background:#BFA75F;
-                color:#151F6D;
+                color:white !important;
+
                 border:none;
+                border-radius:10px !important;
+
                 font-weight:700;
-                box-shadow:0 4px 12px rgba(0,0,0,.15);
+                font-size:16px;
+
+                display:flex;
+                align-items:center;
+                justify-content:center;
+
+                text-align:center;
+
+                box-shadow:0 4px 12px rgba(0,0,0,.18);
             }
 
             div.stButton > button[kind="secondary"]:hover{
-                background:#BFA75F;
-                color:#151F6D;
+                background:#D0B56C;
+                color:white !important;
             }
 
             </style>
