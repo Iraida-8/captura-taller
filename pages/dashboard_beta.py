@@ -133,56 +133,72 @@ latest_version = (
     else "0.00.00.00"
 )
 
-# -------------------------------
-# HEADER
-# -------------------------------
-assets_dir = Path(__file__).parent.parent / "assets"
-logo_path = assets_dir / "white_pgl.png"
+# =============================
+# FIELD USER VIEW
+# =============================
+if role == "field_user":
+    # -------------------------------
+    # HEADER
+    # -------------------------------
+    assets_dir = Path(__file__).parent.parent / "assets"
+    logo_path = assets_dir / "white_pgl.png"
 
-col_info, col_logo, col_logout = st.columns([5, 3, 1])
+    col_info, col_logo, col_logout = st.columns([5, 3, 1])
 
-with col_info:
-    st.title("📊 Menu Principal")
+    with col_info:
+        st.title("📊 Menu Principal")
 
-    st.caption(f"SYS. VER {latest_version}")
+        st.caption(f"SYS. VER {latest_version}")
 
-    st.caption(
-        f"{user['name'] or user['email']}"
-    )
-
-    # live date / time
-    clock_placeholder = st.empty()
-
-    clock_placeholder.caption(
-        datetime.now().strftime("%A, %d %B %Y")
-    )
-
-with col_logo:
-    st.markdown(
-        "<div style='margin-top: 35px;'></div>",
-        unsafe_allow_html=True
-    )
-
-    if logo_path.exists():
-        img = Image.open(logo_path)
-
-        st.image(
-            img,
-            width=300
+        st.caption(
+            f"{user['name'] or user['email']}"
         )
 
-with col_logout:
-    if st.button(
-        "Cerrar sesión",
-        type="secondary",
-        key="btn_logout_top"
-    ):
-        st.session_state.logged_in = False
-        st.session_state.user = None
-        st.switch_page("Home.py")
+        # live date / time
+        clock_placeholder = st.empty()
 
-st.divider()
+        clock_placeholder.caption(
+            datetime.now().strftime("%A, %d %B %Y")
+        )
 
+    with col_logo:
+        st.markdown(
+            "<div style='margin-top: 35px;'></div>",
+            unsafe_allow_html=True
+        )
+
+        if logo_path.exists():
+            img = Image.open(logo_path)
+
+            st.image(
+                img,
+                width=300
+            )
+
+    with col_logout:
+        if st.button(
+            "Cerrar sesión",
+            type="secondary",
+            key="btn_logout_top"
+        ):
+            st.session_state.logged_in = False
+            st.session_state.user = None
+            st.switch_page("Home.py")
+
+    st.divider()
+else:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    st.info(
+        """
+        ## 🚧 Coming Soon
+
+        This dashboard is currently under development for your role.
+
+        Please check back later.
+        """
+    )
+    
 # -------------------------------
 # HELPERS
 # -------------------------------
