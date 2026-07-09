@@ -176,7 +176,7 @@ if role == "field_user":
 
             st.image(
                 img,
-                width=300
+                width=220
             )
 
     with col_logout:
@@ -223,7 +223,7 @@ else:
                 width:100%;
                 height:48px;
                 border-radius:10px !important;
-                background:#FFFFFF;
+                background:#BFA75F;
                 color:#151F6D;
                 border:none;
                 font-weight:700;
@@ -254,7 +254,7 @@ else:
             st.session_state.user = None
             st.switch_page("Home.py")
 
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 #User Card
 
