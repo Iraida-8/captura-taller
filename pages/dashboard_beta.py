@@ -279,6 +279,17 @@ else:
         border-left:8px solid #E23B2F;
         margin-top:10px;
         margin-bottom:25px;
+        position:relative;
+    }
+
+    .hero-date{
+        position:absolute;
+        top:45px;
+        right:55px;
+
+        color:#AAB2D5;
+        font-size:18px;
+        font-weight:500;
     }
 
     .hero-welcome{
@@ -341,23 +352,13 @@ else:
         f"""
 <div class="hero-card">
 
-<table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
-    <tr>
-        <td style="color:#AAB2D5;
-                   font-size:20px;
-                   font-weight:600;
-                   text-align:left;">
-            Bienvenid@
-        </td>
+<div class="hero-welcome">
+    Bienvenid@
+</div>
 
-        <td style="color:#AAB2D5;
-                   font-size:18px;
-                   font-weight:500;
-                   text-align:right;">
-            {current_date}
-        </td>
-    </tr>
-</table>
+<div class="hero-date">
+    {current_date}
+</div>
 
 <div class="hero-name">
 {display_name}
