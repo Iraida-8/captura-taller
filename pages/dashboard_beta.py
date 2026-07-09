@@ -133,6 +133,12 @@ latest_version = (
     else "0.00.00.00"
 )
 
+# -------------------------------
+# ASSETS
+# -------------------------------
+assets_dir = Path(__file__).parent.parent / "assets"
+logo_path = assets_dir / "white_pgl.png"
+
 # =============================
 # FIELD USER VIEW
 # =============================
@@ -140,8 +146,6 @@ if role == "field_user":
     # -------------------------------
     # HEADER
     # -------------------------------
-    assets_dir = Path(__file__).parent.parent / "assets"
-    logo_path = assets_dir / "white_pgl.png"
 
     col_info, col_logo, col_logout = st.columns([5, 3, 1])
 
@@ -188,6 +192,71 @@ if role == "field_user":
     st.divider()
 
 else:
+
+    # -------------------------------
+    # HEADER
+    # -------------------------------
+    col_logo, col_spacer, col_logout = st.columns([3, 7, 1.4])
+
+    with col_logo:
+
+        st.markdown(
+            "<div style='margin-top:35px;'></div>",
+            unsafe_allow_html=True
+        )
+
+        if logo_path.exists():
+            img = Image.open(logo_path)
+
+            st.image(
+                img,
+                width=300
+            )
+
+    with col_logout:
+
+        st.markdown(
+            """
+            <style>
+
+            div.stButton > button[kind="secondary"]{
+                width:100%;
+                height:48px;
+                border-radius:10px !important;
+                background:#FFFFFF;
+                color:#151F6D;
+                border:none;
+                font-weight:700;
+                box-shadow:0 4px 12px rgba(0,0,0,.15);
+            }
+
+            div.stButton > button[kind="secondary"]:hover{
+                background:#BFA75F;
+                color:#151F6D;
+            }
+
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            "<div style='margin-top:28px;'></div>",
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "Cerrar sesión",
+            type="secondary",
+            key="btn_logout_admin"
+        ):
+            st.session_state.logged_in = False
+            st.session_state.user = None
+            st.switch_page("Home.py")
+
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+#User Card
 
     st.markdown("""
     <style>
