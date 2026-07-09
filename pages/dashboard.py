@@ -447,7 +447,9 @@ def render_dashboard_cards(buttons, columns_per_row=3):
 # =============================
 # FIELD USER VIEW
 # =============================
+
 if role == "field_user":
+
     # =============================
     # 1. GENERACION DE PASES Y SOLICITUDES
     # =============================
@@ -620,132 +622,140 @@ if role == "field_user":
 
         st.divider()
 
+# =============================
+# ADMIN, MANAGER, REGULAR USER VIEW
+# =============================
+
 else:
 
     import streamlit.components.v1 as components
 
-    st.markdown("## 📊 Resumen General")
+    show_kpis = role in ["admin", "manager"]
 
-    # =====================================================
-    # KPI TOTALS
-    # =====================================================
+    if show_kpis:
 
-    total_viaticos = (
-        supabase.table("solicitud_viaje")
-        .select("*", count="exact", head=True)
-        .execute()
-        .count
-    )
+        st.markdown("## 📊 Resumen General")
 
-    total_bonos = (
-        supabase.table("bonos_operadores")
-        .select("*", count="exact", head=True)
-        .execute()
-        .count
-    )
+        # =====================================================
+        # KPI TOTALS
+        # =====================================================
 
-    pase_tables = [
-        "IGLOO",
-        "LINCOLN",
-        "PICUS",
-        "SFI",
-        "SLP",
-    ]
-
-    total_pases = 0
-
-    for table in pase_tables:
-
-        response = (
-            supabase.table(table)
+        total_viaticos = (
+            supabase.table("solicitud_viaje")
             .select("*", count="exact", head=True)
             .execute()
+            .count
         )
 
-        total_pases += response.count or 0
+        total_bonos = (
+            supabase.table("bonos_operadores")
+            .select("*", count="exact", head=True)
+            .execute()
+            .count
+        )
 
-    # =====================================================
-    # MODULES
-    # =====================================================
+        pase_tables = [
+            "IGLOO",
+            "LINCOLN",
+            "PICUS",
+            "SFI",
+            "SLP",
+        ]
 
-    modules = [
-        {
-            "access": "pase_taller",
-            "name": "Pase a Taller",
-            "total": total_pases,
-        },
-        {
-            "access": "solicitud_viaticos",
-            "name": "Solicitud de Viáticos",
-            "total": total_viaticos,
-        },
-        {
-            "access": "bonos_operador",
-            "name": "Bono de Operadores",
-            "total": total_bonos,
-        },
-    ]
+        total_pases = 0
 
-    visible_modules = [
-        m for m in modules
-        if m["access"] in access
-    ]
+        for table in pase_tables:
 
-    cols = st.columns(3)
+            response = (
+                supabase.table(table)
+                .select("*", count="exact", head=True)
+                .execute()
+            )
 
-    for i, module in enumerate(visible_modules):
+            total_pases += response.count or 0
 
-        with cols[i % 3]:
+        # =====================================================
+        # MODULES
+        # =====================================================
 
-            html = f"""
-            <div style="padding:6px 6px 18px 6px;">
-                <div style="
-                    background:#FFF7D6;
-                    padding:20px;
-                    border-radius:18px;
-                    box-shadow:0 4px 10px rgba(0,0,0,.10);
-                    min-height:185px;
-                    color:#111;
-                    font-family:sans-serif;
-                ">
+        modules = [
+            {
+                "access": "pase_taller",
+                "name": "Pase a Taller",
+                "total": total_pases,
+            },
+            {
+                "access": "solicitud_viaticos",
+                "name": "Solicitud de Viáticos",
+                "total": total_viaticos,
+            },
+            {
+                "access": "bonos_operador",
+                "name": "Bono de Operadores",
+                "total": total_bonos,
+            },
+        ]
 
+        visible_modules = [
+            m for m in modules
+            if m["access"] in access
+        ]
+
+        cols = st.columns(3)
+
+        for i, module in enumerate(visible_modules):
+
+            with cols[i % 3]:
+
+                html = f"""
+                <div style="padding:6px 6px 18px 6px;">
                     <div style="
-                        color:#666666;
-                        font-size:15px;
-                        font-weight:600;
+                        background:#FFF7D6;
+                        padding:20px;
+                        border-radius:18px;
+                        box-shadow:0 4px 10px rgba(0,0,0,.10);
+                        min-height:185px;
+                        color:#111;
+                        font-family:sans-serif;
                     ">
-                        Total registros para
-                    </div>
 
-                    <div style="
-                        color:#111111;
-                        font-size:28px;
-                        font-weight:700;
-                        margin-top:18px;
-                        line-height:1.25;
-                    ">
-                        {module['name']}
-                    </div>
+                        <div style="
+                            color:#666666;
+                            font-size:15px;
+                            font-weight:600;
+                        ">
+                            Total registros para
+                        </div>
 
-                    <div style="
-                        text-align:center;
-                        color:#111111;
-                        font-size:58px;
-                        font-weight:800;
-                        margin-top:42px;
-                    ">
-                        {module['total']:,}
-                    </div>
+                        <div style="
+                            color:#111111;
+                            font-size:28px;
+                            font-weight:700;
+                            margin-top:18px;
+                            line-height:1.25;
+                        ">
+                            {module['name']}
+                        </div>
 
+                        <div style="
+                            text-align:center;
+                            color:#111111;
+                            font-size:58px;
+                            font-weight:800;
+                            margin-top:42px;
+                        ">
+                            {module['total']:,}
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=255)
+                components.html(html, height=255)
 
-    st.write("")
+        st.write("")
 
-    st.divider()
+        st.divider()
 
     # =============================
     # 1. GENERACION DE PASES Y SOLICITUDES
