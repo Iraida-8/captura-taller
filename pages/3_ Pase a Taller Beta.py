@@ -5,6 +5,28 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 
 # =================================
+# Security gates
+# =================================
+require_login()
+
+# -------------------------------
+# RELEASE GATE
+# -------------------------------
+REQUIRED_RELEASE = "beta"
+
+user = st.session_state.user
+access = user.get("access", [])
+
+if REQUIRED_RELEASE not in access:
+    st.error("No tienes permisos para acceder a esta versión del sistema.")
+    st.stop()
+# -------------------------------
+# RELEASE GATE
+# -------------------------------
+#  
+require_access("pase_taller")
+
+# =================================
 # Page configuration
 # =================================
 st.set_page_config(
@@ -158,16 +180,10 @@ st.markdown(
 )
 
 # =================================
-# Security gates
-# =================================
-require_login()
-require_access("pase_taller")
-
-# =================================
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
+    st.switch_page("pages/dashboard_beta.py")
 
 st.divider()
 
