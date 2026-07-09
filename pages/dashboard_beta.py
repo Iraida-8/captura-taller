@@ -541,7 +541,7 @@ if role == "field_user":
             },
             {
                 "access": "consulta_bonos_operador",
-                "label": "💰 Consultas y Reportes para Bonos de Operadores",
+                "label": "💰 Consulta Bonos de Operadores",
                 "page": "pages/14_ Consulta Bonos.py",
                 "key": "btn_consulta_bonos_operador",
             }
