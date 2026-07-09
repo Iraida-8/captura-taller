@@ -11,7 +11,7 @@ import json
 require_login()
 
 st.set_page_config(
-    page_title="Dashboard - Beta",
+    page_title="Dashboard - BETA",
     layout="wide"
 )
 
@@ -229,7 +229,7 @@ if has_access(section_generacion):
         {
             "access": "pase_taller",
             "label": "🏭  Generar nuevo Pase a Taller",
-            "page": "pages/3_ Pase a Taller.py",
+            "page": "pages/3_ Pase a Taller Beta.py",
             "key": "btn_pase_taller"
         },
         {
