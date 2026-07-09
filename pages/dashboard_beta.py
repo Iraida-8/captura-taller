@@ -12,7 +12,7 @@ from supabase import create_client
 require_login()
 
 st.set_page_config(
-    page_title="Dashboard - OMEGA",
+    page_title="Dashboard - BETA",
     layout="wide"
 )
 
