@@ -186,89 +186,85 @@ if role == "field_user":
             st.switch_page("Home.py")
 
     st.divider()
-    
+
 else:
 
-    st.markdown(
-        """
-        <style>
-        .hero-card{
-            background: linear-gradient(135deg,#1D2675 0%,#2C348C 100%);
-            border-radius:24px;
-            min-height:320px;
-            padding:55px 65px;
-            position:relative;
-            overflow:hidden;
-            border-left:8px solid #E23A2E;
-            box-shadow:0 10px 28px rgba(0,0,0,.18);
-            margin-top:10px;
-        }
+    st.markdown("""
+    <style>
 
-        .hero-subtitle{
-            color:#AEB6D8;
-            font-size:20px;
-            font-weight:600;
-        }
+    .hero-card{
+        background: linear-gradient(90deg,#232C7A 0%,#2F378E 100%);
+        border-radius:24px;
+        padding:45px 55px;
+        border-left:8px solid #E23B2F;
+        margin-top:10px;
+        margin-bottom:25px;
+    }
 
-        .hero-name{
-            color:white;
-            font-size:58px;
-            font-weight:800;
-            margin-top:8px;
-            margin-bottom:20px;
-        }
+    .hero-welcome{
+        color:#AAB2D5;
+        font-size:20px;
+        font-weight:600;
+        margin-bottom:12px;
+    }
 
-        .hero-role{
-            display:inline-block;
-            padding:10px 26px;
-            border-radius:999px;
-            background:#EEF1FF;
-            color:#1D2675;
-            font-weight:700;
-            font-size:20px;
-        }
+    .hero-name{
+        color:white;
+        font-size:54px;
+        font-weight:800;
+        line-height:1.1;
+        margin-bottom:20px;
+    }
 
-        .hero-footer{
-            margin-top:32px;
-            color:#AEB6D8;
-            font-size:22px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    .hero-role{
+        display:inline-block;
+        background:#EEF0FF;
+        color:#1F2876;
+        padding:8px 22px;
+        border-radius:999px;
+        font-size:18px;
+        font-weight:700;
+        margin-bottom:24px;
+    }
 
-    role_name = (
-        role.replace("_", " ").upper()
-        if role
-        else "USER"
-    )
+    .hero-footer{
+        color:#AAB2D5;
+        font-size:20px;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
 
     display_name = user["name"] or user["email"]
 
+    display_role = (
+        role.replace("_", " ").upper()
+        if role else "USER"
+    )
+
     st.markdown(
         f"""
-        <div class="hero-card">
+<div class="hero-card">
 
-            <div class="hero-subtitle">
-                Bienvenido de vuelta
-            </div>
+<div class="hero-welcome">
+Bienvenido de vuelta
+</div>
 
-            <div class="hero-name">
-                {display_name}
-            </div>
+<div class="hero-name">
+{display_name}
+</div>
 
-            <div class="hero-role">
-                {role_name}
-            </div>
+<div class="hero-role">
+{display_role}
+</div>
 
-            <div class="hero-footer">
-                Portal de Palos Garza Logistics
-            </div>
+<div class="hero-footer">
+Portal de Palos Garza Logistics
+</div>
 
-        </div>
+</div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
     
 # -------------------------------
