@@ -11,6 +11,19 @@ from supabase import create_client
 # -------------------------------
 require_login()
 
+# -------------------------------
+# RELEASE GATE
+# -------------------------------
+REQUIRED_RELEASE = "beta"
+
+user = st.session_state.user
+access = user.get("access", [])
+
+if REQUIRED_RELEASE not in access:
+    st.error("No tienes permisos para acceder a esta versión del sistema.")
+    st.stop()
+    
+
 st.set_page_config(
     page_title="Dashboard - BETA",
     layout="wide"
