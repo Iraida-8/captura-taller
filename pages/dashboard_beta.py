@@ -12,7 +12,7 @@ from supabase import create_client
 require_login()
 
 st.set_page_config(
-    page_title="Dashboard - BETA",
+    page_title="Dashboard - OMEGA",
     layout="wide"
 )
 
@@ -465,7 +465,7 @@ if role == "field_user":
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": "pages/3_ Pase a Taller Beta.py",
+                "page": "pages/3_ Pase a Taller.py",
                 "key": "btn_pase_taller"
             },
             {
@@ -764,7 +764,7 @@ else:
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": "pages/3_ Pase a Taller Beta.py",
+                "page": "pages/3_ Pase a Taller.py",
                 "key": "btn_pase_taller"
             },
             {
