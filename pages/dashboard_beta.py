@@ -620,7 +620,7 @@ else:
         with cols[i % 3]:
 
             html = f"""
-            <div style="padding:6px;">
+            <div style="padding:6px 6px 18px 6px;">
                 <div style="
                     background:#FFF7D6;
                     padding:20px;
@@ -663,6 +663,6 @@ else:
             </div>
             """
 
-            components.html(html, height=235)
+            components.html(html, height=255)
 
     st.write("")
