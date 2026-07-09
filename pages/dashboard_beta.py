@@ -287,6 +287,19 @@ else:
         font-weight:600;
         margin-bottom:12px;
     }
+    
+    .hero-top{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:12px;
+    }
+
+    .hero-date{
+        color:#AAB2D5;
+        font-size:18px;
+        font-weight:500;
+    }
 
     .hero-name{
         color:white;
@@ -315,6 +328,8 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
+    current_date = datetime.now().strftime("%d %B %Y")
+
     display_name = user["name"] or user["email"]
 
     display_role = (
@@ -326,8 +341,16 @@ else:
         f"""
 <div class="hero-card">
 
-<div class="hero-welcome">
-Bienvenid@
+<div class="hero-top">
+
+    <div class="hero-welcome">
+        Bienvenid@
+    </div>
+
+    <div class="hero-date">
+        {current_date}
+    </div>
+
 </div>
 
 <div class="hero-name">
