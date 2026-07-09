@@ -587,11 +587,7 @@ if role == "field_user":
 else:
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # =====================================================
-    # MODULE KPIs
-    # =====================================================
-
-    st.markdown("### 📊 Resumen General")
+    st.markdown("## 📊 Resumen General")
 
     modules = [
         "Pase a Taller",
@@ -610,57 +606,27 @@ else:
         "Pruebas IA",
     ]
 
-    POSTITS_PER_ROW = 4
+    CARDS_PER_ROW = 4
 
-    for i in range(0, len(modules), POSTITS_PER_ROW):
+    for i in range(0, len(modules), CARDS_PER_ROW):
 
-        cols = st.columns(POSTITS_PER_ROW)
+        cols = st.columns(CARDS_PER_ROW)
 
-        for j, module in enumerate(modules[i:i + POSTITS_PER_ROW]):
+        for col, module in zip(cols, modules[i:i + CARDS_PER_ROW]):
 
-            with cols[j]:
+            with col:
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        background:#F7F7F7;
-                        border-radius:18px;
-                        padding:20px;
-                        min-height:145px;
-                        box-shadow:0 4px 12px rgba(0,0,0,.15);
-                        border-top:6px solid #BFA75F;
-                    ">
+                with st.container(border=True):
 
-                        <div style="
-                            color:#666;
-                            font-size:14px;
-                            margin-bottom:12px;
-                        ">
-                            Total registros para
-                        </div>
+                    st.caption("Total registros para")
 
-                        <div style="
-                            color:#151F6D;
-                            font-size:20px;
-                            font-weight:700;
-                            line-height:1.25;
-                            min-height:52px;
-                        ">
-                            {module}
-                        </div>
+                    st.markdown(f"#### {module}")
 
-                        <div style="
-                            margin-top:18px;
-                            font-size:42px;
-                            font-weight:800;
-                            color:#151F6D;
-                        ">
-                            0
-                        </div>
+                    st.write("")
 
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                    st.markdown(
+                        "<h1 style='text-align:center;'>0</h1>",
+                        unsafe_allow_html=True
+                    )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.write("")
