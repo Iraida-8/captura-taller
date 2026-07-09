@@ -590,29 +590,35 @@ else:
     st.markdown("## 📊 Resumen General")
 
     modules = [
-        "Pase a Taller",
-        "Solicitud de Viáticos",
-        "Bono de Operadores",
-        "Autorización de Pases",
-        "Gestión de Viáticos",
-        "Consultar Reparaciones",
-        "Consulta de Pases",
-        "Consulta Bono Operador",
-        "Reporte iFuel",
-        "Lector PDF",
-        "GPS",
-        "Preparación de Reportes",
-        "Gestión de Unidades",
-        "Pruebas IA",
+        {
+            "access": "pase_taller",
+            "name": "Pase a Taller",
+            "total": 0,
+        },
+        {
+            "access": "solicitud_viaticos_D",
+            "name": "Solicitud de Viáticos",
+            "total": 0,
+        },
+        {
+            "access": "bonos_operador",
+            "name": "Bono de Operadores",
+            "total": 0,
+        },
     ]
 
-    CARDS_PER_ROW = 4
+    visible_modules = [
+        m for m in modules
+        if m["access"] in access
+    ]
 
-    for i in range(0, len(modules), CARDS_PER_ROW):
+    CARDS_PER_ROW = 3
+
+    for i in range(0, len(visible_modules), CARDS_PER_ROW):
 
         cols = st.columns(CARDS_PER_ROW)
 
-        for col, module in zip(cols, modules[i:i + CARDS_PER_ROW]):
+        for col, module in zip(cols, visible_modules[i:i + CARDS_PER_ROW]):
 
             with col:
 
@@ -620,12 +626,12 @@ else:
 
                     st.caption("Total registros para")
 
-                    st.markdown(f"#### {module}")
+                    st.markdown(f"#### {module['name']}")
 
                     st.write("")
 
                     st.markdown(
-                        "<h1 style='text-align:center;'>0</h1>",
+                        f"<h1 style='text-align:center;'>{module['total']}</h1>",
                         unsafe_allow_html=True
                     )
 
