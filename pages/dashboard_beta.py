@@ -278,7 +278,7 @@ else:
         padding:45px 55px;
         border-left:8px solid #E23B2F;
         margin-top:10px;
-        margin-bottom:25px;
+        margin-bottom:10px;
         position:relative;
     }
 
