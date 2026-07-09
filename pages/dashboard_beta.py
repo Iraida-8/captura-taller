@@ -587,12 +587,80 @@ if role == "field_user":
 else:
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    st.info(
-        """
-        ## 🚧 Coming Soon
+    # =====================================================
+    # MODULE KPIs
+    # =====================================================
 
-        This dashboard is currently under development for your role.
+    st.markdown("### 📊 Resumen General")
 
-        Please check back later.
-        """
-    )
+    modules = [
+        "Pase a Taller",
+        "Solicitud de Viáticos",
+        "Bono de Operadores",
+        "Autorización de Pases",
+        "Gestión de Viáticos",
+        "Consultar Reparaciones",
+        "Consulta de Pases",
+        "Consulta Bono Operador",
+        "Reporte iFuel",
+        "Lector PDF",
+        "GPS",
+        "Preparación de Reportes",
+        "Gestión de Unidades",
+        "Pruebas IA",
+    ]
+
+    POSTITS_PER_ROW = 4
+
+    for i in range(0, len(modules), POSTITS_PER_ROW):
+
+        cols = st.columns(POSTITS_PER_ROW)
+
+        for j, module in enumerate(modules[i:i + POSTITS_PER_ROW]):
+
+            with cols[j]:
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:#F7F7F7;
+                        border-radius:18px;
+                        padding:20px;
+                        min-height:145px;
+                        box-shadow:0 4px 12px rgba(0,0,0,.15);
+                        border-top:6px solid #BFA75F;
+                    ">
+
+                        <div style="
+                            color:#666;
+                            font-size:14px;
+                            margin-bottom:12px;
+                        ">
+                            Total registros para
+                        </div>
+
+                        <div style="
+                            color:#151F6D;
+                            font-size:20px;
+                            font-weight:700;
+                            line-height:1.25;
+                            min-height:52px;
+                        ">
+                            {module}
+                        </div>
+
+                        <div style="
+                            margin-top:18px;
+                            font-size:42px;
+                            font-weight:800;
+                            color:#151F6D;
+                        ">
+                            0
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        st.markdown("<br>", unsafe_allow_html=True)
