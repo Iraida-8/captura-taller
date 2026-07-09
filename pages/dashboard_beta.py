@@ -586,35 +586,6 @@ if role == "field_user":
 
 else:
 
-    st.markdown("""
-    <style>
-
-    /* KPI Cards */
-    [data-testid="stVerticalBlockBorderWrapper"]{
-        background:#F7F1D7;
-        border:2px solid #D8C78A !important;
-        border-radius:18px;
-        padding:8px;
-    }
-
-    /* Caption */
-    [data-testid="stVerticalBlockBorderWrapper"] .stCaption{
-        color:#5A5A5A !important;
-    }
-
-    /* Module title */
-    [data-testid="stVerticalBlockBorderWrapper"] h4{
-        color:#111111 !important;
-    }
-
-    /* KPI value */
-    [data-testid="stVerticalBlockBorderWrapper"] h1{
-        color:#111111 !important;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown("## 📊 Resumen General")
 
     modules = [
@@ -650,17 +621,48 @@ else:
 
             with col:
 
-                with st.container(border=True):
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:#F7F1D7;
+                        border:2px solid #D9C785;
+                        border-radius:18px;
+                        padding:22px;
+                        min-height:210px;
+                        box-shadow:0 4px 10px rgba(0,0,0,.15);
+                    ">
 
-                    st.caption("Total registros para")
+                        <div style="
+                            color:#666666;
+                            font-size:15px;
+                            font-weight:600;
+                        ">
+                            Total registros para
+                        </div>
 
-                    st.markdown(f"#### {module['name']}")
+                        <div style="
+                            color:#111111;
+                            font-size:28px;
+                            font-weight:700;
+                            margin-top:18px;
+                            line-height:1.25;
+                        ">
+                            {module["name"]}
+                        </div>
 
-                    st.write("")
+                        <div style="
+                            text-align:center;
+                            color:#111111;
+                            font-size:58px;
+                            font-weight:800;
+                            margin-top:42px;
+                        ">
+                            {module["total"]}
+                        </div>
 
-                    st.markdown(
-                        f"<h1 style='text-align:center; color:#111111;'>{module['total']}</h1>",
-                        unsafe_allow_html=True
-                    )
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
         st.write("")
