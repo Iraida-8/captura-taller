@@ -585,7 +585,6 @@ if role == "field_user":
         st.divider()
 
 else:
-    st.markdown("<br><br>", unsafe_allow_html=True)
 
     st.markdown("## 📊 Resumen General")
 
