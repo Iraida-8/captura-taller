@@ -22,7 +22,9 @@ access = user.get("access", [])
 if REQUIRED_RELEASE not in access:
     st.error("No tienes permisos para acceder a esta versión del sistema.")
     st.stop()
-    
+# -------------------------------
+# RELEASE GATE
+# -------------------------------    
 
 st.set_page_config(
     page_title="Dashboard - BETA",
