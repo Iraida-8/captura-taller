@@ -341,17 +341,23 @@ else:
         f"""
 <div class="hero-card">
 
-<div class="hero-top">
+<table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+    <tr>
+        <td style="color:#AAB2D5;
+                   font-size:20px;
+                   font-weight:600;
+                   text-align:left;">
+            Bienvenid@
+        </td>
 
-    <div class="hero-welcome">
-        Bienvenid@
-    </div>
-
-    <div class="hero-date">
-        {current_date}
-    </div>
-
-</div>
+        <td style="color:#AAB2D5;
+                   font-size:18px;
+                   font-weight:500;
+                   text-align:right;">
+            {current_date}
+        </td>
+    </tr>
+</table>
 
 <div class="hero-name">
 {display_name}
