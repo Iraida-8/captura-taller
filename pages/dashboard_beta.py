@@ -586,6 +586,35 @@ if role == "field_user":
 
 else:
 
+    st.markdown("""
+    <style>
+
+    /* KPI Cards */
+    [data-testid="stVerticalBlockBorderWrapper"]{
+        background:#F7F1D7;
+        border:2px solid #D8C78A !important;
+        border-radius:18px;
+        padding:8px;
+    }
+
+    /* Caption */
+    [data-testid="stVerticalBlockBorderWrapper"] .stCaption{
+        color:#5A5A5A !important;
+    }
+
+    /* Module title */
+    [data-testid="stVerticalBlockBorderWrapper"] h4{
+        color:#111111 !important;
+    }
+
+    /* KPI value */
+    [data-testid="stVerticalBlockBorderWrapper"] h1{
+        color:#111111 !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("## 📊 Resumen General")
 
     modules = [
@@ -630,7 +659,7 @@ else:
                     st.write("")
 
                     st.markdown(
-                        f"<h1 style='text-align:center;'>{module['total']}</h1>",
+                        f"<h1 style='text-align:center; color:#111111;'>{module['total']}</h1>",
                         unsafe_allow_html=True
                     )
 
