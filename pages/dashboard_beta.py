@@ -417,6 +417,32 @@ def render_button_grid(buttons, columns_per_row=2):
                 ):
                     st.switch_page(btn["page"])
 
+def render_dashboard_cards(buttons, columns_per_row=3):
+
+    visible_buttons = [
+        b for b in buttons
+        if b["access"] in access
+    ]
+
+    for i in range(0, len(visible_buttons), columns_per_row):
+
+        cols = st.columns(columns_per_row)
+
+        for col, btn in zip(cols, visible_buttons[i:i + columns_per_row]):
+
+            with col:
+
+                if st.button(
+                    btn["label"],
+                    key=f"dashboard_{btn['key']}",
+                    use_container_width=True,
+                ):
+                    st.switch_page(btn["page"])
+
+        st.markdown(
+            "<div style='height:6px'></div>",
+            unsafe_allow_html=True
+        )
 
 # =============================
 # FIELD USER VIEW
@@ -718,3 +744,177 @@ else:
             components.html(html, height=255)
 
     st.write("")
+
+    st.divider()
+
+    # =============================
+    # 1. GENERACION DE PASES Y SOLICITUDES
+    # =============================
+    section_generacion = [
+        "pase_taller",
+        "solicitud_viaticos",
+        "bonos_operador"
+    ]
+
+    if has_access(section_generacion):
+
+        st.subheader("🏭 Generación de Pases y Solicitudes")
+
+        render_dashboard_cards([
+            {
+                "access": "pase_taller",
+                "label": "🏭  Generar nuevo Pase a Taller",
+                "page": "pages/3_ Pase a Taller Beta.py",
+                "key": "btn_pase_taller"
+            },
+            {
+                "access": "solicitud_viaticos_D",
+                "label": "💳  Solicitud de Viáticos y Reembolsos",
+                "page": "pages/9_ Viaticos.py",
+                "key": "btn_viaticos"
+            },
+            {
+                "access": "bonos_operador",
+                "label": "💰  Bono de Operadores",
+                "page": "pages/13_ Formulario Bonos.py",
+                "key": "btn_bonos_operador"
+            }
+        ])
+
+        st.divider()
+
+    # =============================
+    # 2. GESTION DE ORDENES Y PASES
+    # =============================
+    section_gestion = [
+        "autorizacion",
+        "gestion_viaticos"
+    ]
+
+    if has_access(section_gestion):
+
+        st.subheader("📋 Gestión de Órdenes y Pases")
+
+        render_dashboard_cards([
+            {
+                "access": "autorizacion",
+                "label": "✅  Autorización y Gestión de Pases de Taller",
+                "page": "pages/4_ Autorizacion.py",
+                "key": "btn_autorizacion"
+            },
+            {
+                "access": "gestion_viaticos",
+                "label": "💼  Gestión de Viáticos",
+                "page": "pages/10_ Gestion Viaticos.py",
+                "key": "btn_gestion_viaticos"
+            }
+        ])
+
+        st.divider()
+
+    # =============================
+    # 3. CONSULTAS
+    # =============================
+    section_consultas = [
+        "consultar_reparacion",
+        "consulta_reportes",
+        "consulta_bonos_operador"
+    ]
+
+    if has_access(section_consultas):
+
+        st.subheader("🔍 Consultas de Reparación y Reportes")
+
+        render_dashboard_cards([
+            {
+                "access": "consultar_reparacion",
+                "label": "🔍  Consultar Historial de Reparación",
+                "page": "pages/1_ Consultar Reparacion.py",
+                "key": "btn_consultar_reparacion"
+            },
+            {
+                "access": "consulta_reportes",
+                "label": "📊  Consulta de Pases de Taller",
+                "page": "pages/6_ Consulta Reportes.py",
+                "key": "btn_consulta_reportes"
+            },
+            {
+                "access": "consulta_bonos_operador",
+                "label": "💰 Consultas y Reportes para Bono de Operadores",
+                "page": "pages/14_ Consulta Bonos.py",
+                "key": "btn_consulta_bonos_operador",
+            }
+        ])
+
+        st.divider()
+
+    # =============================
+    # 4. EXTRAS
+    # =============================
+    section_extras = [
+        "ifuel",
+        "lector_pdf",
+        "gps_tracking"
+    ]
+
+    if has_access(section_extras):
+
+        st.subheader("⚙️ Extras")
+
+        render_dashboard_cards([
+            {
+                "access": "ifuel",
+                "label": "⛽  Reporte iFuel",
+                "page": "pages/5_ Reporte iFuel.py",
+                "key": "btn_ifuel"
+            },
+            {
+                "access": "lector_pdf",
+                "label": "📄  Lector PDF",
+                "page": "pages/2_ Lector PDF.py",
+                "key": "btn_lector_pdf"
+            },
+            {
+                "access": "gps_tracking",
+                "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
+                "page": "pages/11_ api_pull.py",
+                "key": "btn_gps_tracking"
+            }
+        ])
+
+        st.divider()
+
+    # =============================
+    # 5. AUDIT
+    # =============================
+    section_audit = [
+        "prepara_reportes",
+        "gestion_unidades"
+    ]
+
+    if has_access(section_audit):
+
+        st.subheader("🧾 Audit")
+
+        render_dashboard_cards([
+            {
+                "access": "prepara_reportes",
+                "label": "🛠️  Preparación de Reportes",
+                "page": "pages/7_ Preparacion de Reportes.py",
+                "key": "btn_prepara_reportes"
+            },
+            {
+                "access": "gestion_unidades",
+                "label": "🚚  Gestión de Unidades",
+                "page": "pages/8_ Gestion de Unidades.py",
+                "key": "btn_gestion_unidades"
+            },
+            {
+                "access": "ai_testing",
+                "label": "🚚  Pruebas de IA",
+                "page": "pages/12_ AI_tests.py",
+                "key": "btn_ai_testing"
+            }
+        ])
+
+        st.divider()   
