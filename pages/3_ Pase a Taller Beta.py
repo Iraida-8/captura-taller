@@ -213,13 +213,6 @@ def cargar_unidades_supabase(empresa_codigo):
     return df
 
 # =================================
-# Top navigation
-# =================================
-if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard_beta.py")
-
-st.divider()
-# =================================
 # SUPABASE TABLE MAP
 # =================================
 TABLE_MAP = {
@@ -342,6 +335,14 @@ if "confirmar_guardado" not in st.session_state:
 
 if "forzar_guardado" not in st.session_state:
     st.session_state.forzar_guardado = False
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard_beta.py")
+
+st.divider()
 
 # =================================
 # Page title
