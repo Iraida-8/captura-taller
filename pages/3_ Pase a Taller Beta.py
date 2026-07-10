@@ -180,7 +180,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # =================================
 # SUPABASE CONFIGURATION
 # =================================
@@ -607,147 +606,9 @@ if role == "field_user":
         st.divider()
         st.markdown("###")
 
-        # =================================
-        # GUARDAR
-        # =================================
-        if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
-
-            # ==========================================
-            # HARD VALIDATIONS (LOCK)
-            # ==========================================
-            if no_unidad == "Selecciona Unidad":
-                st.error("Debes seleccionar un No. de Unidad válido antes de guardar.")
-                st.stop()
-
-            if no_unidad == "REMOLQUE EXTERNO" and not (no_unidad_externo and str(no_unidad_externo).strip()):
-                st.error("Debes capturar el No. de Unidad Externo.")
-                st.stop()
-
-            if aplica_cobro == "Sí" and not (responsable and str(responsable).strip()):
-                st.error("Debes capturar el Responsable cuando aplica cobro.")
-                st.stop()
-
-            if genero_multa and not (no_inspeccion and str(no_inspeccion).strip()):
-                st.error("Debes capturar el No. de Inspección cuando se genera multa.")
-                st.stop()
-
-            if genero_multa and not (reparacion_multa and str(reparacion_multa).strip()):
-                st.error("Debes capturar la Reparación que generó multa cuando se genera multa.")
-                st.stop()
-
-            # make sure flags exist
-            st.session_state.setdefault("forzar_guardado", False)
-            st.session_state.setdefault("confirmar_guardado", False)
-            st.session_state.setdefault("folio_duplicado", "")
-
-            # ==========================================
-            # DUPLICATE CHECK — LAST 24 HOURS
-            # ==========================================
-            unidad_a_buscar = (
-                no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
-            )
-
-            folio_existente = buscar_unidad_reciente(
-                empresa,
-                no_unidad,
-                no_unidad_externo
-            )
-
-            # If duplicate AND not forcing → ask confirmation
-            if folio_existente and not st.session_state.forzar_guardado:
-                st.session_state.folio_duplicado = folio_existente
-                st.session_state.confirmar_guardado = True
-                st.rerun()
-
-            # ==========================================
-            # NORMAL SAVE
-            # ==========================================
-            payload = {
-                "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-                "Fecha de Reporte": str(fecha_reporte),
-                "Tipo de Proveedor": tipo_proveedor,
-                "Estado": "Inicio / Nuevo",
-                "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
-                "Oste": oste,
-                "No. de Reporte": no_reporte,
-                "Empresa": empresa,
-                "Tipo de Reporte": tipo_reporte,
-                "Tipo de Unidad": tipo_unidad_operador,
-                "Operador": operador,
-                "No. de Unidad": no_unidad,
-                "Marca": marca_valor,
-                "Modelo": modelo_valor,
-                "Sucursal": sucursal_valor,
-                "Tipo de Caja": tipo_caja,
-                "No. de Unidad Externo": no_unidad_externo,
-                "Nombre Linea Externa": linea_externa,
-                "Cobro": str(aplica_cobro),
-                "Responsable": responsable,
-                "Descripcion Problema": descripcion_problema,
-                "Multa": "Sí" if genero_multa else "No",
-                "No. de Inspeccion": no_inspeccion,
-                "Reparacion Multa": reparacion_multa,
-            }
-
-            folio_real = append_pase_to_sheet(payload)
-
-            # important → clear force flag after using it
-            st.session_state.forzar_guardado = False
-
-            st.session_state.folio_generado = folio_real
-            st.session_state.mostrar_confirmacion = True
-            st.rerun()
-
-        # =================================
-        # DUPLICATE CONFIRMATION DIALOG
-        # =================================
-        if st.session_state.get("confirmar_guardado", False):
-
-            @st.dialog("Registro duplicado detectado")
-            def confirmar():
-
-                st.warning(
-                    f"Ya existe un pase para esta unidad en las últimas 24 horas.\n\n"
-                    f"**Folio existente:** {st.session_state.folio_duplicado}"
-                )
-
-                c1, c2 = st.columns(2)
-
-                # YES → CREATE NEW
-                with c1:
-                    if st.button("Sí, crear nuevo"):
-                        st.session_state.forzar_guardado = True
-                        st.session_state.confirmar_guardado = False
-                        st.rerun()
-
-                # NO → USE OLD
-                with c2:
-                    if st.button("No, usar existente"):
-                        st.session_state.folio_generado = st.session_state.folio_duplicado
-                        st.session_state.confirmar_guardado = False
-                        st.session_state.mostrar_confirmacion = True
-                        st.rerun()
-
-            confirmar()
-
-        # =================================
-        # SUCCESS DIALOG
-        # =================================
-        if st.session_state.mostrar_confirmacion:
-
-            @st.dialog("Pase guardado")
-            def confirmacion():
-                st.success("Pase guardado con éxito")
-                st.markdown(
-                    f"**No. de Folio:** `{st.session_state.folio_generado}`"
-                )
-
-                if st.button("Aceptar"):
-                    st.session_state.mostrar_confirmacion = False
-                    st.session_state.folio_generado = ""
-                    st.switch_page("pages/dashboard.py")
-
-            confirmacion()
+# =============================
+# ADMIN, MANAGER, REGULAR USER VIEW
+# =============================
 
 else:
 
@@ -761,3 +622,145 @@ else:
     st.info(
         "Esta vista para usuarios administrativos se encuentra en desarrollo."
     )
+
+# =================================
+# GUARDAR
+# =================================
+if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
+
+    # ==========================================
+    # HARD VALIDATIONS (LOCK)
+    # ==========================================
+    if no_unidad == "Selecciona Unidad":
+        st.error("Debes seleccionar un No. de Unidad válido antes de guardar.")
+        st.stop()
+
+    if no_unidad == "REMOLQUE EXTERNO" and not (no_unidad_externo and str(no_unidad_externo).strip()):
+        st.error("Debes capturar el No. de Unidad Externo.")
+        st.stop()
+
+    if aplica_cobro == "Sí" and not (responsable and str(responsable).strip()):
+        st.error("Debes capturar el Responsable cuando aplica cobro.")
+        st.stop()
+
+    if genero_multa and not (no_inspeccion and str(no_inspeccion).strip()):
+        st.error("Debes capturar el No. de Inspección cuando se genera multa.")
+        st.stop()
+
+    if genero_multa and not (reparacion_multa and str(reparacion_multa).strip()):
+        st.error("Debes capturar la Reparación que generó multa cuando se genera multa.")
+        st.stop()
+
+    # make sure flags exist
+    st.session_state.setdefault("forzar_guardado", False)
+    st.session_state.setdefault("confirmar_guardado", False)
+    st.session_state.setdefault("folio_duplicado", "")
+
+    # ==========================================
+    # DUPLICATE CHECK — LAST 24 HOURS
+    # ==========================================
+    unidad_a_buscar = (
+        no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
+    )
+
+    folio_existente = buscar_unidad_reciente(
+        empresa,
+        no_unidad,
+        no_unidad_externo
+    )
+
+    # If duplicate AND not forcing → ask confirmation
+    if folio_existente and not st.session_state.forzar_guardado:
+        st.session_state.folio_duplicado = folio_existente
+        st.session_state.confirmar_guardado = True
+        st.rerun()
+
+    # ==========================================
+    # NORMAL SAVE
+    # ==========================================
+    payload = {
+        "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        "Fecha de Reporte": str(fecha_reporte),
+        "Tipo de Proveedor": tipo_proveedor,
+        "Estado": "Inicio / Nuevo",
+        "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
+        "Oste": oste,
+        "No. de Reporte": no_reporte,
+        "Empresa": empresa,
+        "Tipo de Reporte": tipo_reporte,
+        "Tipo de Unidad": tipo_unidad_operador,
+        "Operador": operador,
+        "No. de Unidad": no_unidad,
+        "Marca": marca_valor,
+        "Modelo": modelo_valor,
+        "Sucursal": sucursal_valor,
+        "Tipo de Caja": tipo_caja,
+        "No. de Unidad Externo": no_unidad_externo,
+        "Nombre Linea Externa": linea_externa,
+        "Cobro": str(aplica_cobro),
+        "Responsable": responsable,
+        "Descripcion Problema": descripcion_problema,
+        "Multa": "Sí" if genero_multa else "No",
+        "No. de Inspeccion": no_inspeccion,
+        "Reparacion Multa": reparacion_multa,
+    }
+
+    folio_real = append_pase_to_sheet(payload)
+
+    # important → clear force flag after using it
+    st.session_state.forzar_guardado = False
+
+    st.session_state.folio_generado = folio_real
+    st.session_state.mostrar_confirmacion = True
+    st.rerun()
+
+# =================================
+# DUPLICATE CONFIRMATION DIALOG
+# =================================
+if st.session_state.get("confirmar_guardado", False):
+
+    @st.dialog("Registro duplicado detectado")
+    def confirmar():
+
+        st.warning(
+            f"Ya existe un pase para esta unidad en las últimas 24 horas.\n\n"
+            f"**Folio existente:** {st.session_state.folio_duplicado}"
+        )
+
+        c1, c2 = st.columns(2)
+
+        # YES → CREATE NEW
+        with c1:
+            if st.button("Sí, crear nuevo"):
+                st.session_state.forzar_guardado = True
+                st.session_state.confirmar_guardado = False
+                st.rerun()
+
+        # NO → USE OLD
+        with c2:
+            if st.button("No, usar existente"):
+                st.session_state.folio_generado = st.session_state.folio_duplicado
+                st.session_state.confirmar_guardado = False
+                st.session_state.mostrar_confirmacion = True
+                st.rerun()
+
+    confirmar()
+
+# =================================
+# SUCCESS DIALOG
+# =================================
+if st.session_state.mostrar_confirmacion:
+
+    @st.dialog("Pase guardado")
+    def confirmacion():
+        st.success("Pase guardado con éxito")
+        st.markdown(
+            f"**No. de Folio:** `{st.session_state.folio_generado}`"
+        )
+
+        if st.button("Aceptar"):
+            st.session_state.mostrar_confirmacion = False
+            st.session_state.folio_generado = ""
+            st.switch_page("pages/dashboard.py")
+
+    confirmacion()
