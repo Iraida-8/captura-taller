@@ -219,7 +219,6 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard_beta.py")
 
 st.divider()
-
 # =================================
 # SUPABASE TABLE MAP
 # =================================
