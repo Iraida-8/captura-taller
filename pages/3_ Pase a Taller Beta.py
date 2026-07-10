@@ -179,13 +179,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# =================================
-# Top navigation
-# =================================
-if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard_beta.py")
-
-st.divider()
 
 # =================================
 # SUPABASE CONFIGURATION
@@ -218,6 +211,14 @@ def cargar_unidades_supabase(empresa_codigo):
     df["tipo_unidad"] = df["tipo_unidad"].astype(str).str.upper().str.strip()
 
     return df
+
+# =================================
+# Top navigation
+# =================================
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page("pages/dashboard_beta.py")
+
+st.divider()
 
 # =================================
 # SUPABASE TABLE MAP

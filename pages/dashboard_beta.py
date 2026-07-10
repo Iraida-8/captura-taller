@@ -18,6 +18,7 @@ REQUIRED_RELEASE = "beta"
 
 user = st.session_state.user
 access = user.get("access", [])
+role = (user.get("role") or "").lower()
 
 if REQUIRED_RELEASE not in access:
     st.error("No tienes permisos para acceder a esta versión del sistema.")
@@ -133,13 +134,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# -------------------------------
-# USER / ACCESS
-# -------------------------------
-user = st.session_state.user
-access = user.get("access", [])
-role = (user.get("role") or "").lower()
 
 # -------------------------------
 # CHANGELOG
