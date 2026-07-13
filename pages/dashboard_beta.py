@@ -395,13 +395,13 @@ if role == "field_user":
             {
                 "access": "solicitud_viaticos_D",
                 "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": "pages/9_ Viaticos.py",
+                "page": "pages/9_ Viaticos Beta.py",
                 "key": "btn_viaticos"
             },
             {
                 "access": "bonos_operador",
                 "label": "💰  Bono de Operadores",
-                "page": "pages/13_ Formulario Bonos.py",
+                "page": "pages/13_ Formulario Bonos Beta.py",
                 "key": "btn_bonos_operador"
             }
         ])
@@ -424,13 +424,13 @@ if role == "field_user":
             {
                 "access": "autorizacion",
                 "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": "pages/4_ Autorizacion.py",
+                "page": "pages/4_ Autorizacion Beta.py",
                 "key": "btn_autorizacion"
             },
             {
                 "access": "gestion_viaticos",
                 "label": "💼  Gestión de Viáticos",
-                "page": "pages/10_ Gestion Viaticos.py",
+                "page": "pages/10_ Gestion Viaticos Beta.py",
                 "key": "btn_gestion_viaticos"
             }
         ])
@@ -454,19 +454,19 @@ if role == "field_user":
             {
                 "access": "consultar_reparacion",
                 "label": "🔍  Consultar Historial de Reparación",
-                "page": "pages/1_ Consultar Reparacion.py",
+                "page": "pages/1_ Consultar Reparacion Beta.py",
                 "key": "btn_consultar_reparacion"
             },
             {
                 "access": "consulta_reportes",
                 "label": "📊  Consulta de Pases de Taller",
-                "page": "pages/6_ Consulta Reportes.py",
+                "page": "pages/6_ Consulta Reportes Beta.py",
                 "key": "btn_consulta_reportes"
             },
             {
                 "access": "consulta_bonos_operador",
                 "label": "💰 Consulta Bonos de Operadores",
-                "page": "pages/14_ Consulta Bonos.py",
+                "page": "pages/14_ Consulta Bonos Beta.py",
                 "key": "btn_consulta_bonos_operador",
             }
         ])
@@ -490,19 +490,19 @@ if role == "field_user":
             {
                 "access": "ifuel",
                 "label": "⛽  Reporte iFuel",
-                "page": "pages/5_ Reporte iFuel.py",
+                "page": "pages/5_ Reporte iFuel Beta.py",
                 "key": "btn_ifuel"
             },
             {
                 "access": "lector_pdf",
                 "label": "📄  Lector PDF",
-                "page": "pages/2_ Lector PDF.py",
+                "page": "pages/2_ Lector PDF Beta.py",
                 "key": "btn_lector_pdf"
             },
             {
                 "access": "gps_tracking",
                 "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-                "page": "pages/11_ api_pull.py",
+                "page": "pages/11_ api_pull Beta.py",
                 "key": "btn_gps_tracking"
             }
         ])
@@ -525,19 +525,19 @@ if role == "field_user":
             {
                 "access": "prepara_reportes",
                 "label": "🛠️  Preparación de Reportes",
-                "page": "pages/7_ Preparacion de Reportes.py",
+                "page": "pages/7_ Preparacion de Reportes Beta.py",
                 "key": "btn_prepara_reportes"
             },
             {
                 "access": "gestion_unidades",
                 "label": "🚚  Gestión de Unidades",
-                "page": "pages/8_ Gestion de Unidades.py",
+                "page": "pages/8_ Gestion de Unidades Beta.py",
                 "key": "btn_gestion_unidades"
             },
             {
                 "access": "ai_testing",
                 "label": "🚚  Pruebas de IA",
-                "page": "pages/12_ AI_tests.py",
+                "page": "pages/12_ AI_tests Beta.py",
                 "key": "btn_ai_testing"
             }
         ])
@@ -702,13 +702,13 @@ else:
             {
                 "access": "solicitud_viaticos_D",
                 "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": "pages/9_ Viaticos.py",
+                "page": "pages/9_ Viaticos Beta.py",
                 "key": "btn_viaticos"
             },
             {
                 "access": "bonos_operador",
                 "label": "💰  Bono de Operadores",
-                "page": "pages/13_ Formulario Bonos.py",
+                "page": "pages/13_ Formulario Bonos Beta.py",
                 "key": "btn_bonos_operador"
             }
         ])
@@ -731,13 +731,13 @@ else:
             {
                 "access": "autorizacion",
                 "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": "pages/4_ Autorizacion.py",
+                "page": "pages/4_ Autorizacion Beta.py",
                 "key": "btn_autorizacion"
             },
             {
                 "access": "gestion_viaticos",
                 "label": "💼  Gestión de Viáticos",
-                "page": "pages/10_ Gestion Viaticos.py",
+                "page": "pages/10_ Gestion Viaticos Beta.py",
                 "key": "btn_gestion_viaticos"
             }
         ])
@@ -761,19 +761,19 @@ else:
             {
                 "access": "consultar_reparacion",
                 "label": "🔍  Consultar Historial de Reparación",
-                "page": "pages/1_ Consultar Reparacion.py",
+                "page": "pages/1_ Consultar Reparacion Beta.py",
                 "key": "btn_consultar_reparacion"
             },
             {
                 "access": "consulta_reportes",
                 "label": "📊  Consulta de Pases de Taller",
-                "page": "pages/6_ Consulta Reportes.py",
+                "page": "pages/6_ Consulta Reportes Beta.py",
                 "key": "btn_consulta_reportes"
             },
             {
                 "access": "consulta_bonos_operador",
                 "label": "💰 Consulta Bonos de Operadores",
-                "page": "pages/14_ Consulta Bonos.py",
+                "page": "pages/14_ Consulta Bonos Beta.py",
                 "key": "btn_consulta_bonos_operador",
             }
         ])
@@ -797,19 +797,19 @@ else:
             {
                 "access": "ifuel",
                 "label": "⛽  Reporte iFuel",
-                "page": "pages/5_ Reporte iFuel.py",
+                "page": "pages/5_ Reporte iFuel Beta.py",
                 "key": "btn_ifuel"
             },
             {
                 "access": "lector_pdf",
                 "label": "📄  Lector PDF",
-                "page": "pages/2_ Lector PDF.py",
+                "page": "pages/2_ Lector PDF Beta.py",
                 "key": "btn_lector_pdf"
             },
             {
                 "access": "gps_tracking",
                 "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-                "page": "pages/11_ api_pull.py",
+                "page": "pages/11_ api_pull Beta.py",
                 "key": "btn_gps_tracking"
             }
         ])
@@ -832,19 +832,19 @@ else:
             {
                 "access": "prepara_reportes",
                 "label": "🛠️  Preparación de Reportes",
-                "page": "pages/7_ Preparacion de Reportes.py",
+                "page": "pages/7_ Preparacion de Reportes Beta.py",
                 "key": "btn_prepara_reportes"
             },
             {
                 "access": "gestion_unidades",
                 "label": "🚚  Gestión de Unidades",
-                "page": "pages/8_ Gestion de Unidades.py",
+                "page": "pages/8_ Gestion de Unidades Beta.py",
                 "key": "btn_gestion_unidades"
             },
             {
                 "access": "ai_testing",
                 "label": "🚚  Pruebas de IA",
-                "page": "pages/12_ AI_tests.py",
+                "page": "pages/12_ AI_tests Beta.py",
                 "key": "btn_ai_testing"
             }
         ])
