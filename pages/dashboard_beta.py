@@ -245,7 +245,7 @@ else:
                 width:100%;
                 height:48px;
 
-                background:#BFA75F;
+                background:#F4F6FB;
                 color:white !important;
 
                 border:none;
