@@ -735,26 +735,36 @@ else:
                 disabled=no_unidad != "REMOLQUE EXTERNO"
             )
 
-        aplica_cobro = st.radio(
-            "¿Aplica Cobro?",
-            ["No", "Sí"],
-            horizontal=True,
-            index=0
+        c1, c2 = st.columns(2)
+
+        with c1:
+            aplica_cobro = st.radio(
+                "¿Aplica Cobro?",
+                ["No", "Sí"],
+                horizontal=True,
+                index=0
+            )
+
+        with c2:
+            responsable = st.text_input(
+                "Responsable",
+                disabled=aplica_cobro != "Sí"
+            )
+
+        descripcion_problema = st.text_area(
+            "Descripción del problema"
         )
 
-        responsable = st.text_input(
-            "Responsable",
-            disabled=aplica_cobro != "Sí"
-        )
+        c1, c2 = st.columns(2)
 
-        descripcion_problema = st.text_area("Descripción del problema")
+        with c1:
+            genero_multa = st.checkbox("¿Generó multa?")
 
-        genero_multa = st.checkbox("¿Generó multa?")
-
-        no_inspeccion = st.text_input(
-            "No. de Inspección",
-            disabled=not genero_multa
-        )
+        with c2:
+            no_inspeccion = st.text_input(
+                "No. de Inspección",
+                disabled=not genero_multa
+            )
 
         reparacion_multa = st.text_area(
             "Reparación que generó multa",
