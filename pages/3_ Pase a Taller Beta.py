@@ -222,24 +222,31 @@ if role == "field_user":
     st.divider()
     st.subheader("Datos del Reporte")
 
-    fecha_reporte = st.date_input(
-        "Fecha de Reporte",
-        value=date.today()
-    )
+    # Hidden - always today's date
+    fecha_reporte = date.today()
 
-    tp1, tp2 = st.columns(2)
+    tp1, tp2, tp3 = st.columns(3)
+
     with tp1:
         tipo_proveedor = st.selectbox(
             "Tipo de Proveedor",
             ["----", "Interno", "Externo"]
         )
+
     with tp2:
-        estado = st.selectbox(
-            "Estado",
-            ["Inicio / Nuevo"],
-            index=0,
-            disabled=True
+        proveedor = st.selectbox(
+            "Proveedor",
+            ["Selecciona proveedor"]
         )
+
+    with tp3:
+        razones = st.selectbox(
+            "Razones",
+            ["Selecciona razón"]
+        )
+
+    # Hidden value
+    estado = "Inicio / Nuevo"
 
     st.text_input(
         "Capturó",
@@ -253,19 +260,17 @@ if role == "field_user":
         else "Folio generado al guardar"
     )
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        oste = st.text_input("OSTE", value="", disabled=True)
-    with c2:
-        no_reporte = st.text_input(
-            "No. de Reporte"
-        )
-    with c3:
-        st.text_input(
-            "No. de Folio",
-            value=folio_display,
-            disabled=True
-        )
+    # Hidden values
+    oste = ""
+    folio_display = (
+        st.session_state.folio_generado
+        if st.session_state.folio_generado
+        else "Folio generado al guardar"
+    )
+
+    no_reporte = st.text_input(
+        "No. de Reporte"
+    )
 
     # =================================
     # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
@@ -803,6 +808,8 @@ if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
         "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "Fecha de Reporte": str(fecha_reporte),
         "Tipo de Proveedor": tipo_proveedor,
+        "Proveedor": proveedor,
+        "Razones": razones,
         "Estado": "Inicio / Nuevo",
         "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
         "Oste": oste,
