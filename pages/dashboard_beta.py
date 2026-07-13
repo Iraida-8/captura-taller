@@ -36,7 +36,6 @@ st.set_page_config(
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
-
 load_css()
 
 @st.cache_resource
