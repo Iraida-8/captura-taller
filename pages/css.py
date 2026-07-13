@@ -165,9 +165,18 @@ def load_css():
         }
 
         /* Text */
-        input,
-        textarea{
+        /* Enabled text */
+        input:not(:disabled),
+        textarea:not(:disabled){
             color:white !important;
+        }
+
+        /* Disabled text */
+        input:disabled,
+        textarea:disabled{
+            color:#333333 !important;
+            -webkit-text-fill-color:#333333 !important;
+            opacity:1 !important;
         }
 
         /* Placeholder */
@@ -177,8 +186,15 @@ def load_css():
         }
 
         /* Selectbox text */
-        div[data-baseweb="select"] *{
+        /* Enabled selectbox text */
+        div[data-baseweb="select"] div[role="combobox"]{
             color:white !important;
+        }
+
+        /* Disabled selectbox text */
+        div[data-baseweb="select"] div[aria-disabled="true"]{
+            color:#333333 !important;
+            -webkit-text-fill-color:#333333 !important;
         }
 
         /* Radio */
