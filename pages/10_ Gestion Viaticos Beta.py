@@ -108,10 +108,6 @@ EMAILS_EMPRESA = {
 # GET EMAIL FROM PROFILE
 # =================================
 
-# =================================
-# GET EMAIL FROM PROFILE
-# =================================
-
 def obtener_email_usuario(nombre_completo):
 
     try:
@@ -681,21 +677,7 @@ concluidos = len(
 # =================================
 # HEADER
 # =================================
-st.markdown(
-    """
-    <div style="
-        font-size:48px;
-        font-weight:800;
-        color:white;
-        margin-bottom:10px;
-    ">
-        ⚙ Gestión de Viáticos
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
+st.title("⚙ Gestión de Viáticos")
 
 # =================================
 # KPI CARDS
