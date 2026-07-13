@@ -40,6 +40,14 @@ def load_css():
         }
 
         /* =========================
+        CONTAINER BORDERS
+        ========================= */
+
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            border: 1px solid #000000 !important;
+        }
+
+        /* =========================
            DIVIDERS
            ========================= */
 
