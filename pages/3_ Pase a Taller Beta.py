@@ -292,14 +292,31 @@ if role == "field_user":
             else "Pase de Taller Externo"
         )
 
-        empresa = st.selectbox(
-            "Empresa",
-            ["Selecciona Empresa"] + EMPRESAS
-        )
+        # =================================
+        # EMPRESA SEGÚN ACCESO DEL USUARIO
+        # =================================
 
-        if empresa == "Selecciona Empresa":
-            st.info("Selecciona una empresa para continuar con la captura del pase.")
+        empresas_usuario = [
+            empresa
+            for permiso, empresa in ACCESS_EMPRESA_MAP.items()
+            if permiso in access
+        ]
+
+        if not empresas_usuario:
+            st.error("Tu usuario no tiene ninguna empresa asignada.")
             st.stop()
+
+        elif len(empresas_usuario) == 1:
+
+            # Auto-select company and don't show the field
+            empresa = empresas_usuario[0]
+
+        else:
+
+            empresa = st.selectbox(
+                "Empresa",
+                empresas_usuario,
+            )
 
         empresa_codigo = EMPRESA_CODIGOS.get(empresa)
         unidades_df = cargar_unidades_supabase(empresa_codigo)
@@ -331,7 +348,7 @@ if role == "field_user":
 
         operador = st.text_input("Operador")
 
-        c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 2, 3])
+        c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
 
         if tipo_unidad_operador == "Tractores":
 
@@ -408,15 +425,6 @@ if role == "field_user":
                 tipo_unidad_valor = fila.get("tipo_unidad", "")
 
         with c2:
-            st.text_input("Marca", value=marca_valor, disabled=True)
-
-        with c3:
-            st.text_input("Modelo", value=modelo_valor, disabled=True)
-
-        with c4:
-            st.text_input("Sucursal", value=sucursal_valor, disabled=True)
-
-        with c5:
 
             opciones_caja = ["Selecciona Caja", "Caja Seca", "Caja Refrigerada"]
 
@@ -439,38 +447,48 @@ if role == "field_user":
                 disabled=tipo_unidad_operador != "Remolques"
             )
 
-        e1, e2 = st.columns(2)
-        with e1:
+        with c3:
             no_unidad_externo = st.text_input(
                 "No. de Unidad Externo",
                 disabled=no_unidad != "REMOLQUE EXTERNO"
             )
-        with e2:
+
+        with c4:
             linea_externa = st.text_input(
                 "Nombre Línea Externa",
                 disabled=no_unidad != "REMOLQUE EXTERNO"
             )
 
-        aplica_cobro = st.radio(
-            "¿Aplica Cobro?",
-            ["No", "Sí"],
-            horizontal=True,
-            index=0
+        c1, c2 = st.columns([1, 3])
+
+        with c1:
+            aplica_cobro = st.radio(
+                "¿Aplica Cobro?",
+                ["No", "Sí"],
+                horizontal=True,
+                index=0
+            )
+
+        with c2:
+            responsable = st.text_input(
+                "Responsable",
+                disabled=aplica_cobro != "Sí"
+            )
+
+        descripcion_problema = st.text_area(
+            "Descripción del problema"
         )
 
-        responsable = st.text_input(
-            "Responsable",
-            disabled=aplica_cobro != "Sí"
-        )
+        c1, c2 = st.columns([1, 3])
 
-        descripcion_problema = st.text_area("Descripción del problema")
+        with c1:
+            genero_multa = st.checkbox("¿Generó multa?")
 
-        genero_multa = st.checkbox("¿Generó multa?")
-
-        no_inspeccion = st.text_input(
-            "No. de Inspección",
-            disabled=not genero_multa
-        )
+        with c2:
+            no_inspeccion = st.text_input(
+                "No. de Inspección",
+                disabled=not genero_multa
+            )
 
         reparacion_multa = st.text_area(
             "Reparación que generó multa",
@@ -486,7 +504,6 @@ if role == "field_user":
 # =============================
 
 else:
-
     # =================================
     # Top navigation
     # =================================
