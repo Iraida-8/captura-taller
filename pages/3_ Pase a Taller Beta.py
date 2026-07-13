@@ -95,6 +95,14 @@ EMPRESA_CODIGOS = {
 
 EMPRESAS = list(TABLE_MAP.keys())
 
+ACCESS_EMPRESA_MAP = {
+    "igloo": "IGLOO TRANSPORT",
+    "lincoln": "LINCOLN FREIGHT",
+    "picus": "PICUS",
+    "setfreight": "SET FREIGHT INTERNATIONAL",
+    "setlogis": "SET LOGIS PLUS",
+}
+
 # =================================
 # Check duplicate unit in last 24h (SUPABASE)
 # =================================
@@ -560,14 +568,36 @@ else:
             else "Pase de Taller Externo"
         )
 
-        empresa = st.selectbox(
-            "Empresa",
-            ["Selecciona Empresa"] + EMPRESAS
-        )
+        # =================================
+        # EMPRESA SEGÚN ACCESO DEL USUARIO
+        # =================================
 
-        if empresa == "Selecciona Empresa":
-            st.info("Selecciona una empresa para continuar con la captura del pase.")
+        empresas_usuario = [
+            empresa
+            for permiso, empresa in ACCESS_EMPRESA_MAP.items()
+            if permiso in access
+        ]
+
+        if not empresas_usuario:
+            st.error("Tu usuario no tiene ninguna empresa asignada.")
             st.stop()
+
+        elif len(empresas_usuario) == 1:
+
+            empresa = empresas_usuario[0]
+
+            st.text_input(
+                "Empresa",
+                value=empresa,
+                disabled=True,
+            )
+
+        else:
+
+            empresa = st.selectbox(
+                "Empresa",
+                empresas_usuario,
+            )
 
         empresa_codigo = EMPRESA_CODIGOS.get(empresa)
         unidades_df = cargar_unidades_supabase(empresa_codigo)
