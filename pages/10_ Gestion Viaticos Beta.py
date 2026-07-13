@@ -1864,7 +1864,8 @@ else:
                     st.markdown("---")
 
                     st.markdown(
-                        "## ✈️ Motivo del Viaje"
+                        "<h2 style='color:white;'>✈️ Motivo del Viaje</h2>",
+                        unsafe_allow_html=True
                     )
 
                     st.markdown(
@@ -1876,6 +1877,7 @@ else:
                             border:1px solid rgba(191,167,95,0.25);
                             margin-bottom:20px;
                             white-space:pre-wrap;
+                            color:white;
                         '>
                             {solicitud_row.get('motivo_viaje', '')}
                         </div>
@@ -1888,7 +1890,8 @@ else:
                     # =================================
 
                     st.markdown(
-                        "## 📝 Observaciones Solicitud"
+                        "<h2 style='color:white;'>📝 Observaciones Solicitud</h2>",
+                        unsafe_allow_html=True
                     )
 
                     st.markdown(
@@ -1900,6 +1903,7 @@ else:
                             border:1px solid rgba(191,167,95,0.25);
                             margin-bottom:20px;
                             white-space:pre-wrap;
+                            color:white;
                         '>
                             {solicitud_row.get('observaciones', '')}
                         </div>
@@ -1908,7 +1912,8 @@ else:
                     )
 
                     st.markdown(
-                        "## 👤 Empleado que metió comprobación"
+                        "<h2 style='color:white;'>👤 Empleado que metió comprobación</h2>",
+                        unsafe_allow_html=True
                     )
 
                     st.markdown(
@@ -1922,6 +1927,7 @@ else:
                             white-space:pre-wrap;
                             font-size:18px;
                             font-weight:600;
+                            color:white;
                         '>
                             {comprobacion_row.get('nombre_empleado_solicita', '')}
                         </div>
@@ -1930,7 +1936,8 @@ else:
                     )
 
                     st.markdown(
-                        "## 📝 Observaciones Comprobación"
+                        "<h2 style='color:white;'>📝 Observaciones Comprobación</h2>",
+                        unsafe_allow_html=True
                     )
 
                     st.markdown(
@@ -1942,6 +1949,7 @@ else:
                             border:1px solid rgba(191,167,95,0.25);
                             margin-bottom:20px;
                             white-space:pre-wrap;
+                            color:white;
                         '>
                             {comprobacion_row.get('observaciones', '')}
                         </div>
