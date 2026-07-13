@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from auth import require_login, require_access
 import resend # type: ignore
 from io import BytesIO
-from pages.css import load_css
 
 # =================================
 # Page configuration
@@ -15,11 +14,6 @@ st.set_page_config(
     page_title="Gestión de Viáticos",
     layout="wide"
 )
-
-# -------------------------------
-# PAGE STYLE
-# -------------------------------
-load_css()
 
 # =================================
 # Security gates
@@ -3704,7 +3698,7 @@ st.markdown(
 
     /* App background */
     .stApp {
-        background-color: #151F6D;
+        background-color: #FFFFFF;
     }
 
     /* Give page breathing room */
@@ -3714,17 +3708,19 @@ st.markdown(
     }
 
     /* =========================
-       HEADER STYLE
-       ========================= */
-    h1 {
-        font-size: 1.9rem;
-        margin-bottom: 0.2rem;
-        color: #FFFFFF;
+        HEADER STYLE
+        ========================= */
+
+    h1{
+        font-size:1.9rem;
+        margin-bottom:.2rem;
+        color:#151F6D;
     }
 
-    h2, h3 {
-        margin-top: 0.5rem;
-        color: #BFA75F;
+    h2,
+    h3{
+        margin-top:.5rem;
+        color:#BFA75F;
     }
 
     /* =========================
