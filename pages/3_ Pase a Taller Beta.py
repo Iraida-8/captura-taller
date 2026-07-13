@@ -735,7 +735,7 @@ else:
                 disabled=no_unidad != "REMOLQUE EXTERNO"
             )
 
-        c1, c2 = st.columns(2)
+        c1, c2 = st.columns([1, 3])
 
         with c1:
             aplica_cobro = st.radio(
@@ -755,7 +755,7 @@ else:
             "Descripción del problema"
         )
 
-        c1, c2 = st.columns(2)
+        c1, c2 = st.columns([1, 3])
 
         with c1:
             genero_multa = st.checkbox("¿Generó multa?")
