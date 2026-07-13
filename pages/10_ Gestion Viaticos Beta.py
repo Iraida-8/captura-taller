@@ -687,19 +687,7 @@ concluidos = len(
 # =================================
 # HEADER
 # =================================
-st.markdown(
-    """
-    <div style="
-        font-size:48px;
-        font-weight:800;
-        color:white;
-        margin-bottom:10px;
-    ">
-        ⚙ Gestión de Viáticos
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.title("⚙ Gestión de Viáticos")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
