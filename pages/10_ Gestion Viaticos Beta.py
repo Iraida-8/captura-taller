@@ -1214,50 +1214,20 @@ for idx, row in df_pagina.iterrows():
         # FOLIO
         with col2:
 
-            st.markdown(
-                f"""
-                <div style='font-size:13px;color:#BFA75F;'>
-                    Folio
-                </div>
-
-                <div style='font-size:18px;font-weight:700;'>
-                    {row.get("folio_solicitud", "")}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.caption("Folio")
+            st.write(f"**{row.get('folio_solicitud', '')}**")
 
         # EMPLEADO
         with col3:
 
-            st.markdown(
-                f"""
-                <div style='font-size:13px;color:#BFA75F;'>
-                    Empleado
-                </div>
-
-                <div style='font-size:18px;font-weight:700;'>
-                    {row.get("nombre_empleado_solicita", "")}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.caption("Empleado")
+            st.write(f"**{row.get('nombre_empleado_solicita', '')}**")
 
         # FECHA
         with col4:
 
-            st.markdown(
-                f"""
-                <div style='font-size:13px;color:#BFA75F;'>
-                    Fecha Solicitud
-                </div>
-
-                <div style='font-size:18px;font-weight:700;'>
-                    {row.get("fecha_solicitud", "")}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.caption("Fecha Solicitud")
+            st.write(f"**{row.get('fecha_solicitud', '')}**")
 
         # TOTAL
         with col5:
@@ -1266,21 +1236,11 @@ for idx, row in df_pagina.iterrows():
 
             try:
                 total_value = float(total_value)
-            except:
+            except Exception:
                 total_value = 0
 
-            st.markdown(
-                f"""
-                <div style='font-size:13px;color:#BFA75F;'>
-                    Total
-                </div>
-
-                <div style='font-size:18px;font-weight:700;'>
-                    ${total_value:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.caption("Total")
+            st.write(f"**${total_value:,.2f}**")
 
         # APROBAR
         with col6:
