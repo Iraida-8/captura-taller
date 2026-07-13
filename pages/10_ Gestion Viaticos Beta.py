@@ -3332,6 +3332,9 @@ else:
                     # =================================
                     # MONTO SOLICITADO
                     # =================================
+                    # =================================
+                    # MONTO SOLICITADO
+                    # =================================
 
                     st.markdown("---")
 
@@ -3358,7 +3361,7 @@ else:
                         except:
 
                             pass
-                    #here
+
                     st.markdown(
                         f"""
                         <div style='
@@ -3375,8 +3378,13 @@ else:
                         unsafe_allow_html=True
                     )
 
+                    st.markdown(
+                        "<h3 style='color:white;'>👁 Ver Detalles Solicitud</h3>",
+                        unsafe_allow_html=True
+                    )
+
                     with st.expander(
-                        "👁 Ver Detalles Solicitud",
+                        "",
                         expanded=False
                     ):
 
