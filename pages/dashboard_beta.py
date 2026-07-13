@@ -54,7 +54,7 @@ st.markdown(
 
     /* App background */
     .stApp {
-        background-color: #151F6D;
+        background-color: #FFFFFF;
     }
 
     /* Give page breathing room */
@@ -69,7 +69,7 @@ st.markdown(
     h1 {
         font-size: 1.9rem;
         margin-bottom: 0.2rem;
-        color: #FFFFFF;
+        color: #151F6D;
     }
 
     h2, h3 {
@@ -78,33 +78,36 @@ st.markdown(
     }
 
     /* =========================
-       BIG MODULE BUTTONS
-       ========================= */
+    MODULE BUTTONS
+    ========================= */
+
     div.stButton > button {
         height: 95px;
         border-radius: 16px;
         padding: 1.2rem;
+        background: #151F6D !important;
+        color: white !important;
+        border: none;
+        box-shadow: 0 4px 14px rgba(0,0,0,.12);
+        transition: all .2s ease;
     }
 
     div.stButton > button p,
     div.stButton > button span {
+        color: white !important;
         font-size: 1.4rem !important;
         font-weight: 700 !important;
     }
 
-        background-color: #1B267A;
-        color: #FFFFFF;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-        transition: all 0.2s ease-in-out;
+    div.stButton > button:hover {
+        background: #BFA75F !important;
+        color: white !important;
+        transform: translateY(-2px);
     }
 
-    /* Hover */
-    div.stButton > button:hover {
-        transform: translateY(-2px);
-        background-color: #24338C;
-        border-color: #BFA75F;
-        color: #BFA75F;
+    div.stButton > button:hover p,
+    div.stButton > button:hover span {
+        color: white !important;
     }
 
     /* =========================
@@ -128,7 +131,7 @@ st.markdown(
 
     /* Text */
     p, label, span {
-        color: #F5F5F5;
+        color: #222222;
     }
     </style>
     """,
