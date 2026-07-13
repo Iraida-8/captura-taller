@@ -1521,18 +1521,7 @@ with p3:
 # COMPROBACIONES POR VERIFICAR
 # =================================
 
-st.markdown(
-    """
-    <h2 style='margin-bottom:20px;'>
-        🔎 Comprobaciones por Verificar
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
-
-# =================================
-# BASE DATA
-# =================================
+st.header("🔎 Comprobaciones por Verificar")
 
 df_verificar = df_comprobaciones[
     df_comprobaciones["estatus"] == "Verificar"
@@ -2429,16 +2418,7 @@ with p3:
 # SOLICITUDES FINALIZADAS
 # =================================
 
-st.markdown("<br><br>", unsafe_allow_html=True)
-
-st.markdown(
-    """
-    <h2 style='margin-bottom:20px;'>
-        🏁 Solicitudes Finalizadas
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
+st.header("🏁 Solicitudes Finalizadas")
 
 # =================================
 # BASE DATA
