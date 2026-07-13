@@ -281,6 +281,45 @@ def load_css():
             color:#BFA75F !important;
         }
 
+        /* Streamlit markdown inside dialogs */
+        div[role="dialog"] .stMarkdown,
+        div[role="dialog"] .stMarkdown p,
+        div[role="dialog"] .stMarkdown div,
+        div[role="dialog"] .stMarkdown span{
+            color:white !important;
+        }
+
+        /* st.write() output */
+        div[role="dialog"] [data-testid="stMarkdownContainer"]{
+            color:white !important;
+        }
+
+        div[role="dialog"] [data-testid="stMarkdownContainer"] p,
+        div[role="dialog"] [data-testid="stMarkdownContainer"] span,
+        div[role="dialog"] [data-testid="stMarkdownContainer"] div{
+            color:white !important;
+        }
+
+        /* Metric widget */
+        div[role="dialog"] [data-testid="stMetricLabel"]{
+            color:#BFA75F !important;
+        }
+
+        div[role="dialog"] [data-testid="stMetricValue"]{
+            color:white !important;
+        }
+
+        /* Reusable information box */
+        .info-box{
+            background:#1B267A;
+            border:1px solid rgba(191,167,95,.25);
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:20px;
+            white-space:pre-wrap;
+            color:white;
+        }
+
         /* =========================
         KPI CARDS
         ========================= */
