@@ -841,9 +841,13 @@ df_pagina = df_pendientes.iloc[inicio:fin]
 # MODAL
 # =================================
 @st.dialog("Detalle de Solicitud")
+
 def modal_ver_solicitud(row):
 
-    st.markdown("## 📋 Información General")
+    st.markdown(
+        "<h2 style='color:white;'>📋 Información General</h2>",
+        unsafe_allow_html=True
+    )
 
     col1, col2 = st.columns(2)
 
