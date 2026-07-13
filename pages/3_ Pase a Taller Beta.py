@@ -752,7 +752,16 @@ else:
 # =================================
 # GUARDAR
 # =================================
-if st.button("💾 Guardar Pase", type="primary", use_container_width=True):
+
+mostrar_guardar = (
+    tipo_proveedor in ["Interno", "Externo"]
+)
+
+if mostrar_guardar and st.button(
+    "💾 Guardar Pase",
+    type="primary",
+    use_container_width=True
+):
 
     # ==========================================
     # HARD VALIDATIONS (LOCK)
