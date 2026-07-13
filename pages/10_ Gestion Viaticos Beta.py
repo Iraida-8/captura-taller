@@ -1251,7 +1251,11 @@ for idx, row in df_pagina.iterrows():
                     Empleado
                 </div>
 
-                <div style='font-size:18px;font-weight:700;'>
+                <div style='
+                color:#151F6D;
+                font-size:18px;
+                font-weight:700;
+                '>
                     {row.get("nombre_empleado_solicita", "")}
                 </div>
                 """,
@@ -1267,7 +1271,11 @@ for idx, row in df_pagina.iterrows():
                     Fecha Solicitud
                 </div>
 
-                <div style='font-size:18px;font-weight:700;'>
+                <div style='
+                color:#151F6D;
+                font-size:18px;
+                font-weight:700;
+                '>
                     {row.get("fecha_solicitud", "")}
                 </div>
                 """,
@@ -1290,7 +1298,11 @@ for idx, row in df_pagina.iterrows():
                     Total
                 </div>
 
-                <div style='font-size:18px;font-weight:700;'>
+                <div style='
+                color:#151F6D;
+                font-size:18px;
+                font-weight:700;
+                '>
                     ${total_value:,.2f}
                 </div>
                 """,
