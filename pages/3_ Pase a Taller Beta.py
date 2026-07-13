@@ -612,16 +612,270 @@ if role == "field_user":
 
 else:
 
+    # =================================
+    # Top navigation
+    # =================================
     if st.button("⬅ Volver al Dashboard"):
         st.switch_page("pages/dashboard_beta.py")
 
     st.divider()
 
-    st.title("🚧 Under Construction")
+    # =================================
+    # Page title
+    # =================================
+    st.title("🛠️ Captura Pase de Taller")
 
-    st.info(
-        "Esta vista para usuarios administrativos se encuentra en desarrollo."
+    # =================================
+    # SECCIÓN 1 — DATOS DEL REPORTE
+    # =================================
+    st.divider()
+    st.subheader("Datos del Reporte")
+
+    fecha_reporte = st.date_input(
+        "Fecha de Reporte",
+        value=date.today()
     )
+
+    tp1, tp2 = st.columns(2)
+    with tp1:
+        tipo_proveedor = st.selectbox(
+            "Tipo de Proveedor",
+            ["----", "Interno", "Externo"]
+        )
+    with tp2:
+        estado = st.selectbox(
+            "Estado",
+            ["Inicio / Nuevo"],
+            index=0,
+            disabled=True
+        )
+
+    st.text_input(
+        "Capturó",
+        value=st.session_state.user.get("name") or st.session_state.user.get("email"),
+        disabled=True
+    )
+
+    folio_display = (
+        st.session_state.folio_generado
+        if st.session_state.folio_generado
+        else "Folio generado al guardar"
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        oste = st.text_input("OSTE", value="", disabled=True)
+    with c2:
+        no_reporte = st.text_input(
+            "No. de Reporte"
+        )
+    with c3:
+        st.text_input(
+            "No. de Folio",
+            value=folio_display,
+            disabled=True
+        )
+
+    # =================================
+    # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
+    # =================================
+    if tipo_proveedor in ["Interno", "Externo"]:
+
+        st.divider()
+        st.subheader(
+            "Pase de Taller Interno"
+            if tipo_proveedor == "Interno"
+            else "Pase de Taller Externo"
+        )
+
+        empresa = st.selectbox(
+            "Empresa",
+            ["Selecciona Empresa"] + EMPRESAS
+        )
+
+        if empresa == "Selecciona Empresa":
+            st.info("Selecciona una empresa para continuar con la captura del pase.")
+            st.stop()
+
+        empresa_codigo = EMPRESA_CODIGOS.get(empresa)
+        unidades_df = cargar_unidades_supabase(empresa_codigo)
+
+        # Split dataset
+        tractores_df = unidades_df[
+            unidades_df["tipo_unidad"] == "TRACTOR"
+        ]
+
+        remolques_df = unidades_df[
+            unidades_df["tipo_unidad"].isin(["CAJA SECA", "CAJA REFRIGERADA"])
+        ]
+
+        tr1, tr2 = st.columns(2)
+        with tr1:
+            tipo_reporte = st.selectbox(
+                "Tipo de Reporte",
+                [
+                    "Selecciona tipo de reporte",
+                    "Orden Preventivo",
+                    "Orden Correctivo"
+                ]
+            )
+        with tr2:
+            tipo_unidad_operador = st.selectbox(
+                "Tipo de Unidad",
+                ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
+            )
+
+        operador = st.text_input("Operador")
+
+        c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 2, 3])
+
+        if tipo_unidad_operador == "Tractores":
+
+            unidades = ["Selecciona Unidad"] + sorted(
+                tractores_df["unidad"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+
+        elif tipo_unidad_operador == "Remolques":
+
+            unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
+                remolques_df["unidad"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+
+        else:
+            unidades = ["Selecciona Unidad"]
+
+        with c1:
+            no_unidad = st.selectbox(
+                "No. de Unidad",
+                unidades,
+                disabled=tipo_unidad_operador == "Seleccionar tipo de unidad"
+            )
+
+        marca_valor = ""
+        modelo_valor = ""
+        sucursal_valor = ""
+        tipo_caja_auto = ""
+        tipo_unidad_valor = ""
+
+        if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
+            fila_match = tractores_df[
+                tractores_df["unidad"] == str(no_unidad)
+            ]
+
+            if not fila_match.empty:
+                fila = fila_match.iloc[0]
+            else:
+                fila = {}
+            marca_valor = fila.get("marca", "")
+            modelo_valor = fila.get("modelo", "")
+            if pd.notna(modelo_valor):
+                try:
+                    modelo_valor = int(float(modelo_valor))
+                except:
+                    modelo_valor = None
+            sucursal_valor = fila.get("SUCURSAL", "")
+
+        elif tipo_unidad_operador == "Remolques":
+            if no_unidad == "REMOLQUE EXTERNO":
+                marca_valor = "EXTERNO"
+                modelo_valor = "0000"
+                sucursal_valor = "EXTERNO"
+                tipo_caja_auto = ""
+
+            elif no_unidad != "Selecciona Unidad":
+                fila_match = remolques_df[
+                    remolques_df["unidad"].astype(str) == str(no_unidad)
+                ]
+
+                if not fila_match.empty:
+                    fila = fila_match.iloc[0]
+                else:
+                    fila = {}
+
+                marca_valor = fila.get("marca", "")
+                modelo_valor = fila.get("modelo", "")
+                sucursal_valor = fila.get("sucursal", "")
+                tipo_unidad_valor = fila.get("tipo_unidad", "")
+
+        with c2:
+            st.text_input("Marca", value=marca_valor, disabled=True)
+
+        with c3:
+            st.text_input("Modelo", value=modelo_valor, disabled=True)
+
+        with c4:
+            st.text_input("Sucursal", value=sucursal_valor, disabled=True)
+
+        with c5:
+
+            opciones_caja = ["Selecciona Caja", "Caja Seca", "Caja Refrigerada"]
+
+            if tipo_unidad_operador == "Remolques":
+                tipo_lower = str(tipo_unidad_valor).lower()
+
+                if "seca" in tipo_lower:
+                    index_default = 1
+                elif "refriger" in tipo_lower or "fria" in tipo_lower or "frío" in tipo_lower:
+                    index_default = 2
+                else:
+                    index_default = 0
+            else:
+                index_default = 0
+
+            tipo_caja = st.selectbox(
+                "Tipo de Caja",
+                opciones_caja if tipo_unidad_operador == "Remolques" else ["Caja no aplicable"],
+                index=index_default,
+                disabled=tipo_unidad_operador != "Remolques"
+            )
+
+        e1, e2 = st.columns(2)
+        with e1:
+            no_unidad_externo = st.text_input(
+                "No. de Unidad Externo",
+                disabled=no_unidad != "REMOLQUE EXTERNO"
+            )
+        with e2:
+            linea_externa = st.text_input(
+                "Nombre Línea Externa",
+                disabled=no_unidad != "REMOLQUE EXTERNO"
+            )
+
+        aplica_cobro = st.radio(
+            "¿Aplica Cobro?",
+            ["No", "Sí"],
+            horizontal=True,
+            index=0
+        )
+
+        responsable = st.text_input(
+            "Responsable",
+            disabled=aplica_cobro != "Sí"
+        )
+
+        descripcion_problema = st.text_area("Descripción del problema")
+
+        genero_multa = st.checkbox("¿Generó multa?")
+
+        no_inspeccion = st.text_input(
+            "No. de Inspección",
+            disabled=not genero_multa
+        )
+
+        reparacion_multa = st.text_area(
+            "Reparación que generó multa",
+            placeholder="Por favor introducir # de reporte aplicable",
+            disabled=not genero_multa
+        )
+
+        st.divider()
+        st.markdown("###")
 
 # =================================
 # GUARDAR
