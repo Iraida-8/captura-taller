@@ -33,6 +33,10 @@ st.set_page_config(
     layout="wide"
 )
 
+# -------------------------------
+# PAGE STYLE
+# -------------------------------
+
 load_css()
 
 @st.cache_resource
@@ -43,11 +47,6 @@ def get_supabase():
     )
 
 supabase = get_supabase()
-
-# -------------------------------
-# CSS
-# -------------------------------
-
 
 # -------------------------------
 # CHANGELOG

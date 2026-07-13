@@ -110,6 +110,47 @@ def load_css():
             color:#222222;
         }
 
+        /* Input containers */
+        div[data-baseweb="input"] > div,
+        div[data-baseweb="select"] > div,
+        textarea {
+            background-color: #1B267A !important;
+            border: 1px solid rgba(191, 167, 95, 0.25) !important;
+            border-radius: 10px !important;
+            color: white !important;
+        }
+
+        /* Input text */
+        input, textarea {
+            color: white !important;
+        }
+
+        /* Placeholder */
+        input::placeholder,
+        textarea::placeholder {
+            color: #d0d0d0 !important;
+        }
+
+        /* Selectbox dropdown */
+        div[data-baseweb="select"] * {
+            color: white !important;
+        }
+
+        /* Radio buttons */
+        div[role="radiogroup"] label {
+            color: white !important;
+        }
+
+        /* Checkbox */
+        .stCheckbox label {
+            color: white !important;
+        }
+
+        /* Notification boxes */
+        div[data-baseweb="notification"] {
+            border-radius: 12px;
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
