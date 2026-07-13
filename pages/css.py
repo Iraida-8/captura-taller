@@ -233,6 +233,17 @@ def load_css():
             border-radius: 12px;
         }
 
+        /* =========================
+        KPI CARDS
+        ========================= */
+
+        div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]{
+            border:1px solid #D8D8D8 !important;
+            border-radius:14px !important;
+            background:white !important;
+            box-shadow:0 2px 8px rgba(0,0,0,.05);
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
