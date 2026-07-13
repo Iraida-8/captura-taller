@@ -604,7 +604,7 @@ if "toast_actualizado" in st.session_state:
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
+    st.switch_page("pages/dashboard_beta.py")
 
 st.divider()
 
