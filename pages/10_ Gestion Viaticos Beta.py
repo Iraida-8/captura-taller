@@ -1750,6 +1750,9 @@ else:
 
                 comprobacion_row = row.to_dict()
 
+                # =================================
+                # MODAL
+                # =================================
                 @st.dialog("Detalle de Comprobación")
                 def modal_verificacion():
 
@@ -1758,78 +1761,79 @@ else:
                     # =================================
 
                     st.markdown(
-                        "## 📋 Información General"
+                        "<h2 style='color:white;'>📋 Información General</h2>",
+                        unsafe_allow_html=True
                     )
 
                     col1, col2 = st.columns(2)
 
                     with col1:
 
-                        st.write(
-                            f"**Folio Solicitud:** "
-                            f"{solicitud_row.get('folio_solicitud', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Folio Comprobación:** "
-                            f"{comprobacion_row.get('folio_comprobacion', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Estatus:** "
-                            f"{comprobacion_row.get('estatus', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Estatus:</b> {comprobacion_row.get('estatus', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Empleado Solicita:** "
-                            f"{solicitud_row.get('nombre_empleado_solicita', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Fecha Solicitud:** "
-                            f"{solicitud_row.get('fecha_solicitud', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Fecha Comprobación:** "
-                            f"{comprobacion_row.get('created_at', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Fecha Inicio:** "
-                            f"{solicitud_row.get('fecha_inicio', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Fecha Fin:** "
-                            f"{solicitud_row.get('fecha_fin', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
                     with col2:
 
-                        st.write(
-                            f"**Empresa Brinda Servicio:** "
-                            f"{solicitud_row.get('empresa_brinda_servicio', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Empresa Cargo Gastos:** "
-                            f"{solicitud_row.get('empresa_cargo_gastos', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Unidad Negocio:** "
-                            f"{solicitud_row.get('unidad_negocio', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Sucursal:** "
-                            f"{solicitud_row.get('sucursal', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Sucursal Especificar:** "
-                            f"{solicitud_row.get('sucursal_especificar', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
                         label_cliente = (
@@ -1843,14 +1847,14 @@ else:
                             else "Nombre del Cliente"
                         )
 
-                        st.write(
-                            f"**{label_cliente}:** "
-                            f"{solicitud_row.get('nombre_cliente', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"**Registro SAC Ventas?:** "
-                            f"{solicitud_row.get('folio_sac', '')}"
+                        st.markdown(
+                            f"<span style='color:white;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
+                            unsafe_allow_html=True
                         )
 
                     # =================================
