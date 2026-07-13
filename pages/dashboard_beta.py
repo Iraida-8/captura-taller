@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 import json
 from supabase import create_client
-from css import load_css
+from pages.css import load_css
 
 # -------------------------------
 # Security gate
