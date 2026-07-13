@@ -114,10 +114,6 @@ EMAILS_EMPRESA = {
 # GET EMAIL FROM PROFILE
 # =================================
 
-# =================================
-# GET EMAIL FROM PROFILE
-# =================================
-
 def obtener_email_usuario(nombre_completo):
 
     try:
@@ -172,7 +168,6 @@ def construir_destinatarios(
         return [EMAIL_TEST_RECIPIENT]
 
     destinatarios = []
-
 
     # =================================
     # LOGGED USER
@@ -689,88 +684,86 @@ concluidos = len(
 # =================================
 st.title("⚙ Gestión de Viáticos")
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.write("")
 
 # =================================
 # KPI CARDS
 # =================================
+
+def render_kpi_card(title, value, emoji, color):
+
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+
+            <div class="kpi-title">
+                {emoji} {title}
+            </div>
+
+            <div
+                class="kpi-value"
+                style="color:{color};"
+            >
+                {value}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
-def render_kpi_card(
-    title,
-    value,
-    emoji,
-    border_color
-):
-
-    with st.container(border=True):
-
-        st.markdown(
-            f"""
-            #### {emoji} {title}
-            """,
-            unsafe_allow_html=False
-        )
-
-        st.markdown(
-            f"## :{border_color}[{value}]"
-        )
-
 with kpi1:
-
     render_kpi_card(
         "Total",
         total_registros,
         "📊",
-        "#BFA75F"
+        "#BFA75F",
     )
 
 with kpi2:
-
     render_kpi_card(
         "Pendientes",
         pendientes,
         "⏳",
-        "#F59E0B"
+        "#F59E0B",
     )
 
 with kpi3:
-
     render_kpi_card(
         "Autorizadas",
         autorizados,
         "✅",
-        "#10B981"
+        "#10B981",
     )
 
 with kpi4:
-
     render_kpi_card(
         "Verificando",
         verificando,
         "🔎",
-        "#38BDF8"
+        "#38BDF8",
     )
 
 with kpi5:
-
     render_kpi_card(
         "Rechazadas",
         rechazados,
         "❌",
-        "#EF4444"
+        "#EF4444",
     )
 
 with kpi6:
-
     render_kpi_card(
         "Concluidos",
         concluidos,
         "🏁",
-        "#8B5CF6"
+        "#8B5CF6",
     )
 
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.write("")
 
 # =================================
 # PENDIENTES SECTION

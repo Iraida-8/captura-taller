@@ -234,6 +234,32 @@ def load_css():
         }
 
         /* =========================
+        KPI CARDS
+        ========================= */
+
+        .kpi-card{
+            background:#FFFFFF;
+            border:1px solid #D9D9D9;
+            border-radius:16px;
+            padding:18px;
+            min-height:145px;
+            box-shadow:0 2px 8px rgba(0,0,0,.08);
+        }
+
+        .kpi-title{
+            color:#151F6D;
+            font-size:1rem;
+            font-weight:700;
+            margin-bottom:12px;
+        }
+
+        .kpi-value{
+            font-size:3.2rem;
+            font-weight:800;
+            line-height:1;
+        }
+
+        /* =========================
         DIALOGS
         ========================= */
 
