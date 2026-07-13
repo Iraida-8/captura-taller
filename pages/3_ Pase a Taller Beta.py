@@ -584,13 +584,8 @@ else:
 
         elif len(empresas_usuario) == 1:
 
+            # Auto-select company and don't show the field
             empresa = empresas_usuario[0]
-
-            st.text_input(
-                "Empresa",
-                value=empresa,
-                disabled=True,
-            )
 
         else:
 
