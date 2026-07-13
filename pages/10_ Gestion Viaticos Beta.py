@@ -817,154 +817,75 @@ df_pagina = df_pendientes.iloc[inicio:fin]
 @st.dialog("Detalle de Solicitud")
 def modal_ver_solicitud(row):
 
-    st.markdown("## 📋 Información General")
+    st.subheader("📋 Información General")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        st.write(
-            f"**Folio:** {row.get('folio_solicitud', '')}"
-        )
-
-        st.write(
-            f"**Estatus:** {row.get('estatus', '')}"
-        )
-
-        st.write(
-            f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}"
-        )
-
-        st.write(
-            f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}"
-        )
-
-        st.write(
-            f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}"
-        )
-
-        st.write(
-            f"**Fecha Inicio:** {row.get('fecha_inicio', '')}"
-        )
-
-        st.write(
-            f"**Fecha Fin:** {row.get('fecha_fin', '')}"
-        )
+        st.write(f"**Folio:** {row.get('folio_solicitud', '')}")
+        st.write(f"**Estatus:** {row.get('estatus', '')}")
+        st.write(f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}")
+        st.write(f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}")
+        st.write(f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}")
+        st.write(f"**Fecha Inicio:** {row.get('fecha_inicio', '')}")
+        st.write(f"**Fecha Fin:** {row.get('fecha_fin', '')}")
 
     with col2:
 
-        st.write(
-            f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}"
-        )
-
-        st.write(
-            f"**Unidad Negocio:** {row.get('unidad_negocio', '')}"
-        )
-
-        st.write(
-            f"**Sucursal:** {row.get('sucursal', '')}"
-        )
-
-        st.write(
-            f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
-        )
+        st.write(f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}")
+        st.write(f"**Unidad Negocio:** {row.get('unidad_negocio', '')}")
+        st.write(f"**Sucursal:** {row.get('sucursal', '')}")
+        st.write(f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}")
 
         label_cliente = (
             "Motivo del Viaje"
-            if str(
-                row.get(
-                    "motivo_viaje",
-                    ""
-                )
-            ).strip().upper() == "OTROS"
+            if str(row.get("motivo_viaje", "")).strip().upper() == "OTROS"
             else "Nombre del Cliente"
         )
 
-        st.write(
-            f"**{label_cliente}:** "
-            f"{row.get('nombre_cliente', '')}"
-        )
+        st.write(f"**{label_cliente}:** {row.get('nombre_cliente', '')}")
+        st.write(f"**Registro SAC Ventas?:** {row.get('folio_sac', '')}")
 
-        st.write(
-            f"**Registro SAC Ventas?:** "
-            f"{row.get('folio_sac', '')}"
-        )
+    st.divider()
 
-    # =================================
-    # MOTIVO VIAJE
-    # =================================
-    st.markdown("---")
-
-    st.markdown("## ✈️ Motivo del Viaje")
+    st.subheader("✈️ Motivo del Viaje")
 
     st.markdown(
         f"""
-        <div style='
-            background-color:#1B267A;
-            padding:16px;
-            border-radius:12px;
-            border:1px solid rgba(191,167,95,0.25);
-            margin-bottom:20px;
-            white-space:pre-wrap;
-        '>
+        <div class="info-box">
             {row.get('motivo_viaje', '')}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # =================================
-    # OBSERVACIONES
-    # =================================
-
-    st.markdown("## 📝 Observaciones")
+    st.subheader("📝 Observaciones")
 
     observaciones_edit = st.text_area(
         "Observaciones",
-        value=row.get(
-            "observaciones",
-            ""
-        ),
+        value=row.get("observaciones", ""),
         height=150,
         key=f"obs_edit_{row.get('id')}"
     )
 
-    # =================================
-    # CONCEPTOS
-    # =================================
+    st.divider()
 
-    st.markdown("---")
+    st.subheader("💰 Conceptos")
 
-    st.markdown("## 💰 Conceptos")
-
-    total_value = row.get(
-        "total_estimado",
-        0
-    )
+    total_value = row.get("total_estimado", 0)
 
     try:
         total_value = float(total_value)
-    except:
+    except Exception:
         total_value = 0
 
-    st.markdown(
-        f"""
-        <div style='
-            font-size:24px;
-            font-weight:700;
-            color:#BFA75F;
-            margin-bottom:15px;
-        '>
-            Total Estimado: ${total_value:,.2f}
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.metric(
+        "Total Estimado",
+        f"${total_value:,.2f}"
     )
 
-    conceptos = row.get(
-        "conceptos",
-        []
-    )
+    conceptos = row.get("conceptos", [])
 
     if conceptos:
 
@@ -976,48 +897,20 @@ def modal_ver_solicitud(row):
 
                 conceptos_final.append({
 
-                    "Tipo":
-                        concepto.get(
-                            "Tipo",
-                            ""
-                        ),
-
-                    "Descripcion":
-                        concepto.get(
-                            "Descripcion",
-                            ""
-                        ),
-
-                    "Monto":
-                        concepto.get(
-                            "Monto",
-                            0
-                        ),
-                    
-                    "Tipo Cambio":
-                        concepto.get(
-                            "Tipo Cambio",
-                            ""
-                        ),
+                    "Tipo": concepto.get("Tipo", ""),
+                    "Descripcion": concepto.get("Descripcion", ""),
+                    "Monto": concepto.get("Monto", 0),
+                    "Tipo Cambio": concepto.get("Tipo Cambio", ""),
 
                     "Aprobado":
                         "🟢 Si"
-                        if concepto.get(
-                            "Aprobado",
-                            "Si"
-                        ) in ["Si", "🟢 Si"]
+                        if concepto.get("Aprobado", "Si") in ["Si", "🟢 Si"]
                         else "🔴 No",
 
-                    "Razon":
-                        concepto.get(
-                            "Razon",
-                            ""
-                        )
+                    "Razon": concepto.get("Razon", "")
                 })
 
-            df_conceptos = pd.DataFrame(
-                conceptos_final
-            )
+            df_conceptos = pd.DataFrame(conceptos_final)
 
             edited_df = st.data_editor(
 
@@ -1069,7 +962,7 @@ def modal_ver_solicitud(row):
                 key=f"editor_conceptos_{row.get('id')}"
             )
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.write("")
 
             if st.button(
                 "💾 Actualizar Solicitud",
@@ -1077,64 +970,37 @@ def modal_ver_solicitud(row):
                 key=f"actualizar_sol_{row.get('id')}"
             ):
 
-                conceptos_actualizados = (
-                    edited_df.to_dict(
-                        orient="records"
-                    )
+                conceptos_actualizados = edited_df.to_dict(
+                    orient="records"
                 )
-
-                # =================================
-                # RECALCULAR TOTAL ESTIMADO
-                # =================================
 
                 nuevo_total_estimado = 0.0
 
                 for item in conceptos_actualizados:
 
                     aprobado = str(
-                        item.get(
-                            "Aprobado",
-                            "🟢 Si"
-                        )
+                        item.get("Aprobado", "🟢 Si")
                     ).strip()
 
-                    if aprobado in [
-                        "Si",
-                        "🟢 Si"
-                    ]:
+                    if aprobado in ["Si", "🟢 Si"]:
 
                         try:
-
                             nuevo_total_estimado += float(
-                                item.get(
-                                    "Monto",
-                                    0
-                                ) or 0
+                                item.get("Monto", 0) or 0
                             )
-
-                        except:
-
+                        except Exception:
                             pass
 
                 supabase.table(
                     "solicitud_viaje"
                 ).update(
                     {
-                        "observaciones":
-                            observaciones_edit,
-
-                        "conceptos":
-                            conceptos_actualizados,
-
-                        "total_estimado":
-                            float(
-                                nuevo_total_estimado
-                            ),
-
-                        "fecha_actualizacion":
-                            datetime.now(
-                                timezone.utc
-                            ).isoformat()
+                        "observaciones": observaciones_edit,
+                        "conceptos": conceptos_actualizados,
+                        "total_estimado": float(nuevo_total_estimado),
+                        "fecha_actualizacion": datetime.now(
+                            timezone.utc
+                        ).isoformat()
                     }
                 ).eq(
                     "id",
@@ -1144,25 +1010,19 @@ def modal_ver_solicitud(row):
                 st.cache_data.clear()
 
                 st.session_state.toast_actualizado = (
-                    f"Folio "
-                    f"{row.get('folio_solicitud', '')} "
-                    f"actualizado con éxito"
+                    f"Folio {row.get('folio_solicitud', '')} actualizado con éxito"
                 )
 
                 st.rerun()
 
         except Exception as e:
 
-            st.error(
-                f"Error leyendo conceptos: {e}"
-            )
+            st.error(f"Error leyendo conceptos: {e}")
 
     else:
 
-        st.info(
-            "No hay conceptos registrados."
-        )
-
+        st.info("No hay conceptos registrados.")
+        
 # =================================
 # GRID ENTRIES
 # =================================
