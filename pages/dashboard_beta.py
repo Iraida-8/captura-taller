@@ -78,6 +78,16 @@ st.markdown(
     }
 
     /* =========================
+        DIVIDERS
+        ========================= */
+
+        hr{
+            border:none !important;
+            border-top:1px solid #B8B8B8 !important;
+            opacity:1 !important;
+        }
+
+    /* =========================
     MODULE BUTTONS
     ========================= */
 
