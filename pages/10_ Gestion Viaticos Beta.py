@@ -691,29 +691,37 @@ def render_kpi_card(
     border_color
 ):
 
-    with st.container(border=True):
+    st.markdown(
+        f"""
+        <div style="
+            background:#FFF7D6;
+            border-radius:14px;
+            padding:18px;
+            border:1px solid #D8C98E;
+            text-align:center;
+            min-height:150px;
+        ">
+            <div style="
+                font-size:22px;
+                font-weight:700;
+                color:#151F6D;
+            ">
+                {emoji} {title}
+            </div>
 
-        st.markdown(
-            f"""
-            #### {emoji} {title}
-            """,
-            unsafe_allow_html=False
-        )
-
-        st.markdown(
-            f"""
-            <div style='
+            <div style="
                 color:{border_color};
                 font-size:58px;
                 font-weight:800;
                 line-height:1;
-                margin-top:10px;
-            '>
+                margin-top:16px;
+            ">
                 {value}
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 with kpi1:
 
