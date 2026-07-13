@@ -954,16 +954,20 @@ def modal_ver_solicitud(row):
     # OBSERVACIONES
     # =================================
 
-    st.markdown("## 📝 Observaciones")
+    st.markdown(
+        "<h2 style='color:white;'>📝 Observaciones</h2>",
+        unsafe_allow_html=True
+    )
 
     observaciones_edit = st.text_area(
-        "Observaciones",
+        label="",
         value=row.get(
             "observaciones",
             ""
         ),
         height=150,
-        key=f"obs_edit_{row.get('id')}"
+        key=f"obs_edit_{row.get('id')}",
+        label_visibility="collapsed"
     )
 
     # =================================
