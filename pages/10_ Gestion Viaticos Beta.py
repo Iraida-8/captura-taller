@@ -3768,6 +3768,21 @@ st.markdown(
         width: 98vw !important;
         max-width: 1800px !important;
     }
+
+    /* =========================
+    CONTAINER BORDERS
+    ========================= */
+
+    div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stContainer"] {
+        border-color: #000000 !important;
+    }
+
+    div[data-testid="stVerticalBlockBorderWrapper"] > div,
+    div[data-testid="stContainer"] > div {
+        border-color: #000000 !important;
+    }   
+
     </style>
     """,
     unsafe_allow_html=True
