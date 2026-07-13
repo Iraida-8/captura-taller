@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from auth import require_login, require_access
 import resend # type: ignore
 from io import BytesIO
-from pages.css import load_css
 
 # =================================
 # Page configuration
@@ -15,11 +14,6 @@ st.set_page_config(
     page_title="Gestión de Viáticos",
     layout="wide"
 )
-
-# -------------------------------
-# PAGE STYLE
-# -------------------------------
-load_css()
 
 # =================================
 # Security gates
@@ -114,6 +108,10 @@ EMAILS_EMPRESA = {
 # GET EMAIL FROM PROFILE
 # =================================
 
+# =================================
+# GET EMAIL FROM PROFILE
+# =================================
+
 def obtener_email_usuario(nombre_completo):
 
     try:
@@ -168,6 +166,7 @@ def construir_destinatarios(
         return [EMAIL_TEST_RECIPIENT]
 
     destinatarios = []
+
 
     # =================================
     # LOGGED USER
@@ -605,7 +604,7 @@ if "toast_actualizado" in st.session_state:
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard_beta.py")
+    st.switch_page("pages/dashboard.py")
 
 st.divider()
 
@@ -682,93 +681,125 @@ concluidos = len(
 # =================================
 # HEADER
 # =================================
-st.title("⚙ Gestión de Viáticos")
+st.markdown(
+    """
+    <div style="
+        font-size:48px;
+        font-weight:800;
+        color:white;
+        margin-bottom:10px;
+    ">
+        ⚙ Gestión de Viáticos
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.write("")
+st.markdown("<br>", unsafe_allow_html=True)
 
 # =================================
 # KPI CARDS
 # =================================
-
-def render_kpi_card(title, value, emoji, color):
-
-    st.markdown(
-        f"""
-        <div class="kpi-card">
-
-            <div class="kpi-title">
-                {emoji} {title}
-            </div>
-
-            <div
-                class="kpi-value"
-                style="color:{color};"
-            >
-                {value}
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
+def render_kpi_card(
+    title,
+    value,
+    emoji,
+    border_color
+):
+
+    with st.container(border=True):
+
+        st.markdown(
+            f"""
+            #### {emoji} {title}
+            """,
+            unsafe_allow_html=False
+        )
+
+        st.markdown(
+            f"""
+            <div style='
+                color:{border_color};
+                font-size:58px;
+                font-weight:800;
+                line-height:1;
+                margin-top:10px;
+            '>
+                {value}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 with kpi1:
+
     render_kpi_card(
         "Total",
         total_registros,
         "📊",
-        "#BFA75F",
+        "#BFA75F"
     )
 
 with kpi2:
+
     render_kpi_card(
         "Pendientes",
         pendientes,
         "⏳",
-        "#F59E0B",
+        "#F59E0B"
     )
 
 with kpi3:
+
     render_kpi_card(
         "Autorizadas",
         autorizados,
         "✅",
-        "#10B981",
+        "#10B981"
     )
 
 with kpi4:
+
     render_kpi_card(
         "Verificando",
         verificando,
         "🔎",
-        "#38BDF8",
+        "#38BDF8"
     )
 
 with kpi5:
+
     render_kpi_card(
         "Rechazadas",
         rechazados,
         "❌",
-        "#EF4444",
+        "#EF4444"
     )
 
 with kpi6:
+
     render_kpi_card(
         "Concluidos",
         concluidos,
         "🏁",
-        "#8B5CF6",
+        "#8B5CF6"
     )
 
-st.write("")
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 # =================================
 # PENDIENTES SECTION
 # =================================
-st.subheader("📋 Solicitudes Pendientes")
+st.markdown(
+    """
+    <h2 style='margin-bottom:20px;'>
+        📋 Solicitudes Pendientes
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
 
 # Only pendientes
 df_pendientes = df_solicitudes[
@@ -811,81 +842,62 @@ fin = inicio + ENTRADAS_POR_PAGINA
 
 df_pagina = df_pendientes.iloc[inicio:fin]
 
-def info_row(label, value):
-
-    st.caption(label)
-
-    st.write(
-        value if value not in [None, ""] else "-"
-    )
-
 # =================================
 # MODAL
 # =================================
 @st.dialog("Detalle de Solicitud")
 def modal_ver_solicitud(row):
 
-    st.subheader("📋 Información General")
+    st.markdown("## 📋 Información General")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        info_row(
-            "Folio",
-            row.get("folio_solicitud")
+        st.write(
+            f"**Folio:** {row.get('folio_solicitud', '')}"
         )
 
-        info_row(
-            "Estatus",
-            row.get("estatus")
+        st.write(
+            f"**Estatus:** {row.get('estatus', '')}"
         )
 
-        info_row(
-            "Empresa Brinda Servicio",
-            row.get("empresa_brinda_servicio")
+        st.write(
+            f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}"
         )
 
-        info_row(
-            "Empleado Solicita",
-            row.get("nombre_empleado_solicita")
+        st.write(
+            f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}"
         )
 
-        info_row(
-            "Fecha Solicitud",
-            row.get("fecha_solicitud")
+        st.write(
+            f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}"
         )
 
-        info_row(
-            "Fecha Inicio",
-            row.get("fecha_inicio")
+        st.write(
+            f"**Fecha Inicio:** {row.get('fecha_inicio', '')}"
         )
 
-        info_row(
-            "Fecha Fin",
-            row.get("fecha_fin")
+        st.write(
+            f"**Fecha Fin:** {row.get('fecha_fin', '')}"
         )
 
     with col2:
 
-        info_row(
-            "Empresa Cargo Gastos",
-            row.get("empresa_cargo_gastos")
+        st.write(
+            f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}"
         )
 
-        info_row(
-            "Unidad Negocio",
-            row.get("unidad_negocio")
+        st.write(
+            f"**Unidad Negocio:** {row.get('unidad_negocio', '')}"
         )
 
-        info_row(
-            "Sucursal",
-            row.get("sucursal")
+        st.write(
+            f"**Sucursal:** {row.get('sucursal', '')}"
         )
 
-        info_row(
-            "Sucursal Especificar",
-            row.get("sucursal_especificar")
+        st.write(
+            f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
         )
 
         label_cliente = (
@@ -899,55 +911,91 @@ def modal_ver_solicitud(row):
             else "Nombre del Cliente"
         )
 
-        info_row(
-            label_cliente,
-            row.get("nombre_cliente")
+        st.write(
+            f"**{label_cliente}:** "
+            f"{row.get('nombre_cliente', '')}"
         )
 
-        info_row(
-            "Registro SAC Ventas",
-            row.get("folio_sac")
+        st.write(
+            f"**Registro SAC Ventas?:** "
+            f"{row.get('folio_sac', '')}"
         )
 
-    st.divider()
+    # =================================
+    # MOTIVO VIAJE
+    # =================================
+    st.markdown("---")
 
-    st.subheader("✈️ Motivo del Viaje")
+    st.markdown("## ✈️ Motivo del Viaje")
 
     st.markdown(
         f"""
-        <div class="info-box">
+        <div style='
+            background-color:#1B267A;
+            padding:16px;
+            border-radius:12px;
+            border:1px solid rgba(191,167,95,0.25);
+            margin-bottom:20px;
+            white-space:pre-wrap;
+        '>
             {row.get('motivo_viaje', '')}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.subheader("📝 Observaciones")
+    # =================================
+    # OBSERVACIONES
+    # =================================
+
+    st.markdown("## 📝 Observaciones")
 
     observaciones_edit = st.text_area(
         "Observaciones",
-        value=row.get("observaciones", ""),
+        value=row.get(
+            "observaciones",
+            ""
+        ),
         height=150,
         key=f"obs_edit_{row.get('id')}"
     )
 
-    st.divider()
+    # =================================
+    # CONCEPTOS
+    # =================================
 
-    st.subheader("💰 Conceptos")
+    st.markdown("---")
 
-    total_value = row.get("total_estimado", 0)
+    st.markdown("## 💰 Conceptos")
+
+    total_value = row.get(
+        "total_estimado",
+        0
+    )
 
     try:
         total_value = float(total_value)
-    except Exception:
+    except:
         total_value = 0
 
-    st.metric(
-        "Total Estimado",
-        f"${total_value:,.2f}"
+    st.markdown(
+        f"""
+        <div style='
+            font-size:24px;
+            font-weight:700;
+            color:#BFA75F;
+            margin-bottom:15px;
+        '>
+            Total Estimado: ${total_value:,.2f}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    conceptos = row.get("conceptos", [])
+    conceptos = row.get(
+        "conceptos",
+        []
+    )
 
     if conceptos:
 
@@ -959,20 +1007,48 @@ def modal_ver_solicitud(row):
 
                 conceptos_final.append({
 
-                    "Tipo": concepto.get("Tipo", ""),
-                    "Descripcion": concepto.get("Descripcion", ""),
-                    "Monto": concepto.get("Monto", 0),
-                    "Tipo Cambio": concepto.get("Tipo Cambio", ""),
+                    "Tipo":
+                        concepto.get(
+                            "Tipo",
+                            ""
+                        ),
+
+                    "Descripcion":
+                        concepto.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Monto":
+                        concepto.get(
+                            "Monto",
+                            0
+                        ),
+                    
+                    "Tipo Cambio":
+                        concepto.get(
+                            "Tipo Cambio",
+                            ""
+                        ),
 
                     "Aprobado":
                         "🟢 Si"
-                        if concepto.get("Aprobado", "Si") in ["Si", "🟢 Si"]
+                        if concepto.get(
+                            "Aprobado",
+                            "Si"
+                        ) in ["Si", "🟢 Si"]
                         else "🔴 No",
 
-                    "Razon": concepto.get("Razon", "")
+                    "Razon":
+                        concepto.get(
+                            "Razon",
+                            ""
+                        )
                 })
 
-            df_conceptos = pd.DataFrame(conceptos_final)
+            df_conceptos = pd.DataFrame(
+                conceptos_final
+            )
 
             edited_df = st.data_editor(
 
@@ -1024,7 +1100,7 @@ def modal_ver_solicitud(row):
                 key=f"editor_conceptos_{row.get('id')}"
             )
 
-            st.write("")
+            st.markdown("<br>", unsafe_allow_html=True)
 
             if st.button(
                 "💾 Actualizar Solicitud",
@@ -1032,37 +1108,64 @@ def modal_ver_solicitud(row):
                 key=f"actualizar_sol_{row.get('id')}"
             ):
 
-                conceptos_actualizados = edited_df.to_dict(
-                    orient="records"
+                conceptos_actualizados = (
+                    edited_df.to_dict(
+                        orient="records"
+                    )
                 )
+
+                # =================================
+                # RECALCULAR TOTAL ESTIMADO
+                # =================================
 
                 nuevo_total_estimado = 0.0
 
                 for item in conceptos_actualizados:
 
                     aprobado = str(
-                        item.get("Aprobado", "🟢 Si")
+                        item.get(
+                            "Aprobado",
+                            "🟢 Si"
+                        )
                     ).strip()
 
-                    if aprobado in ["Si", "🟢 Si"]:
+                    if aprobado in [
+                        "Si",
+                        "🟢 Si"
+                    ]:
 
                         try:
+
                             nuevo_total_estimado += float(
-                                item.get("Monto", 0) or 0
+                                item.get(
+                                    "Monto",
+                                    0
+                                ) or 0
                             )
-                        except Exception:
+
+                        except:
+
                             pass
 
                 supabase.table(
                     "solicitud_viaje"
                 ).update(
                     {
-                        "observaciones": observaciones_edit,
-                        "conceptos": conceptos_actualizados,
-                        "total_estimado": float(nuevo_total_estimado),
-                        "fecha_actualizacion": datetime.now(
-                            timezone.utc
-                        ).isoformat()
+                        "observaciones":
+                            observaciones_edit,
+
+                        "conceptos":
+                            conceptos_actualizados,
+
+                        "total_estimado":
+                            float(
+                                nuevo_total_estimado
+                            ),
+
+                        "fecha_actualizacion":
+                            datetime.now(
+                                timezone.utc
+                            ).isoformat()
                     }
                 ).eq(
                     "id",
@@ -1072,18 +1175,24 @@ def modal_ver_solicitud(row):
                 st.cache_data.clear()
 
                 st.session_state.toast_actualizado = (
-                    f"Folio {row.get('folio_solicitud', '')} actualizado con éxito"
+                    f"Folio "
+                    f"{row.get('folio_solicitud', '')} "
+                    f"actualizado con éxito"
                 )
 
                 st.rerun()
 
         except Exception as e:
 
-            st.error(f"Error leyendo conceptos: {e}")
+            st.error(
+                f"Error leyendo conceptos: {e}"
+            )
 
     else:
 
-        st.info("No hay conceptos registrados.")
+        st.info(
+            "No hay conceptos registrados."
+        )
 
 # =================================
 # GRID ENTRIES
@@ -1116,11 +1225,7 @@ for idx, row in df_pagina.iterrows():
                     Folio
                 </div>
 
-                <div style='
-                color:#151F6D;
-                font-size:18px;
-                font-weight:700;
-                '>
+                <div style='font-size:18px;font-weight:700;'>
                     {row.get("folio_solicitud", "")}
                 </div>
                 """,
@@ -1136,11 +1241,7 @@ for idx, row in df_pagina.iterrows():
                     Empleado
                 </div>
 
-                <div style='
-                color:#151F6D;
-                font-size:18px;
-                font-weight:700;
-                '>
+                <div style='font-size:18px;font-weight:700;'>
                     {row.get("nombre_empleado_solicita", "")}
                 </div>
                 """,
@@ -1156,11 +1257,7 @@ for idx, row in df_pagina.iterrows():
                     Fecha Solicitud
                 </div>
 
-                <div style='
-                color:#151F6D;
-                font-size:18px;
-                font-weight:700;
-                '>
+                <div style='font-size:18px;font-weight:700;'>
                     {row.get("fecha_solicitud", "")}
                 </div>
                 """,
@@ -1183,11 +1280,7 @@ for idx, row in df_pagina.iterrows():
                     Total
                 </div>
 
-                <div style='
-                color:#151F6D;
-                font-size:18px;
-                font-weight:700;
-                '>
+                <div style='font-size:18px;font-weight:700;'>
                     ${total_value:,.2f}
                 </div>
                 """,
@@ -1453,7 +1546,14 @@ with p3:
 # COMPROBACIONES POR VERIFICAR
 # =================================
 
-st.subheader("🔎 Comprobaciones por Verificar")
+st.markdown(
+    """
+    <h2 style='margin-bottom:20px;'>
+        🔎 Comprobaciones por Verificar
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
 
 # =================================
 # BASE DATA
@@ -3629,3 +3729,103 @@ with p3:
 
         st.session_state.pagina_finalizadas += 1
         st.rerun()
+
+# -------------------------------
+# CSS
+# -------------------------------
+st.markdown(
+    """
+    <style>
+    /* Hide sidebar */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+
+    /* App background */
+    .stApp {
+        background-color: #151F6D;
+    }
+
+    /* Give page breathing room */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* =========================
+       HEADER STYLE
+       ========================= */
+    h1 {
+        font-size: 1.9rem;
+        margin-bottom: 0.2rem;
+        color: #FFFFFF;
+    }
+
+    h2, h3 {
+        margin-top: 0.5rem;
+        color: #BFA75F;
+    }
+
+    /* =========================
+    DEFAULT BUTTONS
+    ========================= */
+    div.stButton > button {
+        height: 95px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        border-radius: 16px;
+        padding: 1.2rem;
+        white-space: normal;
+
+        background-color: #1B267A;
+        color: #FFFFFF;
+        border: 1px solid rgba(191, 167, 95, 0.25);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Hover */
+    div.stButton > button:hover {
+        background-color: #24338C;
+        border-color: #BFA75F;
+        color: #BFA75F;
+    }
+
+    /* =========================
+       LOGOUT BUTTON
+       ========================= */
+    button[kind="secondary"] {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 12px;
+        background-color: transparent;
+        color: #BFA75F;
+        border: 1px solid #BFA75F;
+        font-weight: 600;
+    }
+
+    button[kind="secondary"]:hover {
+        background-color: #BFA75F;
+        color: #151F6D;
+    }
+
+    /* Text */
+    p, label, span {
+        color: #F5F5F5;
+    }
+
+    /* KPI cards fixed height */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        min-height: 190px;
+        max-height: 190px;
+    }
+    /* Wider dialog modal */
+    div[role="dialog"] {
+        width: 98vw !important;
+        max-width: 1800px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
