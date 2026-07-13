@@ -733,7 +733,7 @@ def render_kpi_card(
     </div>
     """
 
-    components.html(html, height=220)
+    components.html(html, height=240)
 
 with kpi1:
 
