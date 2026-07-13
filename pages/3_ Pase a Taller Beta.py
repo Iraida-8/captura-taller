@@ -624,7 +624,7 @@ else:
 
         operador = st.text_input("Operador")
 
-        c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 2, 3])
+        c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
 
         if tipo_unidad_operador == "Tractores":
 
@@ -701,15 +701,6 @@ else:
                 tipo_unidad_valor = fila.get("tipo_unidad", "")
 
         with c2:
-            st.text_input("Marca", value=marca_valor, disabled=True)
-
-        with c3:
-            st.text_input("Modelo", value=modelo_valor, disabled=True)
-
-        with c4:
-            st.text_input("Sucursal", value=sucursal_valor, disabled=True)
-
-        with c5:
 
             opciones_caja = ["Selecciona Caja", "Caja Seca", "Caja Refrigerada"]
 
@@ -732,13 +723,13 @@ else:
                 disabled=tipo_unidad_operador != "Remolques"
             )
 
-        e1, e2 = st.columns(2)
-        with e1:
+        with c3:
             no_unidad_externo = st.text_input(
                 "No. de Unidad Externo",
                 disabled=no_unidad != "REMOLQUE EXTERNO"
             )
-        with e2:
+
+        with c4:
             linea_externa = st.text_input(
                 "Nombre Línea Externa",
                 disabled=no_unidad != "REMOLQUE EXTERNO"
