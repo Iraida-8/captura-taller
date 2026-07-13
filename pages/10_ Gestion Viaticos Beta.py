@@ -713,18 +713,7 @@ def render_kpi_card(
         )
 
         st.markdown(
-            f"""
-            <div style='
-                color:{border_color};
-                font-size:58px;
-                font-weight:800;
-                line-height:1;
-                margin-top:10px;
-            '>
-                {value}
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"## :{border_color}[{value}]"
         )
 
 with kpi1:
@@ -786,14 +775,7 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 # =================================
 # PENDIENTES SECTION
 # =================================
-st.markdown(
-    """
-    <h2 style='margin-bottom:20px;'>
-        📋 Solicitudes Pendientes
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
+st.subheader("📋 Solicitudes Pendientes")
 
 # Only pendientes
 df_pendientes = df_solicitudes[
@@ -1556,14 +1538,7 @@ with p3:
 # COMPROBACIONES POR VERIFICAR
 # =================================
 
-st.markdown(
-    """
-    <h2 style='margin-bottom:20px;'>
-        🔎 Comprobaciones por Verificar
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
+st.subheader("🔎 Comprobaciones por Verificar")
 
 # =================================
 # BASE DATA
