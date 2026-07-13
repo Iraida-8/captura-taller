@@ -811,6 +811,14 @@ fin = inicio + ENTRADAS_POR_PAGINA
 
 df_pagina = df_pendientes.iloc[inicio:fin]
 
+def info_row(label, value):
+
+    st.caption(label)
+
+    st.write(
+        value if value not in [None, ""] else "-"
+    )
+
 # =================================
 # MODAL
 # =================================
@@ -823,29 +831,83 @@ def modal_ver_solicitud(row):
 
     with col1:
 
-        st.write(f"**Folio:** {row.get('folio_solicitud', '')}")
-        st.write(f"**Estatus:** {row.get('estatus', '')}")
-        st.write(f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}")
-        st.write(f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}")
-        st.write(f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}")
-        st.write(f"**Fecha Inicio:** {row.get('fecha_inicio', '')}")
-        st.write(f"**Fecha Fin:** {row.get('fecha_fin', '')}")
+        info_row(
+            "Folio",
+            row.get("folio_solicitud")
+        )
+
+        info_row(
+            "Estatus",
+            row.get("estatus")
+        )
+
+        info_row(
+            "Empresa Brinda Servicio",
+            row.get("empresa_brinda_servicio")
+        )
+
+        info_row(
+            "Empleado Solicita",
+            row.get("nombre_empleado_solicita")
+        )
+
+        info_row(
+            "Fecha Solicitud",
+            row.get("fecha_solicitud")
+        )
+
+        info_row(
+            "Fecha Inicio",
+            row.get("fecha_inicio")
+        )
+
+        info_row(
+            "Fecha Fin",
+            row.get("fecha_fin")
+        )
 
     with col2:
 
-        st.write(f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}")
-        st.write(f"**Unidad Negocio:** {row.get('unidad_negocio', '')}")
-        st.write(f"**Sucursal:** {row.get('sucursal', '')}")
-        st.write(f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}")
+        info_row(
+            "Empresa Cargo Gastos",
+            row.get("empresa_cargo_gastos")
+        )
+
+        info_row(
+            "Unidad Negocio",
+            row.get("unidad_negocio")
+        )
+
+        info_row(
+            "Sucursal",
+            row.get("sucursal")
+        )
+
+        info_row(
+            "Sucursal Especificar",
+            row.get("sucursal_especificar")
+        )
 
         label_cliente = (
             "Motivo del Viaje"
-            if str(row.get("motivo_viaje", "")).strip().upper() == "OTROS"
+            if str(
+                row.get(
+                    "motivo_viaje",
+                    ""
+                )
+            ).strip().upper() == "OTROS"
             else "Nombre del Cliente"
         )
 
-        st.write(f"**{label_cliente}:** {row.get('nombre_cliente', '')}")
-        st.write(f"**Registro SAC Ventas?:** {row.get('folio_sac', '')}")
+        info_row(
+            label_cliente,
+            row.get("nombre_cliente")
+        )
+
+        info_row(
+            "Registro SAC Ventas",
+            row.get("folio_sac")
+        )
 
     st.divider()
 
@@ -1022,7 +1084,7 @@ def modal_ver_solicitud(row):
     else:
 
         st.info("No hay conceptos registrados.")
-        
+
 # =================================
 # GRID ENTRIES
 # =================================
