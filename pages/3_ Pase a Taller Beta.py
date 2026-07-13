@@ -227,7 +227,6 @@ if role == "field_user":
     # =================================
     # SECCIÓN 1 — DATOS DEL REPORTE
     # =================================
-    st.divider()
     st.subheader("Datos del Reporte")
 
     # Hidden - always today's date
@@ -520,7 +519,6 @@ else:
     # =================================
     # SECCIÓN 1 — DATOS DEL REPORTE
     # =================================
-    st.divider()
     st.subheader("Datos del Reporte")
 
     # Hidden - always today's date
