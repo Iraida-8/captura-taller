@@ -234,6 +234,28 @@ def load_css():
         }
 
         /* =========================
+        DIALOGS
+        ========================= */
+
+        div[role="dialog"]{
+            color:white !important;
+        }
+
+        div[role="dialog"] p,
+        div[role="dialog"] span,
+        div[role="dialog"] label,
+        div[role="dialog"] strong,
+        div[role="dialog"] li{
+            color:white !important;
+        }
+
+        div[role="dialog"] h1,
+        div[role="dialog"] h2,
+        div[role="dialog"] h3{
+            color:#BFA75F !important;
+        }
+
+        /* =========================
         KPI CARDS
         ========================= */
 
