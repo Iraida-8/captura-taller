@@ -1231,7 +1231,11 @@ for idx, row in df_pagina.iterrows():
                     Folio
                 </div>
 
-                <div style='font-size:18px;font-weight:700;'>
+                <div style='
+                color:#151F6D;
+                font-size:18px;
+                font-weight:700;
+                '>
                     {row.get("folio_solicitud", "")}
                 </div>
                 """,
