@@ -110,19 +110,85 @@ def load_css():
             color:#222222;
         }
 
-        /* Input containers */
+        /* =========================
+        INPUTS / SELECTS
+        ========================= */
+
+        /* Enabled inputs */
         div[data-baseweb="input"] > div,
-        div[data-baseweb="select"] > div,
-        textarea {
-            background-color: #1B267A !important;
-            border: 1px solid rgba(191, 167, 95, 0.25) !important;
-            border-radius: 10px !important;
-            color: white !important;
+        div[data-baseweb="select"] > div {
+            background-color:#1B267A !important;
+            border:1px solid rgba(191,167,95,.25) !important;
+            border-radius:10px !important;
+            color:white !important;
+            transition:.2s;
         }
 
-        /* Input text */
-        input, textarea {
-            color: white !important;
+        /* Enabled textareas */
+        textarea{
+            background:#3D56C8 !important;
+            border:1px solid rgba(191,167,95,.25) !important;
+            border-radius:10px !important;
+            color:white !important;
+            transition:.2s;
+        }
+
+        /* Disabled text inputs */
+        input:disabled{
+            background:#DCDCDC !important;
+            color:#555555 !important;
+            cursor:not-allowed;
+        }
+
+        /* Disabled input containers */
+        div[data-baseweb="input"] div:has(input:disabled){
+            background:#E8E8E8 !important;
+            border:1px solid #CFCFCF !important;
+        }
+
+        /* Disabled selectboxes */
+        div[data-baseweb="select"] div:has(div[aria-disabled="true"]){
+            background:#E8E8E8 !important;
+            border:1px solid #CFCFCF !important;
+        }
+
+        /* Disabled textarea */
+        textarea:disabled{
+            background:#D8E6FF !important;
+            color:#555555 !important;
+        }
+
+        /* Enabled textarea */
+        textarea:not(:disabled){
+            background:#1B267A !important;
+            color:white !important;
+        }
+
+        /* Text */
+        input,
+        textarea{
+            color:white !important;
+        }
+
+        /* Placeholder */
+        input::placeholder,
+        textarea::placeholder{
+            color:#D0D0D0 !important;
+        }
+
+        /* Selectbox text */
+        div[data-baseweb="select"] *{
+            color:white !important;
+        }
+
+        /* Radio */
+        div[role="radiogroup"] label{
+            color:white !important;
+        }
+
+        /* Checkbox */
+        .stCheckbox label{
+            color:white !important;
         }
 
         /* Placeholder */
