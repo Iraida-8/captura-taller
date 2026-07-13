@@ -684,44 +684,50 @@ st.title("⚙ Gestión de Viáticos")
 # =================================
 kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
+import streamlit.components.v1 as components
+
 def render_kpi_card(
     title,
     value,
     emoji,
-    border_color
+    color,
 ):
 
-    st.markdown(
-        f"""
+    html = f"""
+    <div style="padding:6px;">
         <div style="
             background:#FFF7D6;
-            border-radius:14px;
-            padding:18px;
-            border:1px solid #D8C98E;
-            text-align:center;
-            min-height:150px;
+            padding:20px;
+            border-radius:18px;
+            box-shadow:0 4px 10px rgba(0,0,0,.10);
+            min-height:170px;
+            color:#111;
+            font-family:sans-serif;
         ">
+
             <div style="
-                font-size:22px;
-                font-weight:700;
-                color:#151F6D;
+                color:#666666;
+                font-size:15px;
+                font-weight:600;
             ">
                 {emoji} {title}
             </div>
 
             <div style="
-                color:{border_color};
+                text-align:center;
+                color:{color};
                 font-size:58px;
                 font-weight:800;
-                line-height:1;
-                margin-top:16px;
+                margin-top:40px;
             ">
                 {value}
             </div>
+
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    </div>
+    """
+
+    components.html(html, height=220)
 
 with kpi1:
 
