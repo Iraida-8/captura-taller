@@ -774,14 +774,7 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 # =================================
 # PENDIENTES SECTION
 # =================================
-st.markdown(
-    """
-    <h2 style='margin-bottom:20px;'>
-        📋 Solicitudes Pendientes
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
+st.header("📋 Solicitudes Pendientes")
 
 # Only pendientes
 df_pendientes = df_solicitudes[
