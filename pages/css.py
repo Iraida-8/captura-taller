@@ -241,18 +241,6 @@ def load_css():
             border-radius: 12px;
         }
 
-        /* =========================
-        DIALOG
-        ========================= */
-
-        div[role="dialog"] {
-            background-color: #FFF7D6 !important;
-        }
-
-        div[role="dialog"] > div {
-            background-color: #FFF7D6 !important;
-        }
-
         </style>
         """,
         unsafe_allow_html=True,

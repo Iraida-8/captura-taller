@@ -849,50 +849,61 @@ def modal_ver_solicitud(row):
 
     with col1:
 
-        st.write(
-            f"**Folio:** {row.get('folio_solicitud', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Folio:</b> {row.get('folio_solicitud', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Estatus:** {row.get('estatus', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Empresa Brinda Servicio:** {row.get('empresa_brinda_servicio', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Empresa Brinda Servicio:</b> {row.get('empresa_brinda_servicio', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Empleado Solicita:** {row.get('nombre_empleado_solicita', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Empleado Solicita:</b> {row.get('nombre_empleado_solicita', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Fecha Solicitud:** {row.get('fecha_solicitud', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Fecha Solicitud:</b> {row.get('fecha_solicitud', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Fecha Inicio:** {row.get('fecha_inicio', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Fecha Inicio:</b> {row.get('fecha_inicio', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Fecha Fin:** {row.get('fecha_fin', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Fecha Fin:</b> {row.get('fecha_fin', '')}</span>",
+            unsafe_allow_html=True
         )
 
     with col2:
 
-        st.write(
-            f"**Empresa Cargo Gastos:** {row.get('empresa_cargo_gastos', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Empresa Cargo Gastos:</b> {row.get('empresa_cargo_gastos', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Unidad Negocio:** {row.get('unidad_negocio', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Unidad Negocio:</b> {row.get('unidad_negocio', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Sucursal:** {row.get('sucursal', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Sucursal:</b> {row.get('sucursal', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Sucursal Especificar:** {row.get('sucursal_especificar', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Sucursal Especificar:</b> {row.get('sucursal_especificar', '')}</span>",
+            unsafe_allow_html=True
         )
 
         label_cliente = (
@@ -906,14 +917,14 @@ def modal_ver_solicitud(row):
             else "Nombre del Cliente"
         )
 
-        st.write(
-            f"**{label_cliente}:** "
-            f"{row.get('nombre_cliente', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>{label_cliente}:</b> {row.get('nombre_cliente', '')}</span>",
+            unsafe_allow_html=True
         )
 
-        st.write(
-            f"**Registro SAC Ventas?:** "
-            f"{row.get('folio_sac', '')}"
+        st.markdown(
+            f"<span style='color:white;'><b>Registro SAC Ventas?:</b> {row.get('folio_sac', '')}</span>",
+            unsafe_allow_html=True
         )
 
     # =================================
