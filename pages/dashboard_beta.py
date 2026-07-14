@@ -36,7 +36,7 @@ st.set_page_config(
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
-load_css()
+#load_css()
 
 @st.cache_resource
 def get_supabase():
