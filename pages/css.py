@@ -43,7 +43,10 @@ def load_css():
         body,
         .stApp,
         [data-testid="stAppViewContainer"],
-        [data-testid="stMarkdownContainer"],
+        [data-testid="stMarkdownContainer"]{
+            font-family:"Regen", sans-serif !important;
+        }
+
         button,
         input,
         textarea,
@@ -54,7 +57,18 @@ def load_css():
         div,
         th,
         td{
-            font-family:"Regen", sans-serif !important;
+            font-family:inherit !important;
+        }
+
+        /* Do NOT override Google's Material Icons */
+        .material-icons,
+        .material-symbols-outlined,
+        .material-symbols-rounded,
+        .material-symbols-sharp{
+            font-family:"Material Symbols Outlined",
+                        "Material Symbols Rounded",
+                        "Material Symbols Sharp",
+                        "Material Icons" !important;
         }
 
         /* =========================
