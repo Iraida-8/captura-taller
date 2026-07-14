@@ -21,8 +21,6 @@ st.set_page_config(
 # -------------------------------
 load_css()
 
-
-
 # =================================
 # Supabase setup
 # =================================
@@ -138,7 +136,7 @@ def show_changelog():
 # =================================
 if st.session_state.auth_view == "login":
 
-    st.title("OMEGA")
+   # st.title("OMEGA")
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
