@@ -62,11 +62,7 @@ def load_css():
 
         div.stButton button{
 
-            height:95px;
-
-            border-radius:16px;
-
-            padding:1.2rem;
+            border-radius:10px;
 
             background:#151F6D !important;
 
@@ -74,13 +70,9 @@ def load_css():
 
             border:none !important;
 
-            box-shadow:0 4px 14px rgba(0,0,0,.12);
+            font-weight:600;
 
-            transition:all .2s ease;
-
-            font-size:1.4rem !important;
-
-            font-weight:700 !important;
+            transition:.2s;
         }
 
         div.stButton button *{
