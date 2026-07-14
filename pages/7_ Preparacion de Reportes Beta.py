@@ -10,6 +10,19 @@ import numpy as np
 from pages.css import load_css
 
 # =================================
+# RELEASE CHANNEL
+# =================================
+
+APP_CHANNEL = "BETA"
+# APP_CHANNEL = "RELEASE"
+
+DASHBOARD_PAGE = (
+    "pages/dashboard_beta.py"
+    if APP_CHANNEL == "BETA"
+    else "pages/dashboard.py"
+)
+
+# =================================
 # SUPABASE UPLOAD CONFIG
 # =================================
 COMPANY_DB_MAP = {
@@ -69,7 +82,7 @@ def get_supabase_client():
 # =================================
 st.write("")
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard_beta.py")
+    st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
 

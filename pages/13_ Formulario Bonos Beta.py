@@ -8,6 +8,19 @@ import streamlit.components.v1 as components
 from pages.css import load_css
 
 # =================================
+# RELEASE CHANNEL
+# =================================
+
+APP_CHANNEL = "BETA"
+# APP_CHANNEL = "RELEASE"
+
+DASHBOARD_PAGE = (
+    "pages/dashboard_beta.py"
+    if APP_CHANNEL == "BETA"
+    else "pages/dashboard.py"
+)
+
+# =================================
 # Page configuration
 # =================================
 st.set_page_config(page_title="Lector Facturas PDF → Excel", layout="wide")
@@ -45,7 +58,7 @@ supabase = get_supabase_client()
 # =================================
 st.write("")
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard_beta.py")
+    st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
 
