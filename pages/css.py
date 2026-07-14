@@ -7,10 +7,6 @@ def load_css():
         """
         <style>
 
-        [data-testid="stHeaderActionElements"]{
-            display:none !important;
-        }
-
         /* =========================
            HIDE SIDEBAR
         ========================= */
@@ -272,6 +268,18 @@ def load_css():
             border-radius:14px;
 
             padding:1rem;
+        }
+
+        /* =================================
+        HIDE STREAMLIT HEADER LINK ICONS
+        ================================= */
+
+        [data-testid="stHeaderActionElements"]{
+            display:none !important;
+        }
+
+        [data-testid="stHeaderActionElements"] *{
+            display:none !important;
         }
 
         </style>
