@@ -139,21 +139,22 @@ if st.session_state.auth_view == "login":
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         </style>
 
-        <h1 style="
+        <div style="
+            width:100%;
             text-align:center;
-            font-family:'Orbitron', sans-serif;
-            font-size:4rem;
-            font-weight:900;
+            font-family:'Audiowide', sans-serif;
+            font-size:64px;
+            font-weight:700;
             color:#151F6D;
-            letter-spacing:10px;
-            margin-top:-10px;
-            margin-bottom:5px;
+            letter-spacing:8px;
+            margin-top:10px;
+            margin-bottom:20px;
         ">
             OMEGA
-        </h1>
+        </div>
         """,
         unsafe_allow_html=True
     )
