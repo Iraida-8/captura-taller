@@ -249,13 +249,13 @@ if role == "field_user":
 
     with tp1:
         tipo_proveedor = st.selectbox(
-            "Tipo de Proveedor",
+            "Tipo de Orden",
             ["----", "Interno", "Externo"]
         )
 
     with tp2:
         proveedor = st.selectbox(
-            "Proveedor",
+            "Proveedor / Taller",
             ["Selecciona proveedor"]
         )
 
@@ -542,13 +542,13 @@ else:
 
     with tp1:
         tipo_proveedor = st.selectbox(
-            "Tipo de Proveedor",
+            "Tipo de Orden",
             ["----", "Interno", "Externo"]
         )
 
     with tp2:
         proveedor = st.selectbox(
-            "Proveedor",
+            "Proveedor / Taller",
             ["Selecciona proveedor"]
         )
 
