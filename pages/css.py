@@ -303,6 +303,29 @@ def load_css():
             padding:1rem;
         }
 
+        /* =========================
+        FILE UPLOADER BUTTON
+        ========================= */
+
+        [data-testid="stFileUploader"] button{
+            background-color:#151F6D !important;
+            color:white !important;
+            border:1px solid #BFA75F !important;
+        }
+
+        [data-testid="stFileUploader"] button:hover{
+            background-color:#BFA75F !important;
+            color:#151F6D !important;
+        }
+
+        [data-testid="stFileUploader"] button *{
+            color:white !important;
+        }
+
+        [data-testid="stFileUploader"] button:hover *{
+            color:#151F6D !important;
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
