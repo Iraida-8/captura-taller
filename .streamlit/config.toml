@@ -3,12 +3,7 @@ base = "dark"
 
 primaryColor = "#BFA75F"
 
-backgroundColor = "#FFFFFF"
+backgroundColor = "#151F6D"
 secondaryBackgroundColor = "#1B267A"
 
-textColor = "#222222"
-
-font = "sans serif"
-
-[client]
-toolbarMode = "minimal"
+textColor = "#FFFFFF"
