@@ -7,6 +7,11 @@ def load_css():
         """
         <style>
 
+        /* Hide Streamlit heading anchor links */
+        a[data-testid="stHeaderActionElements"]{
+            display:none !important;
+        }
+
         /* =========================
            HIDE SIDEBAR
         ========================= */
