@@ -241,6 +241,68 @@ def load_css():
             border-radius: 12px;
         }
 
+        /* =========================
+        EXPANDERS
+        ========================= */
+
+        [data-testid="stExpander"]{
+            background-color:#1B267A;
+            border:1px solid rgba(191,167,95,.20);
+            border-radius:14px;
+        }
+
+        /* =========================
+        FILE UPLOADER
+        ========================= */
+
+        [data-testid="stFileUploader"]{
+            background-color:#1B267A !important;
+            border:1px solid rgba(191,167,95,.25) !important;
+            border-radius:12px !important;
+        }
+
+        /* =========================
+        DOWNLOAD BUTTONS
+        ========================= */
+
+        div[data-testid="stDownloadButton"] > button{
+            background-color:#BFA75F;
+            color:#151F6D;
+            border-radius:12px;
+            box-shadow:0 4px 12px rgba(191,167,95,.20);
+            font-weight:600;
+            border:none;
+            transition:all .2s ease;
+        }
+
+        div[data-testid="stDownloadButton"] > button:hover{
+            background-color:#D4BC73;
+            color:#151F6D;
+            transform:translateY(-1px);
+        }
+
+        /* =========================
+        DATAFRAME / DATA EDITOR
+        ========================= */
+
+        [data-testid="stDataFrame"],
+        [data-testid="stDataEditor"]{
+            border:1px solid rgba(191,167,95,.20);
+            border-radius:12px;
+            overflow:hidden;
+        }
+
+        /* =========================
+        METRIC CARDS
+        ========================= */
+
+        [data-testid="metric-container"]{
+            background-color:#1B267A;
+            border:1px solid rgba(191,167,95,.20);
+            border-radius:14px;
+            padding:1rem;
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
