@@ -136,7 +136,27 @@ def show_changelog():
 # =================================
 if st.session_state.auth_view == "login":
 
-   # st.title("OMEGA")
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+        </style>
+
+        <h1 style="
+            text-align:center;
+            font-family:'Orbitron', sans-serif;
+            font-size:4rem;
+            font-weight:900;
+            color:#151F6D;
+            letter-spacing:10px;
+            margin-top:-10px;
+            margin-bottom:5px;
+        ">
+            OMEGA
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
