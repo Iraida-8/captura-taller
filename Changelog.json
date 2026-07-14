@@ -1,5 +1,24 @@
 [
     {
+        "version": "1.07.14.26",
+        "date": "14/07/2026",
+        "changes": [
+            "Rediseño completo de la interfaz del módulo de Solicitud y Gestión de Viáticos",
+            "Nueva hoja de estilos institucional para Portal OMEGA con unificación visual de componentes",
+            "Integración del sistema de temas de Streamlit mediante config.toml",
+            "Estandarización de estilos entre páginas, formularios, tablas y cuadros informativos",
+            "Rediseño de tarjetas KPI y optimización de presentación de indicadores",
+            "Actualización de estilos para contenedores, expandibles, DataFrames y editores de datos",
+            "Rediseño de los modales de consulta con nueva presentación de información y mejoras de legibilidad",
+            "Optimización de colores y estilos para formularios, controles de captura y campos deshabilitados",
+            "Implementación de navegación dinámica entre versiones Release y Beta mediante variables de configuración",
+            "Automatización de rutas internas para cambio de versión del sistema sin modificar enlaces manualmente",
+            "Actualización dinámica del título de la aplicación según la versión activa (OMEGA / OMEGA BETA)",
+            "Refactorización del archivo CSS eliminando conflictos con el sistema de temas de Streamlit",
+            "Mejoras generales de navegación, consistencia visual y experiencia de usuario"
+        ]
+    },
+    {
         "version": "1.07.09.26",
         "date": "09/07/2026",
         "changes": [
