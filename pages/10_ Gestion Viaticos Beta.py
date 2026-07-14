@@ -1493,7 +1493,7 @@ with p2:
             text-align:center;
             padding-top:8px;
             font-weight:700;
-            color:white;
+            color:#151F6D;
         ">
             Página {st.session_state.pagina_viaticos} de {total_paginas}
         </div>
@@ -2402,7 +2402,7 @@ with p2:
             text-align:center;
             padding-top:8px;
             font-weight:700;
-            color:white;
+            color:#151F6D;
         ">
             Página {st.session_state.pagina_verificar} de {total_paginas_verificar}
         </div>
