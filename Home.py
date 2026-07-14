@@ -11,7 +11,7 @@ from pages.css import load_css
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Portal OMEGA - Operational Monitoring & Execution Grid Analytics",
+    page_title="OMEGA - Operations Management Platform",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
