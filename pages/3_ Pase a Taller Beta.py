@@ -256,13 +256,28 @@ if role == "field_user":
     with tp2:
         proveedor = st.selectbox(
             "Proveedor / Taller",
-            ["Selecciona proveedor"]
+            [
+                "Selecciona proveedor",
+                "TALLER",
+                "WNC",
+                "K9",
+                "NAVARRO",
+                "KINOS",
+                "OTRO"
+            ]
         )
 
     with tp3:
         razones = st.selectbox(
             "Razones",
-            ["Selecciona razón"]
+            [
+                "Selecciona razón",
+                "Taller Saturado",
+                "Caja fuera de Patio",
+                "Taller no Cuenta con las Refacciones",
+                "Taller de Respuesta",
+                "Taller PG no va al RFE"
+            ]
         )
 
     # Hidden value
@@ -549,13 +564,28 @@ else:
     with tp2:
         proveedor = st.selectbox(
             "Proveedor / Taller",
-            ["Selecciona proveedor"]
+            [
+                "Selecciona proveedor",
+                "TALLER",
+                "WNC",
+                "K9",
+                "NAVARRO",
+                "KINOS",
+                "OTRO"
+            ]
         )
 
     with tp3:
         razones = st.selectbox(
             "Razones",
-            ["Selecciona razón"]
+            [
+                "Selecciona razón",
+                "Taller Saturado",
+                "Caja fuera de Patio",
+                "Taller no Cuenta con las Refacciones",
+                "Taller de Respuesta",
+                "Taller PG no va al RFE"
+            ]
         )
 
     # Hidden value
