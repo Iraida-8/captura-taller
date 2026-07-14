@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
 import json
+from pages.css import load_css
 
 # =================================
 # Page configuration
@@ -15,192 +16,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# =================================
-# CSS Styling
-# =================================
-st.markdown("""
-<style>
-[data-testid="stSidebar"] {
-    display: none;
-}
+# -------------------------------
+# PAGE STYLE
+# -------------------------------
+load_css()
 
-.stApp {
-    background-color: #151F6D;
-}
 
-.block-container {
-    max-width: 420px;
-    padding-top: 5rem;
-    padding-bottom: 3rem;
-}
-
-/* Logo */
-img {
-    display: block;
-    margin: auto;
-    margin-bottom: 1.2rem;
-    transform: scale(1.18);
-}
-
-/* Main form card */
-form[data-testid="stForm"] {
-    background-color: #1B267A;
-    padding: 2rem;
-    border-radius: 16px;
-    border: 1px solid rgba(191, 167, 95, 0.18);
-    box-shadow: 0 0 0 1px rgba(191, 167, 95, 0.25);
-}
-
-/* Title */
-h1 {
-    text-align: center !important;
-    font-size: 3.0rem !important;
-    margin-bottom: 0.15rem !important;
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
-}
-
-/* Labels */
-label,
-.stTextInput label {
-    color: #F5F5F5 !important;
-    font-weight: 500;
-}
-
-/* =================================
-   INGRESAR button
-================================= */
-div[data-testid="stFormSubmitButton"] > button {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 15px;
-    border: none;
-    transition: all 0.2s ease;
-    background-color: #BFA75F;
-    color: #151F6D;
-    box-shadow: 0 4px 12px rgba(191, 167, 95, 0.25);
-}
-
-div[data-testid="stFormSubmitButton"] > button:hover {
-    background-color: #d4bc73;
-    color: #151F6D;
-    transform: translateY(-1px);
-}
-
-/* =================================
-   Recuperar contraseña button ONLY
-================================= */
-div.stButton > button {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 15px;
-    transition: all 0.2s ease;
-    background-color: transparent;
-    color: #BFA75F;
-    border: 1px solid #BFA75F;
-}
-
-div.stButton > button:hover {
-    background-color: #BFA75F;
-    color: #151F6D;
-    transform: translateY(-1px);
-}
-
-/* =================================
-   SYS VER clickable text ONLY
-================================= */
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    margin-top: -6px !important;
-    margin-bottom: 1.3rem !important;
-}
-
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button {
-    width: auto !important;
-    min-width: unset !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: #BFA75F !important;
-    font-size: 0.85rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.4px !important;
-    min-height: auto !important;
-    line-height: 1.2 !important;
-    display: inline-flex !important;
-    justify-content: center !important;
-    text-align: center !important;
-}
-
-div[data-testid="stButton"]:has(button[key="sys_version_btn"]) button:hover {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #d4bc73 !important;
-    transform: none !important;
-}
-
-/* =================================
-   INPUTS — fixes password black corner
-================================= */
-
-div[data-testid="stTextInputRootElement"] {
-    background: #24338C !important;
-    border: 1px solid rgba(191, 167, 95, 0.25) !important;
-    border-radius: 10px !important;
-    overflow: hidden !important;
-}
-
-/* internal wrapper */
-div[data-testid="stTextInputRootElement"] > div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-/* actual input */
-div[data-testid="stTextInputRootElement"] input {
-    background: transparent !important;
-    color: white !important;
-    border: none !important;
-}
-
-/* placeholder */
-div[data-testid="stTextInputRootElement"] input::placeholder {
-    color: #c7c7c7 !important;
-}
-
-/* eye icon area */
-div[data-testid="stTextInputRootElement"] button {
-    background: #24338C !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-}
-
-/* remove weird dark password background */
-[data-testid="stPasswordInput"] {
-    background: transparent !important;
-}
-
-/* helper text */
-.small-text {
-    text-align: center;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: #BFA75F;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # =================================
 # Supabase setup
