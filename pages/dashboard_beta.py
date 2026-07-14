@@ -78,7 +78,7 @@ latest_version = (
 # ASSETS
 # -------------------------------
 assets_dir = Path(__file__).parent.parent / "assets"
-logo_path = assets_dir / "black_pgl.png"
+logo_path = assets_dir / "color_pgl.png"
 
 # =============================
 # FIELD USER VIEW
