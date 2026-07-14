@@ -42,33 +42,47 @@ def load_css():
         html,
         body,
         .stApp,
-        [data-testid="stAppViewContainer"],
-        [data-testid="stMarkdownContainer"]{
-            font-family:"Regen", sans-serif !important;
+        [data-testid="stAppViewContainer"]{
+            font-family:"Regen", sans-serif;
         }
 
-        button,
+        /* Apply Regen only to user-facing text */
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        label,
         input,
         textarea,
         select,
-        label,
-        span,
-        p,
-        div,
-        th,
-        td{
-            font-family:inherit !important;
+        button{
+            font-family:"Regen", sans-serif !important;
         }
 
-        /* Do NOT override Google's Material Icons */
+        /* Markdown and text */
+        [data-testid="stMarkdownContainer"],
+        [data-testid="stText"]{
+            font-family:"Regen", sans-serif !important;
+        }
+
+        /* DO NOT touch Streamlit internal spans/divs */
+        span,
+        div{
+            font-family:inherit;
+        }
+
+        /* Preserve Streamlit/Material icons */
         .material-icons,
         .material-symbols-outlined,
         .material-symbols-rounded,
-        .material-symbols-sharp{
-            font-family:"Material Symbols Outlined",
-                        "Material Symbols Rounded",
-                        "Material Symbols Sharp",
-                        "Material Icons" !important;
+        .material-symbols-sharp,
+        [data-testid="stPasswordInput"] button,
+        [data-testid="stPasswordInput"] button *{
+            font-family:initial !important;
         }
 
         /* =========================
