@@ -270,23 +270,6 @@ def load_css():
             padding:1rem;
         }
 
-        /* Hide heading anchor links */
-        .stHeading a {
-            display: none !important;
-        }
-
-        .stHeadingAnchor {
-            display: none !important;
-        }
-
-        .stHeadingAction {
-            display: none !important;
-        }
-
-        [data-testid="stHeaderActionElements"] {
-            display: none !important;
-        }
-
         </style>
         """,
         unsafe_allow_html=True,
