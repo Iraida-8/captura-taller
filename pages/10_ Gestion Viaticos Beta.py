@@ -845,7 +845,7 @@ df_pagina = df_pendientes.iloc[inicio:fin]
 def modal_ver_solicitud(row):
 
     st.markdown(
-        "<h2 style='color:white;'>📋 Información General</h2>",
+        "<h2 style='color:#151F6D;'>📋 Información General</h2>",
         unsafe_allow_html=True
     )
 
@@ -941,7 +941,7 @@ def modal_ver_solicitud(row):
     st.markdown(
         f"""
         <div style='
-            background-color:#1B267A;
+            background-color:#F3F4F6;
             padding:16px;
             border-radius:12px;
             border:1px solid rgba(191,167,95,0.25);
@@ -959,7 +959,7 @@ def modal_ver_solicitud(row):
     # =================================
 
     st.markdown(
-        "<h2 style='color:white;'>📝 Observaciones</h2>",
+        "<h2 style='color:#151F6D;'>📝 Observaciones</h2>",
         unsafe_allow_html=True
     )
 
@@ -1761,7 +1761,7 @@ else:
                     # =================================
 
                     st.markdown(
-                        "<h2 style='color:white;'>📋 Información General</h2>",
+                        "<h2 style='color:#151F6D;'>📋 Información General</h2>",
                         unsafe_allow_html=True
                     )
 
@@ -1864,14 +1864,14 @@ else:
                     st.markdown("---")
 
                     st.markdown(
-                        "<h2 style='color:white;'>✈️ Motivo del Viaje</h2>",
+                        "<h2 style='color:#151F6D;'>✈️ Motivo del Viaje</h2>",
                         unsafe_allow_html=True
                     )
 
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -1890,14 +1890,14 @@ else:
                     # =================================
 
                     st.markdown(
-                        "<h2 style='color:white;'>📝 Observaciones Solicitud</h2>",
+                        "<h2 style='color:#151F6D;'>📝 Observaciones Solicitud</h2>",
                         unsafe_allow_html=True
                     )
 
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -1912,14 +1912,14 @@ else:
                     )
 
                     st.markdown(
-                        "<h2 style='color:white;'>👤 Empleado que metió comprobación</h2>",
+                        "<h2 style='color:#151F6D;'>👤 Empleado que metió comprobación</h2>",
                         unsafe_allow_html=True
                     )
 
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -1936,14 +1936,14 @@ else:
                     )
 
                     st.markdown(
-                        "<h2 style='color:white;'>📝 Observaciones Comprobación</h2>",
+                        "<h2 style='color:#151F6D;'>📝 Observaciones Comprobación</h2>",
                         unsafe_allow_html=True
                     )
 
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -3153,7 +3153,7 @@ else:
                     # =================================
 
                     st.markdown(
-                        "<h2 style='color:white;'>📋 Información General</h2>",
+                        "<h2 style='color:#151F6D;'>📋 Información General</h2>",
                         unsafe_allow_html=True
                     )
 
@@ -3262,7 +3262,7 @@ else:
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -3286,7 +3286,7 @@ else:
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -3306,7 +3306,7 @@ else:
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
@@ -3328,7 +3328,7 @@ else:
                     st.markdown(
                         f"""
                         <div style='
-                            background-color:#1B267A;
+                            background-color:#F3F4F6;
                             padding:16px;
                             border-radius:12px;
                             border:1px solid rgba(191,167,95,0.25);
