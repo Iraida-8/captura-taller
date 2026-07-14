@@ -270,16 +270,21 @@ def load_css():
             padding:1rem;
         }
 
-        /* =================================
-        HIDE STREAMLIT HEADER LINK ICONS
-        ================================= */
-
-        [data-testid="stHeaderActionElements"]{
-            display:none !important;
+        /* Hide heading anchor links */
+        .stHeading a {
+            display: none !important;
         }
 
-        [data-testid="stHeaderActionElements"] *{
-            display:none !important;
+        .stHeadingAnchor {
+            display: none !important;
+        }
+
+        .stHeadingAction {
+            display: none !important;
+        }
+
+        [data-testid="stHeaderActionElements"] {
+            display: none !important;
         }
 
         </style>
