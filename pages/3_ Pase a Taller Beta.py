@@ -297,6 +297,12 @@ else:
 
     with tp3:
 
+        if "razones" not in st.session_state:
+            st.session_state.razones = "Selecciona razón"
+
+        if tipo_proveedor == "Interno":
+            st.session_state.razones = "Selecciona razón"
+
         razones = st.selectbox(
             "Razones",
             [
@@ -307,6 +313,7 @@ else:
                 "Taller de Respuesta",
                 "Taller PG no va al RFE"
             ],
+            key="razones",
             disabled=tipo_proveedor != "Externo"
         )
 
