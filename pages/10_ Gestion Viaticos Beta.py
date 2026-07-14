@@ -603,8 +603,9 @@ if "toast_actualizado" in st.session_state:
     ]
 
 # =================================
-# Top navigation
+# Navigation
 # =================================
+st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard_beta.py")
 

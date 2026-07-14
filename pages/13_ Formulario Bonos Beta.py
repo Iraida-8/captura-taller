@@ -43,6 +43,7 @@ supabase = get_supabase_client()
 # =================================
 # Navigation
 # =================================
+st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard_beta.py")
 

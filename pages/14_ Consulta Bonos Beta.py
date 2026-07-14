@@ -43,9 +43,9 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
-# NAVIGATION
+# Navigation
 # =================================
-
+st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard_beta.py")
 

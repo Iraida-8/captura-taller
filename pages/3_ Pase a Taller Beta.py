@@ -39,7 +39,6 @@ st.set_page_config(
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
-
 load_css()
 
 # =================================
@@ -212,8 +211,9 @@ if "forzar_guardado" not in st.session_state:
 
 if role == "field_user":
     # =================================
-    # Top navigation
+    # Navigation
     # =================================
+    st.write("")
     if st.button("⬅ Volver al Dashboard"):
         st.switch_page("pages/dashboard_beta.py")
 
@@ -504,8 +504,9 @@ if role == "field_user":
 
 else:
     # =================================
-    # Top navigation
+    # Navigation
     # =================================
+    st.write("")
     if st.button("⬅ Volver al Dashboard"):
         st.switch_page("pages/dashboard_beta.py")
 

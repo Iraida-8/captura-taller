@@ -27,8 +27,9 @@ require_login()
 require_access("ifuel")
 
 # =================================
-# Top navigation
+# Navigation
 # =================================
+st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page("pages/dashboard_beta.py")
 
