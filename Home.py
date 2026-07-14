@@ -74,7 +74,7 @@ if (
 # =================================
 
 assets_dir = Path(__file__).parent / "assets"
-logo_path = assets_dir / "pg_brand.png"
+logo_path = assets_dir / "color_pgl.png"
 
 if logo_path.exists():
     img = Image.open(logo_path)
