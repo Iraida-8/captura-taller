@@ -360,9 +360,9 @@ if role == "field_user":
         tr1, tr2 = st.columns(2)
         with tr1:
             tipo_reporte = st.selectbox(
-                "Tipo de Reporte",
+                "Tipo de Mantenimiento",
                 [
-                    "Selecciona tipo de reporte",
+                    "Selecciona tipo de mantenimiento",
                     "Orden Preventivo",
                     "Orden Correctivo"
                 ]
@@ -668,9 +668,9 @@ else:
         tr1, tr2 = st.columns(2)
         with tr1:
             tipo_reporte = st.selectbox(
-                "Tipo de Reporte",
+                "Tipo de Mantenimiento",
                 [
-                    "Selecciona tipo de reporte",
+                    "Selecciona tipo de mantenimiento",
                     "Orden Preventivo",
                     "Orden Correctivo"
                 ]
