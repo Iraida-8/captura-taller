@@ -10,12 +10,20 @@ gatherUsageStats = false
 headless = true
 enableStaticServing = true
 runOnSave = true
+maxUploadSize = 500
+maxMessageSize = 500
+
+[runner]
+fastReruns = true
+
+[logger]
+level = "warning"
 
 [theme]
-base="light"
+base = "light"
 
-primaryColor="#BFA75F"
-backgroundColor="#FFFFFF"
-secondaryBackgroundColor="#F6F8FC"
-textColor="#222222"
+primaryColor = "#BFA75F"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F6F8FC"
+textColor = "#222222"
 font = "sans serif"
