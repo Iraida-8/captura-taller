@@ -112,9 +112,10 @@ def load_css():
 
         /* General Text */
 
-        /* Markdown text only */
-        [data-testid="stMarkdownContainer"] p{
-            color:#222222 !important;
+        p,
+        label,
+        span{
+            color:#222222;
         }
 
         /* =========================
