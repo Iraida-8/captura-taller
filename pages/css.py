@@ -7,6 +7,56 @@ def load_css():
         """
         <style>
 
+        @font-face{
+            font-family:"Regen";
+            src:url("/static/fonts/Regen.otf") format("opentype");
+            font-weight:400;
+            font-style:normal;
+        }
+
+        @font-face{
+            font-family:"Regen";
+            src:url("/static/fonts/Regen-Bold.otf") format("opentype");
+            font-weight:700;
+            font-style:normal;
+        }
+
+        @font-face{
+            font-family:"Regen";
+            src:url("/static/fonts/Regen-Italic.otf") format("opentype");
+            font-weight:400;
+            font-style:italic;
+        }
+
+        @font-face{
+            font-family:"Regen";
+            src:url("/static/fonts/Regen-BoldItalic.otf") format("opentype");
+            font-weight:700;
+            font-style:italic;
+        }
+
+        /* =================================
+        GLOBAL FONT
+        ================================= */
+
+        html,
+        body,
+        .stApp,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMarkdownContainer"],
+        button,
+        input,
+        textarea,
+        select,
+        label,
+        span,
+        p,
+        div,
+        th,
+        td{
+            font-family:"Regen", sans-serif !important;
+        }
+
         /* =========================
            HIDE SIDEBAR
         ========================= */
@@ -29,6 +79,7 @@ def load_css():
         ========================= */
 
         h1{
+            font-family:"Regen", sans-serif;
             font-size:1.9rem;
             margin-bottom:.2rem;
         }
