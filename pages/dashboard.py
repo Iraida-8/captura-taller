@@ -5,6 +5,7 @@ from pathlib import Path
 from PIL import Image
 import json
 from supabase import create_client
+from pages.css import load_css
 
 # -------------------------------
 # Security gate
@@ -14,7 +15,13 @@ require_login()
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
+#REQUIRED_RELEASE = "beta"
 REQUIRED_RELEASE = "release"
+
+# -------------------------------
+# PAGE SUFFIX
+# -------------------------------
+PAGE_SUFFIX = " Beta" if REQUIRED_RELEASE.lower() == "beta" else ""
 
 user = st.session_state.user
 access = user.get("access", [])
@@ -23,14 +30,23 @@ role = (user.get("role") or "").lower()
 if REQUIRED_RELEASE not in access:
     st.error("No tienes permisos para acceder a esta versión del sistema.")
     st.stop()
-# -------------------------------
-# RELEASE GATE
-# -------------------------------    
 
+# -------------------------------
+# TITLE
+# -------------------------------
 st.set_page_config(
-    page_title="Dashboard - OMEGA",
+    page_title=(
+        "Dashboard - OMEGA BETA"
+        if REQUIRED_RELEASE.lower() == "beta"
+        else "Dashboard - OMEGA"
+    ),
     layout="wide"
 )
+
+# -------------------------------
+# PAGE STYLE
+# -------------------------------
+load_css()
 
 @st.cache_resource
 def get_supabase():
@@ -40,100 +56,6 @@ def get_supabase():
     )
 
 supabase = get_supabase()
-
-# -------------------------------
-# CSS
-# -------------------------------
-st.markdown(
-    """
-    <style>
-    /* Hide sidebar */
-    [data-testid="stSidebar"] {
-        display: none;
-    }
-
-    /* App background */
-    .stApp {
-        background-color: #151F6D;
-    }
-
-    /* Give page breathing room */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-    }
-
-    /* =========================
-       HEADER STYLE
-       ========================= */
-    h1 {
-        font-size: 1.9rem;
-        margin-bottom: 0.2rem;
-        color: #FFFFFF;
-    }
-
-    h2, h3 {
-        margin-top: 0.5rem;
-        color: #BFA75F;
-    }
-
-    /* =========================
-       BIG MODULE BUTTONS
-       ========================= */
-    div.stButton > button {
-        height: 95px;
-        border-radius: 16px;
-        padding: 1.2rem;
-    }
-
-    div.stButton > button p,
-    div.stButton > button span {
-        font-size: 1.4rem !important;
-        font-weight: 700 !important;
-    }
-
-        background-color: #1B267A;
-        color: #FFFFFF;
-        border: 1px solid rgba(191, 167, 95, 0.25);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-        transition: all 0.2s ease-in-out;
-    }
-
-    /* Hover */
-    div.stButton > button:hover {
-        transform: translateY(-2px);
-        background-color: #24338C;
-        border-color: #BFA75F;
-        color: #BFA75F;
-    }
-
-    /* =========================
-       LOGOUT BUTTON
-       ========================= */
-    button[kind="secondary"] {
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        border-radius: 12px;
-        background-color: transparent;
-        color: #BFA75F;
-        border: 1px solid #BFA75F;
-        font-weight: 600;
-    }
-
-    button[kind="secondary"]:hover {
-        background-color: #BFA75F;
-        color: #151F6D;
-    }
-
-    /* Text */
-    p, label, span {
-        color: #F5F5F5;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 # -------------------------------
 # CHANGELOG
@@ -156,7 +78,7 @@ latest_version = (
 # ASSETS
 # -------------------------------
 assets_dir = Path(__file__).parent.parent / "assets"
-logo_path = assets_dir / "white_pgl.png"
+logo_path = assets_dir / "black_pgl.png"
 
 # =============================
 # FIELD USER VIEW
@@ -242,7 +164,7 @@ else:
                 width:100%;
                 height:48px;
 
-                background:#BFA75F;
+                background:#F4F6FB;
                 color:white !important;
 
                 border:none;
@@ -476,19 +398,19 @@ if role == "field_user":
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": "pages/3_ Pase a Taller.py",
+                "page": f"pages/3_ Pase a Taller{PAGE_SUFFIX}.py",
                 "key": "btn_pase_taller"
             },
             {
                 "access": "solicitud_viaticos_D",
                 "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": "pages/9_ Viaticos.py",
+                "page": f"pages/9_ Viaticos{PAGE_SUFFIX}.py",
                 "key": "btn_viaticos"
             },
             {
                 "access": "bonos_operador",
                 "label": "💰  Bono de Operadores",
-                "page": "pages/13_ Formulario Bonos.py",
+                "page": f"pages/13_ Formulario Bonos{PAGE_SUFFIX}.py",
                 "key": "btn_bonos_operador"
             }
         ])
@@ -511,13 +433,13 @@ if role == "field_user":
             {
                 "access": "autorizacion",
                 "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": "pages/4_ Autorizacion.py",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
                 "key": "btn_autorizacion"
             },
             {
                 "access": "gestion_viaticos",
                 "label": "💼  Gestión de Viáticos",
-                "page": "pages/10_ Gestion Viaticos.py",
+                "page": f"pages/10_ Gestion Viaticos{PAGE_SUFFIX}.py",
                 "key": "btn_gestion_viaticos"
             }
         ])
@@ -541,19 +463,19 @@ if role == "field_user":
             {
                 "access": "consultar_reparacion",
                 "label": "🔍  Consultar Historial de Reparación",
-                "page": "pages/1_ Consultar Reparacion.py",
+                "page": f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py",
                 "key": "btn_consultar_reparacion"
             },
             {
                 "access": "consulta_reportes",
                 "label": "📊  Consulta de Pases de Taller",
-                "page": "pages/6_ Consulta Reportes.py",
+                "page": f"pages/6_ Consulta Reportes{PAGE_SUFFIX}.py",
                 "key": "btn_consulta_reportes"
             },
             {
                 "access": "consulta_bonos_operador",
                 "label": "💰 Consulta Bonos de Operadores",
-                "page": "pages/14_ Consulta Bonos.py",
+                "page": f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py",
                 "key": "btn_consulta_bonos_operador",
             }
         ])
@@ -577,19 +499,19 @@ if role == "field_user":
             {
                 "access": "ifuel",
                 "label": "⛽  Reporte iFuel",
-                "page": "pages/5_ Reporte iFuel.py",
+                "page": f"pages/5_ Reporte iFuel{PAGE_SUFFIX}.py",
                 "key": "btn_ifuel"
             },
             {
                 "access": "lector_pdf",
                 "label": "📄  Lector PDF",
-                "page": "pages/2_ Lector PDF.py",
+                "page": f"pages/2_ Lector PDF{PAGE_SUFFIX}.py",
                 "key": "btn_lector_pdf"
             },
             {
                 "access": "gps_tracking",
                 "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-                "page": "pages/11_ api_pull.py",
+                "page": f"pages/11_ api_pull{PAGE_SUFFIX}.py",
                 "key": "btn_gps_tracking"
             }
         ])
@@ -612,19 +534,19 @@ if role == "field_user":
             {
                 "access": "prepara_reportes",
                 "label": "🛠️  Preparación de Reportes",
-                "page": "pages/7_ Preparacion de Reportes.py",
+                "page": f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py",
                 "key": "btn_prepara_reportes"
             },
             {
                 "access": "gestion_unidades",
                 "label": "🚚  Gestión de Unidades",
-                "page": "pages/8_ Gestion de Unidades.py",
+                "page": f"pages/8_ Gestion de Unidades{PAGE_SUFFIX}.py",
                 "key": "btn_gestion_unidades"
             },
             {
                 "access": "ai_testing",
                 "label": "🚚  Pruebas de IA",
-                "page": "pages/12_ AI_tests.py",
+                "page": f"pages/12_ AI_tests{PAGE_SUFFIX}.py",
                 "key": "btn_ai_testing"
             }
         ])
@@ -783,19 +705,19 @@ else:
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": "pages/3_ Pase a Taller.py",
+                "page": f"pages/3_ Pase a Taller{PAGE_SUFFIX}.py",
                 "key": "btn_pase_taller"
             },
             {
                 "access": "solicitud_viaticos_D",
                 "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": "pages/9_ Viaticos.py",
+                "page": f"pages/9_ Viaticos{PAGE_SUFFIX}.py",
                 "key": "btn_viaticos"
             },
             {
                 "access": "bonos_operador",
                 "label": "💰  Bono de Operadores",
-                "page": "pages/13_ Formulario Bonos.py",
+                "page": f"pages/13_ Formulario Bonos{PAGE_SUFFIX}.py",
                 "key": "btn_bonos_operador"
             }
         ])
@@ -818,13 +740,13 @@ else:
             {
                 "access": "autorizacion",
                 "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": "pages/4_ Autorizacion.py",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
                 "key": "btn_autorizacion"
             },
             {
                 "access": "gestion_viaticos",
                 "label": "💼  Gestión de Viáticos",
-                "page": "pages/10_ Gestion Viaticos.py",
+                "page": f"pages/10_ Gestion Viaticos{PAGE_SUFFIX}.py",
                 "key": "btn_gestion_viaticos"
             }
         ])
@@ -848,19 +770,19 @@ else:
             {
                 "access": "consultar_reparacion",
                 "label": "🔍  Consultar Historial de Reparación",
-                "page": "pages/1_ Consultar Reparacion.py",
+                "page": f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py",
                 "key": "btn_consultar_reparacion"
             },
             {
                 "access": "consulta_reportes",
                 "label": "📊  Consulta de Pases de Taller",
-                "page": "pages/6_ Consulta Reportes.py",
+                "page": f"pages/6_ Consulta Reportes{PAGE_SUFFIX}.py",
                 "key": "btn_consulta_reportes"
             },
             {
                 "access": "consulta_bonos_operador",
                 "label": "💰 Consulta Bonos de Operadores",
-                "page": "pages/14_ Consulta Bonos.py",
+                "page": f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py",
                 "key": "btn_consulta_bonos_operador",
             }
         ])
@@ -884,19 +806,19 @@ else:
             {
                 "access": "ifuel",
                 "label": "⛽  Reporte iFuel",
-                "page": "pages/5_ Reporte iFuel.py",
+                "page": f"pages/5_ Reporte iFuel{PAGE_SUFFIX}.py",
                 "key": "btn_ifuel"
             },
             {
                 "access": "lector_pdf",
                 "label": "📄  Lector PDF",
-                "page": "pages/2_ Lector PDF.py",
+                "page": f"pages/2_ Lector PDF{PAGE_SUFFIX}.py",
                 "key": "btn_lector_pdf"
             },
             {
                 "access": "gps_tracking",
                 "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-                "page": "pages/11_ api_pull.py",
+                "page": f"pages/11_ api_pull{PAGE_SUFFIX}.py",
                 "key": "btn_gps_tracking"
             }
         ])
@@ -919,19 +841,19 @@ else:
             {
                 "access": "prepara_reportes",
                 "label": "🛠️  Preparación de Reportes",
-                "page": "pages/7_ Preparacion de Reportes.py",
+                "page": f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py",
                 "key": "btn_prepara_reportes"
             },
             {
                 "access": "gestion_unidades",
                 "label": "🚚  Gestión de Unidades",
-                "page": "pages/8_ Gestion de Unidades.py",
+                "page": f"pages/8_ Gestion de Unidades{PAGE_SUFFIX}.py",
                 "key": "btn_gestion_unidades"
             },
             {
                 "access": "ai_testing",
                 "label": "🚚  Pruebas de IA",
-                "page": "pages/12_ AI_tests.py",
+                "page": f"pages/12_ AI_tests{PAGE_SUFFIX}.py",
                 "key": "btn_ai_testing"
             }
         ])
