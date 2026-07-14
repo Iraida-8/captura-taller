@@ -3686,7 +3686,7 @@ with p2:
             text-align:center;
             padding-top:8px;
             font-weight:700;
-            color:white;
+            color:#151F6D;
         ">
             Página {st.session_state.pagina_finalizadas} de {total_paginas_finalizadas}
         </div>
