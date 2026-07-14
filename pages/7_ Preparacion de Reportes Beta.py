@@ -68,7 +68,7 @@ def get_supabase_client():
 # Top navigation
 # =================================
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
+    st.switch_page("pages/dashboard_beta.py")
 
 st.divider()
 
