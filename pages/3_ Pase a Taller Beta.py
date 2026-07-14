@@ -292,8 +292,7 @@ else:
         proveedor = st.selectbox(
             "Proveedor / Taller",
             opciones_proveedor,
-            index=1 if tipo_proveedor == "Interno" else 0,
-            disabled=tipo_proveedor == "Interno"
+            index=2 if tipo_proveedor == "Interno" else 0
         )
 
     with tp3:
