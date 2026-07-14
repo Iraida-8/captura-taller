@@ -112,11 +112,7 @@ def load_css():
 
         /* General Text */
 
-        p,
-        label,
-        span{
-            color:#222222;
-        }
+
 
         /* =========================
         INPUTS / SELECTS
