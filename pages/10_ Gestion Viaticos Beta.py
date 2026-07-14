@@ -854,59 +854,59 @@ def modal_ver_solicitud(row):
     with col1:
 
         st.markdown(
-            f"<span style='color:white;'><b>Folio:</b> {row.get('folio_solicitud', '')}</span>",
+            f"<span style='color:black;'><b>Folio:</b> {row.get('folio_solicitud', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
+            f"<span style='color:black;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Empresa Brinda Servicio:</b> {row.get('empresa_brinda_servicio', '')}</span>",
+            f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {row.get('empresa_brinda_servicio', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Empleado Solicita:</b> {row.get('nombre_empleado_solicita', '')}</span>",
+            f"<span style='color:black;'><b>Empleado Solicita:</b> {row.get('nombre_empleado_solicita', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Fecha Solicitud:</b> {row.get('fecha_solicitud', '')}</span>",
+            f"<span style='color:black;'><b>Fecha Solicitud:</b> {row.get('fecha_solicitud', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Fecha Inicio:</b> {row.get('fecha_inicio', '')}</span>",
+            f"<span style='color:black;'><b>Fecha Inicio:</b> {row.get('fecha_inicio', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Fecha Fin:</b> {row.get('fecha_fin', '')}</span>",
+            f"<span style='color:black;'><b>Fecha Fin:</b> {row.get('fecha_fin', '')}</span>",
             unsafe_allow_html=True
         )
 
     with col2:
 
         st.markdown(
-            f"<span style='color:white;'><b>Empresa Cargo Gastos:</b> {row.get('empresa_cargo_gastos', '')}</span>",
+            f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {row.get('empresa_cargo_gastos', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Unidad Negocio:</b> {row.get('unidad_negocio', '')}</span>",
+            f"<span style='color:black;'><b>Unidad Negocio:</b> {row.get('unidad_negocio', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Sucursal:</b> {row.get('sucursal', '')}</span>",
+            f"<span style='color:black;'><b>Sucursal:</b> {row.get('sucursal', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Sucursal Especificar:</b> {row.get('sucursal_especificar', '')}</span>",
+            f"<span style='color:black;'><b>Sucursal Especificar:</b> {row.get('sucursal_especificar', '')}</span>",
             unsafe_allow_html=True
         )
 
@@ -922,12 +922,12 @@ def modal_ver_solicitud(row):
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>{label_cliente}:</b> {row.get('nombre_cliente', '')}</span>",
+            f"<span style='color:black;'><b>{label_cliente}:</b> {row.get('nombre_cliente', '')}</span>",
             unsafe_allow_html=True
         )
 
         st.markdown(
-            f"<span style='color:white;'><b>Registro SAC Ventas?:</b> {row.get('folio_sac', '')}</span>",
+            f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {row.get('folio_sac', '')}</span>",
             unsafe_allow_html=True
         )
 
@@ -1770,69 +1770,69 @@ else:
                     with col1:
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
+                            f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
+                            f"<span style='color:black;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Estatus:</b> {comprobacion_row.get('estatus', '')}</span>",
+                            f"<span style='color:black;'><b>Estatus:</b> {comprobacion_row.get('estatus', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
+                            f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                     with col2:
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
+                            f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
+                            f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
+                            f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
+                            f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
+                            f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
                             unsafe_allow_html=True
                         )
 
@@ -1848,12 +1848,12 @@ else:
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
+                            f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
+                            f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
                             unsafe_allow_html=True
                         )
 
@@ -3162,69 +3162,69 @@ else:
                     with col1:
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
+                            f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Folio Comprobación:</b> {row.get('folio_comprobacion', '')}</span>",
+                            f"<span style='color:black;'><b>Folio Comprobación:</b> {row.get('folio_comprobacion', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
+                            f"<span style='color:black;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
+                            f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Comprobación:</b> {row.get('created_at', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Comprobación:</b> {row.get('created_at', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
+                            f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                     with col2:
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
+                            f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
+                            f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
+                            f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
+                            f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
+                            f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
                             unsafe_allow_html=True
                         )
 
@@ -3240,12 +3240,12 @@ else:
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
+                            f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
                             unsafe_allow_html=True
                         )
 
                         st.markdown(
-                            f"<span style='color:white;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
+                            f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
                             unsafe_allow_html=True
                         )
 
@@ -3391,7 +3391,7 @@ else:
                     )
 
                     st.markdown(
-                        "<h3 style='color:white;'>👁 Ver Detalles Solicitud</h3>",
+                        "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
                         unsafe_allow_html=True
                     )
 
