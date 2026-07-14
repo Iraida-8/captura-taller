@@ -138,9 +138,7 @@ if st.session_state.auth_view == "login":
 
     st.markdown(
         """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
-        </style>
+
 
         <div style="
             width:100%;
