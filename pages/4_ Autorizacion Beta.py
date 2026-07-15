@@ -1100,7 +1100,7 @@ if not pases_df.empty:
                 if len(descripcion) > 120:
                     descripcion = descripcion[:120] + "..."
 
-                html = f"""
+                card_html = f"""
                 <div style="padding:6px;">
                     <div style="
                         background:#fff7d6;
@@ -1150,7 +1150,7 @@ if not pases_df.empty:
                 </div>
                 """
 
-                components.html(html, height=220)
+                components.html(card_html, height=220)
 
                 # =====================================
                 # BUTTON
