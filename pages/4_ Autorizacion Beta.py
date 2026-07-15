@@ -95,6 +95,14 @@ ACCESS_TABLE_MAP = {
     "setfreight": "SFI",
 }
 
+ACCESS_COMPANY_MAP = {
+    "igloo": "IGLOO TRANSPORT",
+    "lincoln": "LINCOLN FREIGHT",
+    "picus": "PICUS",
+    "setlogis": "SET LOGIS PLUS",
+    "setfreight": "SET FREIGHT INTERNATIONAL",
+}
+
 def actualizar_estado_pase(empresa, folio, nuevo_estado):
 
     if nuevo_estado not in VALID_ESTADOS:
@@ -488,6 +496,12 @@ user_access = tuple(
     for access in st.session_state["user"].get("access", [])
 )
 
+allowed_companies = {
+    ACCESS_COMPANY_MAP[perm]
+    for perm in user_access
+    if perm in ACCESS_COMPANY_MAP
+}
+
 pases_df = cargar_pases_taller(user_access)
 facturas_df = cargar_facturas()
 audit_df = cargar_audit()
@@ -666,7 +680,12 @@ with right:
         st.info("Sin actividad registrada.")
     else:
 
-        audit_sorted = audit_df.head(9)
+        audit_sorted = (
+            audit_df[
+                audit_df["Empresa"].isin(allowed_companies)
+            ]
+            .head(9)
+        )
 
         rows_html = ""
 
