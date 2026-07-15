@@ -416,7 +416,7 @@ def cargar_pases_taller(user_access):
     df.rename(columns={
         "No. de Folio": "NoFolio",
         "Fecha de Captura": "Fecha",
-        "Tipo de Proveedor": "Proveedor",
+        #"Tipo de Proveedor": "Proveedor",
     }, inplace=True)
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", utc=True).dt.tz_localize(None)
@@ -916,7 +916,7 @@ with left:
             # ====================================================
 
             conteo_proveedor = (
-                pases_df["Proveedor"]
+                pases_df["Tipo de Proveedor"]
                 .fillna("Sin Tipo")
                 .astype(str)
                 .str.strip()
@@ -1512,7 +1512,7 @@ if st.session_state.buscar_trigger:
         c2.write(row["NoFolio"])
         c3.write(row.get("No. de Unidad", ""))
         c4.write(row["Empresa"])
-        c5.write(row["Proveedor"])
+        c5.write(row["Tipo de Proveedor"])
         c6.write(row["Estado"])
 
         descripcion = row.get("Descripcion Problema", "")
@@ -1566,7 +1566,7 @@ if st.session_state.modal_reporte:
 
         es_cerrado = "Cerrado" in str(r.get("Estado", ""))
 
-        proveedor = (r.get("Proveedor") or "").lower()
+        proveedor = (r.get("Tipo de Proveedor") or "").lower()
 
         # ==========================================
         # NO. DE ORDEN (editable + no decimals)
