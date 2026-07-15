@@ -907,7 +907,7 @@ with left:
                             factura = str(factura_raw)
                             label_btn = "Ver"
 
-                        html = f"""
+                        factura_html = f"""
                         <div style="padding:6px;">
                             <div style="
                                 background:#ffe2e2;
@@ -939,7 +939,6 @@ with left:
                             </div>
                         </div>
                         """
-
                         components.html(html, height=160)
 
                         # View facturas
@@ -1100,7 +1099,7 @@ if not pases_df.empty:
                 if len(descripcion) > 120:
                     descripcion = descripcion[:120] + "..."
 
-                card_html = f"""
+                html = f"""
                 <div style="padding:6px;">
                     <div style="
                         background:#fff7d6;
@@ -1150,7 +1149,7 @@ if not pases_df.empty:
                 </div>
                 """
 
-                components.html(card_html, height=220)
+                components.html(html, height=220)
 
                 # =====================================
                 # BUTTON
