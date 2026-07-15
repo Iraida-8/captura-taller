@@ -764,7 +764,7 @@ Permite administrar la información maestra del sistema, incluyendo catálogos, 
                 use_container_width=True,
             ):
                 st.switch_page(
-                    f"pages/8_ Gestion de Unidades{PAGE_SUFFIX}.py"
+                    f"pages/8_ Gestion de Base de Dato{PAGE_SUFFIX}.py"
                 )
 
 st.divider()
