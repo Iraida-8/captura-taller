@@ -826,9 +826,19 @@ with left:
             # ====================================================
             st.write("Estados encontrados:")
 
-            for estado in sorted(pases_df["Estado"].dropna().unique()):
-                st.write(repr(estado))
-                
+            for _, row in (
+                pases_df[
+                    ["NoFolio", "Estado"]
+                ]
+                .dropna(subset=["Estado"])
+                .sort_values("NoFolio")
+                .iterrows()
+            ):
+
+                st.write(
+                    f"Folio: {row['NoFolio']} | Estado: {repr(row['Estado'])}"
+                )
+
             conteo_estados = (
                 pases_df["Estado"]
                 .fillna("Sin Estado")
