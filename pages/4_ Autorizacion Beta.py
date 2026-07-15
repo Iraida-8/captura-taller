@@ -1418,11 +1418,16 @@ with tab_nuevos:
     # =================================
     # PASES DE TALLER EN CURSO
     # =================================
-
     with tab_proceso:
 
         st.info("Construyendo...")
 
+    # =================================
+    # PASES DE TALLER CONCLUIDOS
+    # =================================
+    with tab_terminados:
+
+        st.info("Construyendo...")
 
 
 # =================================
