@@ -695,38 +695,94 @@ else:
         st.divider()
 
     # =============================
-    # 1. GENERACION DE PASES Y SOLICITUDES
+    # 1. OPERACIÓN
     # =============================
-    section_generacion = [
+    section_operacion = [
         "pase_taller",
-        "solicitud_viaticos",
-        "bonos_operador"
+        "bonos_operador",
     ]
 
-    if has_access(section_generacion):
+    if has_access(section_operacion):
 
-        st.subheader("🏭 Generación de Pases y Solicitudes")
+        st.subheader("🏭 Operación")
 
-        render_dashboard_cards([
-            {
-                "access": "pase_taller",
-                "label": "🏭  Generar nuevo Pase a Taller",
-                "page": f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py",
-                "key": "btn_pase_taller"
-            },
-            {
-                "access": "solicitud_viaticos_D",
-                "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": f"pages/9_ Viaticos{PAGE_SUFFIX}.py",
-                "key": "btn_viaticos"
-            },
-            {
-                "access": "bonos_operador",
-                "label": "💰  Bono de Operadores",
-                "page": f"pages/13_ Formulario Bonos{PAGE_SUFFIX}.py",
-                "key": "btn_bonos_operador"
+        col = st.columns(1)[0]
+
+        with col:
+
+            st.markdown("""
+            <style>
+
+            .omega-module{
+                background:#FFF7D6;
+                border-radius:22px;
+                padding:28px;
+                min-height:230px;
+                box-shadow:0 4px 10px rgba(0,0,0,.10);
+                margin-bottom:10px;
             }
-        ])
+
+            .omega-title{
+                font-size:34px;
+                font-weight:800;
+                color:#111;
+                margin-bottom:18px;
+            }
+
+            .omega-divider{
+                border-top:2px solid #E5D39A;
+                margin:18px 0;
+            }
+
+            .omega-subtitle{
+                font-size:17px;
+                font-weight:700;
+                color:#555;
+                margin-bottom:8px;
+            }
+
+            .omega-description{
+                font-size:16px;
+                color:#333;
+                line-height:1.6;
+            }
+
+            </style>
+            """, unsafe_allow_html=True)
+
+            st.markdown("""
+            <div class="omega-module">
+
+                <div class="omega-title">
+                    🏭 SOLICITUDES Y PASES
+                </div>
+
+                <div class="omega-divider"></div>
+
+                <div class="omega-subtitle">
+                    Módulos incluidos
+                </div>
+
+                <div class="omega-description">
+                    • Captura de Pases de Taller<br>
+                    • Bono de Operadores<br><br>
+
+                    Permite registrar solicitudes de taller,
+                    generar Bonos de Operadores y administrar
+                    la captura inicial de la operación.
+                </div>
+
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.button(
+                "Abrir módulo",
+                key="btn_operacion",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
+                )
 
         st.divider()
 
