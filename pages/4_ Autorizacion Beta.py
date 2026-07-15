@@ -1245,6 +1245,176 @@ st.session_state.setdefault(
 # =================================
 # PASES DE TALLER
 # =================================
+def safe(x):
+    if pd.isna(x) or x is None:
+        return ""
+    return str(x)
+
+def render_pases_tab(
+    source_df,
+    estado_label,
+    session_key,
+    button_prefix,
+):
+    source_df = source_df.sort_values(
+        "Fecha",
+        ascending=False
+    )
+
+    if source_df.empty:
+        st.info(f"No hay pases en estado {estado_label}.")
+        return
+
+    CARDS_PER_PAGE = 10
+
+    st.session_state.setdefault(session_key, 0)
+
+    total_pages = max(
+        1,
+        (len(source_df) + CARDS_PER_PAGE - 1) // CARDS_PER_PAGE
+    )
+
+    st.session_state[session_key] = min(
+        st.session_state[session_key],
+        total_pages - 1
+    )
+
+    start = st.session_state[session_key] * CARDS_PER_PAGE
+    end = start + CARDS_PER_PAGE
+
+    page_df = source_df.iloc[start:end]
+
+    # ============================
+    # CARDS
+    # ============================
+
+    for row_start in range(0, len(page_df), 5):
+
+        cols = st.columns(5)
+
+        for col, (_, r) in zip(
+            cols,
+            page_df.iloc[row_start:row_start + 5].iterrows()
+        ):
+
+            with col:
+
+                folio = safe(r.get("NoFolio"))
+                tipo_unidad = safe(r.get("Tipo de Unidad"))
+                fecha = r.get("Fecha")
+                fecha = fecha.date() if pd.notna(fecha) else ""
+                unidad = safe(r.get("No. de Unidad"))
+                capturo = safe(r.get("Capturo"))
+                descripcion = safe(r.get("Descripcion Problema"))
+
+                if len(descripcion) > 120:
+                    descripcion = descripcion[:120] + "..."
+
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#fff7d6;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:160px;
+                        font-family:sans-serif;
+                    ">
+
+                        <div style="font-weight:900;">{folio}</div>
+                        <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                        <div style="font-size:0.8rem;">{fecha}</div>
+
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.8rem;">{unidad}</div>
+
+                        <div style="
+                            font-size:0.75rem;
+                            margin-top:6px;
+                            padding:6px;
+                            background:#fff;
+                            border-radius:8px;
+                            box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                        ">
+                            {descripcion}
+                        </div>
+
+                        <div style="
+                            margin-top:6px;
+                            font-size:0.75rem;
+                            font-weight:700;
+                            color:#856404;
+                        ">
+                            {estado_label}
+                        </div>
+
+                        <div style="
+                            font-size:0.75rem;
+                            margin-top:4px;
+                            opacity:0.8;
+                        ">
+                            Capturó: {capturo}
+                        </div>
+
+                    </div>
+                </div>
+                """
+
+                components.html(html, height=220)
+
+                if st.button(
+                    "✏ Editar",
+                    key=f"{button_prefix}_{folio}",
+                    use_container_width=True,
+                ):
+
+                    st.session_state.modal_factura = None
+                    st.session_state.modal_factura_open = False
+
+                    st.session_state.modal_reporte = r.to_dict()
+
+                    st.session_state.servicios_df = cargar_servicios_folio(
+                        r["NoFolio"]
+                    )
+
+    # ============================
+    # PAGINATION
+    # ============================
+
+    st.divider()
+
+    c1, c2, c3 = st.columns([1, 2, 1])
+
+    with c1:
+        if st.button(
+            "⬅ Anterior",
+            key=f"prev_{button_prefix}",
+            disabled=st.session_state[session_key] == 0,
+            use_container_width=True,
+        ):
+            st.session_state[session_key] -= 1
+            st.rerun()
+
+    with c2:
+        st.markdown(
+            f"<div style='text-align:center;font-weight:700;'>"
+            f"Página {st.session_state[session_key] + 1} de {total_pages}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    with c3:
+        if st.button(
+            "Siguiente ➡",
+            key=f"next_{button_prefix}",
+            disabled=st.session_state[session_key] >= total_pages - 1,
+            use_container_width=True,
+        ):
+            st.session_state[session_key] += 1
+            st.rerun()
+
 st.subheader("Pases de Taller")
 
 tab_nuevos, tab_proceso, tab_terminados = st.tabs([
@@ -1254,180 +1424,33 @@ tab_nuevos, tab_proceso, tab_terminados = st.tabs([
 ])
 
 with tab_nuevos:
-    # =================================
-    # PASES DE TALLER NUEVOS
-    # =================================
-    def safe(x):
-        if pd.isna(x) or x is None:
-            return ""
-        return str(x)
+    render_pases_tab(
+        pases_df[pases_df["Estado"] == "Inicio / Nuevo"],
+        "Inicio / Nuevo",
+        "page_nuevos",
+        "nuevo",
+    )
 
-    if not pases_df.empty:
+with tab_proceso:
+    render_pases_tab(
+        pases_df[pases_df["Estado"] == "En Curso / Proceso"],
+        "En Curso / Proceso",
+        "page_proceso",
+        "proceso",
+    )
 
-        nuevos_df = (
-            pases_df[pases_df["Estado"] == "Inicio / Nuevo"]
-            .sort_values("Fecha", ascending=False)
-        )
-
-        CARDS_PER_PAGE = 10
-
-        st.session_state.setdefault("page_nuevos", 0)
-
-        total_pages = max(
-            1,
-            (len(nuevos_df) + CARDS_PER_PAGE - 1) // CARDS_PER_PAGE
-        )
-
-        # Prevent going out of range
-        st.session_state.page_nuevos = min(
-            st.session_state.page_nuevos,
-            total_pages - 1
-        )
-
-        start = st.session_state.page_nuevos * CARDS_PER_PAGE
-        end = start + CARDS_PER_PAGE
-
-        page_df = nuevos_df.iloc[start:end]
-
-        if nuevos_df.empty:
-            st.info("No hay pases en estado Inicio / Nuevo.")
-
-        else:
-            for row_start in range(0, len(page_df), 5):
-
-                cols = st.columns(5)
-
-                for col, (_, r) in zip(
-                    cols,
-                    page_df.iloc[row_start:row_start + 5].iterrows()
-                ):
-
-                    with col:
-                        folio = safe(r.get("NoFolio"))
-                        tipo_unidad = safe(r.get("Tipo de Unidad"))
-                        fecha = r.get("Fecha")
-                        fecha = fecha.date() if pd.notna(fecha) else ""
-                        unidad = safe(r.get("No. de Unidad"))
-                        capturo = safe(r.get("Capturo"))
-                        descripcion = safe(r.get("Descripcion Problema"))
-
-                        if len(descripcion) > 120:
-                            descripcion = descripcion[:120] + "..."
-
-                        html = f"""
-                        <div style="padding:6px;">
-                            <div style="
-                                background:#fff7d6;
-                                padding:14px;
-                                border-radius:16px;
-                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                color:#111;
-                                min-height:160px;
-                                font-family:sans-serif;
-                            ">
-                                <div style="font-weight:900;">{folio}</div>
-                                <div style="font-size:0.8rem;">{tipo_unidad}</div>
-                                <div style="font-size:0.8rem;">{fecha}</div>
-
-                                <hr style="margin:6px 0">
-
-                                <div style="font-size:0.8rem;">{unidad}</div>
-
-                                <div style="
-                                    font-size:0.75rem;
-                                    margin-top:6px;
-                                    padding:6px;
-                                    background:#fff;
-                                    border-radius:8px;
-                                    box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
-                                ">
-                                    {descripcion}
-                                </div>
-
-                                <div style="
-                                    margin-top:6px;
-                                    font-size:0.75rem;
-                                    font-weight:700;
-                                    color:#856404;
-                                ">
-                                    Inicio / Nuevo
-                                </div>
-
-                                <div style="
-                                    font-size:0.75rem;
-                                    margin-top:4px;
-                                    opacity:0.8;
-                                ">
-                                    Capturó: {capturo}
-                                </div>
-                            </div>
-                        </div>
-                        """
-
-                        components.html(html, height=220)
-
-                        # =====================================
-                        # BUTTON
-                        # =====================================
-                        if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
-
-                            st.session_state.modal_factura = None
-                            st.session_state.modal_factura_open = False
-
-                            st.session_state.modal_reporte = r.to_dict()
-
-                            df = cargar_servicios_folio(r["NoFolio"])
-
-                            st.session_state.servicios_df = df
-
-            st.divider()
-
-            nav1, nav2, nav3 = st.columns([1, 2, 1])
-
-            with nav1:
-                if st.button(
-                    "⬅ Anterior",
-                    disabled=st.session_state.page_nuevos == 0,
-                    key="prev_nuevos",
-                    use_container_width=True,
-                ):
-                    st.session_state.page_nuevos -= 1
-                    st.rerun()
-
-            with nav2:
-                st.markdown(
-                    f"<div style='text-align:center;font-weight:700;'>"
-                    f"Página {st.session_state.page_nuevos + 1} de {total_pages}"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-
-            with nav3:
-                if st.button(
-                    "Siguiente ➡",
-                    disabled=st.session_state.page_nuevos >= total_pages - 1,
-                    key="next_nuevos",
-                    use_container_width=True,
-                ):
-                    st.session_state.page_nuevos += 1
-                    st.rerun()
-
-    else:
-        st.info("No hay pases registrados.")
-
-    # =================================
-    # PASES DE TALLER EN CURSO
-    # =================================
-    with tab_proceso:
-
-        st.info("Construyendo...")
-
-    # =================================
-    # PASES DE TALLER CONCLUIDOS
-    # =================================
-    with tab_terminados:
-
-        st.info("Construyendo...")
+with tab_terminados:
+    render_pases_tab(
+        pases_df[
+            pases_df["Estado"].isin([
+                "Cerrado / Terminado",
+                "Cerrado / Cancelado",
+            ])
+        ],
+        "Cerrado",
+        "page_terminados",
+        "terminado",
+    )
 
 
 # =================================
