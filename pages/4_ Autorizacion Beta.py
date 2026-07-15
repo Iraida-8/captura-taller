@@ -939,7 +939,7 @@ with left:
                             </div>
                         </div>
                         """
-                        components.html(html, height=160)
+                        components.html(factura_html, height=160)
 
                         # View facturas
                         if st.button(
