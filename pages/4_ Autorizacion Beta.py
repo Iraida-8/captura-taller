@@ -626,49 +626,244 @@ left, right = st.columns([2, 1])
 # LEFT → COMPANY SUMMARY
 # =============================
 with left:
-    st.markdown("### Órdenes por Empresa")
 
-    if not pases_df.empty:
+    tab_empresa, tab_distribucion = st.tabs([
+        "🏢 Órdenes por Empresa",
+        "📊 Distribución por Tipo de Parte"
+    ])
 
-        empresas = sorted(pases_df["Empresa"].dropna().unique())
-        total_global = len(pases_df)
+    # ====================================================
+    # TAB 1 - ÓRDENES POR EMPRESA
+    # ====================================================
+    with tab_empresa:
 
-        for empresa in empresas:
+        if not pases_df.empty:
 
-            df_emp = pases_df[pases_df["Empresa"] == empresa]
-            total_emp = len(df_emp)
-            pct = (total_emp / total_global * 100) if total_global else 0
+            empresas = sorted(pases_df["Empresa"].dropna().unique())
+            total_global = len(pases_df)
 
-            pendientes = len(
-                df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
+            for empresa in empresas:
+
+                df_emp = pases_df[pases_df["Empresa"] == empresa]
+                total_emp = len(df_emp)
+                pct = (total_emp / total_global * 100) if total_global else 0
+
+                pendientes = len(
+                    df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
+                )
+
+                proceso = len(
+                    df_emp[df_emp["Estado"] == "En Curso / Proceso"]
+                )
+
+                completadas = len(
+                    df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
+                )
+
+                canceladas = len(
+                    df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
+                )
+
+                with st.container(border=True):
+
+                    st.markdown(f"**{empresa}**")
+                    st.caption(f"Total: {total_emp} ({pct:.1f}%)")
+
+                    c1, c2, c3, c4 = st.columns(4)
+
+                    c1.metric("Pendientes", pendientes)
+                    c2.metric("Proceso", proceso)
+                    c3.metric("Completadas", completadas)
+                    c4.metric("Canceladas", canceladas)
+
+        else:
+            st.info("No hay datos.")
+
+    # ====================================================
+    # TAB 2 - DISTRIBUCIÓN POR TIPO DE PARTE
+    # ====================================================
+    with tab_distribucion:
+
+        @st.cache_data(ttl=300)
+        def cargar_tipos_parte():
+
+            supabase = get_supabase_client()
+
+            page_size = 1000
+            start = 0
+            all_rows = []
+
+            while True:
+                response = (
+                    supabase
+                    .table("SERVICES")
+                    .select('"Tipo De Parte"')
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+
+                data = response.data
+
+                if not data:
+                    break
+
+                all_rows.extend(data)
+                start += page_size
+
+            if not all_rows:
+                return pd.DataFrame(columns=["Tipo De Parte"])
+
+            df = pd.DataFrame(all_rows)
+
+            if "Tipo De Parte" not in df.columns:
+                return pd.DataFrame(columns=["Tipo De Parte"])
+
+            df["Tipo De Parte"] = (
+                df["Tipo De Parte"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
             )
 
-            proceso = len(
-                df_emp[df_emp["Estado"] == "En Curso / Proceso"]
+            df = df[
+                (df["Tipo De Parte"] != "")
+                & (df["Tipo De Parte"].str.lower() != "nan")
+                & (df["Tipo De Parte"].str.lower() != "none")
+                & (df["Tipo De Parte"].str.lower() != "null")
+            ]
+
+            return df
+
+
+        tipos_df = cargar_tipos_parte()
+
+        if tipos_df.empty:
+            st.info("No hay datos disponibles en Tipo De Parte.")
+        else:
+
+            conteo_tipos = (
+                tipos_df["Tipo De Parte"]
+                .value_counts()
+                .reset_index()
             )
 
-            completadas = len(
-                df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
-            )
+            conteo_tipos.columns = ["Tipo De Parte", "Cantidad"]
 
-            canceladas = len(
-                df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
-            )
+            total_tipos = conteo_tipos["Cantidad"].sum()
 
-            with st.container(border=True):
+            import streamlit.components.v1 as components
 
-                st.markdown(f"**{empresa}**")
-                st.caption(f"Total: {total_emp} ({pct:.1f}%)")
+            rows_html = ""
 
-                c1, c2, c3, c4 = st.columns(4)
+            for _, row in conteo_tipos.iterrows():
 
-                c1.metric("Pendientes", pendientes)
-                c2.metric("Proceso", proceso)
-                c3.metric("Completadas", completadas)
-                c4.metric("Canceladas", canceladas)
+                tipo = row["Tipo De Parte"]
+                cantidad = int(row["Cantidad"])
+                porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
+                progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
 
-    else:
-        st.info("No hay datos.")
+                rows_html += f"""
+                <div style="margin-bottom:14px;">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        font-size:0.85rem;
+                        font-weight:700;
+                        margin-bottom:6px;
+                        color:#111;
+                    ">
+                        <span>{tipo}</span>
+                        <span>{cantidad} ({porcentaje}%)</span>
+                    </div>
+
+                    <div style="
+                        width:100%;
+                        height:12px;
+                        background:#f1ead0;
+                        border-radius:999px;
+                        overflow:hidden;
+                    ">
+                        <div style="
+                            width:{progress_width}%;
+                            height:100%;
+                            background:#BFA75F;
+                            border-radius:999px;
+                        "></div>
+                    </div>
+
+                </div>
+                """
+
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#fff7d6;
+                    padding:22px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    font-family:sans-serif;
+                ">
+
+                    <div style="
+                        font-size:1rem;
+                        font-weight:900;
+                        margin-bottom:18px;
+                        color:#111;
+                    ">
+                        Distribución por Actividad
+                    </div>
+
+                    {rows_html}
+
+                </div>
+            </div>
+            """
+
+            components.html(html, height=420)
+
+        if not pases_df.empty:
+
+            empresas = sorted(pases_df["Empresa"].dropna().unique())
+            total_global = len(pases_df)
+
+            for empresa in empresas:
+
+                df_emp = pases_df[pases_df["Empresa"] == empresa]
+                total_emp = len(df_emp)
+                pct = (total_emp / total_global * 100) if total_global else 0
+
+                pendientes = len(
+                    df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
+                )
+
+                proceso = len(
+                    df_emp[df_emp["Estado"] == "En Curso / Proceso"]
+                )
+
+                completadas = len(
+                    df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
+                )
+
+                canceladas = len(
+                    df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
+                )
+
+                with st.container(border=True):
+
+                    st.markdown(f"**{empresa}**")
+                    st.caption(f"Total: {total_emp} ({pct:.1f}%)")
+
+                    c1, c2, c3, c4 = st.columns(4)
+
+                    c1.metric("Pendientes", pendientes)
+                    c2.metric("Proceso", proceso)
+                    c3.metric("Completadas", completadas)
+                    c4.metric("Canceladas", canceladas)
+
+        else:
+            st.info("No hay datos.")
 
 # =============================
 # RIGHT → LAST ACTIVITY
@@ -771,153 +966,6 @@ st.session_state.setdefault(
         "Cantidad"
     ])
 )
-
-# =================================
-# DISTRIBUCIÓN POR TIPO DE PARTE
-# =================================
-st.divider()
-st.subheader("Distribución por Tipo de Parte")
-
-@st.cache_data(ttl=300)
-def cargar_tipos_parte():
-
-    supabase = get_supabase_client()
-
-    page_size = 1000
-    start = 0
-    all_rows = []
-
-    while True:
-        response = (
-            supabase
-            .table("SERVICES")
-            .select('"Tipo De Parte"')
-            .range(start, start + page_size - 1)
-            .execute()
-        )
-
-        data = response.data
-
-        if not data:
-            break
-
-        all_rows.extend(data)
-        start += page_size
-
-    if not all_rows:
-        return pd.DataFrame(columns=["Tipo De Parte"])
-
-    df = pd.DataFrame(all_rows)
-
-    if "Tipo De Parte" not in df.columns:
-        return pd.DataFrame(columns=["Tipo De Parte"])
-
-    # limpiar valores inválidos
-    df["Tipo De Parte"] = (
-        df["Tipo De Parte"]
-        .fillna("")
-        .astype(str)
-        .str.strip()
-    )
-
-    # excluir vacíos, null, nan, none
-    df = df[
-        (df["Tipo De Parte"] != "")
-        & (df["Tipo De Parte"].str.lower() != "nan")
-        & (df["Tipo De Parte"].str.lower() != "none")
-        & (df["Tipo De Parte"].str.lower() != "null")
-    ]
-
-    return df
-
-
-tipos_df = cargar_tipos_parte()
-
-if tipos_df.empty:
-    st.info("No hay datos disponibles en Tipo De Parte.")
-else:
-
-    conteo_tipos = (
-        tipos_df["Tipo De Parte"]
-        .value_counts()
-        .reset_index()
-    )
-
-    conteo_tipos.columns = ["Tipo De Parte", "Cantidad"]
-
-    total_tipos = conteo_tipos["Cantidad"].sum()
-
-    import streamlit.components.v1 as components
-
-    rows_html = ""
-
-    for _, row in conteo_tipos.iterrows():
-
-        tipo = row["Tipo De Parte"]
-        cantidad = int(row["Cantidad"])
-        porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
-        progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
-
-        rows_html += f"""
-        <div style="margin-bottom:14px;">
-
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                font-size:0.85rem;
-                font-weight:700;
-                margin-bottom:6px;
-                color:#111;
-            ">
-                <span>{tipo}</span>
-                <span>{cantidad} ({porcentaje}%)</span>
-            </div>
-
-            <div style="
-                width:100%;
-                height:12px;
-                background:#f1ead0;
-                border-radius:999px;
-                overflow:hidden;
-            ">
-                <div style="
-                    width:{progress_width}%;
-                    height:100%;
-                    background:#BFA75F;
-                    border-radius:999px;
-                "></div>
-            </div>
-
-        </div>
-        """
-
-    html = f"""
-    <div style="padding:6px;">
-        <div style="
-            background:#fff7d6;
-            padding:22px;
-            border-radius:16px;
-            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-            color:#111;
-            font-family:sans-serif;
-        ">
-
-            <div style="
-                font-size:1rem;
-                font-weight:900;
-                margin-bottom:18px;
-                color:#111;
-            ">
-                Distribución por Actividad
-            </div>
-
-            {rows_html}
-
-        </div>
-    </div>
-    """
-
-    components.html(html, height=420)
 
 # =================================
 # TOP 10 EN CURSO → POST ITS
