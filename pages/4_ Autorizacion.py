@@ -383,7 +383,6 @@ def cargar_pases_taller():
     df.rename(columns={
         "No. de Folio": "NoFolio",
         "Fecha de Captura": "Fecha",
-        "Tipo de Proveedor": "Proveedor",
     }, inplace=True)
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", utc=True).dt.tz_localize(None)
@@ -1312,7 +1311,9 @@ if st.session_state.modal_reporte:
 
         st.markdown(f"**Fecha:** {fecha_modal}")
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
-        st.markdown(f"**Proveedor:** {r['Proveedor']}")
+        st.markdown(f"**Tipo de Proveedor:** {clean(r.get('Tipo de Proveedor', ''))}")
+        st.markdown(f"**Proveedor:** {clean(r.get('Proveedor', ''))}")
+        st.markdown(f"**Razones:** {clean(r.get('Razones', ''))}")
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         descripcion_actual = r.get("Descripcion Problema", "") or ""
         es_cerrado = r["Estado"].startswith("Cerrado")
@@ -1328,7 +1329,7 @@ if st.session_state.modal_reporte:
 
         es_cerrado = "Cerrado" in str(r.get("Estado", ""))
 
-        proveedor = (r.get("Proveedor") or "").lower()
+        tipo_proveedor = clean(r.get("Tipo de Proveedor", "")).lower()
 
         # ==========================================
         # NO. DE ORDEN (editable + no decimals)
@@ -1353,7 +1354,7 @@ if st.session_state.modal_reporte:
         # OSTE (externo only)
         # editable until order is Cerrado
         # ==========================================
-        if "interno" not in proveedor:
+        if "interno" not in tipo_proveedor:
             oste_val = st.text_input(
                 "OSTE",
                 value=clean(r.get("Oste", "")),
@@ -1562,7 +1563,7 @@ if st.session_state.modal_reporte:
                         oste_nuevo=clean(r.get("Oste"))
                     )
 
-                if "interno" not in proveedor:
+                if "interno" not in tipo_proveedor:
                     if oste_val.strip() != clean(r.get("Oste")):
 
                         oste_anterior = clean(r.get("Oste"))
