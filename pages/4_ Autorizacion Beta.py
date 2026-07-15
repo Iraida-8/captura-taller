@@ -909,7 +909,7 @@ with left:
             </div>
             """
 
-            components.html(estado_html, height=330)
+            components.html(estado_html, height=380)
 
     # ====================================================
     # TAB 3 - FACTURACIÓN
