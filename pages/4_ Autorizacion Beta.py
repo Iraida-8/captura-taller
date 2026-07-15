@@ -1573,7 +1573,6 @@ if has_autorizacion:
 
         with tab_buscar:
 
-            st.divider()
             st.subheader("Buscar Pase de Taller")
 
             empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
@@ -1818,7 +1817,9 @@ if has_autorizacion:
                         else ""
                     )
 
-
+        # =================================
+        # REPORTES
+        # =================================
         with tab_reportes:
 
             st.info("🚧 Este módulo se encuentra en construcción.")
