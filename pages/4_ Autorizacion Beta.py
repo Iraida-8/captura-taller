@@ -795,7 +795,7 @@ with left:
                 </div>
                 """
 
-            html = f"""
+            distribution_html = f"""
             <div style="padding:6px;">
                 <div style="
                     background:#fff7d6;
@@ -821,7 +821,7 @@ with left:
             </div>
             """
 
-            components.html(html, height=420)
+            components.html(distribution_html, height=420)
 
         if not pases_df.empty:
 
