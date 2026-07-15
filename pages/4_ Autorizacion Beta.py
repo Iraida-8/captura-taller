@@ -823,48 +823,6 @@ with left:
 
             components.html(distribution_html, height=420)
 
-        if not pases_df.empty:
-
-            empresas = sorted(pases_df["Empresa"].dropna().unique())
-            total_global = len(pases_df)
-
-            for empresa in empresas:
-
-                df_emp = pases_df[pases_df["Empresa"] == empresa]
-                total_emp = len(df_emp)
-                pct = (total_emp / total_global * 100) if total_global else 0
-
-                pendientes = len(
-                    df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
-                )
-
-                proceso = len(
-                    df_emp[df_emp["Estado"] == "En Curso / Proceso"]
-                )
-
-                completadas = len(
-                    df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
-                )
-
-                canceladas = len(
-                    df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
-                )
-
-                with st.container(border=True):
-
-                    st.markdown(f"**{empresa}**")
-                    st.caption(f"Total: {total_emp} ({pct:.1f}%)")
-
-                    c1, c2, c3, c4 = st.columns(4)
-
-                    c1.metric("Pendientes", pendientes)
-                    c2.metric("Proceso", proceso)
-                    c3.metric("Completadas", completadas)
-                    c4.metric("Canceladas", canceladas)
-
-        else:
-            st.info("No hay datos.")
-
 # =============================
 # RIGHT → LAST ACTIVITY
 # =============================
