@@ -883,33 +883,33 @@ with left:
                 </div>
                 """
 
-                estado_html = f"""
-                <div style="padding:6px; margin-top:24px;">
+            estado_html = f"""
+            <div style="padding:6px; margin-top:24px;">
+                <div style="
+                    background:#fff7d6;
+                    padding:22px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    font-family:sans-serif;
+                ">
+
                     <div style="
-                        background:#fff7d6;
-                        padding:22px;
-                        border-radius:16px;
-                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        font-size:1rem;
+                        font-weight:900;
+                        margin-bottom:18px;
                         color:#111;
-                        font-family:sans-serif;
                     ">
-
-                        <div style="
-                            font-size:1rem;
-                            font-weight:900;
-                            margin-bottom:18px;
-                            color:#111;
-                        ">
-                            Distribución por Estado
-                        </div>
-
-                        {rows_estado}
-
+                        Distribución por Estado
                     </div>
-                </div>
-                """
 
-                components.html(estado_html, height=300)    
+                    {rows_estado}
+
+                </div>
+            </div>
+            """
+
+            components.html(estado_html, height=300)
 
     # ====================================================
     # TAB 3 - FACTURACIÓN
