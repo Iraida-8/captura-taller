@@ -1640,7 +1640,10 @@ if st.session_state.modal_reporte:
         "En Curso / Proceso"
     ]
 
-    @st.dialog("Detalle del Pase de Taller")
+    @st.dialog(
+        "Detalle del Pase de Taller",
+        width="large",
+    )
     def modal():
 
         st.markdown(f"**No. de Folio:** {r.get('NoFolio', r.get('No. de Folio',''))}")
