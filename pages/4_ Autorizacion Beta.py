@@ -7,7 +7,7 @@ from auth import require_login, require_access
 from supabase import create_client
 from pages.css import load_css
 import html
-import resend  # type: ignore
+import resend  #type: ignore
 
 # =================================
 # RELEASE CHANNEL

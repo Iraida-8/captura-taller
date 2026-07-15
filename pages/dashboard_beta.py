@@ -685,37 +685,116 @@ Permite visualizar la ubicación en tiempo real de las unidades, consultar indic
 
 st.divider()
 
-# =============================
-# 5. AUDIT
-# =============================
-section_audit = [
+# =================================
+# ROW 5 AUDITORÍA / BASE DE DATOS
+# =================================
+show_reports = has_access([
     "prepara_reportes",
-    "gestion_unidades"
-]
+])
 
-if has_access(section_audit):
+show_database = has_access([
+    "gestion_unidades",
+])
 
-    st.subheader("🧾 Audit")
+if show_reports and show_database:
+    col1, col2 = st.columns(2)
 
-    render_dashboard_cards([
-        {
-            "access": "prepara_reportes",
-            "label": "🛠️  Preparación de Reportes",
-            "page": f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py",
-            "key": "btn_prepara_reportes"
-        },
-        {
-            "access": "gestion_unidades",
-            "label": "🚚  Gestión de Unidades",
-            "page": f"pages/8_ Gestion de Unidades{PAGE_SUFFIX}.py",
-            "key": "btn_gestion_unidades"
-        },
-        {
-            "access": "ai_testing",
-            "label": "🚚  Pruebas de IA",
-            "page": f"pages/12_ AI_tests{PAGE_SUFFIX}.py",
-            "key": "btn_ai_testing"
-        }
-    ])
+elif show_reports:
+    col1 = st.container()
 
-    st.divider()   
+elif show_database:
+    col2 = st.container()
+
+
+# =============================
+# 1. PREPARACIÓN DE REPORTES
+# =============================
+if show_reports:
+
+    with col1:
+
+        with st.container(border=True):
+
+            st.markdown("## 🧾 PREPARACIÓN DE REPORTES")
+
+            st.divider()
+
+            st.markdown("""
+**Módulos incluidos**
+
+- 🛠️ Preparación de Reportes
+
+Permite preparar, consolidar y generar reportes operativos para auditoría y análisis interno.
+""")
+
+            if st.button(
+                "Abrir módulo",
+                key="btn_prepara_reportes",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py"
+                )
+
+
+# =============================
+# 2. GESTIÓN DE BASE DE DATOS
+# =============================
+if show_database:
+
+    with col2:
+
+        with st.container(border=True):
+
+            st.markdown("## 🗄️ GESTIÓN DE BASE DE DATOS")
+
+            st.divider()
+
+            st.markdown("""
+**Módulos incluidos**
+
+- 🗄️ Gestión de Base de Datos
+
+Permite administrar la información maestra del sistema, incluyendo catálogos, unidades y registros necesarios para la operación.
+""")
+
+            if st.button(
+                "Abrir módulo",
+                key="btn_gestion_unidades",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/8_ Gestion de Unidades{PAGE_SUFFIX}.py"
+                )
+
+st.divider()
+
+# =================================
+# ROW 6 IA
+# =================================
+if has_access(["ai_testing"]):
+
+    with st.container(border=True):
+
+        st.markdown("## 🤖 PRUEBAS DE IA")
+
+        st.divider()
+
+        st.markdown("""
+**Módulos incluidos**
+
+- 🤖 Pruebas de IA
+
+Permite ejecutar pruebas, validar modelos y experimentar con herramientas de inteligencia artificial.
+""")
+
+        if st.button(
+            "Abrir módulo",
+            key="btn_ai_testing",
+            use_container_width=True,
+        ):
+            st.switch_page(
+                f"pages/12_ AI_tests{PAGE_SUFFIX}.py"
+            )
+
+st.divider()
