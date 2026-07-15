@@ -1569,6 +1569,29 @@ with f4:
 with f5:
     f_fecha = st.date_input("Fecha de Captura", value=None)
 
+f6, f7, f8, f9, f10 = st.columns(5)
+
+with f6:
+    tipos_proveedor = sorted(
+        pases_df["Tipo de Proveedor"]
+        .dropna()
+        .astype(str)
+        .unique()
+    )
+
+    f_tipo_proveedor = st.selectbox(
+        "Tipo de Proveedor",
+        ["Todos"] + tipos_proveedor,
+    )
+with f7:
+    f_proveedor = st.text_input("Proveedor")
+
+with f8:
+    f_oste = st.text_input("OSTE")
+
+with f10:
+    st.write("")
+
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
     st.session_state.modal_reporte = None
