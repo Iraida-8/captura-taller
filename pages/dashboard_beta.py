@@ -740,8 +740,6 @@ else:
 
     if has_access(section_gestion):
 
-        st.subheader("📋 Gestión")
-
         with st.container(border=True):
 
             st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
