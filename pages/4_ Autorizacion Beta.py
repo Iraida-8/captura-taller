@@ -2788,15 +2788,6 @@ with tab_viaticos:
             ]
 
         # =================================
-        # Navigation
-        # =================================
-        st.write("")
-        if st.button("⬅ Volver al Dashboard"):
-            st.switch_page(DASHBOARD_PAGE)
-
-        st.divider()
-
-        # =================================
         # KPI VALUES
         # =================================
         if "estatus" not in df_solicitudes.columns:
