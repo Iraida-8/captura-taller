@@ -884,7 +884,7 @@ with left:
                 """
 
             estado_html = f"""
-            <div style="padding:6px; margin-top:24px;">
+            <div style="padding:6px; margin-top:12px;">
                 <div style="
                     background:#fff7d6;
                     padding:22px;
@@ -979,7 +979,7 @@ with left:
                 """
 
             proveedor_html = f"""
-            <div style="padding:6px; margin-top:24px;">
+            <div style="padding:6px; margin-top:12px;">
                 <div style="
                     background:#fff7d6;
                     padding:22px;
