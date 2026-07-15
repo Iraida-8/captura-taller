@@ -1565,249 +1565,271 @@ if has_autorizacion:
         # BUSCAR
         # =================================
         st.divider()
-        st.subheader("Buscar Pase de Taller")
 
-        empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
+        tab_buscar, tab_reportes = st.tabs([
+            "🔍 Buscar Pase de Taller",
+            "📄 Descarga y Consulta de Reportes"
+        ])
 
-        # =================================
-        # ROW 1
-        # =================================
-        f1, f2, f3, f4, f5 = st.columns(5)
+        with tab_buscar:
 
-        with f1:
-            f_folio = st.text_input("No. de Folio")
+            st.divider()
+            st.subheader("Buscar Pase de Taller")
 
-        with f2:
-            f_factura = st.text_input("No. de Factura")
+            empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
 
-        with f3:
-            f_oste = st.text_input("OSTE")
+            # =================================
+            # ROW 1
+            # =================================
+            f1, f2, f3, f4, f5 = st.columns(5)
 
-        with f4:
-            tipos_proveedor = sorted(
-                pases_df["Tipo de Proveedor"]
-                .dropna()
-                .astype(str)
-                .unique()
-            )
+            with f1:
+                f_folio = st.text_input("No. de Folio")
 
-            f_tipo_proveedor = st.selectbox(
-                "Tipo de Proveedor",
-                ["Todos"] + tipos_proveedor,
-            )
+            with f2:
+                f_factura = st.text_input("No. de Factura")
 
-        with f5:
-            f_empresa = st.selectbox(
-                "Empresa",
-                ["Selecciona empresa"] + empresas,
-            )
+            with f3:
+                f_oste = st.text_input("OSTE")
 
-        # =================================
-        # ROW 2
-        # =================================
-        f6, f7, f8, f9, f10 = st.columns(5)
-
-        with f6:
-
-            unidades = (
-                sorted(
-                    pases_df["No. de Unidad"]
+            with f4:
+                tipos_proveedor = sorted(
+                    pases_df["Tipo de Proveedor"]
                     .dropna()
                     .astype(str)
                     .unique()
                 )
-                if not pases_df.empty and "No. de Unidad" in pases_df.columns
-                else []
-            )
 
-            f_unidad = st.selectbox(
-                "No. de Unidad",
-                ["Selecciona unidad"] + unidades,
-            )
-
-        with f7:
-
-            f_estado = st.selectbox(
-                "Estado",
-                [
-                    "Selecciona estado",
-                    "Inicio / Nuevo",
-                    "En Curso / Proceso",
-                    "Cerrado / Terminado",
-                    "Cerrado / Cancelado",
-                ],
-            )
-
-        with f8:
-            f_fecha = st.date_input(
-                "Fecha de Captura",
-                value=None,
-            )
-
-        with f9:
-            buscar = st.button(
-                "🔍 Buscar",
-                use_container_width=True,
-            )
-
-        with f10:
-            limpiar = st.button(
-                "🧹 Limpiar",
-                use_container_width=True,
-            )
-
-        # =================================
-        # BUTTONS
-        # =================================
-        if buscar:
-            st.session_state.buscar_trigger = True
-            st.session_state.modal_reporte = None
-            st.session_state.modal_factura = None
-            st.session_state.modal_factura_open = False
-
-        if limpiar:
-            st.session_state.buscar_trigger = False
-            st.session_state.modal_reporte = None
-            st.session_state.modal_factura = None
-            st.session_state.modal_factura_open = False
-            st.rerun()
-
-        # =================================
-        # RESULTADOS
-        # =================================
-        if st.session_state.buscar_trigger:
-
-            resultados = pases_df.copy()
-
-            if not facturas_df.empty:
-
-                resultados = resultados.merge(
-                    facturas_df[
-                        ["NoFolio", "No. de Factura"]
-                    ],
-                    on="NoFolio",
-                    how="left",
+                f_tipo_proveedor = st.selectbox(
+                    "Tipo de Proveedor",
+                    ["Todos"] + tipos_proveedor,
                 )
-            # FOLIO
-            if f_folio:
-                resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
-            # NO. FACTURA
-            if f_factura:
-                resultados = resultados[
-                    resultados["No. de Factura"]
-                    .fillna("")
-                    .astype(str)
-                    .str.contains(
-                        f_factura,
-                        case=False,
-                        na=False,
+
+            with f5:
+                f_empresa = st.selectbox(
+                    "Empresa",
+                    ["Selecciona empresa"] + empresas,
+                )
+
+            # =================================
+            # ROW 2
+            # =================================
+            f6, f7, f8, f9, f10 = st.columns(5)
+
+            with f6:
+
+                unidades = (
+                    sorted(
+                        pases_df["No. de Unidad"]
+                        .dropna()
+                        .astype(str)
+                        .unique()
                     )
-                ]
-            # OSTE
-            if f_oste:
-                resultados = resultados[
-                    resultados["Oste"]
-                    .fillna("")
-                    .astype(str)
-                    .str.contains(
-                        f_oste,
-                        case=False,
-                        na=False,
+                    if not pases_df.empty and "No. de Unidad" in pases_df.columns
+                    else []
+                )
+
+                f_unidad = st.selectbox(
+                    "No. de Unidad",
+                    ["Selecciona unidad"] + unidades,
+                )
+
+            with f7:
+
+                f_estado = st.selectbox(
+                    "Estado",
+                    [
+                        "Selecciona estado",
+                        "Inicio / Nuevo",
+                        "En Curso / Proceso",
+                        "Cerrado / Terminado",
+                        "Cerrado / Cancelado",
+                    ],
+                )
+
+            with f8:
+                f_fecha = st.date_input(
+                    "Fecha de Captura",
+                    value=None,
+                )
+
+            with f9:
+                buscar = st.button(
+                    "🔍 Buscar",
+                    use_container_width=True,
+                )
+
+            with f10:
+                limpiar = st.button(
+                    "🧹 Limpiar",
+                    use_container_width=True,
+                )
+
+            # =================================
+            # BUTTONS
+            # =================================
+            if buscar:
+                st.session_state.buscar_trigger = True
+                st.session_state.modal_reporte = None
+                st.session_state.modal_factura = None
+                st.session_state.modal_factura_open = False
+
+            if limpiar:
+                st.session_state.buscar_trigger = False
+                st.session_state.modal_reporte = None
+                st.session_state.modal_factura = None
+                st.session_state.modal_factura_open = False
+                st.rerun()
+
+            # =================================
+            # RESULTADOS
+            # =================================
+            if st.session_state.buscar_trigger:
+
+                resultados = pases_df.copy()
+
+                if not facturas_df.empty:
+
+                    resultados = resultados.merge(
+                        facturas_df[
+                            ["NoFolio", "No. de Factura"]
+                        ],
+                        on="NoFolio",
+                        how="left",
                     )
-                ]
-            # TIPO PROVEEDOR
-            if f_tipo_proveedor != "Todos":
-                resultados = resultados[
-                    resultados["Tipo de Proveedor"] == f_tipo_proveedor
-                ]
+                # FOLIO
+                if f_folio:
+                    resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
+                # NO. FACTURA
+                if f_factura:
+                    resultados = resultados[
+                        resultados["No. de Factura"]
+                        .fillna("")
+                        .astype(str)
+                        .str.contains(
+                            f_factura,
+                            case=False,
+                            na=False,
+                        )
+                    ]
+                # OSTE
+                if f_oste:
+                    resultados = resultados[
+                        resultados["Oste"]
+                        .fillna("")
+                        .astype(str)
+                        .str.contains(
+                            f_oste,
+                            case=False,
+                            na=False,
+                        )
+                    ]
+                # TIPO PROVEEDOR
+                if f_tipo_proveedor != "Todos":
+                    resultados = resultados[
+                        resultados["Tipo de Proveedor"] == f_tipo_proveedor
+                    ]
 
-            if f_empresa != "Selecciona empresa":
-                resultados = resultados[resultados["Empresa"] == f_empresa]
+                if f_empresa != "Selecciona empresa":
+                    resultados = resultados[resultados["Empresa"] == f_empresa]
 
-            if f_estado != "Selecciona estado":
-                resultados = resultados[resultados["Estado"] == f_estado]
+                if f_estado != "Selecciona estado":
+                    resultados = resultados[resultados["Estado"] == f_estado]
 
-            if f_unidad != "Selecciona unidad":
-                resultados = resultados[
-                    resultados["No. de Unidad"].astype(str) == f_unidad]
+                if f_unidad != "Selecciona unidad":
+                    resultados = resultados[
+                        resultados["No. de Unidad"].astype(str) == f_unidad]
 
-            if f_fecha:
-                resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
+                if f_fecha:
+                    resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
 
-            st.divider()
-            st.subheader("Resultados")
+                st.divider()
+                st.subheader("Resultados")
 
-            h1, h2, h3, h4, h5, h6, h7, h8, h9, h10 = st.columns(
-                [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
-            )
-
-            h1.markdown("**Acción**")
-            h2.markdown("**Folio**")
-            h3.markdown("**Factura**")
-            h4.markdown("**OSTE**")
-            h5.markdown("**Tipo Prov.**")
-            h6.markdown("**Empresa**")
-            h7.markdown("**Unidad**")
-            h8.markdown("**Estado**")
-            h9.markdown("**Descripción**")
-            h10.markdown("**Fecha**")
-
-            st.divider()
-
-            for _, row in resultados.iterrows():
-                c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = st.columns(
+                h1, h2, h3, h4, h5, h6, h7, h8, h9, h10 = st.columns(
                     [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
                 )
 
-                editable = row["Estado"] in [
-                    "Inicio / Nuevo",
-                    "En Curso / Proceso"
-                ]
+                h1.markdown("**Acción**")
+                h2.markdown("**Folio**")
+                h3.markdown("**Factura**")
+                h4.markdown("**OSTE**")
+                h5.markdown("**Tipo Prov.**")
+                h6.markdown("**Empresa**")
+                h7.markdown("**Unidad**")
+                h8.markdown("**Estado**")
+                h9.markdown("**Descripción**")
+                h10.markdown("**Fecha**")
 
-                # ======================================================
-                # BUTTON COLUMN
-                # ======================================================
-                with c1:
-                    label = "Editar" if editable else "Ver"
-                    if st.button(label, key=f"accion_{row['NoFolio']}"):
+                st.divider()
 
-                        st.session_state.modal_factura = None
-                        st.session_state.modal_factura_open = False
+                for _, row in resultados.iterrows():
+                    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = st.columns(
+                        [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
+                    )
 
-                        st.session_state.modal_reporte = row.to_dict()
+                    editable = row["Estado"] in [
+                        "Inicio / Nuevo",
+                        "En Curso / Proceso"
+                    ]
 
-                        df = cargar_servicios_folio(row["NoFolio"])
+                    # ======================================================
+                    # BUTTON COLUMN
+                    # ======================================================
+                    with c1:
+                        label = "Editar" if editable else "Ver"
+                        if st.button(label, key=f"accion_{row['NoFolio']}"):
 
-                        st.session_state.servicios_df = df
+                            st.session_state.modal_factura = None
+                            st.session_state.modal_factura_open = False
 
-                # ======================================================
-                # INFO COLUMNS
-                # ======================================================
-                c2.write(row["NoFolio"])
+                            st.session_state.modal_reporte = row.to_dict()
 
-                c3.write("" if pd.isna(row.get("No. de Factura")) else row.get("No. de Factura"))
+                            df = cargar_servicios_folio(row["NoFolio"])
 
-                c4.write("" if pd.isna(row.get("Oste")) else row.get("Oste"))
+                            st.session_state.servicios_df = df
 
-                c5.write(row.get("Tipo de Proveedor", ""))
+                    # ======================================================
+                    # INFO COLUMNS
+                    # ======================================================
+                    c2.write(row["NoFolio"])
 
-                c6.write(row["Empresa"])
+                    c3.write("" if pd.isna(row.get("No. de Factura")) else row.get("No. de Factura"))
 
-                c7.write(row.get("No. de Unidad", ""))
+                    c4.write("" if pd.isna(row.get("Oste")) else row.get("Oste"))
 
-                c8.write(row["Estado"])
+                    c5.write(row.get("Tipo de Proveedor", ""))
 
-                descripcion = row.get("Descripcion Problema", "")
-                if isinstance(descripcion, str) and len(descripcion) > 80:
-                    descripcion = descripcion[:80] + "..."
+                    c6.write(row["Empresa"])
 
-                c9.write(descripcion)
+                    c7.write(row.get("No. de Unidad", ""))
 
-                c10.write(
-                    row["Fecha"].date()
-                    if pd.notna(row["Fecha"])
-                    else ""
-                )
+                    c8.write(row["Estado"])
+
+                    descripcion = row.get("Descripcion Problema", "")
+                    if isinstance(descripcion, str) and len(descripcion) > 80:
+                        descripcion = descripcion[:80] + "..."
+
+                    c9.write(descripcion)
+
+                    c10.write(
+                        row["Fecha"].date()
+                        if pd.notna(row["Fecha"])
+                        else ""
+                    )
+
+
+        with tab_reportes:
+
+            st.info("🚧 Este módulo se encuentra en construcción.")
+
+            st.markdown("""
+        ### Descarga y Consulta de Reportes
+
+        Esta sección permitirá consultar y descargar reportes consolidados de Pases de Taller.
+
+        **Próximamente disponible.**
+        """)
 
         # =================================
         # MODAL
