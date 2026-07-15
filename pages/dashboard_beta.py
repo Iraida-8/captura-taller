@@ -706,74 +706,20 @@ else:
 
         st.subheader("🏭 Operación")
 
-        col = st.columns(1)[0]
+        with st.container(border=True):
 
-        with col:
+            st.markdown("## 🏭 SOLICITUDES Y PASES")
 
-            st.markdown("""
-            <style>
-
-            .omega-module{
-                background:#FFF7D6;
-                border-radius:22px;
-                padding:28px;
-                min-height:230px;
-                box-shadow:0 4px 10px rgba(0,0,0,.10);
-                margin-bottom:10px;
-            }
-
-            .omega-title{
-                font-size:34px;
-                font-weight:800;
-                color:#111;
-                margin-bottom:18px;
-            }
-
-            .omega-divider{
-                border-top:2px solid #E5D39A;
-                margin:18px 0;
-            }
-
-            .omega-subtitle{
-                font-size:17px;
-                font-weight:700;
-                color:#555;
-                margin-bottom:8px;
-            }
-
-            .omega-description{
-                font-size:16px;
-                color:#333;
-                line-height:1.6;
-            }
-
-            </style>
-            """, unsafe_allow_html=True)
+            st.divider()
 
             st.markdown("""
-            <div class="omega-module">
+    **Módulos incluidos**
 
-                <div class="omega-title">
-                    🏭 SOLICITUDES Y PASES
-                </div>
+    - 🛠️ Captura de Pases de Taller
+    - 💰 Bono de Operadores
 
-                <div class="omega-divider"></div>
-
-                <div class="omega-subtitle">
-                    Módulos incluidos
-                </div>
-
-                <div class="omega-description">
-                    • Captura de Pases de Taller<br>
-                    • Bono de Operadores<br><br>
-
-                    Permite registrar solicitudes de taller,
-                    generar Bonos de Operadores y administrar
-                    la captura inicial de la operación.
-                </div>
-
-            </div>
-            """, unsafe_allow_html=True)
+    Permite registrar solicitudes de taller, generar Bonos de Operadores y administrar la captura inicial de la operación.
+    """)
 
             if st.button(
                 "Abrir módulo",
