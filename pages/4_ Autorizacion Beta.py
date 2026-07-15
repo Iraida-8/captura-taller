@@ -910,6 +910,101 @@ with left:
             """
 
             components.html(estado_html, height=380)
+    
+            # ====================================================
+            # TAB 2 - TIPO DE PROVEEDOR
+            # ====================================================
+
+            conteo_proveedor = (
+                pases_df["Tipo de Proveedor"]
+                .fillna("Sin Tipo")
+                .astype(str)
+                .str.strip()
+                .value_counts()
+                .reset_index()
+            )
+
+            conteo_proveedor.columns = ["Tipo", "Cantidad"]
+
+            total_proveedor = conteo_proveedor["Cantidad"].sum()
+
+            rows_proveedor = ""
+
+            for _, row in conteo_proveedor.iterrows():
+
+                tipo = row["Tipo"]
+                cantidad = int(row["Cantidad"])
+
+                porcentaje = (
+                    round((cantidad / total_proveedor) * 100, 1)
+                    if total_proveedor else 0
+                )
+
+                progress_width = (
+                    int((cantidad / total_proveedor) * 100)
+                    if total_proveedor else 0
+                )
+
+                rows_proveedor += f"""
+                <div style="margin-bottom:14px;">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        font-size:0.85rem;
+                        font-weight:700;
+                        margin-bottom:6px;
+                        color:#111;
+                    ">
+                        <span>{tipo}</span>
+                        <span>{cantidad} ({porcentaje}%)</span>
+                    </div>
+
+                    <div style="
+                        width:100%;
+                        height:12px;
+                        background:#f1ead0;
+                        border-radius:999px;
+                        overflow:hidden;
+                    ">
+                        <div style="
+                            width:{progress_width}%;
+                            height:100%;
+                            background:#BFA75F;
+                            border-radius:999px;
+                        "></div>
+                    </div>
+
+                </div>
+                """
+
+            proveedor_html = f"""
+            <div style="padding:6px; margin-top:24px;">
+                <div style="
+                    background:#fff7d6;
+                    padding:22px;
+                    border-radius:16px;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                    font-family:sans-serif;
+                ">
+
+                    <div style="
+                        font-size:1rem;
+                        font-weight:900;
+                        margin-bottom:18px;
+                        color:#111;
+                    ">
+                        Distribución por Tipo de Proveedor
+                    </div>
+
+                    {rows_proveedor}
+
+                </div>
+            </div>
+            """
+
+            components.html(proveedor_html, height=260)
 
     # ====================================================
     # TAB 3 - FACTURACIÓN
