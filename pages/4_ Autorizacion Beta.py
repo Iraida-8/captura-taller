@@ -629,7 +629,7 @@ with left:
 
     tab_empresa, tab_distribucion, tab_facturacion = st.tabs([
         "🏢 Órdenes por Empresa",
-        "📊 Distribución por Tipo de Parte",
+        "📊 Distribución de Órdenes",
         "🧾 Facturación"
     ])
 
@@ -681,7 +681,7 @@ with left:
             st.info("No hay datos.")
 
     # ====================================================
-    # TAB 2 - DISTRIBUCIÓN POR TIPO DE PARTE
+    # TAB 2 - DISTRIBUCIÓN
     # ====================================================
     with tab_distribucion:
 
@@ -823,6 +823,94 @@ with left:
             """
 
             components.html(distribution_html, height=420)
+
+            # ====================================================
+            # TAB 2 - ESTATUS
+            # ====================================================
+
+            conteo_estados = (
+                pases_df["Estado"]
+                .fillna("Sin Estado")
+                .astype(str)
+                .value_counts()
+                .reset_index()
+            )
+
+            conteo_estados.columns = ["Estado", "Cantidad"]
+
+            total_estados = conteo_estados["Cantidad"].sum()
+
+            rows_estado = ""
+
+            for _, row in conteo_estados.iterrows():
+
+                estado = row["Estado"]
+                cantidad = int(row["Cantidad"])
+
+                porcentaje = round((cantidad / total_estados) * 100, 1) if total_estados else 0
+                progress_width = int((cantidad / total_estados) * 100) if total_estados else 0
+
+                rows_estado += f"""
+                <div style="margin-bottom:14px;">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        font-size:0.85rem;
+                        font-weight:700;
+                        margin-bottom:6px;
+                        color:#111;
+                    ">
+                        <span>{estado}</span>
+                        <span>{cantidad} ({porcentaje}%)</span>
+                    </div>
+
+                    <div style="
+                        width:100%;
+                        height:12px;
+                        background:#f1ead0;
+                        border-radius:999px;
+                        overflow:hidden;
+                    ">
+                        <div style="
+                            width:{progress_width}%;
+                            height:100%;
+                            background:#BFA75F;
+                            border-radius:999px;
+                        "></div>
+                    </div>
+
+                </div>
+                """
+
+                estado_html = f"""
+                <div style="padding:6px; margin-top:24px;">
+                    <div style="
+                        background:#fff7d6;
+                        padding:22px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        font-family:sans-serif;
+                    ">
+
+                        <div style="
+                            font-size:1rem;
+                            font-weight:900;
+                            margin-bottom:18px;
+                            color:#111;
+                        ">
+                            Distribución por Estado
+                        </div>
+
+                        {rows_estado}
+
+                    </div>
+                </div>
+                """
+
+                components.html(estado_html, height=300)    
+
     # ====================================================
     # TAB 3 - FACTURACIÓN
     # ====================================================
