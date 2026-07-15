@@ -1,8 +1,24 @@
 [
     {
-        "version": "1.07.14.26",
-        "date": "14/07/2026",
+        "version": "1.07.15.26",
+        "date": "15/07/2026",
         "changes": [
+            "Rediseño del Dashboard de Pases de Taller con reorganización de secciones e indicadores",
+            "Implementación de pestañas para consolidar Órdenes por Empresa, Distribución de Órdenes y Facturación en una sola área de visualización",
+            "Nueva vista 'Distribución de Órdenes' con indicadores de Tipo de Parte, Estado y Tipo de Proveedor",
+            "Integración de distribución por Tipo de Proveedor (Interno / Externo) desde las tablas operativas de cada empresa",
+            "Aplicación de filtros por empresa y permisos de usuario en los indicadores de Última Actividad",
+            "Aplicación de filtros por empresa y permisos de usuario en KPIs del Dashboard Principal",
+            "Optimización del sistema de visualización de Facturación compartiendo espacio con el resto de indicadores mediante pestañas",
+            "Implementación de paginación para tarjetas de Pases de Taller mostrando 10 registros por página en formato de 2 filas por 5 columnas",
+            "Implementación de pestañas independientes para Pases Nuevos, En Curso / Proceso y Pases Cerrados",
+            "Refactorización del sistema de tarjetas de Pases de Taller mediante una función reutilizable para reducir código duplicado",
+            "Implementación de botones dinámicos 'Editar' y 'Ver' según el estado operativo del pase",
+            "Corrección de la visualización de Tipo de Proveedor, Proveedor y Razones dentro del modal de detalle",
+            "Corrección de referencias internas para utilizar correctamente el campo 'Tipo de Proveedor' sin afectar el proveedor real",
+            "Ajustes al comportamiento del modal para respetar correctamente el estado del pase y la información del proveedor",
+            "Ampliación del ancho del modal de Detalle de Pase de Taller para mejorar la visualización de información",
+            "Mejoras generales de organización visual, navegación y experiencia de usuario del módulo de Taller",
             "Rediseño completo de la interfaz del módulo de Solicitud y Gestión de Viáticos",
             "Nueva hoja de estilos institucional para Portal OMEGA con unificación visual de componentes",
             "Integración del sistema de temas de Streamlit mediante config.toml",
@@ -15,13 +31,7 @@
             "Automatización de rutas internas para cambio de versión del sistema sin modificar enlaces manualmente",
             "Actualización dinámica del título de la aplicación según la versión activa (OMEGA / OMEGA BETA)",
             "Refactorización del archivo CSS eliminando conflictos con el sistema de temas de Streamlit",
-            "Mejoras generales de navegación, consistencia visual y experiencia de usuario"
-        ]
-    },
-    {
-        "version": "1.07.09.26",
-        "date": "09/07/2026",
-        "changes": [
+            "Mejoras generales de navegación, consistencia visual y experiencia de usuario",
             "Rediseño completo del Dashboard Principal",
             "Implementación de vistas diferenciadas para usuarios Field y usuarios administrativos",
             "Nuevo Portal OMEGA para usuarios Admin, Manager y Regular User",
