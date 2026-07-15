@@ -585,12 +585,18 @@ else:
             .count
         )
 
+        ACCESS_TABLE_MAP = {
+            "igloo": "IGLOO",
+            "lincoln": "LINCOLN",
+            "picus": "PICUS",
+            "setlogis": "SLP",
+            "setfreight": "SFI",
+        }
+
         pase_tables = [
-            "IGLOO",
-            "LINCOLN",
-            "PICUS",
-            "SFI",
-            "SLP",
+            tabla
+            for permiso, tabla in ACCESS_TABLE_MAP.items()
+            if permiso in access
         ]
 
         total_pases = 0
