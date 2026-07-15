@@ -557,41 +557,41 @@ if show_gestion:
 
     st.divider()
 
-# =============================
-# 3. CONSULTAS
-# =============================
-section_consultas = [
+# =================================
+# ROW 3 CONSULTAS
+# =================================
+show_consultas = has_access([
     "consultar_reparacion",
-    "consulta_reportes",
-    "consulta_bonos_operador"
-]
+    "consulta_bonos_operador",
+])
 
-if has_access(section_consultas):
+if show_consultas:
 
-    st.subheader("🔍 Consultas de Reparación y Reportes")
+    with st.container(border=True):
 
-    render_dashboard_cards([
-        {
-            "access": "consultar_reparacion",
-            "label": "🔍  Consultar Historial de Reparación",
-            "page": f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py",
-            "key": "btn_consultar_reparacion"
-        },
-        {
-            "access": "consulta_reportes",
-            "label": "📊  Consulta de Pases de Taller",
-            "page": f"pages/6_ Consulta Reportes{PAGE_SUFFIX}.py",
-            "key": "btn_consulta_reportes"
-        },
-        {
-            "access": "consulta_bonos_operador",
-            "label": "💰 Consulta Bonos de Operadores",
-            "page": f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py",
-            "key": "btn_consulta_bonos_operador",
-        }
-    ])
+        st.markdown("## 🔍 CONSULTAS")
 
-    st.divider()
+        st.divider()
+
+        st.markdown("""
+**Módulos incluidos**
+
+- 🔍 Consultar Historial de Reparación
+- 💰 Consulta Bonos de Operadores
+
+Permite consultar el historial de reparaciones de las unidades y realizar consultas de Bonos de Operadores desde una única interfaz.
+""")
+
+        if st.button(
+            "Abrir módulo",
+            key="btn_consultas",
+            use_container_width=True,
+        ):
+            st.switch_page(
+                f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
+            )
+
+st.divider()
 
 # =================================
 # ROW 4 EXTRAS / GPS
