@@ -1822,34 +1822,15 @@ if has_autorizacion:
         # =================================
         with tab_reportes:
 
-            # =================================
-            # FILTERS
-            # =================================
-            if st.session_state.get("_reset_filtros_consulta", False):
+            st.info("🚧 Este módulo se encuentra en construcción.")
 
-                st.session_state["f_folio"] = ""
-                st.session_state["f_no_reporte"] = ""
-                st.session_state["f_oste"] = ""
-                st.session_state["f_no_factura"] = ""
+            st.markdown("""
+        ### Descarga y Consulta de Reportes
 
-                st.session_state["f_empresa"] = "Todas"
-                st.session_state["f_unidad"] = "Todas"
-                st.session_state["f_capturo"] = "Todos"
-                st.session_state["f_estado"] = "Todos"
+        Esta sección permitirá consultar y descargar reportes consolidados de Pases de Taller.
 
-                st.session_state["f_fecha_proceso"] = None
-                st.session_state["f_fecha_terminado"] = None
-                st.session_state["f_fecha_cancel"] = None
-
-                st.session_state.pop("df_filtrado_pases", None)
-                st.session_state.pop("df_filtrado_servicios", None)
-
-                st.session_state["filtros_aplicados"] = False
-                st.session_state.modal_reporte = None
-
-                st.session_state["_reset_filtros_consulta"] = False
-                
-            st.subheader("Filtros")
+        **Próximamente disponible.**
+        """)
 
         # =================================
         # MODAL
