@@ -398,7 +398,7 @@ if role == "field_user":
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": f"pages/3_ Pase a Taller{PAGE_SUFFIX}.py",
+                "page": f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py",
                 "key": "btn_pase_taller"
             },
             {
@@ -711,7 +711,7 @@ else:
             {
                 "access": "pase_taller",
                 "label": "🏭  Generar nuevo Pase a Taller",
-                "page": f"pages/3_ Pase a Taller{PAGE_SUFFIX}.py",
+                "page": f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py",
                 "key": "btn_pase_taller"
             },
             {
