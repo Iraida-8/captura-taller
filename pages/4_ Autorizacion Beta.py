@@ -822,8 +822,6 @@ with left:
             </div>
             """
 
-            components.html(distribution_html, height=420)
-
             # ====================================================
             # TAB 2 - ESTATUS
             # ====================================================
@@ -908,8 +906,6 @@ with left:
                 </div>
             </div>
             """
-
-            components.html(estado_html, height=380)
     
             # ====================================================
             # TAB 2 - TIPO DE PROVEEDOR
@@ -1003,8 +999,13 @@ with left:
                 </div>
             </div>
             """
+            dashboard_html = (
+                distribution_html
+                + estado_html
+                + proveedor_html
+            )
 
-            components.html(proveedor_html, height=260)
+            components.html(dashboard_html, height=1050)
 
     # ====================================================
     # TAB 3 - FACTURACIÓN
