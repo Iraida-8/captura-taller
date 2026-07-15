@@ -4,6 +4,7 @@ from supabase import create_client
 from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
+import re
 
 # =================================
 # RELEASE CHANNEL
@@ -728,7 +729,7 @@ with tab_pases:
             if st.button("Aceptar"):
                 st.session_state.mostrar_confirmacion = False
                 st.session_state.folio_generado = ""
-                st.switch_page("pages/dashboard.py")
+                st.switch_page(DASHBOARD_PAGE)
 
         confirmacion()
 
@@ -792,8 +793,6 @@ with tab_bonos:
         # MERGE BOTH TABLES
         # ==========================================
 
-        import re
-
         def normalize_unit(unit):
 
             if pd.isna(unit):
@@ -822,8 +821,6 @@ with tab_bonos:
                 return f"A{number:05d}"
 
             return unit
-            return unit
-
 
         vehicle_df["join_key"] = vehicle_df["unidad"].apply(normalize_unit)
 
