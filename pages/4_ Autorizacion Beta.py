@@ -1415,6 +1415,13 @@ with tab_nuevos:
     else:
         st.info("No hay pases registrados.")
 
+    # =================================
+    # PASES DE TALLER EN CURSO
+    # =================================
+
+    with tab_proceso:
+
+        st.info("Construyendo...")
 
 
 
