@@ -42,7 +42,7 @@ require_access("pase_taller")
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Solicitudes y Pases",
+    page_title="Solicitudes y Pases BETA",
     layout="wide"
 )
 
