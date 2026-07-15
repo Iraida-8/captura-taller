@@ -704,7 +704,7 @@ else:
 
     if has_access(section_operacion):
 
-        st.subheader("🏭 Operación")
+        #st.subheader("🏭 Operación")
 
         with st.container(border=True):
 
