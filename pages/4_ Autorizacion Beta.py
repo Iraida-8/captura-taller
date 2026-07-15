@@ -878,83 +878,84 @@ with left:
                 ]
 
             # =============================================
-            # LIMIT TO 5 POST-ITS
+            # LIMIT TO 5 POST-ITS PER ROW
             # =============================================
-            merged = merged.head(5)
+            merged = merged.head(15)
 
             if merged.empty:
                 st.info("No hay resultados con los filtros aplicados.")
             else:
-                cols = st.columns(5)
+                for row_start in range(0, len(merged), 5):
 
-                for i, (_, r) in enumerate(merged.iterrows()):
-                    col = cols[i]
+                    cols = st.columns(5)
 
-                    with col:
-                        folio = r.get("NoFolio", "")
-                        estado = r.get("Estado", "")
-                        factura_raw = r.get("No. de Factura")
+                    for col, (_, r) in zip(cols, merged.iloc[row_start:row_start + 5].iterrows()):
 
-                        factura_vacia = (
-                            pd.isna(factura_raw)
-                            or str(factura_raw).strip() == ""
-                        )
+                        with col:
+                            folio = r.get("NoFolio", "")
+                            estado = r.get("Estado", "")
+                            factura_raw = r.get("No. de Factura")
 
-                        if factura_vacia:
-                            factura = "-"
-                            label_btn = "Agregar Factura"
-                        else:
-                            factura = str(factura_raw)
-                            label_btn = "Ver"
+                            factura_vacia = (
+                                pd.isna(factura_raw)
+                                or str(factura_raw).strip() == ""
+                            )
 
-                        factura_html = f"""
-                        <div style="padding:6px;">
-                            <div style="
-                                background:#ffe2e2;
-                                padding:14px;
-                                border-radius:16px;
-                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                color:#111;
-                                min-height:120px;
-                                font-family:sans-serif;
-                            ">
-                                <div style="font-weight:900;">{folio}</div>
+                            if factura_vacia:
+                                factura = "-"
+                                label_btn = "Agregar Factura"
+                            else:
+                                factura = str(factura_raw)
+                                label_btn = "Ver"
 
-                                <hr style="margin:6px 0">
-
+                            factura_html = f"""
+                            <div style="padding:6px;">
                                 <div style="
-                                    font-size:0.8rem;
-                                    font-weight:700;
-                                    color:#721c24;
+                                    background:#ffe2e2;
+                                    padding:14px;
+                                    border-radius:16px;
+                                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                                    color:#111;
+                                    min-height:120px;
+                                    font-family:sans-serif;
                                 ">
-                                    {estado}
-                                </div>
+                                    <div style="font-weight:900;">{folio}</div>
 
-                                <div style="
-                                    margin-top:8px;
-                                    font-size:0.75rem;
-                                ">
-                                    No. de Factura: {factura}
+                                    <hr style="margin:6px 0">
+
+                                    <div style="
+                                        font-size:0.8rem;
+                                        font-weight:700;
+                                        color:#721c24;
+                                    ">
+                                        {estado}
+                                    </div>
+
+                                    <div style="
+                                        margin-top:8px;
+                                        font-size:0.75rem;
+                                    ">
+                                        No. de Factura: {factura}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        """
-                        components.html(factura_html, height=160)
+                            """
+                            components.html(factura_html, height=160)
 
-                        # View facturas
-                        if st.button(
-                            label_btn,
-                            key=f"fact_btn_{folio}",
-                            use_container_width=True
-                        ):
-                            st.session_state.modal_factura = {
-                                "NoFolio": folio,
-                                "NoFactura": None if factura_vacia else factura
-                            }
-                            st.session_state.modal_factura_open = True
+                            # View facturas
+                            if st.button(
+                                label_btn,
+                                key=f"fact_btn_{folio}",
+                                use_container_width=True
+                            ):
+                                st.session_state.modal_factura = {
+                                    "NoFolio": folio,
+                                    "NoFactura": None if factura_vacia else factura
+                                }
+                                st.session_state.modal_factura_open = True
 
-        else:
-            st.info("No hay datos disponibles.")
+                else:
+                    st.info("No hay datos disponibles.")
 
 # =============================
 # RIGHT → LAST ACTIVITY
