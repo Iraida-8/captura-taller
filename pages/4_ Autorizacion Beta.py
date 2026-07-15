@@ -87,6 +87,14 @@ VALID_ESTADOS = [
     "Cerrado / Cancelado",
 ]
 
+ACCESS_TABLE_MAP = {
+    "igloo": "IGLOO",
+    "lincoln": "LINCOLN",
+    "picus": "PICUS",
+    "setlogis": "SLP",
+    "setfreight": "SFI",
+}
+
 def actualizar_estado_pase(empresa, folio, nuevo_estado):
 
     if nuevo_estado not in VALID_ESTADOS:
@@ -366,11 +374,15 @@ def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=Non
 # Load Pase de Taller (SUPABASE)
 # =================================
 @st.cache_data(ttl=300)
-def cargar_pases_taller():
+def cargar_pases_taller(user_access):
 
     supabase = get_supabase_client()
 
-    tablas = ["IGLOO", "LINCOLN", "PICUS", "SFI", "SLP"]
+    tablas = [
+        tabla
+        for permiso, tabla in ACCESS_TABLE_MAP.items()
+        if permiso in user_access
+    ]
 
     dfs = []
 
@@ -471,7 +483,12 @@ def cargar_audit():
     return df
 
 #loaders
-pases_df = cargar_pases_taller()
+user_access = tuple(
+    access.lower()
+    for access in st.session_state["user"].get("access", [])
+)
+
+pases_df = cargar_pases_taller(user_access)
 facturas_df = cargar_facturas()
 audit_df = cargar_audit()
 
