@@ -1364,8 +1364,15 @@ def render_pases_tab(
 
                 components.html(html, height=220)
 
+                editable = r.get("Estado") in [
+                    "Inicio / Nuevo",
+                    "En Curso / Proceso"
+                ]
+
+                button_text = "✏ Editar" if editable else "👁 Ver"
+
                 if st.button(
-                    "✏ Editar",
+                    button_text,
                     key=f"{button_prefix}_{folio}",
                     use_container_width=True,
                 ):
