@@ -3399,309 +3399,314 @@ if has_viaticos:
             # GRID ENTRIES
             # =================================
 
-            for idx, row in df_pagina.iterrows():
+            if df_pagina.empty:
 
-                with st.container(border=True):
+                st.info("No hay solicitudes pendientes.")
 
-                    col1, col2, col3, col4, col5, col6, col7 = st.columns(
-                        [1, 2, 2, 2, 2, 1.2, 1.2]
+            else:
+                for idx, row in df_pagina.iterrows():
+
+                    with st.container(border=True):
+
+                        col1, col2, col3, col4, col5, col6, col7 = st.columns(
+                            [1, 2, 2, 2, 2, 1.2, 1.2]
+                        )
+
+                        # VER BUTTON
+                        with col1:
+
+                            if st.button(
+                                "Ver",
+                                key=f"ver_{idx}",
+                                use_container_width=True
+                            ):
+                                modal_ver_solicitud(row)
+
+                        # FOLIO
+                        with col2:
+
+                            st.caption("Folio")
+                            st.write(f"**{row.get('folio_solicitud', '')}**")
+
+                        # EMPLEADO
+                        with col3:
+
+                            st.caption("Empleado")
+                            st.write(f"**{row.get('nombre_empleado_solicita', '')}**")
+
+                        # FECHA
+                        with col4:
+
+                            st.caption("Fecha Solicitud")
+                            st.write(f"**{row.get('fecha_solicitud', '')}**")
+
+                        # TOTAL
+                        with col5:
+
+                            total_value = row.get("total_estimado", 0)
+
+                            try:
+                                total_value = float(total_value)
+                            except Exception:
+                                total_value = 0
+
+                            st.caption("Total")
+                            st.write(f"**${total_value:,.2f}**")
+
+                        # APROBAR
+                        with col6:
+
+                            if st.button(
+                                "Aprobar",
+                                key=f"aprobar_{idx}",
+                                use_container_width=True
+                            ):
+
+                                supabase.table(
+                                    "solicitud_viaje"
+                                ).update(
+                                    {
+                                        "estatus": "Aprobado",
+                                        "fecha_actualizacion": datetime.now(
+                                            timezone.utc
+                                        ).isoformat()
+                                    }
+                                ).eq(
+                                    "id",
+                                    row["id"]
+                                ).execute()
+
+                                # =================================
+                                # GET CREATOR EMAIL
+                                # =================================
+
+                                correo_creador = (
+                                    obtener_email_usuario(
+                                        row.get(
+                                            "nombre_empleado_solicita",
+                                            ""
+                                        )
+                                    )
+                                )
+
+                                destinatarios = construir_destinatarios(
+
+                                    empresa=row.get(
+                                        "empresa_brinda_servicio",
+                                        ""
+                                    ),
+
+                                    email_usuario_actual=email_usuario,
+
+                                    correo_creador=correo_creador
+                                )
+
+                                # =================================
+                                # SEND EMAIL
+                                # =================================
+
+                                try:
+
+                                    enviar_correo_estatus_solicitud(
+
+                                        destinatarios=destinatarios,
+
+                                        folio=row.get(
+                                            "folio_solicitud",
+                                            ""
+                                        ),
+
+                                        estatus="Aprobado",
+
+                                        fecha_inicio=row.get(
+                                            "fecha_inicio",
+                                            ""
+                                        ),
+
+                                        fecha_fin=row.get(
+                                            "fecha_fin",
+                                            ""
+                                        ),
+
+                                        motivo_viaje=row.get(
+                                            "motivo_viaje",
+                                            ""
+                                        ),
+
+                                        observaciones=row.get(
+                                            "observaciones",
+                                            ""
+                                        ),
+
+                                        conceptos=row.get(
+                                            "conceptos",
+                                            []
+                                        )
+                                    )
+
+                                except Exception as e:
+
+                                    st.warning(
+                                        f"No se pudo enviar correo: {e}"
+                                    )
+
+
+
+                                st.success("Solicitud aprobada")
+                                st.cache_data.clear()
+                                st.rerun()
+
+                        # RECHAZAR
+                        with col7:
+
+                            if st.button(
+                                "Rechazar",
+                                key=f"rechazar_{idx}",
+                                use_container_width=True
+                            ):
+
+                                supabase.table(
+                                    "solicitud_viaje"
+                                ).update(
+                                    {
+                                        "estatus": "Rechazado",
+                                        "fecha_actualizacion": datetime.now(
+                                            timezone.utc
+                                        ).isoformat()
+                                    }
+                                ).eq(
+                                    "id",
+                                    row["id"]
+                                ).execute()
+
+                                # =================================
+                                # GET CREATOR EMAIL
+                                # =================================
+
+                                correo_creador = (
+                                    obtener_email_usuario(
+                                        row.get(
+                                            "nombre_empleado_solicita",
+                                            ""
+                                        )
+                                    )
+                                )
+
+                                destinatarios = construir_destinatarios(
+
+                                    empresa=row.get(
+                                        "empresa_brinda_servicio",
+                                        ""
+                                    ),
+
+                                    email_usuario_actual=email_usuario,
+
+                                    correo_creador=correo_creador
+                                )
+
+                                # =================================
+                                # SEND EMAIL
+                                # =================================
+
+                                try:
+
+                                    enviar_correo_estatus_solicitud(
+
+                                        destinatarios=destinatarios,
+
+                                        folio=row.get(
+                                            "folio_solicitud",
+                                            ""
+                                        ),
+
+                                        estatus="Rechazado",
+
+                                        fecha_inicio=row.get(
+                                            "fecha_inicio",
+                                            ""
+                                        ),
+
+                                        fecha_fin=row.get(
+                                            "fecha_fin",
+                                            ""
+                                        ),
+
+                                        motivo_viaje=row.get(
+                                            "motivo_viaje",
+                                            ""
+                                        ),
+
+                                        observaciones=row.get(
+                                            "observaciones",
+                                            ""
+                                        ),
+
+                                        conceptos=row.get(
+                                            "conceptos",
+                                            []
+                                        )
+                                    )
+
+                                except Exception as e:
+
+                                    st.warning(
+                                        f"No se pudo enviar correo: {e}"
+                                    )
+
+                                st.error("Solicitud rechazada")
+                                st.cache_data.clear()
+                                st.rerun()
+
+                # =================================
+                # PAGINATION CONTROLS
+                # =================================
+
+                st.divider()
+
+                p1, p2, p3 = st.columns([1,2,1])
+
+                with p1:
+
+                    if st.button(
+                        "⬅ Anterior",
+                        disabled=st.session_state.pagina_viaticos <= 1,
+                        use_container_width=True,
+                        key="prev_pendientes"
+                    ):
+
+                        st.session_state.pagina_viaticos -= 1
+                        st.rerun()
+
+                with p2:
+
+                    st.markdown(
+                        f"""
+                        <div style="
+                            text-align:center;
+                            padding-top:8px;
+                            font-weight:700;
+                            color:#151F6D;
+                        ">
+                            Página {st.session_state.pagina_viaticos} de {total_paginas}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
                     )
 
-                    # VER BUTTON
-                    with col1:
-
-                        if st.button(
-                            "Ver",
-                            key=f"ver_{idx}",
-                            use_container_width=True
-                        ):
-                            modal_ver_solicitud(row)
-
-                    # FOLIO
-                    with col2:
-
-                        st.caption("Folio")
-                        st.write(f"**{row.get('folio_solicitud', '')}**")
-
-                    # EMPLEADO
-                    with col3:
-
-                        st.caption("Empleado")
-                        st.write(f"**{row.get('nombre_empleado_solicita', '')}**")
-
-                    # FECHA
-                    with col4:
-
-                        st.caption("Fecha Solicitud")
-                        st.write(f"**{row.get('fecha_solicitud', '')}**")
-
-                    # TOTAL
-                    with col5:
-
-                        total_value = row.get("total_estimado", 0)
-
-                        try:
-                            total_value = float(total_value)
-                        except Exception:
-                            total_value = 0
-
-                        st.caption("Total")
-                        st.write(f"**${total_value:,.2f}**")
-
-                    # APROBAR
-                    with col6:
-
-                        if st.button(
-                            "Aprobar",
-                            key=f"aprobar_{idx}",
-                            use_container_width=True
-                        ):
-
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "estatus": "Aprobado",
-                                    "fecha_actualizacion": datetime.now(
-                                        timezone.utc
-                                    ).isoformat()
-                                }
-                            ).eq(
-                                "id",
-                                row["id"]
-                            ).execute()
-
-                            # =================================
-                            # GET CREATOR EMAIL
-                            # =================================
-
-                            correo_creador = (
-                                obtener_email_usuario(
-                                    row.get(
-                                        "nombre_empleado_solicita",
-                                        ""
-                                    )
-                                )
-                            )
-
-                            destinatarios = construir_destinatarios(
-
-                                empresa=row.get(
-                                    "empresa_brinda_servicio",
-                                    ""
-                                ),
-
-                                email_usuario_actual=email_usuario,
-
-                                correo_creador=correo_creador
-                            )
-
-                            # =================================
-                            # SEND EMAIL
-                            # =================================
-
-                            try:
-
-                                enviar_correo_estatus_solicitud(
-
-                                    destinatarios=destinatarios,
-
-                                    folio=row.get(
-                                        "folio_solicitud",
-                                        ""
-                                    ),
-
-                                    estatus="Aprobado",
-
-                                    fecha_inicio=row.get(
-                                        "fecha_inicio",
-                                        ""
-                                    ),
-
-                                    fecha_fin=row.get(
-                                        "fecha_fin",
-                                        ""
-                                    ),
-
-                                    motivo_viaje=row.get(
-                                        "motivo_viaje",
-                                        ""
-                                    ),
-
-                                    observaciones=row.get(
-                                        "observaciones",
-                                        ""
-                                    ),
-
-                                    conceptos=row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
-
-                            except Exception as e:
-
-                                st.warning(
-                                    f"No se pudo enviar correo: {e}"
-                                )
-
-
-
-                            st.success("Solicitud aprobada")
-                            st.cache_data.clear()
-                            st.rerun()
-
-                    # RECHAZAR
-                    with col7:
-
-                        if st.button(
-                            "Rechazar",
-                            key=f"rechazar_{idx}",
-                            use_container_width=True
-                        ):
-
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "estatus": "Rechazado",
-                                    "fecha_actualizacion": datetime.now(
-                                        timezone.utc
-                                    ).isoformat()
-                                }
-                            ).eq(
-                                "id",
-                                row["id"]
-                            ).execute()
-
-                            # =================================
-                            # GET CREATOR EMAIL
-                            # =================================
-
-                            correo_creador = (
-                                obtener_email_usuario(
-                                    row.get(
-                                        "nombre_empleado_solicita",
-                                        ""
-                                    )
-                                )
-                            )
-
-                            destinatarios = construir_destinatarios(
-
-                                empresa=row.get(
-                                    "empresa_brinda_servicio",
-                                    ""
-                                ),
-
-                                email_usuario_actual=email_usuario,
-
-                                correo_creador=correo_creador
-                            )
-
-                            # =================================
-                            # SEND EMAIL
-                            # =================================
-
-                            try:
-
-                                enviar_correo_estatus_solicitud(
-
-                                    destinatarios=destinatarios,
-
-                                    folio=row.get(
-                                        "folio_solicitud",
-                                        ""
-                                    ),
-
-                                    estatus="Rechazado",
-
-                                    fecha_inicio=row.get(
-                                        "fecha_inicio",
-                                        ""
-                                    ),
-
-                                    fecha_fin=row.get(
-                                        "fecha_fin",
-                                        ""
-                                    ),
-
-                                    motivo_viaje=row.get(
-                                        "motivo_viaje",
-                                        ""
-                                    ),
-
-                                    observaciones=row.get(
-                                        "observaciones",
-                                        ""
-                                    ),
-
-                                    conceptos=row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
-
-                            except Exception as e:
-
-                                st.warning(
-                                    f"No se pudo enviar correo: {e}"
-                                )
-
-                            st.error("Solicitud rechazada")
-                            st.cache_data.clear()
-                            st.rerun()
-
-            # =================================
-            # PAGINATION CONTROLS
-            # =================================
-
-            st.divider()
-
-            p1, p2, p3 = st.columns([1,2,1])
-
-            with p1:
-
-                if st.button(
-                    "⬅ Anterior",
-                    disabled=st.session_state.pagina_viaticos <= 1,
-                    use_container_width=True,
-                    key="prev_pendientes"
-                ):
-
-                    st.session_state.pagina_viaticos -= 1
-                    st.rerun()
-
-            with p2:
-
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align:center;
-                        padding-top:8px;
-                        font-weight:700;
-                        color:#151F6D;
-                    ">
-                        Página {st.session_state.pagina_viaticos} de {total_paginas}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            with p3:
-
-                if st.button(
-                    "Siguiente ➡",
-                    disabled=(
-                        st.session_state.pagina_viaticos
-                        >= total_paginas
-                    ),
-                    use_container_width=True,
-                    key="next_pendientes"
-                ):
-
-                    st.session_state.pagina_viaticos += 1
-                    st.rerun()
+                with p3:
+
+                    if st.button(
+                        "Siguiente ➡",
+                        disabled=(
+                            st.session_state.pagina_viaticos
+                            >= total_paginas
+                        ),
+                        use_container_width=True,
+                        key="next_pendientes"
+                    ):
+
+                        st.session_state.pagina_viaticos += 1
+                        st.rerun()
 
             # =================================
             # COMPROBACIONES POR VERIFICAR
