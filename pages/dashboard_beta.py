@@ -657,11 +657,7 @@ if show_gps:
 
     with col2:
 
-        section_gps = [
-            "gps_tracking",
-        ]
-
-        if has_access(section_gps):
+        if has_access(["gps_tracking"]):
 
             with st.container(border=True):
 
@@ -670,9 +666,10 @@ if show_gps:
                 st.divider()
 
                 st.markdown("""
-**Módulo incluido**
+**Módulos incluidos**
 
 - 🛰️ Rastreador y Seguimiento GPS de Unidades
+- 📍 Monitoreo en Tiempo Real
 
 Permite visualizar la ubicación en tiempo real de las unidades, consultar indicadores operativos y dar seguimiento a la flota.
 """)
@@ -686,7 +683,7 @@ Permite visualizar la ubicación en tiempo real de las unidades, consultar indic
                         f"pages/11_ api_pull{PAGE_SUFFIX}.py"
                     )
 
-    st.divider()
+st.divider()
 
 # =============================
 # 5. AUDIT
