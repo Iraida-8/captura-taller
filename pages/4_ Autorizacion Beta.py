@@ -56,16 +56,6 @@ require_login()
 require_access("autorizacion")
 
 # =================================
-# Defensive reset on page entry
-# =================================
-if st.session_state.get("_reset_autorizacion_page", True):
-    st.session_state.modal_reporte = None
-    st.session_state.modal_factura = None
-    st.session_state.modal_factura_open = False
-    st.session_state.buscar_trigger = False
-    st.session_state["_reset_autorizacion_page"] = False
-    
-# =================================
 # Navigation
 # =================================
 st.write("")
@@ -77,6 +67,16 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
+
+# =================================
+# Defensive reset on page entry
+# =================================
+if st.session_state.get("_reset_autorizacion_page", True):
+    st.session_state.modal_reporte = None
+    st.session_state.modal_factura = None
+    st.session_state.modal_factura_open = False
+    st.session_state.buscar_trigger = False
+    st.session_state["_reset_autorizacion_page"] = False
 
 # =================================
 # Update Estado
@@ -1583,11 +1583,15 @@ with f6:
         "Tipo de Proveedor",
         ["Todos"] + tipos_proveedor,
     )
+
 with f7:
-    f_proveedor = st.text_input("Proveedor")
+    f_oste = st.text_input("OSTE")
 
 with f8:
-    f_oste = st.text_input("OSTE")
+    f_factura = st.text_input("No. de Factura")
+
+with f9:
+    st.write("")
 
 with f10:
     st.write("")
