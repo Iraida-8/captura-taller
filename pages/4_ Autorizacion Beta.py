@@ -1293,91 +1293,128 @@ with tab_nuevos:
             st.info("No hay pases en estado Inicio / Nuevo.")
 
         else:
-            cols = st.columns(5)
+            for row_start in range(0, len(page_df), 5):
 
-            for i, (_, r) in enumerate(page_df.iterrows()):
-                col = cols[i % 5]
+                cols = st.columns(5)
 
-                with col:
-                    folio = safe(r.get("NoFolio"))
-                    tipo_unidad = safe(r.get("Tipo de Unidad"))
-                    fecha = r.get("Fecha")
-                    fecha = fecha.date() if pd.notna(fecha) else ""
-                    unidad = safe(r.get("No. de Unidad"))
-                    capturo = safe(r.get("Capturo"))
-                    descripcion = safe(r.get("Descripcion Problema"))
+                for col, (_, r) in zip(
+                    cols,
+                    page_df.iloc[row_start:row_start + 5].iterrows()
+                ):
 
-                    if len(descripcion) > 120:
-                        descripcion = descripcion[:120] + "..."
+                    with col:
+                        folio = safe(r.get("NoFolio"))
+                        tipo_unidad = safe(r.get("Tipo de Unidad"))
+                        fecha = r.get("Fecha")
+                        fecha = fecha.date() if pd.notna(fecha) else ""
+                        unidad = safe(r.get("No. de Unidad"))
+                        capturo = safe(r.get("Capturo"))
+                        descripcion = safe(r.get("Descripcion Problema"))
 
-                    html = f"""
-                    <div style="padding:6px;">
-                        <div style="
-                            background:#fff7d6;
-                            padding:14px;
-                            border-radius:16px;
-                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            color:#111;
-                            min-height:160px;
-                            font-family:sans-serif;
-                        ">
-                            <div style="font-weight:900;">{folio}</div>
-                            <div style="font-size:0.8rem;">{tipo_unidad}</div>
-                            <div style="font-size:0.8rem;">{fecha}</div>
+                        if len(descripcion) > 120:
+                            descripcion = descripcion[:120] + "..."
 
-                            <hr style="margin:6px 0">
-
-                            <div style="font-size:0.8rem;">{unidad}</div>
-
+                        html = f"""
+                        <div style="padding:6px;">
                             <div style="
-                                font-size:0.75rem;
-                                margin-top:6px;
-                                padding:6px;
-                                background:#fff;
-                                border-radius:8px;
-                                box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                                background:#fff7d6;
+                                padding:14px;
+                                border-radius:16px;
+                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                                color:#111;
+                                min-height:160px;
+                                font-family:sans-serif;
                             ">
-                                {descripcion}
-                            </div>
+                                <div style="font-weight:900;">{folio}</div>
+                                <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                                <div style="font-size:0.8rem;">{fecha}</div>
 
-                            <div style="
-                                margin-top:6px;
-                                font-size:0.75rem;
-                                font-weight:700;
-                                color:#856404;
-                            ">
-                                Inicio / Nuevo
-                            </div>
+                                <hr style="margin:6px 0">
 
-                            <div style="
-                                font-size:0.75rem;
-                                margin-top:4px;
-                                opacity:0.8;
-                            ">
-                                Capturó: {capturo}
+                                <div style="font-size:0.8rem;">{unidad}</div>
+
+                                <div style="
+                                    font-size:0.75rem;
+                                    margin-top:6px;
+                                    padding:6px;
+                                    background:#fff;
+                                    border-radius:8px;
+                                    box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                                ">
+                                    {descripcion}
+                                </div>
+
+                                <div style="
+                                    margin-top:6px;
+                                    font-size:0.75rem;
+                                    font-weight:700;
+                                    color:#856404;
+                                ">
+                                    Inicio / Nuevo
+                                </div>
+
+                                <div style="
+                                    font-size:0.75rem;
+                                    margin-top:4px;
+                                    opacity:0.8;
+                                ">
+                                    Capturó: {capturo}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    """
+                        """
 
-                    components.html(html, height=220)
+                        components.html(html, height=220)
 
-                    # =====================================
-                    # BUTTON
-                    # =====================================
-                    if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
+                        # =====================================
+                        # BUTTON
+                        # =====================================
+                        if st.button("✏ Editar", key=f"top10_{folio}", use_container_width=True):
 
-                        st.session_state.modal_factura = None
-                        st.session_state.modal_factura_open = False
+                            st.session_state.modal_factura = None
+                            st.session_state.modal_factura_open = False
 
-                        st.session_state.modal_reporte = r.to_dict()
+                            st.session_state.modal_reporte = r.to_dict()
 
-                        df = cargar_servicios_folio(r["NoFolio"])
+                            df = cargar_servicios_folio(r["NoFolio"])
 
-                        st.session_state.servicios_df = df
+                            st.session_state.servicios_df = df
+
+            st.divider()
+
+            nav1, nav2, nav3 = st.columns([1, 2, 1])
+
+            with nav1:
+                if st.button(
+                    "⬅ Anterior",
+                    disabled=st.session_state.page_nuevos == 0,
+                    key="prev_nuevos",
+                    use_container_width=True,
+                ):
+                    st.session_state.page_nuevos -= 1
+                    st.rerun()
+
+            with nav2:
+                st.markdown(
+                    f"<div style='text-align:center;font-weight:700;'>"
+                    f"Página {st.session_state.page_nuevos + 1} de {total_pages}"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+
+            with nav3:
+                if st.button(
+                    "Siguiente ➡",
+                    disabled=st.session_state.page_nuevos >= total_pages - 1,
+                    key="next_nuevos",
+                    use_container_width=True,
+                ):
+                    st.session_state.page_nuevos += 1
+                    st.rerun()
 
     else:
         st.info("No hay pases registrados.")
+
 
 
 
