@@ -824,7 +824,11 @@ with left:
             # ====================================================
             # TAB 2 - ESTATUS
             # ====================================================
+            st.write("Estados encontrados:")
 
+            for estado in sorted(pases_df["Estado"].dropna().unique()):
+                st.write(repr(estado))
+                
             conteo_estados = (
                 pases_df["Estado"]
                 .fillna("Sin Estado")
