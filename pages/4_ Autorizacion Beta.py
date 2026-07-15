@@ -491,7 +491,21 @@ def cargar_audit():
 
     return df
 
-#loaders
+# =================================
+# REFRESH CACHED DATA
+# =================================
+def refresh_cached_data():
+    cargar_pases_taller.clear()
+    cargar_facturas.clear()
+    cargar_audit.clear()
+    cargar_refacciones.clear()
+
+# =================================
+# LOADERS
+# =================================
+#cache
+refresh_cached_data()
+
 user_access = tuple(
     access.lower()
     for access in st.session_state["user"].get("access", [])
@@ -1500,7 +1514,7 @@ if st.session_state.get("modal_factura") and st.session_state.get("modal_factura
             # If editable and user typed something → save
             if factura_vacia and nueva_factura.strip() != "":
                 guardar_factura(folio, nueva_factura.strip())
-                st.cache_data.clear()
+                refresh_cached_data()
 
             st.session_state.modal_factura = None
             st.session_state.modal_factura_open = False
@@ -2032,8 +2046,8 @@ if st.session_state.modal_reporte:
                     nuevo_estado
                 )
                 
+                refresh_cached_data()
                 st.session_state.modal_reporte = None
-                st.cache_data.clear()
                 st.rerun()
 
     modal()
