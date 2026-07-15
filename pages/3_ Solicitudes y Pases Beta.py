@@ -739,7 +739,7 @@ with tab_bonos:
 
     if "bonos_operador" in access:
 
-        st.title("💰 Bono de Operadores")
+        st.title("💰 Captura Bono de Operadores")
 
         # ==========================================
         # CATALOGO DE UNIDADES
