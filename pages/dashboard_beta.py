@@ -686,7 +686,7 @@ else:
         st.divider()
 
     # =================================
-    # OPERACIÓN / GESTIÓN
+    #  ROW 1 OPERACIÓN / GESTIÓN
     # =================================
     show_operacion = has_access([
         "pase_taller",
@@ -819,39 +819,98 @@ else:
 
         st.divider()
 
-    # =============================
-    # 4. EXTRAS
-    # =============================
-    section_extras = [
+    # =================================
+    # ROW 4 EXTRAS / GPS
+    # =================================
+    show_extras = has_access([
         "ifuel",
         "lector_pdf",
-        "gps_tracking"
-    ]
+    ])
 
-    if has_access(section_extras):
+    show_gps = has_access([
+        "gps_tracking",
+    ])
 
-        st.subheader("⚙️ Extras")
+    if show_extras and show_gps:
+        col1, col2 = st.columns(2)
 
-        render_dashboard_cards([
-            {
-                "access": "ifuel",
-                "label": "⛽  Reporte iFuel",
-                "page": f"pages/5_ Reporte iFuel{PAGE_SUFFIX}.py",
-                "key": "btn_ifuel"
-            },
-            {
-                "access": "lector_pdf",
-                "label": "📄  Lector PDF",
-                "page": f"pages/2_ Lector PDF{PAGE_SUFFIX}.py",
-                "key": "btn_lector_pdf"
-            },
-            {
-                "access": "gps_tracking",
-                "label": "🛰️  Rastreador y Seguimiento GPS de Unidades",
-                "page": f"pages/11_ api_pull{PAGE_SUFFIX}.py",
-                "key": "btn_gps_tracking"
-            }
-        ])
+    elif show_extras:
+        col1 = st.container()
+
+    elif show_gps:
+        col2 = st.container()
+
+    # =============================
+    # 1. EXTRAS
+    # =============================
+    if show_extras:
+
+        with col1:
+
+            section_extras = [
+                "ifuel",
+                "lector_pdf",
+            ]
+
+            with st.container(border=True):
+
+                st.markdown("## ⚙️ EXTRAS")
+
+                st.divider()
+
+                st.markdown("""
+**Módulos incluidos**
+
+- 📄 Lector PDF
+- ⛽ Reporte iFuel
+
+Permite consultar archivos PDF de reparación y generar reportes operativos de iFuel desde una única interfaz.
+""")
+
+                if st.button(
+                    "Abrir módulo",
+                    key="btn_extras",
+                    use_container_width=True,
+                ):
+                    st.switch_page(
+                        f"pages/5_ Extras{PAGE_SUFFIX}.py"
+                    )
+
+    # =============================
+    # 2. GPS
+    # =============================
+    if show_gps:
+
+        with col2:
+
+            section_gps = [
+                "gps_tracking",
+            ]
+
+            if has_access(section_gps):
+
+                with st.container(border=True):
+
+                    st.markdown("## 🛰️ RASTREADOR Y SEGUIMIENTO GPS")
+
+                    st.divider()
+
+                    st.markdown("""
+**Módulo incluido**
+
+- 🛰️ Rastreador y Seguimiento GPS de Unidades
+
+Permite visualizar la ubicación en tiempo real de las unidades, consultar indicadores operativos y dar seguimiento a la flota.
+""")
+
+                    if st.button(
+                        "Abrir módulo",
+                        key="btn_gps_tracking",
+                        use_container_width=True,
+                    ):
+                        st.switch_page(
+                            f"pages/11_ api_pull{PAGE_SUFFIX}.py"
+                        )
 
         st.divider()
 
