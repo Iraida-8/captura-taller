@@ -1616,20 +1616,70 @@ with f10:
         use_container_width=True,
     )
 
-if st.button("Buscar"):
+# =================================
+# BUTTONS
+# =================================
+if buscar:
     st.session_state.buscar_trigger = True
     st.session_state.modal_reporte = None
     st.session_state.modal_factura = None
     st.session_state.modal_factura_open = False
 
+if limpiar:
+    st.session_state.buscar_trigger = False
+    st.session_state.modal_reporte = None
+    st.session_state.modal_factura = None
+    st.session_state.modal_factura_open = False
+    st.rerun()
+
 # =================================
 # RESULTADOS
 # =================================
 if st.session_state.buscar_trigger:
+
     resultados = pases_df.copy()
 
+    if not facturas_df.empty:
+
+        resultados = resultados.merge(
+            facturas_df[
+                ["NoFolio", "No. de Factura"]
+            ],
+            on="NoFolio",
+            how="left",
+        )
+    # FOLIO
     if f_folio:
         resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
+    # NO. FACTURA
+    if f_factura:
+        resultados = resultados[
+            resultados["No. de Factura"]
+            .fillna("")
+            .astype(str)
+            .str.contains(
+                f_factura,
+                case=False,
+                na=False,
+            )
+        ]
+    # OSTE
+    if f_oste:
+        resultados = resultados[
+            resultados["Oste"]
+            .fillna("")
+            .astype(str)
+            .str.contains(
+                f_oste,
+                case=False,
+                na=False,
+            )
+        ]
+    # TIPO PROVEEDOR
+    if f_tipo_proveedor != "Todos":
+        resultados = resultados[
+            resultados["Tipo de Proveedor"] == f_tipo_proveedor
+        ]
 
     if f_empresa != "Selecciona empresa":
         resultados = resultados[resultados["Empresa"] == f_empresa]
@@ -1648,7 +1698,9 @@ if st.session_state.buscar_trigger:
     st.subheader("Resultados")
 
     for _, row in resultados.iterrows():
-        c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([1,2,2,2,2,3,2,1])
+        c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = st.columns(
+            [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
+        )
 
         editable = row["Estado"] in [
             "Inicio / Nuevo",
@@ -1672,21 +1724,33 @@ if st.session_state.buscar_trigger:
                 st.session_state.servicios_df = df
 
         # ======================================================
-        # INFO COLUMNS (UNCHANGED)
+        # INFO COLUMNS
         # ======================================================
         c2.write(row["NoFolio"])
-        c3.write(row.get("No. de Unidad", ""))
-        c4.write(row["Empresa"])
-        c5.write(row["Tipo de Proveedor"])
-        c6.write(row["Estado"])
+
+        c3.write(row.get("No. de Factura", ""))
+
+        c4.write(row.get("Oste", ""))
+
+        c5.write(row.get("Tipo de Proveedor", ""))
+
+        c6.write(row["Empresa"])
+
+        c7.write(row.get("No. de Unidad", ""))
+
+        c8.write(row["Estado"])
 
         descripcion = row.get("Descripcion Problema", "")
         if isinstance(descripcion, str) and len(descripcion) > 80:
             descripcion = descripcion[:80] + "..."
 
-        c7.write(descripcion)
+        c9.write(descripcion)
 
-        c8.write(row["Fecha"].date() if pd.notna(row["Fecha"]) else "")
+        c10.write(
+            row["Fecha"].date()
+            if pd.notna(row["Fecha"])
+            else ""
+        )
 
 # =================================
 # MODAL
