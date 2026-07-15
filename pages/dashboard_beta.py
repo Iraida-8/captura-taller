@@ -386,7 +386,6 @@ if role == "field_user":
     # =============================
     section_generacion = [
         "pase_taller",
-        "solicitud_viaticos",
         "bonos_operador"
     ]
 
@@ -400,12 +399,6 @@ if role == "field_user":
                 "label": "🏭  Generar nuevo Pase a Taller",
                 "page": f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py",
                 "key": "btn_pase_taller"
-            },
-            {
-                "access": "solicitud_viaticos_D",
-                "label": "💳  Solicitud de Viáticos y Reembolsos",
-                "page": f"pages/9_ Viaticos{PAGE_SUFFIX}.py",
-                "key": "btn_viaticos"
             },
             {
                 "access": "bonos_operador",
@@ -425,26 +418,24 @@ if role == "field_user":
         "gestion_viaticos"
     ]
 
-    if has_access(section_gestion):
+    st.subheader("📋 Gestión de Órdenes y Pases")
 
-        st.subheader("📋 Gestión de Órdenes y Pases")
+    render_button_grid([
+        {
+            "access": "autorizacion",
+            "label": "✅  Autorización y Gestión de Pases de Taller",
+            "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+            "key": "btn_autorizacion"
+        },
+        {
+            "access": "gestion_viaticos",
+            "label": "💼  Gestión de Viáticos",
+            "page": f"pages/10_ Gestion Viaticos{PAGE_SUFFIX}.py",
+            "key": "btn_gestion_viaticos"
+        }
+    ])
 
-        render_button_grid([
-            {
-                "access": "autorizacion",
-                "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
-                "key": "btn_autorizacion"
-            },
-            {
-                "access": "gestion_viaticos",
-                "label": "💼  Gestión de Viáticos",
-                "page": f"pages/10_ Gestion Viaticos{PAGE_SUFFIX}.py",
-                "key": "btn_gestion_viaticos"
-            }
-        ])
-
-        st.divider()
+    st.divider()
 
     # =============================
     # 3. CONSULTAS
@@ -697,19 +688,36 @@ else:
     # =================================
     # OPERACIÓN / GESTIÓN
     # =================================
-    col1, col2 = st.columns(2)
+    show_operacion = has_access([
+        "pase_taller",
+        "bonos_operador",
+    ])
+
+    show_gestion = has_access([
+        "autorizacion",
+        "gestion_viaticos",
+    ])
+
+    if show_operacion and show_gestion:
+        col1, col2 = st.columns(2)
+
+    elif show_operacion:
+        col1 = st.container()
+
+    elif show_gestion:
+        col2 = st.container()
 
     # =============================
     # 1. OPERACIÓN
     # =============================
-    with col1:
+    if show_operacion:
 
-        section_operacion = [
-            "pase_taller",
-            "bonos_operador",
-        ]
+        with col1:
 
-        if has_access(section_operacion):
+            section_operacion = [
+                "pase_taller",
+                "bonos_operador",
+            ]
 
             with st.container(border=True):
 
@@ -738,40 +746,42 @@ else:
     # =============================
     # 2. GESTIÓN
     # =============================
-    with col2:
+    if show_gestion:
 
-        section_gestion = [
-            "autorizacion",
-            "gestion_viaticos",
-        ]
+        with col2:
 
-        if has_access(section_gestion):
+            section_gestion = [
+                "autorizacion",
+                "gestion_viaticos",
+            ]
 
-            with st.container(border=True):
+            if has_access(section_gestion):
 
-                st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
+                with st.container(border=True):
 
-                st.divider()
+                    st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
 
-                st.markdown("""
-    **Módulos incluidos**
+                    st.divider()
 
-    - ✅ Autorización y Gestión de Pases de Taller
-    - 💼 Gestión de Viáticos
+                    st.markdown("""
+        **Módulos incluidos**
 
-    Permite autorizar, actualizar y dar seguimiento a Pases de Taller, así como gestionar Solicitudes de Viáticos y Reembolsos desde una única interfaz operativa.
-    """)
+        - ✅ Autorización y Gestión de Pases de Taller
+        - 💼 Gestión de Viáticos
 
-                if st.button(
-                    "Abrir módulo",
-                    key="btn_gestion_operacion",
-                    use_container_width=True,
-                ):
-                    st.switch_page(
-                        f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
-                    )
+        Permite autorizar, actualizar y dar seguimiento a Pases de Taller, así como gestionar Solicitudes de Viáticos y Reembolsos desde una única interfaz operativa.
+        """)
 
-    st.divider()
+                    if st.button(
+                        "Abrir módulo",
+                        key="btn_gestion_operacion",
+                        use_container_width=True,
+                    ):
+                        st.switch_page(
+                            f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
+                        )
+
+        st.divider()
 
     # =============================
     # 3. CONSULTAS
