@@ -797,7 +797,7 @@ with left:
                 """
 
             distribution_html = f"""
-            <div style="padding:6px;">
+            <div style="padding:12px;">
                 <div style="
                     background:#fff7d6;
                     padding:22px;
@@ -882,7 +882,7 @@ with left:
                 """
 
             estado_html = f"""
-            <div style="padding:6px;">
+            <div style="padding:12px;">
                 <div style="
                     background:#fff7d6;
                     padding:22px;
@@ -975,7 +975,7 @@ with left:
                 """
 
             proveedor_html = f"""
-            <div style="padding:6px;">
+            <div style="padding:12px;">
                 <div style="
                     background:#fff7d6;
                     padding:22px;
