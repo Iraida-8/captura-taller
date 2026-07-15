@@ -1697,6 +1697,23 @@ if st.session_state.buscar_trigger:
     st.divider()
     st.subheader("Resultados")
 
+    h1, h2, h3, h4, h5, h6, h7, h8, h9, h10 = st.columns(
+        [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
+    )
+
+    h1.markdown("**Acción**")
+    h2.markdown("**Folio**")
+    h3.markdown("**Factura**")
+    h4.markdown("**OSTE**")
+    h5.markdown("**Tipo Prov.**")
+    h6.markdown("**Empresa**")
+    h7.markdown("**Unidad**")
+    h8.markdown("**Estado**")
+    h9.markdown("**Descripción**")
+    h10.markdown("**Fecha**")
+
+    st.divider()
+
     for _, row in resultados.iterrows():
         c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = st.columns(
             [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
@@ -1728,9 +1745,9 @@ if st.session_state.buscar_trigger:
         # ======================================================
         c2.write(row["NoFolio"])
 
-        c3.write(row.get("No. de Factura", ""))
+        c3.write("" if pd.isna(row.get("No. de Factura")) else row.get("No. de Factura"))
 
-        c4.write(row.get("Oste", ""))
+        c4.write("" if pd.isna(row.get("Oste")) else row.get("Oste"))
 
         c5.write(row.get("Tipo de Proveedor", ""))
 
