@@ -30,7 +30,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Fuel Solutions → Análisis y Comparativos",
+    page_title="Módulos Extras",
     layout="wide"
 )
 
@@ -66,10 +66,6 @@ has_lector = "lector_pdf" in user_access
 if not (has_ifuel or has_lector):
     st.error("No tienes permisos para acceder a este módulo.")
     st.stop()
-
-st.title("⚙️ Módulos Extras")
-
-st.divider()
 
 if has_ifuel and has_lector:
 
