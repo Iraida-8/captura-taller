@@ -764,7 +764,7 @@ with left:
                 progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
 
                 rows_html += f"""
-                <div style="margin-bottom:4px;">
+                <div style="margin-bottom:14px;">
 
                     <div style="
                         display:flex;
@@ -851,7 +851,7 @@ with left:
                 progress_width = int((cantidad / total_estados) * 100) if total_estados else 0
 
                 rows_estado += f"""
-                <div style="margin-bottom:4px;">
+                <div style="margin-bottom:14px;">
 
                     <div style="
                         display:flex;
