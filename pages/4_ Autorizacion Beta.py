@@ -1656,7 +1656,17 @@ if st.session_state.modal_reporte:
 
         st.markdown(f"**Fecha:** {fecha_modal}")
         st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
-        st.markdown(f"**Proveedor:** {r['Proveedor']}")
+        st.markdown(
+            f"**Tipo de Proveedor:** {clean(r.get('Tipo de Proveedor', ''))}"
+        )
+
+        st.markdown(
+            f"**Proveedor:** {clean(r.get('Proveedor', ''))}"
+        )
+
+        st.markdown(
+            f"**Razones:** {clean(r.get('Razones', ''))}"
+        )
         st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
         descripcion_actual = r.get("Descripcion Problema", "") or ""
         es_cerrado = r["Estado"].startswith("Cerrado")
