@@ -731,31 +731,40 @@ else:
         st.divider()
 
     # =============================
-    # 2. GESTION DE ORDENES Y PASES
+    # 2. GESTIÓN
     # =============================
     section_gestion = [
         "autorizacion",
-        "gestion_viaticos"
+        "gestion_viaticos",
     ]
 
     if has_access(section_gestion):
 
-        st.subheader("📋 Gestión de Órdenes y Pases")
+        st.subheader("📋 Gestión")
 
-        render_dashboard_cards([
-            {
-                "access": "autorizacion",
-                "label": "✅  Autorización y Gestión de Pases de Taller",
-                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
-                "key": "btn_autorizacion"
-            },
-            {
-                "access": "gestion_viaticos",
-                "label": "💼  Gestión de Viáticos",
-                "page": f"pages/10_ Gestion Viaticos{PAGE_SUFFIX}.py",
-                "key": "btn_gestion_viaticos"
-            }
-        ])
+        with st.container(border=True):
+
+            st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
+
+            st.divider()
+
+            st.markdown("""
+    **Módulos incluidos**
+
+    - ✅ Autorización y Gestión de Pases de Taller
+    - 💼 Gestión de Viáticos
+
+    Permite autorizar, actualizar y dar seguimiento a Pases de Taller, así como gestionar Solicitudes de Viáticos y Reembolsos desde una única interfaz operativa.
+    """)
+
+            if st.button(
+                "Abrir módulo",
+                key="btn_gestion_operacion",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
+                )
 
         st.divider()
 
