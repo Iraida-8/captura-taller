@@ -916,7 +916,7 @@ with left:
             # ====================================================
 
             conteo_proveedor = (
-                pases_df["Tipo de Proveedor"]
+                pases_df["Proveedor"]
                 .fillna("Sin Tipo")
                 .astype(str)
                 .str.strip()
