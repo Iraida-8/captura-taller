@@ -694,23 +694,30 @@ else:
 
         st.divider()
 
+    # =================================
+    # OPERACIÓN / GESTIÓN
+    # =================================
+    col1, col2 = st.columns(2)
+
     # =============================
     # 1. OPERACIÓN
     # =============================
-    section_operacion = [
-        "pase_taller",
-        "bonos_operador",
-    ]
+    with col1:
 
-    if has_access(section_operacion):
+        section_operacion = [
+            "pase_taller",
+            "bonos_operador",
+        ]
 
-        with st.container(border=True):
+        if has_access(section_operacion):
 
-            st.markdown("## 🏭 SOLICITUDES Y PASES")
+            with st.container(border=True):
 
-            st.divider()
+                st.markdown("## 🏭 SOLICITUDES Y PASES")
 
-            st.markdown("""
+                st.divider()
+
+                st.markdown("""
     **Módulos incluidos**
 
     - 🛠️ Captura de Pases de Taller
@@ -719,34 +726,34 @@ else:
     Permite registrar solicitudes de taller, generar Bonos de Operadores y administrar la captura inicial de la operación.
     """)
 
-            if st.button(
-                "Abrir módulo",
-                key="btn_operacion",
-                use_container_width=True,
-            ):
-                st.switch_page(
-                    f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
-                )
-
-        st.divider()
+                if st.button(
+                    "Abrir módulo",
+                    key="btn_operacion",
+                    use_container_width=True,
+                ):
+                    st.switch_page(
+                        f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
+                    )
 
     # =============================
     # 2. GESTIÓN
     # =============================
-    section_gestion = [
-        "autorizacion",
-        "gestion_viaticos",
-    ]
+    with col2:
 
-    if has_access(section_gestion):
+        section_gestion = [
+            "autorizacion",
+            "gestion_viaticos",
+        ]
 
-        with st.container(border=True):
+        if has_access(section_gestion):
 
-            st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
+            with st.container(border=True):
 
-            st.divider()
+                st.markdown("## 📋 GESTIÓN DE ÓRDENES Y PASES")
 
-            st.markdown("""
+                st.divider()
+
+                st.markdown("""
     **Módulos incluidos**
 
     - ✅ Autorización y Gestión de Pases de Taller
@@ -755,16 +762,16 @@ else:
     Permite autorizar, actualizar y dar seguimiento a Pases de Taller, así como gestionar Solicitudes de Viáticos y Reembolsos desde una única interfaz operativa.
     """)
 
-            if st.button(
-                "Abrir módulo",
-                key="btn_gestion_operacion",
-                use_container_width=True,
-            ):
-                st.switch_page(
-                    f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
-                )
+                if st.button(
+                    "Abrir módulo",
+                    key="btn_gestion_operacion",
+                    use_container_width=True,
+                ):
+                    st.switch_page(
+                        f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
+                    )
 
-        st.divider()
+    st.divider()
 
     # =============================
     # 3. CONSULTAS
