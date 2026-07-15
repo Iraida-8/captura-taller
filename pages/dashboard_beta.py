@@ -560,36 +560,84 @@ if show_gestion:
 # =================================
 # ROW 3 CONSULTAS
 # =================================
-show_consultas = has_access([
+show_historial = has_access([
     "consultar_reparacion",
+])
+
+show_bonos = has_access([
     "consulta_bonos_operador",
 ])
 
-if show_consultas:
+if show_historial and show_bonos:
+    col1, col2 = st.columns(2)
 
-    with st.container(border=True):
+elif show_historial:
+    col1 = st.container()
 
-        st.markdown("## 🔍 CONSULTAS")
+elif show_bonos:
+    col2 = st.container()
 
-        st.divider()
 
-        st.markdown("""
+# =============================
+# 1. HISTORIAL DE REPARACIÓN
+# =============================
+if show_historial:
+
+    with col1:
+
+        with st.container(border=True):
+
+            st.markdown("## 🔍 HISTORIAL DE REPARACIÓN")
+
+            st.divider()
+
+            st.markdown("""
 **Módulos incluidos**
 
 - 🔍 Consultar Historial de Reparación
-- 💰 Consulta Bonos de Operadores
 
-Permite consultar el historial de reparaciones de las unidades y realizar consultas de Bonos de Operadores desde una única interfaz.
+Permite consultar el historial completo de reparaciones, órdenes y servicios realizados a las unidades.
 """)
 
-        if st.button(
-            "Abrir módulo",
-            key="btn_consultas",
-            use_container_width=True,
-        ):
-            st.switch_page(
-                f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
-            )
+            if st.button(
+                "Abrir módulo",
+                key="btn_consultar_reparacion",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
+                )
+
+
+# =============================
+# 2. CONSULTA BONOS
+# =============================
+if show_bonos:
+
+    with col2:
+
+        with st.container(border=True):
+
+            st.markdown("## 💰 CONSULTA BONOS DE OPERADORES")
+
+            st.divider()
+
+            st.markdown("""
+**Módulos incluidos**
+
+- 💰 Consulta Bonos de Operadores
+
+Permite consultar el historial de Bonos de Operadores, así como su información y estatus.
+""")
+
+            if st.button(
+                "Abrir módulo",
+                key="btn_consulta_bonos_operador",
+                use_container_width=True,
+            ):
+                st.switch_page(
+                    f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py"
+                )
 
 st.divider()
 
