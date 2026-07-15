@@ -90,7 +90,6 @@ if has_ifuel:
     with tab_ifuel:
 
         st.title("⛽ Reporte iFuel")
-        st.divider()
 
         # =================================
         # Page Instructions
@@ -337,9 +336,6 @@ if has_ifuel:
 if has_lector:
 
     with tab_lector:
-
-        st.title("📄 Lector PDF")
-        st.divider()
 
         COLS = [
             "EMPRESA", "#FACTURA", "UUID", "FECHA FACTURA",
