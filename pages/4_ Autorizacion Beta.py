@@ -498,7 +498,6 @@ def refresh_cached_data():
     cargar_pases_taller.clear()
     cargar_facturas.clear()
     cargar_audit.clear()
-    cargar_refacciones.clear()
 
 # =================================
 # LOADERS
