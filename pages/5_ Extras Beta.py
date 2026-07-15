@@ -82,6 +82,8 @@ if has_ifuel:
 
     with tab_ifuel:
 
+        st.title("⛽ Reporte iFuel")
+
         # =================================
         # Page Instructions
         # =================================
