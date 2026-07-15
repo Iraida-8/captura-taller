@@ -1916,7 +1916,7 @@ if st.session_state.modal_reporte:
                         oste_nuevo=clean(r.get("Oste"))
                     )
 
-                if "interno" not in proveedor:
+                if "interno" not in tipo_proveedor:
                     if oste_val.strip() != clean(r.get("Oste")):
 
                         oste_anterior = clean(r.get("Oste"))
