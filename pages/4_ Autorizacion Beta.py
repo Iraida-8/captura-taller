@@ -1682,7 +1682,7 @@ if st.session_state.modal_reporte:
 
         es_cerrado = "Cerrado" in str(r.get("Estado", ""))
 
-        proveedor = (r.get("Tipo de Proveedor") or "").lower()
+        tipo_proveedor = clean(r.get("Tipo de Proveedor", "")).lower()
 
         # ==========================================
         # NO. DE ORDEN (editable + no decimals)
@@ -1707,7 +1707,7 @@ if st.session_state.modal_reporte:
         # OSTE (externo only)
         # editable until order is Cerrado
         # ==========================================
-        if "interno" not in proveedor:
+        if "interno" not in tipo_proveedor:
             oste_val = st.text_input(
                 "OSTE",
                 value=clean(r.get("Oste", "")),
