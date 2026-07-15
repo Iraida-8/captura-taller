@@ -899,7 +899,7 @@ Permite consultar archivos PDF de reparación y generar reportes operativos de i
 **Módulo incluido**
 
 - 🛰️ Rastreador y Seguimiento GPS de Unidades
-
+.
                                 
 Permite visualizar la ubicación en tiempo real de las unidades, consultar indicadores operativos y dar seguimiento a la flota.
 """)
