@@ -992,6 +992,20 @@ with st.expander("📄 Reporte Detallado", expanded=False):
         width="stretch"
     )
 
+    csv_detallado = (
+        df_detallado[columnas]
+        .to_csv(index=False)
+        .encode("utf-8-sig")
+    )
+
+    st.download_button(
+        "⬇ Descargar Reporte Detallado",
+        data=csv_detallado,
+        file_name="Reporte_Detallado.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
 # ======================================================
 # TABLE 2 — RESUMEN POR ORDEN (1 LINE PER FOLIO)
 # ======================================================
@@ -1101,6 +1115,20 @@ with st.expander("📦 Resumen por Orden", expanded=False):
             df_resumen[columnas],
             hide_index=True,
             width="stretch"
+        )
+
+        csv_resumen = (
+            df_resumen[columnas]
+            .to_csv(index=False)
+            .encode("utf-8-sig")
+        )
+
+        st.download_button(
+            "⬇ Descargar Resumen por Orden",
+            data=csv_resumen,
+            file_name="Resumen_por_Orden.csv",
+            mime="text/csv",
+            use_container_width=True,
         )
 
 #date parse
