@@ -1529,12 +1529,46 @@ st.subheader("Buscar Pase de Taller")
 
 empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
 
+# =================================
+# ROW 1
+# =================================
 f1, f2, f3, f4, f5 = st.columns(5)
 
 with f1:
     f_folio = st.text_input("No. de Folio")
 
 with f2:
+    f_factura = st.text_input("No. de Factura")
+
+with f3:
+    f_oste = st.text_input("OSTE")
+
+with f4:
+    tipos_proveedor = sorted(
+        pases_df["Tipo de Proveedor"]
+        .dropna()
+        .astype(str)
+        .unique()
+    )
+
+    f_tipo_proveedor = st.selectbox(
+        "Tipo de Proveedor",
+        ["Todos"] + tipos_proveedor,
+    )
+
+with f5:
+    f_empresa = st.selectbox(
+        "Empresa",
+        ["Selecciona empresa"] + empresas,
+    )
+
+# =================================
+# ROW 2
+# =================================
+f6, f7, f8, f9, f10 = st.columns(5)
+
+with f6:
+
     unidades = (
         sorted(
             pases_df["No. de Unidad"]
@@ -1548,13 +1582,11 @@ with f2:
 
     f_unidad = st.selectbox(
         "No. de Unidad",
-        ["Selecciona unidad"] + unidades
+        ["Selecciona unidad"] + unidades,
     )
 
-with f3:
-    f_empresa = st.selectbox("Empresa", ["Selecciona empresa"] + empresas)
+with f7:
 
-with f4:
     f_estado = st.selectbox(
         "Estado",
         [
@@ -1563,38 +1595,26 @@ with f4:
             "En Curso / Proceso",
             "Cerrado / Terminado",
             "Cerrado / Cancelado",
-        ]
+        ],
     )
-
-with f5:
-    f_fecha = st.date_input("Fecha de Captura", value=None)
-
-f6, f7, f8, f9, f10 = st.columns(5)
-
-with f6:
-    tipos_proveedor = sorted(
-        pases_df["Tipo de Proveedor"]
-        .dropna()
-        .astype(str)
-        .unique()
-    )
-
-    f_tipo_proveedor = st.selectbox(
-        "Tipo de Proveedor",
-        ["Todos"] + tipos_proveedor,
-    )
-
-with f7:
-    f_oste = st.text_input("OSTE")
 
 with f8:
-    f_factura = st.text_input("No. de Factura")
+    f_fecha = st.date_input(
+        "Fecha de Captura",
+        value=None,
+    )
 
 with f9:
-    st.write("")
+    buscar = st.button(
+        "🔍 Buscar",
+        use_container_width=True,
+    )
 
 with f10:
-    st.write("")
+    limpiar = st.button(
+        "🧹 Limpiar",
+        use_container_width=True,
+    )
 
 if st.button("Buscar"):
     st.session_state.buscar_trigger = True
