@@ -724,7 +724,7 @@ if show_reports:
 
 - 🛠️ Preparación de Reportes
 
-Permite preparar, consolidar y generar reportes operativos para auditoría y análisis interno.
+Permite generar el Reporte Mensual del Historial de Reparaciones, consolidando la información de mantenimiento para auditoría, seguimiento y análisis operativo.
 """)
 
             if st.button(
