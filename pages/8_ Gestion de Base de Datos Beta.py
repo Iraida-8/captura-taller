@@ -4,6 +4,7 @@ from supabase import create_client
 from auth import require_login, require_access
 from datetime import datetime, timezone
 from pages.css import load_css
+from io import BytesIO
 
 # =================================
 # RELEASE CHANNEL
@@ -276,6 +277,24 @@ if st.session_state.mode == "gestionar":
         use_container_width=True,
         hide_index=True,
         height=300
+    )
+
+    # =================================
+    # DOWNLOAD TABLE
+    # =================================
+    excel_buffer = BytesIO()
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_display.to_excel(writer, index=False, sheet_name="Unidades")
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        label="📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name=f"Unidades_{empresa_codigo}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
     )
 
     # =============================
