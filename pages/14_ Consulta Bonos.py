@@ -4,6 +4,20 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from auth import require_login, require_access
+from pages.css import load_css
+
+# =================================
+# RELEASE CHANNEL
+# =================================
+
+#APP_CHANNEL = "BETA"
+APP_CHANNEL = "RELEASE"
+
+DASHBOARD_PAGE = (
+    "pages/dashboard_beta.py"
+    if APP_CHANNEL == "BETA"
+    else "pages/dashboard.py"
+)
 
 # =================================
 # Page configuration
@@ -13,62 +27,10 @@ st.set_page_config(
     layout="wide"
 )
 
-# =================================
-# CSS
-# =================================
-st.markdown("""
-<style>
-
-[data-testid="stSidebar"]{
-    display:none;
-}
-
-.stApp{
-    background:#151F6D;
-}
-
-.block-container{
-    padding-top:2rem;
-    padding-bottom:3rem;
-}
-
-h1{
-    color:white;
-}
-
-h2,h3{
-    color:#BFA75F;
-}
-
-p,label,span{
-    color:white !important;
-}
-
-div.stButton>button{
-    background:#1B267A;
-    color:white;
-    border-radius:12px;
-    border:1px solid rgba(191,167,95,.25);
-}
-
-div.stButton>button:hover{
-    border-color:#BFA75F;
-    color:#BFA75F;
-}
-
-div[data-testid="stDownloadButton"]>button{
-    background:#BFA75F;
-    color:#151F6D;
-}
-
-[data-testid="metric-container"]{
-    background:#1B267A;
-    border-radius:14px;
-    border:1px solid rgba(191,167,95,.2);
-}
-
-</style>
-""", unsafe_allow_html=True)
+# -------------------------------
+# PAGE STYLE
+# -------------------------------
+load_css()
 
 # =================================
 # SECURITY
@@ -94,11 +56,11 @@ def get_supabase():
 supabase = get_supabase()
 
 # =================================
-# NAVIGATION
+# Navigation
 # =================================
-
+st.write("")
 if st.button("⬅ Volver al Dashboard"):
-    st.switch_page("pages/dashboard.py")
+    st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
 

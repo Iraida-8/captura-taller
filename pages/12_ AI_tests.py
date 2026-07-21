@@ -6,8 +6,8 @@ from pages.css import load_css
 # RELEASE CHANNEL
 # =================================
 
-#APP_CHANNEL = "BETA"
-APP_CHANNEL = "RELEASE"
+APP_CHANNEL = "BETA"
+# APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
@@ -19,7 +19,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Rastreador y Seguimiento GPS de Unidades",
+    page_title="AI STOOF",
     layout="wide"
 )
 
