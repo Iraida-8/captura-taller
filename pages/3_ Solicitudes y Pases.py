@@ -27,7 +27,7 @@ require_login()
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
-REQUIRED_RELEASE = "beta"
+REQUIRED_RELEASE = "release"
 
 user = st.session_state.user
 access = user.get("access", [])
