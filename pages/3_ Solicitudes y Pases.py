@@ -27,15 +27,9 @@ require_login()
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
-REQUIRED_RELEASE = "release"
-
 user = st.session_state.user
 access = user.get("access", [])
 role = (user.get("role") or "").lower()
-
-if REQUIRED_RELEASE not in access:
-    st.error("No tienes permisos para acceder a esta versión del sistema.")
-    st.stop()
 
 require_access("pase_taller")
 
