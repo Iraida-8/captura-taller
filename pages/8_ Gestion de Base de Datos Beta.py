@@ -178,6 +178,35 @@ def load_table(table_name):
     return df
 
 # =================================
+# Activity Log
+# =================================
+def log_action(action, table_name, record_key, details):
+
+    user_id = st.session_state["user_id"]
+
+    profile = (
+        supabase
+        .table("profiles")
+        .select("full_name")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+
+    full_name = profile.data["full_name"]
+
+    supabase.table("audit_log").insert({
+
+        "user_id": user_id,
+        "user_name": full_name,
+        "action": action,
+        "table_name": table_name,
+        "record_key": record_key,
+        "details": details
+
+    }).execute()
+
+# =================================
 # Session state
 # =================================
 
@@ -351,6 +380,13 @@ with tab_unidades:
 
                     }).execute()
 
+                    log_action(
+                        "INSERT",
+                        "vehicle_units",
+                        unidad,
+                        f"Agregó unidad {unidad}"
+                    )
+
                     st.cache_data.clear()
 
                     st.success("Unidad agregada.")
@@ -494,6 +530,13 @@ with tab_unidades:
                         }) \
                         .eq("id", row["id"]) \
                         .execute()
+                    
+                    log_action(
+                        "UPDATE",
+                        "vehicle_units",
+                        unidad,
+                        f"Modificó unidad {unidad}"
+                    )
 
                     st.cache_data.clear()
 
@@ -561,6 +604,13 @@ with tab_unidades:
                     .delete() \
                     .eq("id", row["id"]) \
                     .execute()
+                
+                log_action(
+                    "DELETE",
+                    "vehicle_units",
+                    unidad,
+                    f"Eliminó unidad {unidad}"
+                )
 
                 st.cache_data.clear()
 
@@ -672,6 +722,13 @@ with tab_unidades:
                     supabase.table("vehicle_units") \
                         .insert(records) \
                         .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "vehicle_units",
+                    f"{len(records)} registros",
+                    f"Reemplazó completamente la tabla vehicle_units"
+                )
 
                 st.cache_data.clear()
 
