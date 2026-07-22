@@ -203,6 +203,9 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 
+# ==========================================
+# UNIDADES
+# ==========================================
 with tab_unidades:
 
     st.subheader("Gestión, Creación y Carga de Unidades")
@@ -678,7 +681,9 @@ with tab_unidades:
 
                 st.rerun()
 
-
+# ==========================================
+# REFACCIONES
+# ==========================================
 with tab_refacciones:
 
     st.subheader("Refacciones")
@@ -837,7 +842,7 @@ with tab_refacciones:
                             st.success("Refacción actualizada.")
 
                             st.rerun()
-                            
+
     # =====================================================
     # DELETE
     # =====================================================
@@ -927,17 +932,339 @@ with tab_refacciones:
 
                 st.rerun()
 
+# ==========================================
+# PROVEEDORES
+# ==========================================
 with tab_proveedores:
 
     st.subheader("Proveedores IVA")
 
-    st.dataframe(
-        df_proveedores,
+    # ==========================================
+    # DOWNLOAD TABLE
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    df_download = df_proveedores.drop(columns=["id"], errors="ignore")
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Proveedores IVA"
+        )
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="Proveedores_IVA.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
-        hide_index=True,
-        height=600,
     )
 
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
+    st.dataframe(
+        df_download,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+    )
+
+    st.divider()
+
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Proveedor",
+        "✏️ Modificar Proveedor",
+        "🗑 Eliminar Proveedor",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_supplier"):
+
+            proveedor = st.text_input("Proveedor")
+            clave = st.text_input("Clave")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                iva_pct = st.number_input(
+                    "IVA %",
+                    value=16.0,
+                    step=0.01,
+                    format="%.2f"
+                )
+
+            with col2:
+                isr_pct = st.number_input(
+                    "ISR %",
+                    value=0.0,
+                    step=0.01,
+                    format="%.2f"
+                )
+
+            formula = st.text_input("Fórmula")
+
+            submitted = st.form_submit_button(
+                "Agregar Proveedor",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                if not proveedor.strip():
+
+                    st.error("El proveedor es obligatorio.")
+
+                elif not df_proveedores[
+                    df_proveedores["proveedor"] == proveedor.strip()
+                ].empty:
+
+                    st.error("El proveedor ya existe.")
+
+                else:
+
+                    supabase.table("proveedores_iva").insert({
+
+                        "proveedor": proveedor.strip(),
+                        "iva_pct": iva_pct,
+                        "isr_pct": isr_pct,
+                        "formula": formula.strip(),
+                        "clave": clave.strip()
+
+                    }).execute()
+
+                    st.cache_data.clear()
+                    st.success("Proveedor agregado.")
+                    st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_proveedores.empty:
+
+            st.info("No existen proveedores.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona el proveedor",
+                sorted(df_proveedores["proveedor"].tolist()),
+                key="edit_supplier"
+            )
+
+            row = df_proveedores[
+                df_proveedores["proveedor"] == selected
+            ].iloc[0]
+
+            with st.form("edit_supplier_form"):
+
+                proveedor = st.text_input(
+                    "Proveedor",
+                    value=row["proveedor"]
+                )
+
+                clave = st.text_input(
+                    "Clave",
+                    value=row["clave"]
+                )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    iva_pct = st.number_input(
+                        "IVA %",
+                        value=float(row["iva_pct"]),
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                with col2:
+
+                    isr_pct = st.number_input(
+                        "ISR %",
+                        value=float(row["isr_pct"]),
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                formula = st.text_input(
+                    "Fórmula",
+                    value=row["formula"]
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    duplicate = df_proveedores[
+                        (df_proveedores["proveedor"] == proveedor.strip()) &
+                        (df_proveedores["proveedor"] != selected)
+                    ]
+
+                    if not duplicate.empty():
+
+                        st.error("Ese proveedor ya existe.")
+
+                    else:
+
+                        supabase.table("proveedores_iva") \
+                            .update({
+
+                                "proveedor": proveedor.strip(),
+                                "iva_pct": iva_pct,
+                                "isr_pct": isr_pct,
+                                "formula": formula.strip(),
+                                "clave": clave.strip()
+
+                            }) \
+                            .eq("id", row["id"]) \
+                            .execute()
+
+                        st.cache_data.clear()
+                        st.success("Proveedor actualizado.")
+                        st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_proveedores.empty:
+
+            st.info("No existen proveedores.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona el proveedor",
+                sorted(df_proveedores["proveedor"].tolist()),
+                key="delete_supplier"
+            )
+
+            row = df_proveedores[
+                df_proveedores["proveedor"] == selected
+            ].iloc[0]
+
+            if st.button(
+                "🗑 Eliminar Proveedor",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("proveedores_iva") \
+                    .delete() \
+                    .eq("id", row["id"]) \
+                    .execute()
+
+                st.cache_data.clear()
+                st.success("Proveedor eliminado.")
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción reemplazará completamente la tabla."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="proveedores_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla",
+                type="primary",
+                use_container_width=True
+            ):
+
+                new_df.columns = [
+                    c.lower().strip()
+                    for c in new_df.columns
+                ]
+
+                required = {
+                    "proveedor",
+                    "iva_pct",
+                    "isr_pct",
+                    "formula",
+                    "clave"
+                }
+
+                if not required.issubset(set(new_df.columns)):
+
+                    st.error("El archivo no contiene las columnas requeridas.")
+                    st.stop()
+
+                records = (
+                    new_df[
+                        [
+                            "proveedor",
+                            "iva_pct",
+                            "isr_pct",
+                            "formula",
+                            "clave"
+                        ]
+                    ]
+                    .fillna("")
+                    .to_dict("records")
+                )
+
+                supabase.table("proveedores_iva") \
+                    .delete() \
+                    .neq("id", 0) \
+                    .execute()
+
+                if records:
+
+                    supabase.table("proveedores_iva") \
+                        .insert(records) \
+                        .execute()
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron {len(records)} proveedores."
+                )
+
+                st.rerun()
+
+# ==========================================
+# TEE CEE
+# ==========================================
 with tab_tc:
 
     st.subheader("TC Mensual")
