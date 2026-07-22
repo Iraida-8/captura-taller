@@ -827,6 +827,13 @@ with tab_refacciones:
                             "tipo": tipo.strip()
                         }).execute()
 
+                        log_action(
+                            "INSERT",
+                            "parts",
+                            parte.strip(),
+                            f"Agregó refacción {parte.strip()}"
+                        )
+
                         st.cache_data.clear()
                         st.success("Refacción agregada.")
                         st.rerun()
@@ -895,6 +902,13 @@ with tab_refacciones:
                                 }) \
                                 .eq("parte", selected) \
                                 .execute()
+                            
+                            log_action(
+                                "UPDATE",
+                                "parts",
+                                parte.strip(),
+                                f"Modificó refacción {parte.strip()}"
+                            )
 
                             st.cache_data.clear()
 
@@ -928,6 +942,13 @@ with tab_refacciones:
                     .delete() \
                     .eq("parte", selected) \
                     .execute()
+
+                log_action(
+                    "DELETE",
+                    "parts",
+                    selected,
+                    f"Eliminó refacción {selected}"
+                )
 
                 st.cache_data.clear()
                 st.success("Refacción eliminada.")
@@ -984,6 +1005,13 @@ with tab_refacciones:
 
                 if records:
                     supabase.table("parts").insert(records).execute()
+
+                log_action(
+                    "REPLACE",
+                    "parts",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla parts"
+                )
 
                 st.cache_data.clear()
 
@@ -1102,6 +1130,13 @@ with tab_proveedores:
 
                     }).execute()
 
+                    log_action(
+                        "INSERT",
+                        "proveedores_iva",
+                        proveedor.strip(),
+                        f"Agregó proveedor {proveedor.strip()}"
+                    )
+
                     st.cache_data.clear()
                     st.success("Proveedor agregado.")
                     st.rerun()
@@ -1195,6 +1230,13 @@ with tab_proveedores:
                             .eq("id", row["id"]) \
                             .execute()
 
+                        log_action(
+                            "UPDATE",
+                            "proveedores_iva",
+                            proveedor.strip(),
+                            f"Modificó proveedor {proveedor.strip()}"
+                        )
+
                         st.cache_data.clear()
                         st.success("Proveedor actualizado.")
                         st.rerun()
@@ -1230,6 +1272,13 @@ with tab_proveedores:
                     .delete() \
                     .eq("id", row["id"]) \
                     .execute()
+                
+                log_action(
+                    "DELETE",
+                    "proveedores_iva",
+                    selected,
+                    f"Eliminó proveedor {selected}"
+                )
 
                 st.cache_data.clear()
                 st.success("Proveedor eliminado.")
@@ -1312,6 +1361,13 @@ with tab_proveedores:
                     supabase.table("proveedores_iva") \
                         .insert(records) \
                         .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "proveedores_iva",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla proveedores_iva"
+                )
 
                 st.cache_data.clear()
 
@@ -1431,6 +1487,13 @@ with tab_tc:
 
                 }).execute()
 
+                log_action(
+                    "INSERT",
+                    "tc_mensual",
+                    f"{year} - {month}",
+                    f"Agregó TC {month} {year}"
+                )
+
                 st.cache_data.clear()
 
                 st.success("Registro agregado.")
@@ -1510,6 +1573,13 @@ with tab_tc:
                         }) \
                         .eq("id", row["id"]) \
                         .execute()
+                    
+                    log_action(
+                        "UPDATE",
+                        "tc_mensual",
+                        f"{year} - {month}",
+                        f"Modificó TC {month} {year}"
+                    )
 
                     st.cache_data.clear()
 
@@ -1563,6 +1633,13 @@ with tab_tc:
                     .delete() \
                     .eq("id", row["id"]) \
                     .execute()
+                
+                log_action(
+                    "DELETE",
+                    "tc_mensual",
+                    selected,
+                    f"Eliminó TC {selected}"
+                )                
 
                 st.cache_data.clear()
 
@@ -1648,6 +1725,13 @@ with tab_tc:
                     supabase.table("tc_mensual") \
                         .insert(records) \
                         .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "tc_mensual",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla tc_mensual"
+                )
 
                 st.cache_data.clear()
 
