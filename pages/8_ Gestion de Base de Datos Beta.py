@@ -37,6 +37,8 @@ load_css()
 # =================================
 require_login()
 require_access("gestion_unidades")
+current_user = st.session_state["user"]
+is_admin = current_user.get("role") == "admin"
 
 # FORCE RESET EVERY TIME PAGE LOADS
 if st.session_state.get("_reset_gestion_page", True):
@@ -72,12 +74,35 @@ st.title("🗄️ GESTIÓN DE BASE DE DATOS")
 # TABS
 # =================================
 
-tab_unidades, tab_refacciones, tab_proveedores, tab_tc = st.tabs([
-    "Gestión, Creación y Carga de Unidades",
-    "Refacciones",
-    "Proveedores IVA",
-    "TC Mensual",
-])
+if is_admin:
+
+    (
+        tab_unidades,
+        tab_refacciones,
+        tab_proveedores,
+        tab_tc,
+        tab_admin,
+    ) = st.tabs([
+        "Gestión, Creación y Carga de Unidades",
+        "Refacciones",
+        "Proveedores IVA",
+        "TC Mensual",
+        "👤 Administración de Usuarios",
+    ])
+
+else:
+
+    (
+        tab_unidades,
+        tab_refacciones,
+        tab_proveedores,
+        tab_tc,
+    ) = st.tabs([
+        "Gestión, Creación y Carga de Unidades",
+        "Refacciones",
+        "Proveedores IVA",
+        "TC Mensual",
+    ])
 
 if st.session_state.get("success_modal"):
 
@@ -233,6 +258,7 @@ df_units = load_table("vehicle_units")
 df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
+df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1740,3 +1766,20 @@ with tab_tc:
                 )
 
                 st.rerun()
+
+# ==========================================
+# ADMINISTRACIÓN DE USUARIOS
+# ==========================================
+
+if is_admin:
+
+    with tab_admin:
+
+        st.subheader("Administración de Usuarios")
+
+        st.dataframe(
+            df_profiles,
+            use_container_width=True,
+            hide_index=True,
+            height=500,
+        )
