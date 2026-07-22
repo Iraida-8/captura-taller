@@ -503,6 +503,58 @@ if has_autorizacion:
             return df
 
         # =================================
+        # LOAD SERVICES
+        # =================================
+        @st.cache_data(ttl=300)
+        def cargar_services():
+
+            supabase = get_supabase_client()
+
+            page_size = 1000
+            start = 0
+            all_rows = []
+
+            while True:
+
+                response = (
+                    supabase
+                    .table("SERVICES")
+                    .select("*")
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+
+                data = response.data
+
+                if not data:
+                    break
+
+                all_rows.extend(data)
+                start += page_size
+
+            if not all_rows:
+                return pd.DataFrame()
+
+            df = pd.DataFrame(all_rows)
+
+            df.columns = df.columns.str.strip()
+
+            if "No. de Folio" in df.columns:
+                df = df.rename(
+                    columns={
+                        "No. de Folio": "NoFolio"
+                    }
+                )
+
+            df["NoFolio"] = (
+                df["NoFolio"]
+                .astype(str)
+                .str.strip()
+            )
+
+            return df
+
+        # =================================
         # Load Audit Log
         # =================================
         @st.cache_data(ttl=120)
@@ -558,6 +610,7 @@ if has_autorizacion:
 
         pases_df = cargar_pases_taller(user_access)
         facturas_df = cargar_facturas()
+        services_df = cargar_services()
         audit_df = cargar_audit()
 
         if not facturas_df.empty:
@@ -1822,15 +1875,364 @@ if has_autorizacion:
         # =================================
         with tab_reportes:
 
-            st.info("🚧 Este módulo se encuentra en construcción.")
+            st.subheader("Descarga y Consulta de Reportes")
 
-            st.markdown("""
-        ### Descarga y Consulta de Reportes
+            empresas = (
+                sorted(pases_df["Empresa"].dropna().unique())
+                if not pases_df.empty else []
+            )
 
-        Esta sección permitirá consultar y descargar reportes consolidados de Pases de Taller.
+            # =================================
+            # ROW 1
+            # =================================
+            f1, f2, f3, f4, f5 = st.columns(5)
 
-        **Próximamente disponible.**
-        """)
+            with f1:
+                f_folio = st.text_input(
+                    "No. de Folio",
+                    key="report_folio"
+                )
+
+            with f2:
+                f_factura = st.text_input(
+                    "No. de Factura",
+                    key="report_factura"
+                )
+
+            with f3:
+                f_oste = st.text_input(
+                    "OSTE",
+                    key="report_oste"
+                )
+
+            with f4:
+
+                tipos_proveedor = sorted(
+                    pases_df["Tipo de Proveedor"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                )
+
+                f_tipo_proveedor = st.selectbox(
+                    "Tipo de Proveedor",
+                    ["Todos"] + tipos_proveedor,
+                    key="report_tipo_proveedor"
+                )
+
+            with f5:
+                f_empresa = st.selectbox(
+                    "Empresa",
+                    ["Selecciona empresa"] + empresas,
+                    key="report_empresa"
+                )
+
+            # =================================
+            # ROW 2
+            # =================================
+            f6, f7, f8, f9, f10 = st.columns(5)
+
+            with f6:
+
+                unidades = (
+                    sorted(
+                        pases_df["No. de Unidad"]
+                        .dropna()
+                        .astype(str)
+                        .unique()
+                    )
+                    if (
+                        not pases_df.empty
+                        and "No. de Unidad" in pases_df.columns
+                    )
+                    else []
+                )
+
+                f_unidad = st.selectbox(
+                    "No. de Unidad",
+                    ["Selecciona unidad"] + unidades,
+                    key="report_unidad"
+                )
+
+            with f7:
+
+                f_estado = st.selectbox(
+                    "Estado",
+                    [
+                        "Selecciona estado",
+                        "Inicio / Nuevo",
+                        "En Curso / Proceso",
+                        "Cerrado / Terminado",
+                        "Cerrado / Cancelado",
+                    ],
+                    key="report_estado"
+                )
+
+            with f8:
+
+                f_fecha = st.date_input(
+                    "Fecha de Captura",
+                    value=None,
+                    key="report_fecha"
+                )
+
+            # =================================
+            # BUILD MASTER REPORT
+            # =================================
+
+            resultados = pases_df.copy()
+
+            # ---------------------------------
+            # MERGE FACTURAS
+            # ---------------------------------
+
+            if not facturas_df.empty:
+
+                resultados = resultados.merge(
+                    facturas_df[
+                        [
+                            "NoFolio",
+                            "No. de Factura"
+                        ]
+                    ],
+                    on="NoFolio",
+                    how="left",
+                )
+
+            # ---------------------------------
+            # MERGE SERVICES
+            # ---------------------------------
+
+            if not services_df.empty:
+
+                servicios = services_df.copy()
+
+                # clean values
+                for col in [
+                    "Parte",
+                    "Tipo De Parte"
+                ]:
+
+                    if col in servicios.columns:
+
+                        servicios[col] = (
+                            servicios[col]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                        )
+
+                servicios = servicios[
+                    (
+                        servicios["Parte"] != ""
+                    )
+                    |
+                    (
+                        servicios["Tipo De Parte"] != ""
+                    )
+                ]
+
+                servicios_resumen = (
+                    servicios
+                    .groupby("NoFolio", as_index=False)
+                    .agg(
+                        {
+                            "Parte": lambda x: " | ".join(
+                                sorted(
+                                    set(
+                                        i for i in x
+                                        if i
+                                    )
+                                )
+                            ),
+                            "Tipo De Parte": lambda x: " | ".join(
+                                sorted(
+                                    set(
+                                        i for i in x
+                                        if i
+                                    )
+                                )
+                            ),
+                        }
+                    )
+                )
+
+                servicios_resumen = servicios_resumen.rename(
+                    columns={
+                        "Parte": "Partes",
+                        "Tipo De Parte": "Tipos de Parte",
+                    }
+                )
+
+                resultados = resultados.merge(
+                    servicios_resumen,
+                    on="NoFolio",
+                    how="left",
+                )
+
+            # =================================
+            # APPLY FILTERS
+            # =================================
+
+            if f_folio:
+                resultados = resultados[
+                    resultados["NoFolio"]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(
+                        f_folio,
+                        case=False,
+                        na=False
+                    )
+                ]
+
+            if f_factura:
+                resultados = resultados[
+                    resultados["No. de Factura"]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(
+                        f_factura,
+                        case=False,
+                        na=False
+                    )
+                ]
+
+            if f_oste:
+                resultados = resultados[
+                    resultados["Oste"]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(
+                        f_oste,
+                        case=False,
+                        na=False
+                    )
+                ]
+
+            if f_tipo_proveedor != "Todos":
+                resultados = resultados[
+                    resultados["Tipo de Proveedor"] == f_tipo_proveedor
+                ]
+
+            if f_empresa != "Selecciona empresa":
+                resultados = resultados[
+                    resultados["Empresa"] == f_empresa
+                ]
+
+            if f_estado != "Selecciona estado":
+                resultados = resultados[
+                    resultados["Estado"] == f_estado
+                ]
+
+            if f_unidad != "Selecciona unidad":
+                resultados = resultados[
+                    resultados["No. de Unidad"]
+                    .astype(str)
+                    == f_unidad
+                ]
+
+            if f_fecha:
+                resultados = resultados[
+                    resultados["Fecha"].dt.date == f_fecha
+                ]
+
+            # =================================
+            # SELECT COLUMNS
+            # =================================
+
+            columnas_reporte = [
+                "NoFolio",
+                "No. de Factura",
+                "Empresa",
+                "No. de Unidad",
+                "Estado",
+                "Tipo de Unidad",
+                "Tipo de Proveedor",
+                "Proveedor",
+                "No. de Reporte",
+                "Oste",
+                "Capturo",
+                "Razones",
+                "Descripcion Problema",
+                "Partes",
+                "Tipos de Parte",
+                "Fecha",
+            ]
+
+            columnas_existentes = [
+                c for c in columnas_reporte
+                if c in resultados.columns
+            ]
+
+            resultados = resultados[columnas_existentes].copy()
+
+            # =================================
+            # FORMAT DATE
+            # =================================
+
+            if "Fecha" in resultados.columns:
+                resultados["Fecha"] = (
+                    pd.to_datetime(
+                        resultados["Fecha"],
+                        errors="coerce"
+                    )
+                    .dt.strftime("%Y-%m-%d")
+                )
+
+            # =================================
+            # REPORT SUMMARY
+            # =================================
+
+            st.divider()
+
+            c1, c2 = st.columns([1,4])
+
+            with c1:
+                st.metric(
+                    "Registros",
+                    len(resultados)
+                )
+
+            with c2:
+                st.write("")
+
+            # =================================
+            # TABLE
+            # =================================
+
+            st.dataframe(
+                resultados,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            # =================================
+            # DOWNLOAD REPORT
+            # =================================
+
+            st.divider()
+
+            excel_buffer = BytesIO()
+
+            with pd.ExcelWriter(
+                excel_buffer,
+                engine="openpyxl"
+            ) as writer:
+
+                resultados.to_excel(
+                    writer,
+                    sheet_name="Reporte",
+                    index=False
+                )
+
+            st.download_button(
+                label="⬇ Descargar Reporte en Excel",
+                data=excel_buffer.getvalue(),
+                file_name=f"Reporte_Pases_Taller_{datetime.now():%Y%m%d_%H%M%S}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
 
         # =================================
         # MODAL
