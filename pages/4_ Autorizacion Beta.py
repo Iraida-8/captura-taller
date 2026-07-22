@@ -503,6 +503,58 @@ if has_autorizacion:
             return df
 
         # =================================
+        # LOAD SERVICES
+        # =================================
+        @st.cache_data(ttl=300)
+        def cargar_services():
+
+            supabase = get_supabase_client()
+
+            page_size = 1000
+            start = 0
+            all_rows = []
+
+            while True:
+
+                response = (
+                    supabase
+                    .table("SERVICES")
+                    .select("*")
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+
+                data = response.data
+
+                if not data:
+                    break
+
+                all_rows.extend(data)
+                start += page_size
+
+            if not all_rows:
+                return pd.DataFrame()
+
+            df = pd.DataFrame(all_rows)
+
+            df.columns = df.columns.str.strip()
+
+            if "No. de Folio" in df.columns:
+                df = df.rename(
+                    columns={
+                        "No. de Folio": "NoFolio"
+                    }
+                )
+
+            df["NoFolio"] = (
+                df["NoFolio"]
+                .astype(str)
+                .str.strip()
+            )
+
+            return df
+
+        # =================================
         # Load Audit Log
         # =================================
         @st.cache_data(ttl=120)
@@ -558,6 +610,7 @@ if has_autorizacion:
 
         pases_df = cargar_pases_taller(user_access)
         facturas_df = cargar_facturas()
+        services_df = cargar_services()
         audit_df = cargar_audit()
 
         if not facturas_df.empty:
