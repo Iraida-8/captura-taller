@@ -1263,15 +1263,327 @@ with tab_proveedores:
                 st.rerun()
 
 # ==========================================
-# TEE CEE
+# TC MENSUAL
 # ==========================================
 with tab_tc:
 
     st.subheader("TC Mensual")
 
+    # ==========================================
+    # DOWNLOAD
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    df_download = df_tc.drop(columns=["id"], errors="ignore")
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="TC Mensual"
+        )
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="TC_Mensual.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
     st.dataframe(
-        df_tc,
+        df_download,
         use_container_width=True,
         hide_index=True,
-        height=600,
+        height=400,
     )
+
+    st.divider()
+
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar TC",
+        "✏️ Modificar TC",
+        "🗑 Eliminar TC",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ]
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_tc"):
+
+            year = st.number_input(
+                "Año",
+                min_value=2020,
+                max_value=2100,
+                value=datetime.now().year,
+                step=1
+            )
+
+            month = st.selectbox(
+                "Mes",
+                months
+            )
+
+            tc = st.number_input(
+                "Tipo de Cambio",
+                min_value=0.0,
+                step=0.0001,
+                format="%.4f"
+            )
+
+            submitted = st.form_submit_button(
+                "Agregar Registro",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                supabase.table("tc_mensual").insert({
+
+                    "YEAR": int(year),
+                    "MONTH": month,
+                    "DATE": datetime.now().strftime("%Y-%m-%d"),
+                    "TC": tc
+
+                }).execute()
+
+                st.cache_data.clear()
+
+                st.success("Registro agregado.")
+
+                st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_tc.empty:
+
+            st.info("No existen registros.")
+
+        else:
+
+            df_sorted = df_tc.sort_values(
+                ["year", "month", "date"],
+                ascending=False
+            )
+
+            selected = st.selectbox(
+                "Selecciona el registro",
+                df_sorted["date"].astype(str).tolist(),
+                key="edit_tc"
+            )
+
+            row = df_sorted[
+                df_sorted["date"].astype(str) == selected
+            ].iloc[0]
+
+            with st.form("edit_tc_form"):
+
+                st.text_input(
+                    "Fecha de Captura",
+                    value=str(row["date"]),
+                    disabled=True
+                )
+
+                year = st.number_input(
+                    "Año",
+                    min_value=2020,
+                    max_value=2100,
+                    value=int(row["year"]),
+                    step=1
+                )
+
+                month = st.selectbox(
+                    "Mes",
+                    months,
+                    index=months.index(row["month"])
+                    if row["month"] in months else 0
+                )
+
+                tc = st.number_input(
+                    "Tipo de Cambio",
+                    value=float(row["tc"]),
+                    step=0.0001,
+                    format="%.4f"
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    supabase.table("tc_mensual") \
+                        .update({
+
+                            "YEAR": int(year),
+                            "MONTH": month,
+                            "TC": tc
+
+                        }) \
+                        .eq("id", row["id"]) \
+                        .execute()
+
+                    st.cache_data.clear()
+
+                    st.success("Registro actualizado.")
+
+                    st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_tc.empty:
+
+            st.info("No existen registros.")
+
+        else:
+
+            df_sorted = df_tc.sort_values(
+                ["year", "month", "date"],
+                ascending=False
+            )
+
+            selected = st.selectbox(
+                "Selecciona el registro",
+                df_sorted["date"].astype(str).tolist(),
+                key="delete_tc"
+            )
+
+            row = df_sorted[
+                df_sorted["date"].astype(str) == selected
+            ].iloc[0]
+
+            if st.button(
+                "🗑 Eliminar Registro",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("tc_mensual") \
+                    .delete() \
+                    .eq("id", row["id"]) \
+                    .execute()
+
+                st.cache_data.clear()
+
+                st.success("Registro eliminado.")
+
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción reemplazará completamente la tabla."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="tc_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300,
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla",
+                type="primary",
+                use_container_width=True
+            ):
+
+                new_df.columns = [
+                    c.strip().upper()
+                    for c in new_df.columns
+                ]
+
+                required = {
+                    "YEAR",
+                    "MONTH",
+                    "DATE",
+                    "TC"
+                }
+
+                if not required.issubset(set(new_df.columns)):
+
+                    st.error(
+                        "El archivo no contiene las columnas requeridas."
+                    )
+
+                    st.stop()
+
+                records = (
+                    new_df[
+                        [
+                            "YEAR",
+                            "MONTH",
+                            "DATE",
+                            "TC"
+                        ]
+                    ]
+                    .fillna("")
+                    .to_dict("records")
+                )
+
+                supabase.table("tc_mensual") \
+                    .delete() \
+                    .neq("id", 0) \
+                    .execute()
+
+                if records:
+
+                    supabase.table("tc_mensual") \
+                        .insert(records) \
+                        .execute()
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron {len(records)} registros."
+                )
+
+                st.rerun()
