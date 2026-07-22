@@ -23,7 +23,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Gestionador de Unidades",
+    page_title="GESTIÓN DE BASE DE DATOS",
     layout="wide"
 )
 
@@ -37,6 +37,8 @@ load_css()
 # =================================
 require_login()
 require_access("gestion_unidades")
+current_user = st.session_state["user"]
+is_admin = current_user.get("role") == "admin"
 
 # FORCE RESET EVERY TIME PAGE LOADS
 if st.session_state.get("_reset_gestion_page", True):
@@ -66,7 +68,41 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📊 Gestión, Creación y Carga de Unidades")
+st.title("🗄️ GESTIÓN DE BASE DE DATOS")
+
+# =================================
+# TABS
+# =================================
+
+if is_admin:
+
+    (
+        tab_unidades,
+        tab_refacciones,
+        tab_proveedores,
+        tab_tc,
+        tab_admin,
+    ) = st.tabs([
+        "Gestión, Creación y Carga de Unidades",
+        "Refacciones",
+        "Proveedores IVA",
+        "TC Mensual",
+        "👤 Administración de Usuarios",
+    ])
+
+else:
+
+    (
+        tab_unidades,
+        tab_refacciones,
+        tab_proveedores,
+        tab_tc,
+    ) = st.tabs([
+        "Gestión, Creación y Carga de Unidades",
+        "Refacciones",
+        "Proveedores IVA",
+        "TC Mensual",
+    ])
 
 if st.session_state.get("success_modal"):
 
@@ -136,7 +172,7 @@ if st.session_state.get("delete_modal"):
 # Load Data
 # =================================
 @st.cache_data(ttl=60)
-def load_vehicle_units():
+def load_table(table_name):
 
     page_size = 1000
     start = 0
@@ -145,7 +181,7 @@ def load_vehicle_units():
     while True:
         response = (
             supabase
-            .table("vehicle_units")
+            .table(table_name)
             .select("*")
             .range(start, start + page_size - 1)
             .execute()
@@ -167,6 +203,37 @@ def load_vehicle_units():
     return df
 
 # =================================
+# Activity Log
+# =================================
+def log_action(action, table_name, record_key, details):
+
+    user = st.session_state["user"]
+
+    user_id = user["id"]
+
+    profile = (
+        supabase
+        .table("profiles")
+        .select("full_name")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+
+    full_name = profile.data["full_name"]
+
+    supabase.table("audit_log").insert({
+
+        "user_id": user_id,
+        "user_name": full_name,
+        "action": action,
+        "table_name": table_name,
+        "record_key": record_key,
+        "details": details
+
+    }).execute()
+
+# =================================
 # Session state
 # =================================
 
@@ -186,361 +253,1681 @@ if "just_saved" not in st.session_state:
 if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
-# =================================
-# Buttons
-# =================================
-st.divider()
+#loaders
+df_units = load_table("vehicle_units")
+df_parts = load_table("parts")
+df_proveedores = load_table("proveedores_iva")
+df_tc = load_table("tc_mensual")
+df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 
-st.markdown('<div class="main-btn">', unsafe_allow_html=True)
+# ==========================================
+# UNIDADES
+# ==========================================
+with tab_unidades:
 
-col1, col2, col3 = st.columns(3)
+    st.subheader("Gestión, Creación y Carga de Unidades")
 
-with col1:
-    if st.button("Gestionar Unidades Existentes", use_container_width=True):
-        st.session_state.mode = "gestionar"
+    # ==========================================
+    # DOWNLOAD
+    # ==========================================
 
-with col2:
-    if st.button("Crear Nuevas Unidades", use_container_width=True):
-        st.session_state.mode = "crear"
-
-with col3:
-    if st.button("Cargar Reporte de Unidades", use_container_width=True):
-        st.session_state.mode = "cargar"
-
-
-# STOP HERE if nothing selected
-if st.session_state.mode is None:
-    st.stop()
-
-df_units = load_vehicle_units()
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =================================
-# GESTIONAR
-# =================================
-if st.session_state.mode == "gestionar":
-
-    st.subheader("Gestionar Unidades")
-
-    # =============================
-    # POST SAVE
-    # =============================
-    if df_units.empty:
-        st.warning("No hay datos.")
-        st.stop()
-
-    # =============================
-    # Empresa mapping
-    # =============================
-    empresa_map = {
-        "SET": "Set Freight International",
-        "LIN": "Lincoln Freight",
-        "PIC": "Picus",
-        "IGT": "Igloo Transport",
-        "SLP": "Set Logis Plus"
-    }
-
-    reverse_empresa_map = {v: k for k, v in empresa_map.items()}
-
-    # =============================
-    # Empresa selector
-    # =============================
-    empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
-
-    empresa_nombre = st.selectbox(
-        "Empresa",
-        empresa_options,
-        index=0,
-        key="empresa_select",
-        disabled=False
-    )
-
-    if empresa_nombre == "Selecciona empresa":
-        st.stop()
-
-    empresa_codigo = reverse_empresa_map[empresa_nombre]
-
-    # =============================
-    # TABLE — UNIDADES
-    # =============================
-    st.divider()
-
-    st.subheader("📄 Unidades de la empresa seleccionada")
-
-    df_filtered = df_units[df_units["empresa"] == empresa_codigo]
-
-    df_display = df_filtered.drop(columns=["id", "created_at"], errors="ignore")
-
-    st.dataframe(
-        df_display,
-        use_container_width=True,
-        hide_index=True,
-        height=300
-    )
-
-    # =================================
-    # DOWNLOAD TABLE
-    # =================================
     excel_buffer = BytesIO()
 
+    df_download = df_units.drop(columns=["id"], errors="ignore")
+
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        df_display.to_excel(writer, index=False, sheet_name="Unidades")
+        df_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Unidades"
+        )
 
     excel_buffer.seek(0)
 
     st.download_button(
-        label="📥 Descargar Tabla",
+        "📥 Descargar Tabla",
         data=excel_buffer,
-        file_name=f"Unidades_{empresa_codigo}.xlsx",
+        file_name="Vehicle_Units.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
     )
 
-    # =============================
-    # Unidad selector
-    # =============================
-    df_filtered = df_units[df_units["empresa"] == empresa_codigo]
-
-    unidades = sorted(df_filtered["unidad"].dropna().unique().tolist())
-    unidad_options = ["Selecciona unidad"] + unidades
-
-    st.markdown("### 🔧 Selección de Unidad")
-
-    st.caption("Selecciona unidad para editar")
-
-    unidad_selected = st.selectbox(
-        "",  # remove default label
-        unidad_options,
-        index=0,
-        key="unidad_select",
-        disabled=False
-    )
-
-    if unidad_selected == "Selecciona unidad":
-        st.stop()
-
-    selected_row = df_filtered[df_filtered["unidad"] == unidad_selected].iloc[0]
-
     st.divider()
 
-    # =============================
-    # FORM
-    # =============================
-    with st.form("form"):
+    # ==========================================
+    # TABLE
+    # ==========================================
 
-        col1, col2, col3 = st.columns(3)
-
-        tipo_options = ["CAJA SECA", "CAJA REFRIGERADA", "TRACTOR"]
-
-        tipo_db = str(selected_row["tipo_unidad"]).upper().strip()
-        tipo_index = tipo_options.index(tipo_db) if tipo_db in tipo_options else 0
-
-        with col1:
-            marca = st.text_input("Marca", value=selected_row["marca"] or "")
-            modelo = st.text_input("Modelo", value=selected_row["modelo"] or "")
-
-        with col2:
-            vin = st.text_input("VIN", value=selected_row["vin"] or "")
-            tipo_unidad = st.selectbox("Tipo Unidad", tipo_options, index=tipo_index)
-
-        with col3:
-            sucursal = st.text_input("Sucursal", value=selected_row["sucursal"] or "")
-            estado_options = ["ACTIVA", "BAJA"]
-
-            estado_db = str(selected_row["estado"]).upper().strip()
-            estado_index = estado_options.index(estado_db) if estado_db in estado_options else 0
-
-            estado = st.selectbox("Estado", estado_options, index=estado_index)
-
-        col_btn1, col_btn2 = st.columns(2)
-
-        with col_btn1:
-            submitted = st.form_submit_button("Guardar Cambios", type="secondary")
-
-        with col_btn2:
-            delete_clicked = st.form_submit_button("Eliminar", type="primary")
-
-        if submitted:
-
-            st.session_state.is_saving = True
-            st.session_state.last_saved_unit = unidad_selected
-
-            supabase.table("vehicle_units") \
-                .update({
-                    "empresa": empresa_codigo,
-                    "unidad": unidad_selected,
-                    "marca": marca,
-                    "modelo": modelo,
-                    "vin": vin,
-                    "tipo_unidad": tipo_unidad,
-                    "sucursal": sucursal,
-                    "estado": estado,
-                    "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f+00")
-                }) \
-                .eq("unidad", unidad_selected) \
-                .execute()
-            
-            st.cache_data.clear()
-
-            st.session_state.success_modal = unidad_selected
-            st.rerun()
-        
-        if delete_clicked:
-            st.session_state.delete_modal = unidad_selected
-            st.rerun()
-        
-# =================================
-# CREAR
-# =================================
-if st.session_state.mode == "crear":
-
-    st.subheader("Crear Nueva Unidad")
-
-    if df_units.empty:
-        st.warning("No hay datos base.")
-        st.stop()
-
-    # =============================
-    # Empresa mapping (same)
-    # =============================
-    empresa_map = {
-        "SET": "Set Freight International",
-        "LIN": "Lincoln Freight",
-        "PIC": "Picus",
-        "IGT": "Igloo Transport",
-        "SLP": "Set Logis Plus"
-    }
-
-    reverse_empresa_map = {v: k for k, v in empresa_map.items()}
-
-    empresa_options = ["Selecciona empresa"] + list(empresa_map.values())
-
-    empresa_nombre = st.selectbox(
-        "Empresa",
-        empresa_options,
-        index=0,
-        key="empresa_crear"
-    )
-
-    if empresa_nombre == "Selecciona empresa":
-        st.stop()
-
-    empresa_codigo = reverse_empresa_map[empresa_nombre]
-
-    st.divider()
-
-    # =============================
-    # FORM
-    # =============================
-    with st.form("crear_form"):
-
-        col1, col2, col3 = st.columns(3)
-
-        tipo_options = ["Selecciona tipo de unidad", "CAJA SECA", "CAJA REFRIGERADA", "TRACTOR"]
-
-        with col1:
-            unidad = st.text_input("Unidad")
-            marca = st.text_input("Marca")
-            modelo = st.text_input("Modelo")
-
-        with col2:
-            vin = st.text_input("VIN")
-            tipo_unidad = st.selectbox("Tipo Unidad", tipo_options, index=0)
-
-        with col3:
-            sucursal = st.text_input("Sucursal")
-            estado = st.text_input("Estado")
-
-        submitted = st.form_submit_button("Crear Unidad")
-
-        if submitted:
-
-            if not unidad.strip():
-                st.error("Unidad es obligatoria")
-                st.stop()
-
-            if tipo_unidad == "Selecciona tipo de unidad":
-                st.error("Selecciona tipo de unidad")
-                st.stop()
-
-            # =============================
-            # CHECK IF EXISTS
-            # =============================
-            exists = df_units[
-                (df_units["empresa"] == empresa_codigo) &
-                (df_units["unidad"].astype(str) == unidad.strip())
-            ]
-
-            if not exists.empty:
-                st.error("La unidad ya existe para esta empresa")
-                st.stop()
-
-            # =============================
-            # INSERT
-            # =============================
-            created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f+00")
-
-            supabase.table("vehicle_units").insert({
-                "empresa": empresa_codigo,
-                "unidad": unidad.strip(),
-                "marca": marca,
-                "modelo": modelo,
-                "vin": vin,
-                "tipo_unidad": tipo_unidad,
-                "sucursal": sucursal,
-                "estado": estado,
-                "created_at": created_at
-            }).execute()
-
-            st.cache_data.clear()
-
-            st.session_state.success_modal = unidad.strip()
-            st.rerun()
-
-# =================================
-# CARGAR REPORTE DE UNIDADES
-# =================================
-if st.session_state.mode == "cargar":
-
-    st.subheader("Cargar Reporte de Unidades")
-
-    st.markdown("### 📂 Carga el reporte de unidades a actualizar o crear")
-
-    uploaded_file = st.file_uploader(
-        "Selecciona un archivo (.xlsx o .csv)",
-        type=["xlsx", "csv"]
+    st.dataframe(
+        df_download,
+        use_container_width=True,
+        hide_index=True,
+        height=450,
     )
 
     st.divider()
 
-    df_preview = None
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Unidad",
+        "✏️ Modificar Unidad",
+        "🗑 Eliminar Unidad",
+        "🔄 Reemplazar Tabla"
+    ])
 
-    if uploaded_file:
-        st.success(f"Archivo cargado: {uploaded_file.name}")
+    # =====================================================
+    # ADD
+    # =====================================================
 
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                df_preview = pd.read_csv(uploaded_file)
-            else:
-                df_preview = pd.read_excel(uploaded_file)
+    with tab_add:
 
-        except Exception as e:
-            st.error(f"Error al leer el archivo: {e}")
-            df_preview = None
+        empresa_map = {
+            "SET": "Set Freight International",
+            "LIN": "Lincoln Freight",
+            "PIC": "Picus",
+            "IGT": "Igloo Transport",
+            "SLP": "Set Logis Plus"
+        }
 
-    # ===============================
-    # PREVIEW TABLE
-    # ===============================
-    if df_preview is not None and not df_preview.empty:
+        reverse_empresa = {v: k for k, v in empresa_map.items()}
 
-        with st.expander("📄 Vista previa del archivo", expanded=False):
-            st.dataframe(
-                df_preview,
-                use_container_width=True,
-                hide_index=True
+        with st.form("add_unit"):
+
+            empresa_nombre = st.selectbox(
+                "Empresa",
+                list(empresa_map.values())
             )
 
-    # Dummy button (no logic yet)
-    if st.button("Cargar datos", type="primary"):
-        st.info("Funcionalidad aún no implementada")
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                unidad = st.text_input("Unidad")
+                marca = st.text_input("Marca")
+
+            with col2:
+                modelo = st.text_input("Modelo")
+                vin = st.text_input("VIN")
+
+            with col3:
+
+                tipo_unidad = st.selectbox(
+                    "Tipo Unidad",
+                    [
+                        "CAJA SECA",
+                        "CAJA REFRIGERADA",
+                        "TRACTOR"
+                    ]
+                )
+
+                sucursal = st.text_input("Sucursal")
+
+                estado = st.selectbox(
+                    "Estado",
+                    [
+                        "ACTIVA",
+                        "BAJA"
+                    ]
+                )
+
+            submitted = st.form_submit_button(
+                "Agregar Unidad",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                empresa = reverse_empresa[empresa_nombre]
+
+                existe = df_units[
+                    (df_units["empresa"] == empresa) &
+                    (df_units["unidad"] == unidad)
+                ]
+
+                if not unidad.strip():
+
+                    st.error("La unidad es obligatoria.")
+
+                elif not existe.empty:
+
+                    st.error("La unidad ya existe.")
+
+                else:
+
+                    supabase.table("vehicle_units").insert({
+
+                        "empresa": empresa,
+                        "unidad": unidad.strip(),
+                        "marca": marca.strip(),
+                        "modelo": modelo.strip(),
+                        "vin": vin.strip(),
+                        "tipo_unidad": tipo_unidad,
+                        "sucursal": sucursal.strip(),
+                        "estado": estado,
+                        "created_at": datetime.now(timezone.utc).strftime(
+                            "%Y-%m-%d %H:%M:%S.%f+00"
+                        )
+
+                    }).execute()
+
+                    log_action(
+                        "INSERT",
+                        "vehicle_units",
+                        unidad,
+                        f"Agregó unidad {unidad}"
+                    )
+
+                    st.cache_data.clear()
+
+                    st.success("Unidad agregada.")
+
+                    st.rerun()
+
+    # =====================================================
+    # MODIFY
+    # =====================================================
+
+    with tab_edit:
+
+        empresa_map = {
+            "SET": "Set Freight International",
+            "LIN": "Lincoln Freight",
+            "PIC": "Picus",
+            "IGT": "Igloo Transport",
+            "SLP": "Set Logis Plus"
+        }
+
+        reverse_empresa = {v: k for k, v in empresa_map.items()}
+
+        empresa_nombre = st.selectbox(
+            "Empresa",
+            list(empresa_map.values()),
+            key="edit_empresa"
+        )
+
+        empresa_codigo = reverse_empresa[empresa_nombre]
+
+        df_empresa = df_units[
+            df_units["empresa"] == empresa_codigo
+        ].sort_values("unidad")
+
+        if df_empresa.empty:
+
+            st.info("No existen unidades para esta empresa.")
+
+        else:
+
+            unidad = st.selectbox(
+                "Unidad",
+                df_empresa["unidad"].tolist(),
+                key="edit_unidad"
+            )
+
+            row = df_empresa[
+                df_empresa["unidad"] == unidad
+            ].iloc[0]
+
+            with st.form("edit_unit"):
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+
+                    marca = st.text_input(
+                        "Marca",
+                        value=row["marca"] or ""
+                    )
+
+                    modelo = st.text_input(
+                        "Modelo",
+                        value=row["modelo"] or ""
+                    )
+
+                with col2:
+
+                    vin = st.text_input(
+                        "VIN",
+                        value=row["vin"] or ""
+                    )
+
+                    tipo_options = [
+                        "CAJA SECA",
+                        "CAJA REFRIGERADA",
+                        "TRACTOR"
+                    ]
+
+                    tipo_actual = str(
+                        row["tipo_unidad"]
+                    ).upper()
+
+                    tipo_index = (
+                        tipo_options.index(tipo_actual)
+                        if tipo_actual in tipo_options
+                        else 0
+                    )
+
+                    tipo_unidad = st.selectbox(
+                        "Tipo Unidad",
+                        tipo_options,
+                        index=tipo_index
+                    )
+
+                with col3:
+
+                    sucursal = st.text_input(
+                        "Sucursal",
+                        value=row["sucursal"] or ""
+                    )
+
+                    estado_options = [
+                        "ACTIVA",
+                        "BAJA"
+                    ]
+
+                    estado_actual = str(
+                        row["estado"]
+                    ).upper()
+
+                    estado_index = (
+                        estado_options.index(estado_actual)
+                        if estado_actual in estado_options
+                        else 0
+                    )
+
+                    estado = st.selectbox(
+                        "Estado",
+                        estado_options,
+                        index=estado_index
+                    )
+
+                guardar = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if guardar:
+
+                    supabase.table("vehicle_units") \
+                        .update({
+
+                            "marca": marca.strip(),
+                            "modelo": modelo.strip(),
+                            "vin": vin.strip(),
+                            "tipo_unidad": tipo_unidad,
+                            "sucursal": sucursal.strip(),
+                            "estado": estado
+
+                        }) \
+                        .eq("id", row["id"]) \
+                        .execute()
+                    
+                    log_action(
+                        "UPDATE",
+                        "vehicle_units",
+                        unidad,
+                        f"Modificó unidad {unidad}"
+                    )
+
+                    st.cache_data.clear()
+
+                    st.success("Unidad actualizada.")
+
+                    st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+
+    with tab_delete:
+
+        empresa_map = {
+            "SET": "Set Freight International",
+            "LIN": "Lincoln Freight",
+            "PIC": "Picus",
+            "IGT": "Igloo Transport",
+            "SLP": "Set Logis Plus"
+        }
+
+        reverse_empresa = {v: k for k, v in empresa_map.items()}
+
+        empresa_nombre = st.selectbox(
+            "Empresa",
+            list(empresa_map.values()),
+            key="delete_empresa"
+        )
+
+        empresa_codigo = reverse_empresa[empresa_nombre]
+
+        df_empresa = (
+            df_units[df_units["empresa"] == empresa_codigo]
+            .sort_values("unidad")
+        )
+
+        if df_empresa.empty:
+
+            st.info("No existen unidades para esta empresa.")
+
+        else:
+
+            unidad = st.selectbox(
+                "Unidad",
+                df_empresa["unidad"].tolist(),
+                key="delete_unidad"
+            )
+
+            row = df_empresa[
+                df_empresa["unidad"] == unidad
+            ].iloc[0]
+
+            st.warning(
+                f"⚠️ Se eliminará la unidad **{unidad}** de forma permanente."
+            )
+
+            if st.button(
+                "🗑 Eliminar Unidad",
+                type="primary",
+                use_container_width=True,
+                key="delete_unit_button"
+            ):
+
+                supabase.table("vehicle_units") \
+                    .delete() \
+                    .eq("id", row["id"]) \
+                    .execute()
+                
+                log_action(
+                    "DELETE",
+                    "vehicle_units",
+                    unidad,
+                    f"Eliminó unidad {unidad}"
+                )
+
+                st.cache_data.clear()
+
+                st.success("Unidad eliminada correctamente.")
+
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción eliminará TODAS las unidades actuales y las reemplazará con el archivo cargado."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="vehicle_units_replace"
+        )
+
+        if uploaded:
+
+            try:
+
+                if uploaded.name.endswith(".csv"):
+                    new_df = pd.read_csv(uploaded)
+                else:
+                    new_df = pd.read_excel(uploaded)
+
+            except Exception as e:
+
+                st.error(f"No fue posible leer el archivo.\n\n{e}")
+                st.stop()
+
+            st.subheader("Vista previa")
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=350,
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla Completa",
+                type="primary",
+                use_container_width=True,
+                key="replace_vehicle_units"
+            ):
+
+                new_df.columns = [
+                    c.strip().lower()
+                    for c in new_df.columns
+                ]
+
+                required = {
+                    "empresa",
+                    "unidad",
+                    "marca",
+                    "modelo",
+                    "vin",
+                    "tipo_unidad",
+                    "sucursal",
+                    "estado"
+                }
+
+                if not required.issubset(set(new_df.columns)):
+
+                    st.error(
+                        "El archivo no contiene las columnas requeridas."
+                    )
+                    st.stop()
+
+                records = (
+                    new_df[
+                        [
+                            "empresa",
+                            "unidad",
+                            "marca",
+                            "modelo",
+                            "vin",
+                            "tipo_unidad",
+                            "sucursal",
+                            "estado",
+                        ]
+                    ]
+                    .fillna("")
+                    .to_dict("records")
+                )
+
+                # Delete existing rows
+                supabase.table("vehicle_units") \
+                    .delete() \
+                    .neq("id", 0) \
+                    .execute()
+
+                # Add timestamps
+                now = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M:%S.%f+00"
+                )
+
+                for record in records:
+                    record["created_at"] = now
+
+                if records:
+                    supabase.table("vehicle_units") \
+                        .insert(records) \
+                        .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "vehicle_units",
+                    f"{len(records)} registros",
+                    f"Reemplazó completamente la tabla vehicle_units"
+                )
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron correctamente {len(records)} unidades."
+                )
+
+                st.rerun()
+
+# ==========================================
+# REFACCIONES
+# ==========================================
+with tab_refacciones:
+
+    st.subheader("Refacciones")
+
+    # ==========================================
+    # DOWNLOAD TABLE
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_parts.to_excel(writer, index=False, sheet_name="Refacciones")
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="Refacciones.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
+    st.dataframe(
+        df_parts,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # SUB TABS
+    # ==========================================
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Refacción",
+        "✏️ Modificar Refacción",
+        "🗑 Eliminar Refacción",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_part"):
+
+            parte = st.text_input("Parte")
+            tipo = st.text_input("Tipo")
+
+            submitted = st.form_submit_button(
+                "Agregar Refacción",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                if not parte.strip():
+                    st.error("La parte es obligatoria.")
+                else:
+
+                    existe = (
+                        supabase
+                        .table("parts")
+                        .select("parte")
+                        .eq("parte", parte)
+                        .execute()
+                    )
+
+                    if existe.data:
+                        st.error("La parte ya existe.")
+                    else:
+
+                        supabase.table("parts").insert({
+                            "parte": parte.strip(),
+                            "tipo": tipo.strip()
+                        }).execute()
+
+                        log_action(
+                            "INSERT",
+                            "parts",
+                            parte.strip(),
+                            f"Agregó refacción {parte.strip()}"
+                        )
+
+                        st.cache_data.clear()
+                        st.success("Refacción agregada.")
+                        st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_parts.empty:
+
+            st.info("No hay refacciones.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona la refacción",
+                sorted(df_parts["parte"].tolist()),
+                key="edit_part"
+            )
+
+            row = df_parts[
+                df_parts["parte"] == selected
+            ].iloc[0]
+
+            with st.form("edit_part_form"):
+
+                parte = st.text_input(
+                    "Parte",
+                    value=row["parte"]
+                )
+
+                tipo = st.text_input(
+                    "Tipo",
+                    value=row["tipo"]
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    if not parte.strip():
+
+                        st.error("La parte es obligatoria.")
+
+                    else:
+
+                        duplicate = df_parts[
+                            (df_parts["parte"] == parte.strip()) &
+                            (df_parts["parte"] != selected)
+                        ]
+
+                        if not duplicate.empty:
+
+                            st.error("Ya existe una refacción con ese nombre.")
+
+                        else:
+
+                            supabase.table("parts") \
+                                .update({
+                                    "parte": parte.strip(),
+                                    "tipo": tipo.strip()
+                                }) \
+                                .eq("parte", selected) \
+                                .execute()
+                            
+                            log_action(
+                                "UPDATE",
+                                "parts",
+                                parte.strip(),
+                                f"Modificó refacción {parte.strip()}"
+                            )
+
+                            st.cache_data.clear()
+
+                            st.success("Refacción actualizada.")
+
+                            st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_parts.empty:
+
+            st.info("No hay refacciones.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona la refacción",
+                sorted(df_parts["parte"].tolist())
+            )
+
+            if st.button(
+                "Eliminar Refacción",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("parts") \
+                    .delete() \
+                    .eq("parte", selected) \
+                    .execute()
+
+                log_action(
+                    "DELETE",
+                    "parts",
+                    selected,
+                    f"Eliminó refacción {selected}"
+                )
+
+                st.cache_data.clear()
+                st.success("Refacción eliminada.")
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción eliminará TODAS las refacciones actuales y las reemplazará con el archivo cargado."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="parts_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.subheader("Vista previa")
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300,
+            )
+
+            if st.button(
+                "Reemplazar Tabla Completa",
+                type="primary",
+                use_container_width=True
+            ):
+
+                required = {"parte", "tipo"}
+
+                if not required.issubset(set(new_df.columns.str.lower())):
+                    st.error("El archivo debe contener las columnas: parte y tipo.")
+                    st.stop()
+
+                new_df.columns = [c.lower() for c in new_df.columns]
+
+                supabase.table("parts").delete().neq("parte", "").execute()
+
+                records = new_df[["parte", "tipo"]].fillna("").to_dict("records")
+
+                if records:
+                    supabase.table("parts").insert(records).execute()
+
+                log_action(
+                    "REPLACE",
+                    "parts",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla parts"
+                )
+
+                st.cache_data.clear()
+
+                st.success("Tabla reemplazada correctamente.")
+
+                st.rerun()
+
+# ==========================================
+# PROVEEDORES
+# ==========================================
+with tab_proveedores:
+
+    st.subheader("Proveedores IVA")
+
+    # ==========================================
+    # DOWNLOAD TABLE
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    df_download = df_proveedores.drop(columns=["id"], errors="ignore")
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Proveedores IVA"
+        )
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="Proveedores_IVA.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
+    st.dataframe(
+        df_download,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+    )
+
+    st.divider()
+
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Proveedor",
+        "✏️ Modificar Proveedor",
+        "🗑 Eliminar Proveedor",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_supplier"):
+
+            proveedor = st.text_input("Proveedor")
+            clave = st.text_input("Clave")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                iva_pct = st.number_input(
+                    "IVA %",
+                    value=16.0,
+                    step=0.01,
+                    format="%.2f"
+                )
+
+            with col2:
+                isr_pct = st.number_input(
+                    "ISR %",
+                    value=0.0,
+                    step=0.01,
+                    format="%.2f"
+                )
+
+            formula = st.text_input("Fórmula")
+
+            submitted = st.form_submit_button(
+                "Agregar Proveedor",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                if not proveedor.strip():
+
+                    st.error("El proveedor es obligatorio.")
+
+                elif not df_proveedores[
+                    df_proveedores["proveedor"] == proveedor.strip()
+                ].empty:
+
+                    st.error("El proveedor ya existe.")
+
+                else:
+
+                    supabase.table("proveedores_iva").insert({
+
+                        "proveedor": proveedor.strip(),
+                        "iva_pct": iva_pct,
+                        "isr_pct": isr_pct,
+                        "formula": formula.strip(),
+                        "clave": clave.strip()
+
+                    }).execute()
+
+                    log_action(
+                        "INSERT",
+                        "proveedores_iva",
+                        proveedor.strip(),
+                        f"Agregó proveedor {proveedor.strip()}"
+                    )
+
+                    st.cache_data.clear()
+                    st.success("Proveedor agregado.")
+                    st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_proveedores.empty:
+
+            st.info("No existen proveedores.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona el proveedor",
+                sorted(df_proveedores["proveedor"].tolist()),
+                key="edit_supplier"
+            )
+
+            row = df_proveedores[
+                df_proveedores["proveedor"] == selected
+            ].iloc[0]
+
+            with st.form("edit_supplier_form"):
+
+                proveedor = st.text_input(
+                    "Proveedor",
+                    value=row["proveedor"]
+                )
+
+                clave = st.text_input(
+                    "Clave",
+                    value=row["clave"]
+                )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    iva_pct = st.number_input(
+                        "IVA %",
+                        value=float(row["iva_pct"]),
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                with col2:
+
+                    isr_pct = st.number_input(
+                        "ISR %",
+                        value=float(row["isr_pct"]),
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                formula = st.text_input(
+                    "Fórmula",
+                    value=row["formula"]
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    duplicate = df_proveedores[
+                        (df_proveedores["proveedor"] == proveedor.strip()) &
+                        (df_proveedores["proveedor"] != selected)
+                    ]
+
+                    if not duplicate.empty():
+
+                        st.error("Ese proveedor ya existe.")
+
+                    else:
+
+                        supabase.table("proveedores_iva") \
+                            .update({
+
+                                "proveedor": proveedor.strip(),
+                                "iva_pct": iva_pct,
+                                "isr_pct": isr_pct,
+                                "formula": formula.strip(),
+                                "clave": clave.strip()
+
+                            }) \
+                            .eq("id", row["id"]) \
+                            .execute()
+
+                        log_action(
+                            "UPDATE",
+                            "proveedores_iva",
+                            proveedor.strip(),
+                            f"Modificó proveedor {proveedor.strip()}"
+                        )
+
+                        st.cache_data.clear()
+                        st.success("Proveedor actualizado.")
+                        st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_proveedores.empty:
+
+            st.info("No existen proveedores.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona el proveedor",
+                sorted(df_proveedores["proveedor"].tolist()),
+                key="delete_supplier"
+            )
+
+            row = df_proveedores[
+                df_proveedores["proveedor"] == selected
+            ].iloc[0]
+
+            if st.button(
+                "🗑 Eliminar Proveedor",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("proveedores_iva") \
+                    .delete() \
+                    .eq("id", row["id"]) \
+                    .execute()
+                
+                log_action(
+                    "DELETE",
+                    "proveedores_iva",
+                    selected,
+                    f"Eliminó proveedor {selected}"
+                )
+
+                st.cache_data.clear()
+                st.success("Proveedor eliminado.")
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción reemplazará completamente la tabla."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="proveedores_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla",
+                type="primary",
+                use_container_width=True
+            ):
+
+                new_df.columns = [
+                    c.lower().strip()
+                    for c in new_df.columns
+                ]
+
+                required = {
+                    "proveedor",
+                    "iva_pct",
+                    "isr_pct",
+                    "formula",
+                    "clave"
+                }
+
+                if not required.issubset(set(new_df.columns)):
+
+                    st.error("El archivo no contiene las columnas requeridas.")
+                    st.stop()
+
+                records = (
+                    new_df[
+                        [
+                            "proveedor",
+                            "iva_pct",
+                            "isr_pct",
+                            "formula",
+                            "clave"
+                        ]
+                    ]
+                    .fillna("")
+                    .to_dict("records")
+                )
+
+                supabase.table("proveedores_iva") \
+                    .delete() \
+                    .neq("id", 0) \
+                    .execute()
+
+                if records:
+
+                    supabase.table("proveedores_iva") \
+                        .insert(records) \
+                        .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "proveedores_iva",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla proveedores_iva"
+                )
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron {len(records)} proveedores."
+                )
+
+                st.rerun()
+
+# ==========================================
+# TC MENSUAL
+# ==========================================
+with tab_tc:
+
+    st.subheader("TC Mensual")
+
+    # ==========================================
+    # DOWNLOAD
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    df_download = df_tc.drop(columns=["id"], errors="ignore")
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="TC Mensual"
+        )
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="TC_Mensual.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
+    st.dataframe(
+        df_download,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+    )
+
+    st.divider()
+
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar TC",
+        "✏️ Modificar TC",
+        "🗑 Eliminar TC",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ]
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_tc"):
+
+            year = st.number_input(
+                "Año",
+                min_value=2020,
+                max_value=2100,
+                value=datetime.now().year,
+                step=1
+            )
+
+            month = st.selectbox(
+                "Mes",
+                months
+            )
+
+            tc = st.number_input(
+                "Tipo de Cambio",
+                min_value=0.0,
+                step=0.0001,
+                format="%.4f"
+            )
+
+            submitted = st.form_submit_button(
+                "Agregar Registro",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                supabase.table("tc_mensual").insert({
+
+                    "YEAR": int(year),
+                    "MONTH": month,
+                    "DATE": datetime.now().strftime("%Y-%m-%d"),
+                    "TC": tc
+
+                }).execute()
+
+                log_action(
+                    "INSERT",
+                    "tc_mensual",
+                    f"{year} - {month}",
+                    f"Agregó TC {month} {year}"
+                )
+
+                st.cache_data.clear()
+
+                st.success("Registro agregado.")
+
+                st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_tc.empty:
+
+            st.info("No existen registros.")
+
+        else:
+
+            df_sorted = df_tc.sort_values(
+                ["year", "month", "date"],
+                ascending=False
+            )
+
+            selected = st.selectbox(
+                "Selecciona el registro",
+                df_sorted["date"].astype(str).tolist(),
+                key="edit_tc"
+            )
+
+            row = df_sorted[
+                df_sorted["date"].astype(str) == selected
+            ].iloc[0]
+
+            with st.form("edit_tc_form"):
+
+                st.text_input(
+                    "Fecha de Captura",
+                    value=str(row["date"]),
+                    disabled=True
+                )
+
+                year = st.number_input(
+                    "Año",
+                    min_value=2020,
+                    max_value=2100,
+                    value=int(row["year"]),
+                    step=1
+                )
+
+                month = st.selectbox(
+                    "Mes",
+                    months,
+                    index=months.index(row["month"])
+                    if row["month"] in months else 0
+                )
+
+                tc = st.number_input(
+                    "Tipo de Cambio",
+                    value=float(row["tc"]),
+                    step=0.0001,
+                    format="%.4f"
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    supabase.table("tc_mensual") \
+                        .update({
+
+                            "YEAR": int(year),
+                            "MONTH": month,
+                            "TC": tc
+
+                        }) \
+                        .eq("id", row["id"]) \
+                        .execute()
+                    
+                    log_action(
+                        "UPDATE",
+                        "tc_mensual",
+                        f"{year} - {month}",
+                        f"Modificó TC {month} {year}"
+                    )
+
+                    st.cache_data.clear()
+
+                    st.success("Registro actualizado.")
+
+                    st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_tc.empty:
+
+            st.info("No existen registros.")
+
+        else:
+
+            df_sorted = df_tc.sort_values(
+                ["year", "date"],
+                ascending=False
+            ).copy()
+
+            df_sorted["display"] = (
+                df_sorted["year"].astype(str)
+                + " - "
+                + df_sorted["month"].astype(str)
+            )
+
+            selected = st.selectbox(
+                "Selecciona el registro",
+                df_sorted["display"].tolist(),
+                key="delete_tc"
+            )
+
+            row = df_sorted[
+                df_sorted["display"] == selected
+            ].iloc[0]
+
+            st.warning(
+                f"⚠️ Se eliminará el registro **{selected}**."
+            )
+
+            if st.button(
+                "🗑 Eliminar Registro",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("tc_mensual") \
+                    .delete() \
+                    .eq("id", row["id"]) \
+                    .execute()
+                
+                log_action(
+                    "DELETE",
+                    "tc_mensual",
+                    selected,
+                    f"Eliminó TC {selected}"
+                )                
+
+                st.cache_data.clear()
+
+                st.success("Registro eliminado.")
+
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción reemplazará completamente la tabla."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="tc_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300,
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla",
+                type="primary",
+                use_container_width=True
+            ):
+
+                new_df.columns = [
+                    c.strip().upper()
+                    for c in new_df.columns
+                ]
+
+                required = {
+                    "YEAR",
+                    "MONTH",
+                    "DATE",
+                    "TC"
+                }
+
+                if not required.issubset(set(new_df.columns)):
+
+                    st.error(
+                        "El archivo no contiene las columnas requeridas."
+                    )
+
+                    st.stop()
+
+                records = (
+                    new_df[
+                        [
+                            "YEAR",
+                            "MONTH",
+                            "DATE",
+                            "TC"
+                        ]
+                    ]
+                    .fillna("")
+                    .to_dict("records")
+                )
+
+                supabase.table("tc_mensual") \
+                    .delete() \
+                    .neq("id", 0) \
+                    .execute()
+
+                if records:
+
+                    supabase.table("tc_mensual") \
+                        .insert(records) \
+                        .execute()
+                    
+                log_action(
+                    "REPLACE",
+                    "tc_mensual",
+                    f"{len(records)} registros",
+                    "Reemplazó completamente la tabla tc_mensual"
+                )
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron {len(records)} registros."
+                )
+
+                st.rerun()
+
+# ==========================================
+# ADMINISTRACIÓN DE USUARIOS
+# ==========================================
+
+with tab_admin:
+    
+    USER_ROLES = [
+        "admin",
+        "manager",
+        "field_user",
+        "regular_user",
+    ]
+
+    BRANCHES = [
+        "beta",
+        "release",
+    ]
+
+    ENTERPRISES = [
+        "picus",
+        "igloo",
+        "lincoln",
+        "setlogis",
+        "setfreight",
+    ]
+
+    PAGE_PERMITS = [
+        "consulta_reportes",
+        "consultar_reparacion",
+        "lector_pdf",
+        "pase_taller",
+        "autorizacion",
+        "ifuel",
+        "prepara_reportes",
+        "gestion_unidades",
+        "solicitud_viaticos",
+        "gestion_viaticos",
+        "gps_tracking",
+        "ai_testing",
+        "bonos_operador",
+        "consulta_bonos_operador",
+    ]
+
+    st.subheader("Administración de Usuarios")
+
+    st.dataframe(
+        df_profiles,
+        use_container_width=True,
+        hide_index=True,
+        height=350,
+    )
+
+    st.divider()
+
+    st.subheader("Modificar Usuario")
+
+    if df_profiles.empty:
+
+        st.info("No existen usuarios.")
+
+    else:
+
+        selected_email = st.selectbox(
+            "Usuario",
+            sorted(df_profiles["email"].tolist())
+        )
+
+        row = df_profiles[
+            df_profiles["email"] == selected_email
+        ].iloc[0]
+
+        access = row["access"] or []
+
+        selected_branch = next(
+            (x for x in BRANCHES if x in access),
+            "release"
+        )
+
+        selected_enterprises = [
+            x for x in ENTERPRISES
+            if x in access
+        ]
+
+        selected_pages = [
+            x for x in PAGE_PERMITS
+            if x in access
+        ]
+
+        with st.form("edit_profile"):
+
+            st.text_input(
+                "Email",
+                value=row["email"],
+                disabled=True,
+            )
+
+            full_name = st.text_input(
+                "Nombre",
+                value=row["full_name"] or ""
+            )
+
+            role = st.selectbox(
+                "Rol",
+                USER_ROLES,
+                index=USER_ROLES.index(row["role"])
+                if row["role"] in USER_ROLES
+                else 0
+            )
+
+            branch = st.radio(
+                "Branch",
+                BRANCHES,
+                index=BRANCHES.index(selected_branch),
+                horizontal=True,
+            )
+
+            enterprises = st.multiselect(
+                "Empresas",
+                ENTERPRISES,
+                default=selected_enterprises,
+            )
+
+            permissions = st.multiselect(
+                "Permisos",
+                PAGE_PERMITS,
+                default=selected_pages,
+            )
+
+            save = st.form_submit_button(
+                "Guardar Cambios",
+                use_container_width=True
+            )
+
+            if save:
+
+                access = (
+                    [branch]
+                    + enterprises
+                    + permissions
+                )
+
+                supabase.table("profiles") \
+                    .update({
+
+                        "full_name": full_name.strip(),
+                        "role": role,
+                        "access": access
+
+                    }) \
+                    .eq("id", row["id"]) \
+                    .execute()
+
+                log_action(
+                    "UPDATE",
+                    "profiles",
+                    row["email"],
+                    f"Actualizó usuario {row['email']}"
+                )
+
+                st.cache_data.clear()
+
+                st.success("Usuario actualizado correctamente.")
+
+                st.rerun()
