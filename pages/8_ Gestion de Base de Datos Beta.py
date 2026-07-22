@@ -566,12 +566,177 @@ with tab_refacciones:
 
     st.subheader("Refacciones")
 
+    # ==========================================
+    # DOWNLOAD TABLE
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_parts.to_excel(writer, index=False, sheet_name="Refacciones")
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="Refacciones.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
     st.dataframe(
         df_parts,
         use_container_width=True,
         hide_index=True,
-        height=600,
+        height=400,
     )
+
+    st.divider()
+
+    # ==========================================
+    # SUB TABS
+    # ==========================================
+    tab_add, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Refacción",
+        "🗑 Eliminar Refacción",
+        "🔄 Reemplazar Tabla"
+    ])
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_part"):
+
+            parte = st.text_input("Parte")
+            tipo = st.text_input("Tipo")
+
+            submitted = st.form_submit_button(
+                "Agregar Refacción",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                if not parte.strip():
+                    st.error("La parte es obligatoria.")
+                else:
+
+                    existe = (
+                        supabase
+                        .table("parts")
+                        .select("parte")
+                        .eq("parte", parte)
+                        .execute()
+                    )
+
+                    if existe.data:
+                        st.error("La parte ya existe.")
+                    else:
+
+                        supabase.table("parts").insert({
+                            "parte": parte.strip(),
+                            "tipo": tipo.strip()
+                        }).execute()
+
+                        st.cache_data.clear()
+                        st.success("Refacción agregada.")
+                        st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_parts.empty:
+
+            st.info("No hay refacciones.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona la refacción",
+                sorted(df_parts["parte"].tolist())
+            )
+
+            if st.button(
+                "Eliminar Refacción",
+                type="primary",
+                use_container_width=True
+            ):
+
+                supabase.table("parts") \
+                    .delete() \
+                    .eq("parte", selected) \
+                    .execute()
+
+                st.cache_data.clear()
+                st.success("Refacción eliminada.")
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción eliminará TODAS las refacciones actuales y las reemplazará con el archivo cargado."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="parts_replace"
+        )
+
+        if uploaded:
+
+            if uploaded.name.endswith(".csv"):
+                new_df = pd.read_csv(uploaded)
+            else:
+                new_df = pd.read_excel(uploaded)
+
+            st.subheader("Vista previa")
+
+            st.dataframe(
+                new_df,
+                use_container_width=True,
+                hide_index=True,
+                height=300,
+            )
+
+            if st.button(
+                "Reemplazar Tabla Completa",
+                type="primary",
+                use_container_width=True
+            ):
+
+                required = {"parte", "tipo"}
+
+                if not required.issubset(set(new_df.columns.str.lower())):
+                    st.error("El archivo debe contener las columnas: parte y tipo.")
+                    st.stop()
+
+                new_df.columns = [c.lower() for c in new_df.columns]
+
+                supabase.table("parts").delete().neq("parte", "").execute()
+
+                records = new_df[["parte", "tipo"]].fillna("").to_dict("records")
+
+                if records:
+                    supabase.table("parts").insert(records).execute()
+
+                st.cache_data.clear()
+
+                st.success("Tabla reemplazada correctamente.")
+
+                st.rerun()
 
 with tab_proveedores:
 
