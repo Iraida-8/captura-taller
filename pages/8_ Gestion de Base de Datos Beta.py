@@ -147,7 +147,7 @@ if st.session_state.get("delete_modal"):
 # Load Data
 # =================================
 @st.cache_data(ttl=60)
-def load_vehicle_units():
+def load_table(table_name):
 
     page_size = 1000
     start = 0
@@ -156,7 +156,7 @@ def load_vehicle_units():
     while True:
         response = (
             supabase
-            .table("vehicle_units")
+            .table(table_name)
             .select("*")
             .range(start, start + page_size - 1)
             .execute()
@@ -225,7 +225,13 @@ with tab_unidades:
     if st.session_state.mode is None:
         st.stop()
 
-    df_units = load_vehicle_units()
+    df_units = load_table("vehicle_units")
+
+    df_parts = load_table("parts")
+
+    df_proveedores = load_table("proveedores_iva")
+
+    df_tc = load_table("tc_mensual")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
