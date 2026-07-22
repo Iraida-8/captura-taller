@@ -182,7 +182,9 @@ def load_table(table_name):
 # =================================
 def log_action(action, table_name, record_key, details):
 
-    user_id = st.session_state["user_id"]
+    user = st.session_state["user"]
+
+    user_id = user["id"]
 
     profile = (
         supabase
