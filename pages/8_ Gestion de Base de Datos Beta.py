@@ -10,8 +10,8 @@ from io import BytesIO
 # RELEASE CHANNEL
 # =================================
 
-#APP_CHANNEL = "BETA"
-APP_CHANNEL = "RELEASE"
+APP_CHANNEL = "BETA"
+#APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
