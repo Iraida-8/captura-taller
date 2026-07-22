@@ -66,7 +66,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.markdown("🗄️ GESTIÓN DE BASE DE DATOS")
+st.title("🗄️ GESTIÓN DE BASE DE DATOS")
 
 # =================================
 # TABS
