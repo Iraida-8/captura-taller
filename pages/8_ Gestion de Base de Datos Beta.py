@@ -23,7 +23,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Gestionador de Unidades",
+    page_title="GESTIÓN DE BASE DE DATOS",
     layout="wide"
 )
 
@@ -66,7 +66,7 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-st.title("📚 Administración de Catálogos")
+st.markdown("🗄️ GESTIÓN DE BASE DE DATOS")
 
 # =================================
 # TABS
