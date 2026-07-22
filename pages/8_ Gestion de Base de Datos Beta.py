@@ -197,6 +197,12 @@ if "just_saved" not in st.session_state:
 if "last_saved_unit" not in st.session_state:
     st.session_state.last_saved_unit = None
 
+#loaders
+df_units = load_table("vehicle_units")
+df_parts = load_table("parts")
+df_proveedores = load_table("proveedores_iva")
+df_tc = load_table("tc_mensual")
+
 with tab_unidades:
         
     # =================================
@@ -223,15 +229,7 @@ with tab_unidades:
 
     # STOP HERE if nothing selected
     if st.session_state.mode is None:
-        st.stop()
-
-    df_units = load_table("vehicle_units")
-
-    df_parts = load_table("parts")
-
-    df_proveedores = load_table("proveedores_iva")
-
-    df_tc = load_table("tc_mensual")
+        st.info("Selecciona una acción.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
