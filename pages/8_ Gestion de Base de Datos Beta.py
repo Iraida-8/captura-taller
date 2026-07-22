@@ -1470,19 +1470,29 @@ with tab_tc:
         else:
 
             df_sorted = df_tc.sort_values(
-                ["year", "month", "date"],
+                ["year", "date"],
                 ascending=False
+            ).copy()
+
+            df_sorted["display"] = (
+                df_sorted["year"].astype(str)
+                + " - "
+                + df_sorted["month"].astype(str)
             )
 
             selected = st.selectbox(
                 "Selecciona el registro",
-                df_sorted["date"].astype(str).tolist(),
+                df_sorted["display"].tolist(),
                 key="delete_tc"
             )
 
             row = df_sorted[
-                df_sorted["date"].astype(str) == selected
+                df_sorted["display"] == selected
             ].iloc[0]
+
+            st.warning(
+                f"⚠️ Se eliminará el registro **{selected}**."
+            )
 
             if st.button(
                 "🗑 Eliminar Registro",
