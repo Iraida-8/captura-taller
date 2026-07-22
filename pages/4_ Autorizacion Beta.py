@@ -1976,14 +1976,96 @@ if has_autorizacion:
                     key="report_fecha"
                 )
 
+            # =================================
+            # BUILD MASTER REPORT
+            # =================================
+
             resultados = pases_df.copy()
+
+            # ---------------------------------
+            # MERGE FACTURAS
+            # ---------------------------------
 
             if not facturas_df.empty:
 
                 resultados = resultados.merge(
                     facturas_df[
-                        ["NoFolio", "No. de Factura"]
+                        [
+                            "NoFolio",
+                            "No. de Factura"
+                        ]
                     ],
+                    on="NoFolio",
+                    how="left",
+                )
+
+            # ---------------------------------
+            # MERGE SERVICES
+            # ---------------------------------
+
+            if not services_df.empty:
+
+                servicios = services_df.copy()
+
+                # clean values
+                for col in [
+                    "Parte",
+                    "Tipo De Parte"
+                ]:
+
+                    if col in servicios.columns:
+
+                        servicios[col] = (
+                            servicios[col]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                        )
+
+                servicios = servicios[
+                    (
+                        servicios["Parte"] != ""
+                    )
+                    |
+                    (
+                        servicios["Tipo De Parte"] != ""
+                    )
+                ]
+
+                servicios_resumen = (
+                    servicios
+                    .groupby("NoFolio", as_index=False)
+                    .agg(
+                        {
+                            "Parte": lambda x: " | ".join(
+                                sorted(
+                                    set(
+                                        i for i in x
+                                        if i
+                                    )
+                                )
+                            ),
+                            "Tipo De Parte": lambda x: " | ".join(
+                                sorted(
+                                    set(
+                                        i for i in x
+                                        if i
+                                    )
+                                )
+                            ),
+                        }
+                    )
+                )
+
+                servicios_resumen = servicios_resumen.rename(
+                    columns={
+                        "Parte": "Partes",
+                        "Tipo De Parte": "Tipos de Parte",
+                    }
+                )
+
+                resultados = resultados.merge(
+                    servicios_resumen,
                     on="NoFolio",
                     how="left",
                 )
@@ -2065,11 +2147,16 @@ if has_autorizacion:
                 "Empresa",
                 "No. de Unidad",
                 "Estado",
+                "Tipo de Unidad",
                 "Tipo de Proveedor",
                 "Proveedor",
                 "No. de Reporte",
                 "Oste",
+                "Capturo",
+                "Razones",
                 "Descripcion Problema",
+                "Partes",
+                "Tipos de Parte",
                 "Fecha",
             ]
 
