@@ -1824,7 +1824,10 @@ if has_autorizacion:
 
             st.subheader("Descarga y Consulta de Reportes")
 
-            empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
+            empresas = (
+                sorted(pases_df["Empresa"].dropna().unique())
+                if not pases_df.empty else []
+            )
 
             # =================================
             # ROW 1
@@ -1832,15 +1835,25 @@ if has_autorizacion:
             f1, f2, f3, f4, f5 = st.columns(5)
 
             with f1:
-                f_folio = st.text_input("No. de Folio")
+                f_folio = st.text_input(
+                    "No. de Folio",
+                    key="report_folio"
+                )
 
             with f2:
-                f_factura = st.text_input("No. de Factura")
+                f_factura = st.text_input(
+                    "No. de Factura",
+                    key="report_factura"
+                )
 
             with f3:
-                f_oste = st.text_input("OSTE")
+                f_oste = st.text_input(
+                    "OSTE",
+                    key="report_oste"
+                )
 
             with f4:
+
                 tipos_proveedor = sorted(
                     pases_df["Tipo de Proveedor"]
                     .dropna()
@@ -1851,12 +1864,14 @@ if has_autorizacion:
                 f_tipo_proveedor = st.selectbox(
                     "Tipo de Proveedor",
                     ["Todos"] + tipos_proveedor,
+                    key="report_tipo_proveedor"
                 )
 
             with f5:
                 f_empresa = st.selectbox(
                     "Empresa",
                     ["Selecciona empresa"] + empresas,
+                    key="report_empresa"
                 )
 
             # =================================
@@ -1873,13 +1888,17 @@ if has_autorizacion:
                         .astype(str)
                         .unique()
                     )
-                    if not pases_df.empty and "No. de Unidad" in pases_df.columns
+                    if (
+                        not pases_df.empty
+                        and "No. de Unidad" in pases_df.columns
+                    )
                     else []
                 )
 
                 f_unidad = st.selectbox(
                     "No. de Unidad",
                     ["Selecciona unidad"] + unidades,
+                    key="report_unidad"
                 )
 
             with f7:
@@ -1893,12 +1912,15 @@ if has_autorizacion:
                         "Cerrado / Terminado",
                         "Cerrado / Cancelado",
                     ],
+                    key="report_estado"
                 )
 
             with f8:
+
                 f_fecha = st.date_input(
                     "Fecha de Captura",
                     value=None,
+                    key="report_fecha"
                 )
 
             resultados = pases_df.copy()
