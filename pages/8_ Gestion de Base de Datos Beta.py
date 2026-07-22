@@ -718,8 +718,9 @@ with tab_refacciones:
     # ==========================================
     # SUB TABS
     # ==========================================
-    tab_add, tab_delete, tab_replace = st.tabs([
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
         "➕ Agregar Refacción",
+        "✏️ Modificar Refacción",
         "🗑 Eliminar Refacción",
         "🔄 Reemplazar Tabla"
     ])
@@ -766,6 +767,77 @@ with tab_refacciones:
                         st.success("Refacción agregada.")
                         st.rerun()
 
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_parts.empty:
+
+            st.info("No hay refacciones.")
+
+        else:
+
+            selected = st.selectbox(
+                "Selecciona la refacción",
+                sorted(df_parts["parte"].tolist()),
+                key="edit_part"
+            )
+
+            row = df_parts[
+                df_parts["parte"] == selected
+            ].iloc[0]
+
+            with st.form("edit_part_form"):
+
+                parte = st.text_input(
+                    "Parte",
+                    value=row["parte"]
+                )
+
+                tipo = st.text_input(
+                    "Tipo",
+                    value=row["tipo"]
+                )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    if not parte.strip():
+
+                        st.error("La parte es obligatoria.")
+
+                    else:
+
+                        duplicate = df_parts[
+                            (df_parts["parte"] == parte.strip()) &
+                            (df_parts["parte"] != selected)
+                        ]
+
+                        if not duplicate.empty:
+
+                            st.error("Ya existe una refacción con ese nombre.")
+
+                        else:
+
+                            supabase.table("parts") \
+                                .update({
+                                    "parte": parte.strip(),
+                                    "tipo": tipo.strip()
+                                }) \
+                                .eq("parte", selected) \
+                                .execute()
+
+                            st.cache_data.clear()
+
+                            st.success("Refacción actualizada.")
+
+                            st.rerun()
+                            
     # =====================================================
     # DELETE
     # =====================================================
