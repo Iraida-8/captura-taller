@@ -1,5 +1,29 @@
 [
     {
+    "version": "1.07.22.26",
+    "date": "22/07/2026",
+    "changes": 
+        [
+            "Creación del módulo Gestión de Base de Datos para administración centralizada de catálogos del sistema",
+            "Implementación de administración completa de Unidades con funciones de alta, modificación, eliminación y reemplazo masivo mediante archivos Excel y CSV",
+            "Implementación de administración completa del catálogo de Refacciones con operaciones CRUD y reemplazo masivo de información",
+            "Implementación de administración completa del catálogo de Proveedores IVA con operaciones CRUD y reemplazo masivo de información",
+            "Implementación de administración completa del catálogo de Tipo de Cambio Mensual con operaciones CRUD y reemplazo masivo de información",
+            "Incorporación de exportación a Excel para todos los catálogos administrados desde el módulo",
+            "Implementación de validaciones para evitar registros duplicados y garantizar la integridad de la información",
+            "Optimización del sistema de recarga mediante limpieza automática de caché después de operaciones de actualización",
+            "Integración del sistema de auditoría para registrar automáticamente todas las operaciones de Inserción, Modificación, Eliminación y Reemplazo de información",
+            "Creación de la bitácora Audit Log con registro de usuario, fecha, acción realizada, tabla afectada y detalle de la operación",
+            "Incorporación del registro automático del nombre del usuario autenticado en cada evento de auditoría",
+            "Estandarización del registro de actividades para todos los catálogos administrados desde el módulo",
+            "Implementación de control de acceso para el módulo de Administración de Usuarios disponible únicamente para usuarios con rol Admin",
+            "Ocultamiento dinámico de la pestaña Administración de Usuarios para usuarios sin privilegios administrativos",
+            "Inicio del módulo Administración de Usuarios para gestión centralizada de perfiles y permisos del sistema",
+            "Preparación de la administración visual de Roles, Branch, Empresas y Permisos mediante generación automática del campo Access en formato JSON",
+            "Mejoras generales de organización del código, seguridad, mantenimiento y experiencia de administración del Portal OMEGA"
+        ]
+    },
+    {
     "version": "1.07.16.26",
     "date": "16/07/2026",
     "changes": 
