@@ -567,14 +567,32 @@ with tab_unidades:
 with tab_refacciones:
 
     st.subheader("Refacciones")
-    st.info("Próximamente")
+
+    st.dataframe(
+        df_parts,
+        use_container_width=True,
+        hide_index=True,
+        height=600,
+    )
 
 with tab_proveedores:
 
     st.subheader("Proveedores IVA")
-    st.info("Próximamente")
+
+    st.dataframe(
+        df_proveedores,
+        use_container_width=True,
+        hide_index=True,
+        height=600,
+    )
 
 with tab_tc:
 
     st.subheader("TC Mensual")
-    st.info("Próximamente")
+
+    st.dataframe(
+        df_tc,
+        use_container_width=True,
+        hide_index=True,
+        height=600,
+    )
