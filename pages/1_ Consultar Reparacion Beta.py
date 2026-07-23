@@ -441,6 +441,11 @@ if "Fecha OSTE" in df_externa.columns:
 # =====================================================
 # MANO DE OBRA INTERNA
 # =====================================================
+tab_interna, tab_ostes = st.tabs([
+    "🔧 Mano de Obra Interna",
+    "🧾 Mano de Obra Externa (OSTES)"
+])
+
 if (
     (unidad_sel != "Todas" or factura_sel != "Todas")
     and df_interna.empty
@@ -448,148 +453,150 @@ if (
 ):
     st.warning("No hay reportes para el filtro seleccionado.")
 
-st.markdown("### 🔧 Mano de Obra Interna")
+with tab_interna:
 
-if df_interna.empty:
-    st.info("No hay registros internos.")
-else:
-    cols = st.columns(5)
+    st.markdown("### 🔧 Mano de Obra Interna")
 
-    for i, (_, row) in enumerate(df_interna.iterrows()):
-        col = cols[i % 5]
+    if df_interna.empty:
+        st.info("No hay registros internos.")
+    else:
+        cols = st.columns(5)
 
-        with col:
-            reporte = safe(row.get("Reporte"))
-            unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
-            factura = safe(row.get("Factura"))
-            razon = safe(row.get("Razon Reparacion"))
-            desc = safe(row.get("Descripcion"))
-            fecha_registro = row.get("Fecha Registro")
-            if pd.notna(fecha_registro):
-                fecha_registro = fecha_registro.strftime("%d/%m/%Y")
-            else:
-                fecha_registro = ""
+        for i, (_, row) in enumerate(df_interna.iterrows()):
+            col = cols[i % 5]
 
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffffff;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:190px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{reporte}</div>
+            with col:
+                reporte = safe(row.get("Reporte"))
+                unidad = safe(row.get("Unidad"))
+                tipo = safe(row.get("Tipo Unidad"))
+                factura = safe(row.get("Factura"))
+                razon = safe(row.get("Razon Reparacion"))
+                desc = safe(row.get("Descripcion"))
+                fecha_registro = row.get("Fecha Registro")
+                if pd.notna(fecha_registro):
+                    fecha_registro = fecha_registro.strftime("%d/%m/%Y")
+                else:
+                    fecha_registro = ""
 
-                    <div style="font-size:0.8rem; margin-top:4px;">
-                        {unidad} &nbsp; | &nbsp; {tipo}
-                    </div>
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#ffffff;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:190px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{reporte}</div>
 
-                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
-                        {factura}
-                    </div>
+                        <div style="font-size:0.8rem; margin-top:4px;">
+                            {unidad} &nbsp; | &nbsp; {tipo}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                            {factura}
+                        </div>
 
-                    <div style="font-size:0.8rem;">
-                        <b>Razón:</b> {razon}
-                    </div>
+                        <hr style="margin:6px 0">
 
-                    <div style="font-size:0.8rem;">
-                        <b>Descripción:</b> {desc}
-                    </div>
+                        <div style="font-size:0.8rem;">
+                            <b>Razón:</b> {razon}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem;">
+                            <b>Descripción:</b> {desc}
+                        </div>
 
-                    <div style="font-size:0.75rem;">
-                        <b>Fecha Registro:</b> {fecha_registro}
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.75rem;">
+                            <b>Fecha Registro:</b> {fecha_registro}
+                        </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=260)
+                components.html(html, height=260)
 
-            if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
-                st.session_state.modal_orden = row.to_dict()
-                st.session_state.modal_tipo = "interna"
-
-st.divider()
+                if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
+                    st.session_state.modal_orden = row.to_dict()
+                    st.session_state.modal_tipo = "interna"
 
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
 # =====================================================
-st.markdown("### 🧾 Mano de Obra Externa (OSTES)")
+with tab_ostes:
 
-if df_externa.empty:
-    st.info("No hay registros externos.")
-else:
-    cols = st.columns(5)
+    st.markdown("### 🧾 Mano de Obra Externa (OSTES)")
 
-    for i, (_, row) in enumerate(df_externa.iterrows()):
-        col = cols[i % 5]
+    if df_externa.empty:
+        st.info("No hay registros externos.")
+    else:
+        cols = st.columns(5)
 
-        with col:
-            reporte = safe(row.get("Reporte"))
-            unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
-            factura = safe(row.get("Factura"))
-            razon = safe(row.get("Razon Reparacion"))
-            desc = safe(row.get("Descripcion"))
-            fecha_oste = row.get("Fecha OSTE")
-            if pd.notna(fecha_oste):
-                fecha_oste = fecha_oste.strftime("%d/%m/%Y")
-            else:
-                fecha_oste = ""
+        for i, (_, row) in enumerate(df_externa.iterrows()):
+            col = cols[i % 5]
 
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffffff;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:190px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{reporte}</div>
+            with col:
+                reporte = safe(row.get("Reporte"))
+                unidad = safe(row.get("Unidad"))
+                tipo = safe(row.get("Tipo Unidad"))
+                factura = safe(row.get("Factura"))
+                razon = safe(row.get("Razon Reparacion"))
+                desc = safe(row.get("Descripcion"))
+                fecha_oste = row.get("Fecha OSTE")
+                if pd.notna(fecha_oste):
+                    fecha_oste = fecha_oste.strftime("%d/%m/%Y")
+                else:
+                    fecha_oste = ""
 
-                    <div style="font-size:0.8rem; margin-top:4px;">
-                        {unidad} &nbsp; | &nbsp; {tipo}
-                    </div>
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#ffffff;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:190px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{reporte}</div>
 
-                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
-                        {factura}
-                    </div>
+                        <div style="font-size:0.8rem; margin-top:4px;">
+                            {unidad} &nbsp; | &nbsp; {tipo}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                            {factura}
+                        </div>
 
-                    <div style="font-size:0.8rem;">
-                        <b>Razón:</b> {razon}
-                    </div>
+                        <hr style="margin:6px 0">
 
-                    <div style="font-size:0.8rem;">
-                        <b>Descripción:</b> {desc}
-                    </div>
+                        <div style="font-size:0.8rem;">
+                            <b>Razón:</b> {razon}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem;">
+                            <b>Descripción:</b> {desc}
+                        </div>
 
-                    <div style="font-size:0.75rem;">
-                        <b>Fecha OSTE:</b> {fecha_oste}
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.75rem;">
+                            <b>Fecha OSTE:</b> {fecha_oste}
+                        </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=260)
+                components.html(html, height=260)
 
-            if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
-                st.session_state.modal_orden = row.to_dict()
-                st.session_state.modal_tipo = "oste"
+                if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
+                    st.session_state.modal_orden = row.to_dict()
+                    st.session_state.modal_tipo = "oste"
 
 st.divider()
 
