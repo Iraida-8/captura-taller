@@ -548,27 +548,30 @@ with tab_interna:
 
         st.write("")
 
-        c1, c2, c3 = st.columns([1,2,1])
+        c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
 
         with c1:
             if st.button(
                 "◀ Anterior",
                 disabled=st.session_state.page_interna == 1,
-                key="prev_interna"
+                key="prev_interna",
+                use_container_width=True
             ):
                 st.session_state.page_interna -= 1
                 st.rerun()
 
-        with c2:
+        with c3:
             st.markdown(
-                f"### Página {st.session_state.page_interna} de {total_pages_interna}"
+                f"<h3 style='text-align:center;'>Página {st.session_state.page_interna} de {total_pages_interna}</h3>",
+                unsafe_allow_html=True
             )
 
-        with c3:
+        with c5:
             if st.button(
                 "Siguiente ▶",
                 disabled=st.session_state.page_interna >= total_pages_interna,
-                key="next_interna"
+                key="next_interna",
+                use_container_width=True
             ):
                 st.session_state.page_interna += 1
                 st.rerun()
