@@ -4,6 +4,7 @@ from auth import require_login, require_access
 import streamlit.components.v1 as components
 from supabase import create_client
 from pages.css import load_css
+import math
 
 # =================================
 # RELEASE CHANNEL
@@ -233,17 +234,14 @@ def normalizar_columnas(df, tipo):
 # =================================
 # EMPRESA SELECTION
 # =================================
-st.subheader("Selección de Empresa")
+st.subheader("Empresa")
 
-empresa = st.selectbox(
-    "Empresa",
-    ["Selecciona empresa"] + list(EMPRESA_CONFIG.keys()),
-    index=0
+empresa = st.radio(
+    "",
+    list(EMPRESA_CONFIG.keys()),
+    horizontal=True,
+    label_visibility="collapsed",
 )
-
-if empresa == "Selecciona empresa":
-    st.info("Selecciona una empresa para consultar las órdenes.")
-    st.stop()
 
 config = EMPRESA_CONFIG[empresa]
 
@@ -396,9 +394,11 @@ if st.session_state.last_filters != current_filters:
     st.session_state.modal_orden = None
     st.session_state.modal_tipo = None
     st.session_state.last_filters = current_filters
+    st.session_state.page_interna = 1
+    st.session_state.page_oste = 1
 
 # =====================================================
-# BUILD INTERNAL DATASET (LATEST 10)
+# BUILD INTERNAL DATASET
 # =====================================================
 df_interna = df.copy()
 
@@ -417,10 +417,31 @@ if "Fecha Registro" in df_interna.columns:
         by="Fecha Registro",
         ascending=False,
         na_position="last"
-    ).head(10)
+    )
+
+PAGE_SIZE = 10
+
+if "page_interna" not in st.session_state:
+    st.session_state.page_interna = 1
+
+total_pages_interna = max(
+    1,
+    math.ceil(len(df_interna) / PAGE_SIZE)
+)
+
+# Prevent going past last page
+st.session_state.page_interna = min(
+    st.session_state.page_interna,
+    total_pages_interna
+)
+
+start = (st.session_state.page_interna - 1) * PAGE_SIZE
+end = start + PAGE_SIZE
+
+df_interna = df_interna.iloc[start:end]
 
 # =====================================================
-# BUILD EXTERNAL DATASET (LATEST 10)
+# BUILD EXTERNAL DATASET
 # =====================================================
 df_externa = df_ostes.copy()
 
@@ -439,11 +460,34 @@ if "Fecha OSTE" in df_externa.columns:
         by="Fecha OSTE",
         ascending=False,
         na_position="last"
-    ).head(10)
+    )
+
+if "page_oste" not in st.session_state:
+    st.session_state.page_oste = 1
+
+total_pages_oste = max(
+    1,
+    math.ceil(len(df_externa) / PAGE_SIZE)
+)
+
+st.session_state.page_oste = min(
+    st.session_state.page_oste,
+    total_pages_oste
+)
+
+start = (st.session_state.page_oste - 1) * PAGE_SIZE
+end = start + PAGE_SIZE
+
+df_externa = df_externa.iloc[start:end]
 
 # =====================================================
 # MANO DE OBRA INTERNA
 # =====================================================
+tab_interna, tab_ostes = st.tabs([
+    "🔧 Mano de Obra Interna",
+    "🧾 Mano de Obra Externa (OSTES)"
+])
+
 if (
     (unidad_sel != "Todas" or factura_sel != "Todas")
     and df_interna.empty
@@ -451,188 +495,243 @@ if (
 ):
     st.warning("No hay reportes para el filtro seleccionado.")
 
-st.markdown("### 🔧 Mano de Obra Interna")
+with tab_interna:
 
-if df_interna.empty:
-    st.info("No hay registros internos.")
-else:
-    cols = st.columns(5)
+    st.markdown("### 🔧 Mano de Obra Interna")
 
-    for i, (_, row) in enumerate(df_interna.iterrows()):
-        col = cols[i % 5]
+    if df_interna.empty:
+        st.info("No hay registros internos.")
+    else:
+        cols = st.columns(5)
 
-        with col:
-            reporte = safe(row.get("Reporte"))
-            unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
-            factura = safe(row.get("Factura"))
-            razon = safe(row.get("Razon Reparacion"))
-            desc = safe(row.get("Descripcion"))
-            fecha_registro = row.get("Fecha Registro")
-            if pd.notna(fecha_registro):
-                fecha_registro = fecha_registro.strftime("%d/%m/%Y")
-            else:
-                fecha_registro = ""
+        for i, (_, row) in enumerate(df_interna.iterrows()):
+            col = cols[i % 5]
 
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffffff;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:190px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{reporte}</div>
+            with col:
+                reporte = safe(row.get("Reporte"))
+                unidad = safe(row.get("Unidad"))
+                tipo = safe(row.get("Tipo Unidad"))
+                factura = safe(row.get("Factura"))
+                razon = safe(row.get("Razon Reparacion"))
+                desc = safe(row.get("Descripcion"))
+                fecha_registro = row.get("Fecha Registro")
+                if pd.notna(fecha_registro):
+                    fecha_registro = fecha_registro.strftime("%d/%m/%Y")
+                else:
+                    fecha_registro = ""
 
-                    <div style="font-size:0.8rem; margin-top:4px;">
-                        {unidad} &nbsp; | &nbsp; {tipo}
-                    </div>
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#ffffff;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:190px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{reporte}</div>
 
-                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
-                        {factura}
-                    </div>
+                        <div style="font-size:0.8rem; margin-top:4px;">
+                            {unidad} &nbsp; | &nbsp; {tipo}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                            {factura}
+                        </div>
 
-                    <div style="font-size:0.8rem;">
-                        <b>Razón:</b> {razon}
-                    </div>
+                        <hr style="margin:6px 0">
 
-                    <div style="font-size:0.8rem;">
-                        <b>Descripción:</b> {desc}
-                    </div>
+                        <div style="font-size:0.8rem;">
+                            <b>Razón:</b> {razon}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem;">
+                            <b>Descripción:</b> {desc}
+                        </div>
 
-                    <div style="font-size:0.75rem;">
-                        <b>Fecha Registro:</b> {fecha_registro}
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.75rem;">
+                            <b>Fecha Registro:</b> {fecha_registro}
+                        </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=260)
+                components.html(html, height=260)
 
-            if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
-                st.session_state.modal_orden = row.to_dict()
-                st.session_state.modal_tipo = "interna"
+                if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
+                    st.session_state.modal_orden = row.to_dict()
+                    st.session_state.modal_tipo = "interna"
 
-st.divider()
+        st.write("")
+
+        c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
+
+        with c1:
+            if st.button(
+                "◀ Anterior",
+                disabled=st.session_state.page_interna == 1,
+                key="prev_interna",
+                use_container_width=True
+            ):
+                st.session_state.page_interna -= 1
+                st.rerun()
+
+        with c3:
+            st.markdown(
+                f"<h3 style='text-align:center;'>Página {st.session_state.page_interna} de {total_pages_interna}</h3>",
+                unsafe_allow_html=True
+            )
+
+        with c5:
+            if st.button(
+                "Siguiente ▶",
+                disabled=st.session_state.page_interna >= total_pages_interna,
+                key="next_interna",
+                use_container_width=True
+            ):
+                st.session_state.page_interna += 1
+                st.rerun()
 
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
 # =====================================================
-st.markdown("### 🧾 Mano de Obra Externa (OSTES)")
+with tab_ostes:
 
-if df_externa.empty:
-    st.info("No hay registros externos.")
-else:
-    cols = st.columns(5)
+    st.markdown("### 🧾 Mano de Obra Externa (OSTES)")
 
-    for i, (_, row) in enumerate(df_externa.iterrows()):
-        col = cols[i % 5]
+    if df_externa.empty:
+        st.info("No hay registros externos.")
+    else:
+        cols = st.columns(5)
 
-        with col:
-            reporte = safe(row.get("Reporte"))
-            unidad = safe(row.get("Unidad"))
-            tipo = safe(row.get("Tipo Unidad"))
-            factura = safe(row.get("Factura"))
-            razon = safe(row.get("Razon Reparacion"))
-            desc = safe(row.get("Descripcion"))
-            fecha_oste = row.get("Fecha OSTE")
-            if pd.notna(fecha_oste):
-                fecha_oste = fecha_oste.strftime("%d/%m/%Y")
-            else:
-                fecha_oste = ""
+        for i, (_, row) in enumerate(df_externa.iterrows()):
+            col = cols[i % 5]
 
-            html = f"""
-            <div style="padding:6px;">
-                <div style="
-                    background:#ffffff;
-                    padding:14px;
-                    border-radius:16px;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                    color:#111;
-                    min-height:190px;
-                    font-family:sans-serif;
-                ">
-                    <div style="font-weight:900;">{reporte}</div>
+            with col:
+                reporte = safe(row.get("Reporte"))
+                unidad = safe(row.get("Unidad"))
+                tipo = safe(row.get("Tipo Unidad"))
+                factura = safe(row.get("Factura"))
+                razon = safe(row.get("Razon Reparacion"))
+                desc = safe(row.get("Descripcion"))
+                fecha_oste = row.get("Fecha OSTE")
+                if pd.notna(fecha_oste):
+                    fecha_oste = fecha_oste.strftime("%d/%m/%Y")
+                else:
+                    fecha_oste = ""
 
-                    <div style="font-size:0.8rem; margin-top:4px;">
-                        {unidad} &nbsp; | &nbsp; {tipo}
-                    </div>
+                html = f"""
+                <div style="padding:6px;">
+                    <div style="
+                        background:#ffffff;
+                        padding:14px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        min-height:190px;
+                        font-family:sans-serif;
+                    ">
+                        <div style="font-weight:900;">{reporte}</div>
 
-                    <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
-                        {factura}
-                    </div>
+                        <div style="font-size:0.8rem; margin-top:4px;">
+                            {unidad} &nbsp; | &nbsp; {tipo}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">
+                            {factura}
+                        </div>
 
-                    <div style="font-size:0.8rem;">
-                        <b>Razón:</b> {razon}
-                    </div>
+                        <hr style="margin:6px 0">
 
-                    <div style="font-size:0.8rem;">
-                        <b>Descripción:</b> {desc}
-                    </div>
+                        <div style="font-size:0.8rem;">
+                            <b>Razón:</b> {razon}
+                        </div>
 
-                    <hr style="margin:6px 0">
+                        <div style="font-size:0.8rem;">
+                            <b>Descripción:</b> {desc}
+                        </div>
 
-                    <div style="font-size:0.75rem;">
-                        <b>Fecha OSTE:</b> {fecha_oste}
+                        <hr style="margin:6px 0">
+
+                        <div style="font-size:0.75rem;">
+                            <b>Fecha OSTE:</b> {fecha_oste}
+                        </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
 
-            components.html(html, height=260)
+                components.html(html, height=260)
 
-            if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
-                st.session_state.modal_orden = row.to_dict()
-                st.session_state.modal_tipo = "oste"
+                if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
+                    st.session_state.modal_orden = row.to_dict()
+                    st.session_state.modal_tipo = "oste"
+
+        st.write("")
+
+        c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
+
+        with c1:
+            if st.button(
+                "◀ Anterior",
+                disabled=st.session_state.page_oste == 1,
+                key="prev_oste",
+                use_container_width=True
+            ):
+                st.session_state.page_oste -= 1
+                st.rerun()
+
+        with c3:
+            st.markdown(
+                f"<h3 style='text-align:center;'>Página {st.session_state.page_oste} de {total_pages_oste}</h3>",
+                unsafe_allow_html=True
+            )
+
+        with c5:
+            if st.button(
+                "Siguiente ▶",
+                disabled=st.session_state.page_oste >= total_pages_oste,
+                key="next_oste",
+                use_container_width=True
+            ):
+                st.session_state.page_oste += 1
+                st.rerun()
 
 st.divider()
 
-# =================================
-# REFACCIONES RECIENTES
-# =================================
-st.subheader("Refacciones Recientes")
+reportes_tab, refacciones_tab = st.tabs([
+    "📋 Reportes Mano de Obra",
+    "🔩 Refacciones"
+])
 
-if not df_partes.empty and "Unidad" in df_partes.columns:
+with refacciones_tab:
 
-    LOCK_DATE = pd.Timestamp("2025-01-01")
+    # =================================
+    # REFACCIONES RECIENTES
+    # =================================
+    st.subheader("Refacciones Recientes")
 
-    df_partes_base = df_partes[
-        df_partes["Fecha Compra"] >= LOCK_DATE
-    ].copy()
+    if not df_partes.empty and "Unidad" in df_partes.columns:
 
-    # -----------------------------
-    # DROPDOWNS
-    # -----------------------------
-    col1, col2 = st.columns(2)
+        LOCK_DATE = pd.Timestamp("2025-01-01")
 
-    with col1:
-        unidad_partes_sel = st.selectbox(
-            "Filtrar por Unidad",
-            ["Todas"] + sorted(
-                df_partes_base["Unidad"]
-                .dropna()
-                .astype(str)
-                .str.strip()
-                .unique()
-            ),
-            index=0
-        )
+        df_partes_base = df_partes[
+            df_partes["Fecha Compra"] >= LOCK_DATE
+        ].copy()
 
-    with col2:
-        if "Parte" in df_partes_base.columns:
-            parte_sel = st.selectbox(
-                "Filtrar por Parte",
+        # -----------------------------
+        # DROPDOWNS
+        # -----------------------------
+        col1, col2 = st.columns(2)
+
+        with col1:
+            unidad_partes_sel = st.selectbox(
+                "Filtrar por Unidad",
                 ["Todas"] + sorted(
-                    df_partes_base["Parte"]
+                    df_partes_base["Unidad"]
                     .dropna()
                     .astype(str)
                     .str.strip()
@@ -640,226 +739,266 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
                 ),
                 index=0
             )
+
+        with col2:
+            if "Parte" in df_partes_base.columns:
+                parte_sel = st.selectbox(
+                    "Filtrar por Parte",
+                    ["Todas"] + sorted(
+                        df_partes_base["Parte"]
+                        .dropna()
+                        .astype(str)
+                        .str.strip()
+                        .unique()
+                    ),
+                    index=0
+                )
+            else:
+                parte_sel = "Todas"
+
+        # -----------------------------
+        # APPLY FILTERS
+        # -----------------------------
+        df_partes_filtrado = df_partes_base.copy()
+
+        if unidad_partes_sel != "Todas":
+            df_partes_filtrado = df_partes_filtrado[
+                df_partes_filtrado["Unidad"]
+                .astype(str)
+                .str.strip()
+                == unidad_partes_sel.strip()
+            ]
+
+        if parte_sel != "Todas":
+            df_partes_filtrado = df_partes_filtrado[
+                df_partes_filtrado["Parte"]
+                .astype(str)
+                .str.strip()
+                == parte_sel.strip()
+            ]
+
+        # -----------------------------
+        # SORT
+        # -----------------------------
+        df_partes_filtrado = df_partes_filtrado.sort_values(
+            "Fecha Compra",
+            ascending=False,
+            na_position="last"
+        )
+
+        # -----------------------------
+        # COLUMN LOGIC
+        # -----------------------------
+        if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte",
+                "PU USD",
+                "Cantidad",
+                "Total USD"
+            ]
+        elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte",
+                "PU",
+                "IVA",
+                "Cantidad",
+                "Total Correccion"
+            ]
         else:
-            parte_sel = "Todas"
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte"
+            ]
 
-    # -----------------------------
-    # APPLY FILTERS
-    # -----------------------------
-    df_partes_filtrado = df_partes_base.copy()
-
-    if unidad_partes_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Unidad"]
-            .astype(str)
-            .str.strip()
-            == unidad_partes_sel.strip()
+        df_partes_final = df_partes_filtrado[
+            [c for c in columnas_partes if c in df_partes_filtrado.columns]
         ]
 
-    if parte_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Parte"]
-            .astype(str)
-            .str.strip()
-            == parte_sel.strip()
-        ]
+        st.dataframe(
+            df_partes_final,
+            hide_index=True,
+            use_container_width=True
+        )
 
-    # -----------------------------
-    # SORT
-    # -----------------------------
-    df_partes_filtrado = df_partes_filtrado.sort_values(
-        "Fecha Compra",
-        ascending=False,
-        na_position="last"
-    )
+        st.download_button(
+            "⬇ Descargar Refacciones",
+            data=df_partes_final.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"Refacciones_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+        st.caption(f"Total de refacciones: {len(df_partes_final)}")
 
-    # -----------------------------
-    # COLUMN LOGIC
-    # -----------------------------
-    if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU USD",
-            "Cantidad",
-            "Total USD"
-        ]
-    elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU",
-            "IVA",
-            "Cantidad",
-            "Total Correccion"
-        ]
     else:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte"
-        ]
-
-    df_partes_final = df_partes_filtrado[
-        [c for c in columnas_partes if c in df_partes_filtrado.columns]
-    ]
-
-    st.dataframe(
-        df_partes_final,
-        hide_index=True,
-        use_container_width=True
-    )
-    st.caption(f"Total de refacciones: {len(df_partes_final)}")
-
-else:
-    st.info("No hay información de partes disponible para esta empresa.")
+        st.info("No hay información de partes disponible para esta empresa.")
 
 # =================================
 # FILTROS - TABLAS COMPLETAS (2025+)
 # =================================
-st.divider()
-st.markdown("### Filtros - Tablas Completas")
+with reportes_tab:
+        
+    st.divider()
+    st.markdown("### Filtros - Tablas Completas")
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-# -------- UNIDAD TABLA --------
-with col1:
+    # -------- UNIDAD TABLA --------
+    with col1:
 
-    unidades_interna_tabla = []
-    unidades_externa_tabla = []
+        unidades_interna_tabla = []
+        unidades_externa_tabla = []
 
-    if "Unidad" in df.columns:
-        unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
+        if "Unidad" in df.columns:
+            unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
 
-    if "Unidad" in df_ostes.columns:
-        unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+        if "Unidad" in df_ostes.columns:
+            unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
 
-    unidades_tabla_unificadas = sorted(
-        pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
-    )
-
-    unidad_tabla_sel = st.selectbox(
-        "Unidad",
-        ["Todas"] + unidades_tabla_unificadas,
-        index=0,
-        key="unidad_tabla"
-    )
-
-# -------- FACTURA TABLA --------
-with col2:
-
-    facturas_interna_tabla = []
-    facturas_externa_tabla = []
-
-    if "Factura" in df.columns:
-        facturas_interna_tabla = (
-            df["Factura"]
-            .dropna()
-            .astype(str)
-            .str.strip()
-        )
-        facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
-
-    if "Factura" in df_ostes.columns:
-        facturas_externa_tabla = (
-            df_ostes["Factura"]
-            .dropna()
-            .astype(str)
-            .str.strip()
-        )
-        facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
-
-    facturas_tabla_unificadas = sorted(
-        pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
-    )
-
-    factura_tabla_sel = st.selectbox(
-        "Factura",
-        ["Todas"] + facturas_tabla_unificadas,
-        index=0,
-        key="factura_tabla"
-    )
-
-# =================================
-# TABLA COMPLETA - INTERNAS (2025+)
-# =================================
-st.subheader("Todas las Órdenes Internas")
-
-df_tabla_interna = df.copy()
-
-df_tabla_interna = df.copy()
-
-if unidad_tabla_sel != "Todas":
-    df_tabla_interna = df_tabla_interna[
-        df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-    ]
-
-if factura_tabla_sel != "Todas":
-    df_tabla_interna = df_tabla_interna[
-        df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-    ]
-
-if df_tabla_interna.empty:
-    st.info("No hay órdenes internas.")
-else:
-
-    columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
-    columnas_mostrar = [
-        c for c in df_tabla_interna.columns
-        if c not in columnas_ocultar
-    ]
-
-    if "Fecha Registro" in df_tabla_interna.columns:
-        df_tabla_interna = df_tabla_interna.sort_values(
-            "Fecha Registro",
-            ascending=False
+        unidades_tabla_unificadas = sorted(
+            pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
         )
 
-    st.dataframe(
-        df_tabla_interna[columnas_mostrar],
-        hide_index=True,
-        use_container_width=True
-    )
-
-    st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
-
-# =================================
-# TABLA COMPLETA - EXTERNAS (OSTES 2025+)
-# =================================
-st.divider()
-st.subheader("Todas las Órdenes Externas (OSTES)")
-
-df_tabla_externa = df_ostes.copy()
-
-if unidad_tabla_sel != "Todas":
-    df_tabla_externa = df_tabla_externa[
-        df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-    ]
-
-if factura_tabla_sel != "Todas":
-    df_tabla_externa = df_tabla_externa[
-        df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-    ]
-
-if df_tabla_externa.empty:
-    st.info("No hay registros externos.")
-else:
-
-    if "Fecha OSTE" in df_tabla_externa.columns:
-        df_tabla_externa = df_tabla_externa.sort_values(
-            "Fecha OSTE",
-            ascending=False
+        unidad_tabla_sel = st.selectbox(
+            "Unidad",
+            ["Todas"] + unidades_tabla_unificadas,
+            index=0,
+            key="unidad_tabla"
         )
 
-    st.dataframe(
-        df_tabla_externa,
-        hide_index=True,
-        use_container_width=True
-    )
+    # -------- FACTURA TABLA --------
+    with col2:
 
-    st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
+        facturas_interna_tabla = []
+        facturas_externa_tabla = []
+
+        if "Factura" in df.columns:
+            facturas_interna_tabla = (
+                df["Factura"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
+
+        if "Factura" in df_ostes.columns:
+            facturas_externa_tabla = (
+                df_ostes["Factura"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
+
+        facturas_tabla_unificadas = sorted(
+            pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
+        )
+
+        factura_tabla_sel = st.selectbox(
+            "Factura",
+            ["Todas"] + facturas_tabla_unificadas,
+            index=0,
+            key="factura_tabla"
+        )
+
+    # =================================
+    # TABLA COMPLETA - INTERNAS (2025+)
+    # =================================
+    st.subheader("Todas las Órdenes Internas")
+
+    df_tabla_interna = df.copy()
+
+    df_tabla_interna = df.copy()
+
+    if unidad_tabla_sel != "Todas":
+        df_tabla_interna = df_tabla_interna[
+            df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+        ]
+
+    if factura_tabla_sel != "Todas":
+        df_tabla_interna = df_tabla_interna[
+            df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
+        ]
+
+    if df_tabla_interna.empty:
+        st.info("No hay órdenes internas.")
+    else:
+
+        columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+        columnas_mostrar = [
+            c for c in df_tabla_interna.columns
+            if c not in columnas_ocultar
+        ]
+
+        if "Fecha Registro" in df_tabla_interna.columns:
+            df_tabla_interna = df_tabla_interna.sort_values(
+                "Fecha Registro",
+                ascending=False
+            )
+
+        st.dataframe(
+            df_tabla_interna[columnas_mostrar],
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.download_button(
+            "⬇ Descargar Órdenes Internas",
+            data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"Ordenes_Internas_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+        st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
+
+    # =================================
+    # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
+    # =================================
+    st.divider()
+    st.subheader("Todas las Órdenes Externas (OSTES)")
+
+    df_tabla_externa = df_ostes.copy()
+
+    if unidad_tabla_sel != "Todas":
+        df_tabla_externa = df_tabla_externa[
+            df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+        ]
+
+    if factura_tabla_sel != "Todas":
+        df_tabla_externa = df_tabla_externa[
+            df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
+        ]
+
+    if df_tabla_externa.empty:
+        st.info("No hay registros externos.")
+    else:
+
+        if "Fecha OSTE" in df_tabla_externa.columns:
+            df_tabla_externa = df_tabla_externa.sort_values(
+                "Fecha OSTE",
+                ascending=False
+            )
+
+        st.dataframe(
+            df_tabla_externa,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.download_button(
+            "⬇ Descargar Órdenes Externas",
+            data=df_tabla_externa.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"OSTES_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+        st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
 
 # =================================
 # VIEW MODAL
