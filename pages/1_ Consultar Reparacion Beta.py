@@ -670,35 +670,35 @@ with tab_ostes:
                     st.session_state.modal_orden = row.to_dict()
                     st.session_state.modal_tipo = "oste"
 
-            st.write("")
+        st.write("")
 
-            c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
+        c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
 
-            with c1:
-                if st.button(
-                    "◀ Anterior",
-                    disabled=st.session_state.page_oste == 1,
-                    key="prev_oste",
-                    use_container_width=True
-                ):
-                    st.session_state.page_oste -= 1
-                    st.rerun()
+        with c1:
+            if st.button(
+                "◀ Anterior",
+                disabled=st.session_state.page_oste == 1,
+                key="prev_oste",
+                use_container_width=True
+            ):
+                st.session_state.page_oste -= 1
+                st.rerun()
 
-            with c3:
-                st.markdown(
-                    f"<h3 style='text-align:center;'>Página {st.session_state.page_oste} de {total_pages_oste}</h3>",
-                    unsafe_allow_html=True
-                )
+        with c3:
+            st.markdown(
+                f"<h3 style='text-align:center;'>Página {st.session_state.page_oste} de {total_pages_oste}</h3>",
+                unsafe_allow_html=True
+            )
 
-            with c5:
-                if st.button(
-                    "Siguiente ▶",
-                    disabled=st.session_state.page_oste >= total_pages_oste,
-                    key="next_oste",
-                    use_container_width=True
-                ):
-                    st.session_state.page_oste += 1
-                    st.rerun()
+        with c5:
+            if st.button(
+                "Siguiente ▶",
+                disabled=st.session_state.page_oste >= total_pages_oste,
+                key="next_oste",
+                use_container_width=True
+            ):
+                st.session_state.page_oste += 1
+                st.rerun()
 
 st.divider()
 
