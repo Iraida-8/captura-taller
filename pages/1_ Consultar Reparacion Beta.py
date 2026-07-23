@@ -702,43 +702,36 @@ with tab_ostes:
 
 st.divider()
 
-# =================================
-# REFACCIONES RECIENTES
-# =================================
-st.subheader("Refacciones Recientes")
+reportes_tab, refacciones_tab = st.tabs([
+    "📋 Reportes",
+    "🔩 Refacciones"
+])
 
-if not df_partes.empty and "Unidad" in df_partes.columns:
+with refacciones_tab:
 
-    LOCK_DATE = pd.Timestamp("2025-01-01")
+    # =================================
+    # REFACCIONES RECIENTES
+    # =================================
+    st.subheader("Refacciones Recientes")
 
-    df_partes_base = df_partes[
-        df_partes["Fecha Compra"] >= LOCK_DATE
-    ].copy()
+    if not df_partes.empty and "Unidad" in df_partes.columns:
 
-    # -----------------------------
-    # DROPDOWNS
-    # -----------------------------
-    col1, col2 = st.columns(2)
+        LOCK_DATE = pd.Timestamp("2025-01-01")
 
-    with col1:
-        unidad_partes_sel = st.selectbox(
-            "Filtrar por Unidad",
-            ["Todas"] + sorted(
-                df_partes_base["Unidad"]
-                .dropna()
-                .astype(str)
-                .str.strip()
-                .unique()
-            ),
-            index=0
-        )
+        df_partes_base = df_partes[
+            df_partes["Fecha Compra"] >= LOCK_DATE
+        ].copy()
 
-    with col2:
-        if "Parte" in df_partes_base.columns:
-            parte_sel = st.selectbox(
-                "Filtrar por Parte",
+        # -----------------------------
+        # DROPDOWNS
+        # -----------------------------
+        col1, col2 = st.columns(2)
+
+        with col1:
+            unidad_partes_sel = st.selectbox(
+                "Filtrar por Unidad",
                 ["Todas"] + sorted(
-                    df_partes_base["Parte"]
+                    df_partes_base["Unidad"]
                     .dropna()
                     .astype(str)
                     .str.strip()
@@ -746,226 +739,242 @@ if not df_partes.empty and "Unidad" in df_partes.columns:
                 ),
                 index=0
             )
+
+        with col2:
+            if "Parte" in df_partes_base.columns:
+                parte_sel = st.selectbox(
+                    "Filtrar por Parte",
+                    ["Todas"] + sorted(
+                        df_partes_base["Parte"]
+                        .dropna()
+                        .astype(str)
+                        .str.strip()
+                        .unique()
+                    ),
+                    index=0
+                )
+            else:
+                parte_sel = "Todas"
+
+        # -----------------------------
+        # APPLY FILTERS
+        # -----------------------------
+        df_partes_filtrado = df_partes_base.copy()
+
+        if unidad_partes_sel != "Todas":
+            df_partes_filtrado = df_partes_filtrado[
+                df_partes_filtrado["Unidad"]
+                .astype(str)
+                .str.strip()
+                == unidad_partes_sel.strip()
+            ]
+
+        if parte_sel != "Todas":
+            df_partes_filtrado = df_partes_filtrado[
+                df_partes_filtrado["Parte"]
+                .astype(str)
+                .str.strip()
+                == parte_sel.strip()
+            ]
+
+        # -----------------------------
+        # SORT
+        # -----------------------------
+        df_partes_filtrado = df_partes_filtrado.sort_values(
+            "Fecha Compra",
+            ascending=False,
+            na_position="last"
+        )
+
+        # -----------------------------
+        # COLUMN LOGIC
+        # -----------------------------
+        if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte",
+                "PU USD",
+                "Cantidad",
+                "Total USD"
+            ]
+        elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte",
+                "PU",
+                "IVA",
+                "Cantidad",
+                "Total Correccion"
+            ]
         else:
-            parte_sel = "Todas"
+            columnas_partes = [
+                "Unidad",
+                "Fecha Compra",
+                "Parte"
+            ]
 
-    # -----------------------------
-    # APPLY FILTERS
-    # -----------------------------
-    df_partes_filtrado = df_partes_base.copy()
-
-    if unidad_partes_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Unidad"]
-            .astype(str)
-            .str.strip()
-            == unidad_partes_sel.strip()
+        df_partes_final = df_partes_filtrado[
+            [c for c in columnas_partes if c in df_partes_filtrado.columns]
         ]
 
-    if parte_sel != "Todas":
-        df_partes_filtrado = df_partes_filtrado[
-            df_partes_filtrado["Parte"]
-            .astype(str)
-            .str.strip()
-            == parte_sel.strip()
-        ]
+        st.dataframe(
+            df_partes_final,
+            hide_index=True,
+            use_container_width=True
+        )
+        st.caption(f"Total de refacciones: {len(df_partes_final)}")
 
-    # -----------------------------
-    # SORT
-    # -----------------------------
-    df_partes_filtrado = df_partes_filtrado.sort_values(
-        "Fecha Compra",
-        ascending=False,
-        na_position="last"
-    )
-
-    # -----------------------------
-    # COLUMN LOGIC
-    # -----------------------------
-    if empresa in ["LINCOLN FREIGHT", "SET FREIGHT INTERNATIONAL", "SET LOGIS PLUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU USD",
-            "Cantidad",
-            "Total USD"
-        ]
-    elif empresa in ["IGLOO TRANSPORT", "PICUS"]:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte",
-            "PU",
-            "IVA",
-            "Cantidad",
-            "Total Correccion"
-        ]
     else:
-        columnas_partes = [
-            "Unidad",
-            "Fecha Compra",
-            "Parte"
-        ]
-
-    df_partes_final = df_partes_filtrado[
-        [c for c in columnas_partes if c in df_partes_filtrado.columns]
-    ]
-
-    st.dataframe(
-        df_partes_final,
-        hide_index=True,
-        use_container_width=True
-    )
-    st.caption(f"Total de refacciones: {len(df_partes_final)}")
-
-else:
-    st.info("No hay información de partes disponible para esta empresa.")
+        st.info("No hay información de partes disponible para esta empresa.")
 
 # =================================
 # FILTROS - TABLAS COMPLETAS (2025+)
 # =================================
-st.divider()
-st.markdown("### Filtros - Tablas Completas")
+with reportes_tab:
+        
+    st.divider()
+    st.markdown("### Filtros - Tablas Completas")
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-# -------- UNIDAD TABLA --------
-with col1:
+    # -------- UNIDAD TABLA --------
+    with col1:
 
-    unidades_interna_tabla = []
-    unidades_externa_tabla = []
+        unidades_interna_tabla = []
+        unidades_externa_tabla = []
 
-    if "Unidad" in df.columns:
-        unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
+        if "Unidad" in df.columns:
+            unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
 
-    if "Unidad" in df_ostes.columns:
-        unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+        if "Unidad" in df_ostes.columns:
+            unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
 
-    unidades_tabla_unificadas = sorted(
-        pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
-    )
-
-    unidad_tabla_sel = st.selectbox(
-        "Unidad",
-        ["Todas"] + unidades_tabla_unificadas,
-        index=0,
-        key="unidad_tabla"
-    )
-
-# -------- FACTURA TABLA --------
-with col2:
-
-    facturas_interna_tabla = []
-    facturas_externa_tabla = []
-
-    if "Factura" in df.columns:
-        facturas_interna_tabla = (
-            df["Factura"]
-            .dropna()
-            .astype(str)
-            .str.strip()
-        )
-        facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
-
-    if "Factura" in df_ostes.columns:
-        facturas_externa_tabla = (
-            df_ostes["Factura"]
-            .dropna()
-            .astype(str)
-            .str.strip()
-        )
-        facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
-
-    facturas_tabla_unificadas = sorted(
-        pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
-    )
-
-    factura_tabla_sel = st.selectbox(
-        "Factura",
-        ["Todas"] + facturas_tabla_unificadas,
-        index=0,
-        key="factura_tabla"
-    )
-
-# =================================
-# TABLA COMPLETA - INTERNAS (2025+)
-# =================================
-st.subheader("Todas las Órdenes Internas")
-
-df_tabla_interna = df.copy()
-
-df_tabla_interna = df.copy()
-
-if unidad_tabla_sel != "Todas":
-    df_tabla_interna = df_tabla_interna[
-        df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-    ]
-
-if factura_tabla_sel != "Todas":
-    df_tabla_interna = df_tabla_interna[
-        df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-    ]
-
-if df_tabla_interna.empty:
-    st.info("No hay órdenes internas.")
-else:
-
-    columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
-    columnas_mostrar = [
-        c for c in df_tabla_interna.columns
-        if c not in columnas_ocultar
-    ]
-
-    if "Fecha Registro" in df_tabla_interna.columns:
-        df_tabla_interna = df_tabla_interna.sort_values(
-            "Fecha Registro",
-            ascending=False
+        unidades_tabla_unificadas = sorted(
+            pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
         )
 
-    st.dataframe(
-        df_tabla_interna[columnas_mostrar],
-        hide_index=True,
-        use_container_width=True
-    )
-
-    st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
-
-# =================================
-# TABLA COMPLETA - EXTERNAS (OSTES 2025+)
-# =================================
-st.divider()
-st.subheader("Todas las Órdenes Externas (OSTES)")
-
-df_tabla_externa = df_ostes.copy()
-
-if unidad_tabla_sel != "Todas":
-    df_tabla_externa = df_tabla_externa[
-        df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-    ]
-
-if factura_tabla_sel != "Todas":
-    df_tabla_externa = df_tabla_externa[
-        df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-    ]
-
-if df_tabla_externa.empty:
-    st.info("No hay registros externos.")
-else:
-
-    if "Fecha OSTE" in df_tabla_externa.columns:
-        df_tabla_externa = df_tabla_externa.sort_values(
-            "Fecha OSTE",
-            ascending=False
+        unidad_tabla_sel = st.selectbox(
+            "Unidad",
+            ["Todas"] + unidades_tabla_unificadas,
+            index=0,
+            key="unidad_tabla"
         )
 
-    st.dataframe(
-        df_tabla_externa,
-        hide_index=True,
-        use_container_width=True
-    )
+    # -------- FACTURA TABLA --------
+    with col2:
 
-    st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
+        facturas_interna_tabla = []
+        facturas_externa_tabla = []
+
+        if "Factura" in df.columns:
+            facturas_interna_tabla = (
+                df["Factura"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
+
+        if "Factura" in df_ostes.columns:
+            facturas_externa_tabla = (
+                df_ostes["Factura"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
+
+        facturas_tabla_unificadas = sorted(
+            pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
+        )
+
+        factura_tabla_sel = st.selectbox(
+            "Factura",
+            ["Todas"] + facturas_tabla_unificadas,
+            index=0,
+            key="factura_tabla"
+        )
+
+    # =================================
+    # TABLA COMPLETA - INTERNAS (2025+)
+    # =================================
+    st.subheader("Todas las Órdenes Internas")
+
+    df_tabla_interna = df.copy()
+
+    df_tabla_interna = df.copy()
+
+    if unidad_tabla_sel != "Todas":
+        df_tabla_interna = df_tabla_interna[
+            df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+        ]
+
+    if factura_tabla_sel != "Todas":
+        df_tabla_interna = df_tabla_interna[
+            df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
+        ]
+
+    if df_tabla_interna.empty:
+        st.info("No hay órdenes internas.")
+    else:
+
+        columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+        columnas_mostrar = [
+            c for c in df_tabla_interna.columns
+            if c not in columnas_ocultar
+        ]
+
+        if "Fecha Registro" in df_tabla_interna.columns:
+            df_tabla_interna = df_tabla_interna.sort_values(
+                "Fecha Registro",
+                ascending=False
+            )
+
+        st.dataframe(
+            df_tabla_interna[columnas_mostrar],
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
+
+    # =================================
+    # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
+    # =================================
+    st.divider()
+    st.subheader("Todas las Órdenes Externas (OSTES)")
+
+    df_tabla_externa = df_ostes.copy()
+
+    if unidad_tabla_sel != "Todas":
+        df_tabla_externa = df_tabla_externa[
+            df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
+        ]
+
+    if factura_tabla_sel != "Todas":
+        df_tabla_externa = df_tabla_externa[
+            df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
+        ]
+
+    if df_tabla_externa.empty:
+        st.info("No hay registros externos.")
+    else:
+
+        if "Fecha OSTE" in df_tabla_externa.columns:
+            df_tabla_externa = df_tabla_externa.sort_values(
+                "Fecha OSTE",
+                ascending=False
+            )
+
+        st.dataframe(
+            df_tabla_externa,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
 
 # =================================
 # VIEW MODAL
