@@ -349,6 +349,33 @@ def load_css():
             padding:1rem;
         }
 
+        /* Company selector */
+
+        div[role="radiogroup"] {
+            gap: 8px;
+        }
+
+        div[role="radiogroup"] > label {
+            background: white;
+            border: 1px solid #d0d7de;
+            border-radius: 10px;
+            padding: 10px 18px;
+            transition: 0.2s;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        div[role="radiogroup"] > label:hover {
+            border-color: #151F6D;
+            background: #f7f9ff;
+        }
+
+        div[role="radiogroup"] > label[data-checked="true"] {
+            background: #151F6D;
+            color: white;
+            border-color: #151F6D;
+        }
+
         </style>
         """,
         unsafe_allow_html=True,

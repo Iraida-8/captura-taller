@@ -233,17 +233,14 @@ def normalizar_columnas(df, tipo):
 # =================================
 # EMPRESA SELECTION
 # =================================
-st.subheader("Selección de Empresa")
+st.subheader("Empresa")
 
-empresa = st.selectbox(
-    "Empresa",
-    ["Selecciona empresa"] + list(EMPRESA_CONFIG.keys()),
-    index=0
+empresa = st.radio(
+    "",
+    list(EMPRESA_CONFIG.keys()),
+    horizontal=True,
+    label_visibility="collapsed",
 )
-
-if empresa == "Selecciona empresa":
-    st.info("Selecciona una empresa para consultar las órdenes.")
-    st.stop()
 
 config = EMPRESA_CONFIG[empresa]
 
