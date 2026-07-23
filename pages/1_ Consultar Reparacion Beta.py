@@ -703,7 +703,7 @@ with tab_ostes:
 st.divider()
 
 reportes_tab, refacciones_tab = st.tabs([
-    "📋 Reportes",
+    "📋 Reportes Mano de Obra",
     "🔩 Refacciones"
 ])
 
