@@ -824,6 +824,14 @@ with refacciones_tab:
             hide_index=True,
             use_container_width=True
         )
+
+        st.download_button(
+            "⬇ Descargar Refacciones",
+            data=df_partes_final.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"Refacciones_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
         st.caption(f"Total de refacciones: {len(df_partes_final)}")
 
     else:
@@ -938,6 +946,14 @@ with reportes_tab:
             use_container_width=True
         )
 
+        st.download_button(
+            "⬇ Descargar Órdenes Internas",
+            data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"Ordenes_Internas_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
         st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
 
     # =================================
@@ -972,6 +988,14 @@ with reportes_tab:
             df_tabla_externa,
             hide_index=True,
             use_container_width=True
+        )
+
+        st.download_button(
+            "⬇ Descargar Órdenes Externas",
+            data=df_tabla_externa.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"OSTES_{empresa}.csv",
+            mime="text/csv",
+            use_container_width=True,
         )
 
         st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
