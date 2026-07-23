@@ -546,32 +546,32 @@ with tab_interna:
                     st.session_state.modal_orden = row.to_dict()
                     st.session_state.modal_tipo = "interna"
 
-                st.write("")
+        st.write("")
 
-                c1, c2, c3 = st.columns([1,2,1])
+        c1, c2, c3 = st.columns([1,2,1])
 
-                with c1:
-                    if st.button(
-                        "◀ Anterior",
-                        disabled=st.session_state.page_interna == 1,
-                        key="prev_interna"
-                    ):
-                        st.session_state.page_interna -= 1
-                        st.rerun()
+        with c1:
+            if st.button(
+                "◀ Anterior",
+                disabled=st.session_state.page_interna == 1,
+                key="prev_interna"
+            ):
+                st.session_state.page_interna -= 1
+                st.rerun()
 
-                with c2:
-                    st.markdown(
-                        f"### Página {st.session_state.page_interna} de {total_pages_interna}"
-                    )
+        with c2:
+            st.markdown(
+                f"### Página {st.session_state.page_interna} de {total_pages_interna}"
+            )
 
-                with c3:
-                    if st.button(
-                        "Siguiente ▶",
-                        disabled=st.session_state.page_interna >= total_pages_interna,
-                        key="next_interna"
-                    ):
-                        st.session_state.page_interna += 1
-                        st.rerun()
+        with c3:
+            if st.button(
+                "Siguiente ▶",
+                disabled=st.session_state.page_interna >= total_pages_interna,
+                key="next_interna"
+            ):
+                st.session_state.page_interna += 1
+                st.rerun()
 
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
