@@ -394,9 +394,11 @@ if st.session_state.last_filters != current_filters:
     st.session_state.modal_orden = None
     st.session_state.modal_tipo = None
     st.session_state.last_filters = current_filters
+    st.session_state.page_interna = 1
+    st.session_state.page_oste = 1
 
 # =====================================================
-# BUILD INTERNAL DATASET (LATEST 10)
+# BUILD INTERNAL DATASET
 # =====================================================
 df_interna = df.copy()
 
@@ -439,7 +441,7 @@ end = start + PAGE_SIZE
 df_interna = df_interna.iloc[start:end]
 
 # =====================================================
-# BUILD EXTERNAL DATASET (LATEST 10)
+# BUILD EXTERNAL DATASET
 # =====================================================
 df_externa = df_ostes.copy()
 
@@ -458,7 +460,25 @@ if "Fecha OSTE" in df_externa.columns:
         by="Fecha OSTE",
         ascending=False,
         na_position="last"
-    ).head(10)
+    )
+
+if "page_oste" not in st.session_state:
+    st.session_state.page_oste = 1
+
+total_pages_oste = max(
+    1,
+    math.ceil(len(df_externa) / PAGE_SIZE)
+)
+
+st.session_state.page_oste = min(
+    st.session_state.page_oste,
+    total_pages_oste
+)
+
+start = (st.session_state.page_oste - 1) * PAGE_SIZE
+end = start + PAGE_SIZE
+
+df_externa = df_externa.iloc[start:end]
 
 # =====================================================
 # MANO DE OBRA INTERNA
@@ -649,6 +669,36 @@ with tab_ostes:
                 if st.button("👁 Ver", key=f"ver_externa_{i}", use_container_width=True):
                     st.session_state.modal_orden = row.to_dict()
                     st.session_state.modal_tipo = "oste"
+
+            st.write("")
+
+            c1, c2, c3, c4, c5 = st.columns([1, 2, 2, 2, 1])
+
+            with c1:
+                if st.button(
+                    "◀ Anterior",
+                    disabled=st.session_state.page_oste == 1,
+                    key="prev_oste",
+                    use_container_width=True
+                ):
+                    st.session_state.page_oste -= 1
+                    st.rerun()
+
+            with c3:
+                st.markdown(
+                    f"<h3 style='text-align:center;'>Página {st.session_state.page_oste} de {total_pages_oste}</h3>",
+                    unsafe_allow_html=True
+                )
+
+            with c5:
+                if st.button(
+                    "Siguiente ▶",
+                    disabled=st.session_state.page_oste >= total_pages_oste,
+                    key="next_oste",
+                    use_container_width=True
+                ):
+                    st.session_state.page_oste += 1
+                    st.rerun()
 
 st.divider()
 
