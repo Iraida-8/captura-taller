@@ -4,6 +4,7 @@ from auth import require_login, require_access
 import streamlit.components.v1 as components
 from supabase import create_client
 from pages.css import load_css
+import math
 
 # =================================
 # RELEASE CHANNEL
@@ -414,7 +415,28 @@ if "Fecha Registro" in df_interna.columns:
         by="Fecha Registro",
         ascending=False,
         na_position="last"
-    ).head(10)
+    )
+
+PAGE_SIZE = 10
+
+if "page_interna" not in st.session_state:
+    st.session_state.page_interna = 1
+
+total_pages_interna = max(
+    1,
+    math.ceil(len(df_interna) / PAGE_SIZE)
+)
+
+# Prevent going past last page
+st.session_state.page_interna = min(
+    st.session_state.page_interna,
+    total_pages_interna
+)
+
+start = (st.session_state.page_interna - 1) * PAGE_SIZE
+end = start + PAGE_SIZE
+
+df_interna = df_interna.iloc[start:end]
 
 # =====================================================
 # BUILD EXTERNAL DATASET (LATEST 10)
@@ -523,6 +545,33 @@ with tab_interna:
                 if st.button("👁 Ver", key=f"ver_interna_{i}", use_container_width=True):
                     st.session_state.modal_orden = row.to_dict()
                     st.session_state.modal_tipo = "interna"
+
+                st.write("")
+
+                c1, c2, c3 = st.columns([1,2,1])
+
+                with c1:
+                    if st.button(
+                        "◀ Anterior",
+                        disabled=st.session_state.page_interna == 1,
+                        key="prev_interna"
+                    ):
+                        st.session_state.page_interna -= 1
+                        st.rerun()
+
+                with c2:
+                    st.markdown(
+                        f"### Página {st.session_state.page_interna} de {total_pages_interna}"
+                    )
+
+                with c3:
+                    if st.button(
+                        "Siguiente ▶",
+                        disabled=st.session_state.page_interna >= total_pages_interna,
+                        key="next_interna"
+                    ):
+                        st.session_state.page_interna += 1
+                        st.rerun()
 
 # =====================================================
 # MANO DE OBRA EXTERNA (OSTES)
