@@ -845,116 +845,114 @@ with reportes_tab:
     st.divider()
     st.markdown("### Filtros - Tablas Completas")
 
-    col1, col2 = st.columns(2)
+    # =================================
+    # FILTROS
+    # =================================
 
-    # -------- UNIDAD TABLA --------
-    with col1:
+    filtros = [
+        "Unidad",
+        "Factura",
+        "anio",
+        "mes",
+        "Fecha Analisis",
+        "Sucursal",
+        "Reporte",
+        "Fecha Registro",
+        "Fecha Aceptado",
+        "Fecha Iniciada",
+        "Fecha Liberada",
+        "Fecha Terminada",
+        "Nombre Cliente",
+        "Estatus",
+    ]
 
-        unidades_interna_tabla = []
-        unidades_externa_tabla = []
+    filtros_seleccionados = {}
 
-        if "Unidad" in df.columns:
-            unidades_interna_tabla = df["Unidad"].dropna().astype(str).str.strip()
+    cols = st.columns(4)
 
-        if "Unidad" in df_ostes.columns:
-            unidades_externa_tabla = df_ostes["Unidad"].dropna().astype(str).str.strip()
+    for i, columna in enumerate(filtros):
 
-        unidades_tabla_unificadas = sorted(
-            pd.concat([unidades_interna_tabla, unidades_externa_tabla]).unique()
-        )
+        valores = []
 
-        unidad_tabla_sel = st.selectbox(
-            "Unidad",
-            ["Todas"] + unidades_tabla_unificadas,
-            index=0,
-            key="unidad_tabla"
-        )
-
-    # -------- FACTURA TABLA --------
-    with col2:
-
-        facturas_interna_tabla = []
-        facturas_externa_tabla = []
-
-        if "Factura" in df.columns:
-            facturas_interna_tabla = (
-                df["Factura"]
+        if columna in df.columns:
+            valores.extend(
+                df[columna]
                 .dropna()
                 .astype(str)
                 .str.strip()
+                .tolist()
             )
-            facturas_interna_tabla = facturas_interna_tabla[facturas_interna_tabla != ""]
 
-        if "Factura" in df_ostes.columns:
-            facturas_externa_tabla = (
-                df_ostes["Factura"]
+        if columna in df_ostes.columns:
+            valores.extend(
+                df_ostes[columna]
                 .dropna()
                 .astype(str)
                 .str.strip()
-            )
-            facturas_externa_tabla = facturas_externa_tabla[facturas_externa_tabla != ""]
-
-        facturas_tabla_unificadas = sorted(
-            pd.concat([facturas_interna_tabla, facturas_externa_tabla]).unique()
-        )
-
-        factura_tabla_sel = st.selectbox(
-            "Factura",
-            ["Todas"] + facturas_tabla_unificadas,
-            index=0,
-            key="factura_tabla"
-        )
-
-    # =================================
-    # TABLA COMPLETA - INTERNAS (2025+)
-    # =================================
-    st.subheader("Todas las Órdenes Internas")
-
-    df_tabla_interna = df.copy()
-
-    df_tabla_interna = df.copy()
-
-    if unidad_tabla_sel != "Todas":
-        df_tabla_interna = df_tabla_interna[
-            df_tabla_interna["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-        ]
-
-    if factura_tabla_sel != "Todas":
-        df_tabla_interna = df_tabla_interna[
-            df_tabla_interna["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-        ]
-
-    if df_tabla_interna.empty:
-        st.info("No hay órdenes internas.")
-    else:
-
-        columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
-        columnas_mostrar = [
-            c for c in df_tabla_interna.columns
-            if c not in columnas_ocultar
-        ]
-
-        if "Fecha Registro" in df_tabla_interna.columns:
-            df_tabla_interna = df_tabla_interna.sort_values(
-                "Fecha Registro",
-                ascending=False
+                .tolist()
             )
 
-        st.dataframe(
-            df_tabla_interna[columnas_mostrar],
-            hide_index=True,
-            use_container_width=True
+        valores = sorted(set(v for v in valores if v != ""))
+
+        with cols[i % 4]:
+            filtros_seleccionados[columna] = st.selectbox(
+                columna,
+                ["Todas"] + valores,
+                key=f"tabla_{columna}"
+            )
+
+# =================================
+# TABLA COMPLETA - INTERNAS (2025+)
+# =================================
+st.subheader("Todas las Órdenes Internas")
+
+df_tabla_interna = df.copy()
+
+# Aplicar todos los filtros seleccionados
+for columna, valor in filtros_seleccionados.items():
+
+    if valor == "Todas":
+        continue
+
+    if columna in df_tabla_interna.columns:
+        df_tabla_interna = df_tabla_interna[
+            df_tabla_interna[columna]
+            .astype(str)
+            .str.strip() == valor
+        ]
+
+if df_tabla_interna.empty:
+    st.info("No hay órdenes internas.")
+else:
+
+    columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+    columnas_mostrar = [
+        c for c in df_tabla_interna.columns
+        if c not in columnas_ocultar
+    ]
+
+    if "Fecha Registro" in df_tabla_interna.columns:
+        df_tabla_interna = df_tabla_interna.sort_values(
+            "Fecha Registro",
+            ascending=False
         )
 
-        st.download_button(
-            "⬇ Descargar Órdenes Internas",
-            data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
-            file_name=f"Ordenes_Internas_{empresa}.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
+    st.dataframe(
+        df_tabla_interna[columnas_mostrar],
+        hide_index=True,
+        use_container_width=True
+    )
 
-        st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
+    st.download_button(
+        "⬇ Descargar Órdenes Internas",
+        data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
+        file_name=f"Ordenes_Internas_{empresa}.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+    st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
+
 
     # =================================
     # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
@@ -964,15 +962,18 @@ with reportes_tab:
 
     df_tabla_externa = df_ostes.copy()
 
-    if unidad_tabla_sel != "Todas":
-        df_tabla_externa = df_tabla_externa[
-            df_tabla_externa["Unidad"].astype(str).str.strip() == unidad_tabla_sel.strip()
-        ]
+    # Aplicar todos los filtros seleccionados
+    for columna, valor in filtros_seleccionados.items():
 
-    if factura_tabla_sel != "Todas":
-        df_tabla_externa = df_tabla_externa[
-            df_tabla_externa["Factura"].astype(str).str.strip() == factura_tabla_sel.strip()
-        ]
+        if valor == "Todas":
+            continue
+
+        if columna in df_tabla_externa.columns:
+            df_tabla_externa = df_tabla_externa[
+                df_tabla_externa[columna]
+                .astype(str)
+                .str.strip() == valor
+            ]
 
     if df_tabla_externa.empty:
         st.info("No hay registros externos.")
