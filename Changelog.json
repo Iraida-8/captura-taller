@@ -1,7 +1,7 @@
 [
     {
-    "version": "1.07.22.26",
-    "date": "22/07/2026",
+    "version": "2.00.24.26",
+    "date": "24/07/2026",
     "changes": 
         [
             "Creación del módulo Gestión de Base de Datos para administración centralizada de catálogos del sistema",
@@ -20,14 +20,7 @@
             "Ocultamiento dinámico de la pestaña Administración de Usuarios para usuarios sin privilegios administrativos",
             "Inicio del módulo Administración de Usuarios para gestión centralizada de perfiles y permisos del sistema",
             "Preparación de la administración visual de Roles, Branch, Empresas y Permisos mediante generación automática del campo Access en formato JSON",
-            "Mejoras generales de organización del código, seguridad, mantenimiento y experiencia de administración del Portal OMEGA"
-        ]
-    },
-    {
-    "version": "1.07.16.26",
-    "date": "16/07/2026",
-    "changes": 
-        [
+            "Mejoras generales de organización del código, seguridad, mantenimiento y experiencia de administración del Portal OMEGA",
             "Integración del módulo Bono de Operadores dentro de la página unificada de Solicitudes y Pases",
             "Implementación de navegación modular mediante pestañas con acceso condicional por permisos de usuario",
             "Visualización dinámica de pestañas únicamente para usuarios con acceso a múltiples módulos",
