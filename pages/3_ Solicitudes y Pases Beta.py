@@ -297,6 +297,7 @@ if has_pases:
                     "WNC",
                     "K9",
                     "NAVARRO",
+                    "KEVIN DANIEL RAUDALES MEDINA (RM)",
                     "KINOS",
                     "OTRO"
                 ]
