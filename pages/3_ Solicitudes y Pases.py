@@ -37,7 +37,7 @@ require_access("pase_taller")
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Solicitudes y Pases BETA",
+    page_title="Solicitudes y Pases",
     layout="wide"
 )
 
@@ -281,7 +281,7 @@ if has_pases:
             # Hidden - always today's date
             fecha_reporte = date.today()
 
-            tp1, tp2, tp3 = st.columns(3)
+            tp1, tp2, tp25, tp3 = st.columns(4)
 
             with tp1:
                 tipo_proveedor = st.selectbox(
@@ -307,6 +307,14 @@ if has_pases:
                     index=2 if tipo_proveedor == "Interno" else 0
                 )
 
+            with tp25:
+
+                proveedor_otro = st.text_input(
+                    "Proveedor / Otro",
+                    disabled=proveedor != "OTRO",
+                    placeholder="Especificar proveedor"
+                )
+
             with tp3:
 
                 if "razones" not in st.session_state:
@@ -322,7 +330,7 @@ if has_pases:
                         "Taller Saturado",
                         "Caja fuera de Patio",
                         "Taller no Cuenta con las Refacciones",
-                        "Taller de Respuesta",
+                        "Taller da Respuesta",
                         "Taller PG no va al RFE"
                     ],
                     key="razones",
@@ -612,6 +620,10 @@ if has_pases:
                 st.error("Debes capturar la Reparación que generó multa cuando se genera multa.")
                 st.stop()
 
+            if proveedor == "OTRO" and not proveedor_otro.strip():
+                st.error("Debes capturar el nombre del proveedor.")
+                st.stop()
+
             # make sure flags exist
             st.session_state.setdefault("forzar_guardado", False)
             st.session_state.setdefault("confirmar_guardado", False)
@@ -639,11 +651,16 @@ if has_pases:
             # ==========================================
             # NORMAL SAVE
             # ==========================================
+            if proveedor == "OTRO":
+                proveedor_guardar = f"OTRO, {proveedor_otro.strip()}"
+            else:
+                proveedor_guardar = proveedor
+
             payload = {
                 "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
                 "Fecha de Reporte": str(fecha_reporte),
                 "Tipo de Proveedor": tipo_proveedor,
-                "Proveedor": proveedor,
+                "Proveedor": proveedor_guardar,
                 "Razones": None if tipo_proveedor == "Interno" else razones,
                 "Estado": "Inicio / Nuevo",
                 "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
