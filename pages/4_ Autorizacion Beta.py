@@ -6197,6 +6197,30 @@ if has_viaticos:
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
+
+                                # =================================
+                                # ARCHIVOS ADJUNTOS
+                                # =================================
+
+                                st.markdown("---")
+                                st.markdown("## 📎 Comprobantes Adjuntos")
+
+                                archivos = comprobacion_row.get("archivos", [])
+
+                                if archivos:
+
+                                    for archivo in archivos:
+
+                                        nombre = archivo.get("filename", "")
+                                        ruta = archivo.get("path", "")
+
+                                        st.write(f"📄 {nombre}")
+                                        st.code(ruta)
+
+                                else:
+
+                                    st.info("No hay comprobantes adjuntos.")
+
                                 # =================================
                                 # TOTALES COMPROBACION
                                 # =================================
