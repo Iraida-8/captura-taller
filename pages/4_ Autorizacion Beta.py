@@ -4705,7 +4705,7 @@ if has_viaticos:
                                         path = archivo.get("path", "")
                                         nombre = archivo.get("filename", "Archivo")
 
-                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+                                        url = supabase_mtn.storage.from_("comprobantes-viaje").get_public_url(path)
 
                                         st.link_button(
                                             f"📎 {nombre}",
