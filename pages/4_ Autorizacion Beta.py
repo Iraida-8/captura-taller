@@ -4696,14 +4696,18 @@ if has_viaticos:
                                 st.markdown("---")
                                 st.markdown("## 📎 Comprobantes Adjuntos")
 
-                                archivos = comprobacion_row.get("archivos", [])
+                                archivos = comprobacion_row.get("archivos") or []
 
-                                if archivos:
-
+                                if len(archivos) == 0:
+                                    st.info("No hay comprobantes adjuntos.")
+                                else:
                                     for archivo in archivos:
 
                                         path = archivo.get("path", "")
                                         nombre = archivo.get("filename", "Archivo")
+
+                                        if not path:
+                                            continue
 
                                         url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
 
@@ -4712,10 +4716,6 @@ if has_viaticos:
                                             url,
                                             use_container_width=True
                                         )
-
-                                else:
-
-                                    st.info("No hay archivos adjuntos.")
 
                                 # =================================
                                 # TOTALES COMPROBACION
