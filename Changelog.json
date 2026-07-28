@@ -1,5 +1,19 @@
 [
     {
+    "version": "2.07.28.26",
+    "date": "28/07/2026",
+    "changes": [
+        "Implementación de notificaciones automáticas por correo electrónico para el módulo de Solicitudes y Gestión de Viáticos",
+        "Integración de envío de notificaciones por cambio de estatus durante el proceso de revisión, aprobación, rechazo y conclusión de solicitudes",
+        "Optimización de la distribución automática de destinatarios considerando empresa, usuario solicitante y participantes del flujo de autorización",
+        "Implementación del sistema de carga y almacenamiento de comprobantes de gastos en Supabase Storage",
+        "Integración de consulta y descarga de comprobantes adjuntos desde los modales de Verificación y Solicitudes Finalizadas",
+        "Incorporación de validaciones para manejo de archivos adjuntos y visualización de mensajes cuando no existen comprobantes disponibles",
+        "Mejoras generales de estabilidad, rendimiento y experiencia de usuario en el módulo de Gestión de Viáticos"
+        ]
+    },
+
+    {
     "version": "2.00.24.26",
     "date": "24/07/2026",
     "changes": 
