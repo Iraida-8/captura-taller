@@ -4707,8 +4707,6 @@ if has_viaticos:
 
                                         url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
 
-                                        st.write(url)
-
                                         st.link_button(
                                             f"📎 {nombre}",
                                             url,
