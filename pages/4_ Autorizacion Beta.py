@@ -4515,7 +4515,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {solicitud_row.get('observaciones', '')}
                                     </div>
@@ -6197,29 +6197,6 @@ if has_viaticos:
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
-
-                                # =================================
-                                # ARCHIVOS ADJUNTOS
-                                # =================================
-
-                                st.markdown("---")
-                                st.markdown("## 📎 Comprobantes Adjuntos")
-
-                                archivos = comprobacion_row.get("archivos", [])
-
-                                if archivos:
-
-                                    for archivo in archivos:
-
-                                        nombre = archivo.get("filename", "")
-                                        ruta = archivo.get("path", "")
-
-                                        st.write(f"📄 {nombre}")
-                                        st.code(ruta)
-
-                                else:
-
-                                    st.info("No hay comprobantes adjuntos.")
 
                                 # =================================
                                 # TOTALES COMPROBACION
