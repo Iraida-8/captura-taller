@@ -4489,7 +4489,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {solicitud_row.get('motivo_viaje', '')}
                                     </div>
@@ -4515,7 +4515,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {solicitud_row.get('observaciones', '')}
                                     </div>
@@ -4539,7 +4539,7 @@ if has_viaticos:
                                         white-space:pre-wrap;
                                         font-size:18px;
                                         font-weight:600;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {comprobacion_row.get('nombre_empleado_solicita', '')}
                                     </div>
@@ -4561,7 +4561,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {comprobacion_row.get('observaciones', '')}
                                     </div>
@@ -4688,6 +4688,34 @@ if has_viaticos:
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
+
+                                # =================================
+                                # ARCHIVOS ADJUNTOS
+                                # =================================
+
+                                st.markdown("---")
+                                st.markdown("## 📎 Comprobantes Adjuntos")
+
+                                archivos = comprobacion_row.get("archivos") or []
+
+                                if len(archivos) == 0:
+                                    st.info("No hay comprobantes adjuntos.")
+                                else:
+                                    for archivo in archivos:
+
+                                        path = archivo.get("path", "")
+                                        nombre = archivo.get("filename", "Archivo")
+
+                                        if not path:
+                                            continue
+
+                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+
+                                        st.link_button(
+                                            f"📎 {nombre}",
+                                            url,
+                                            use_container_width=True
+                                        )
 
                                 # =================================
                                 # TOTALES COMPROBACION
@@ -5956,9 +5984,6 @@ if has_viaticos:
                                 # =================================
                                 # MONTO SOLICITADO
                                 # =================================
-                                # =================================
-                                # MONTO SOLICITADO
-                                # =================================
 
                                 st.markdown("---")
 
@@ -6197,6 +6222,38 @@ if has_viaticos:
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
+
+                                # =================================
+                                # ARCHIVOS ADJUNTOS
+                                # =================================
+
+                                st.markdown("---")
+                                st.markdown("## 📎 Comprobantes Adjuntos")
+
+                                archivos = row.get("archivos") or []
+
+                                if len(archivos) == 0:
+
+                                    st.info("No hay comprobantes adjuntos.")
+
+                                else:
+
+                                    for archivo in archivos:
+
+                                        path = archivo.get("path", "")
+                                        nombre = archivo.get("filename", "Archivo")
+
+                                        if not path:
+                                            continue
+
+                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+
+                                        st.link_button(
+                                            f"📎 {nombre}",
+                                            url,
+                                            use_container_width=True
+                                        )
+
                                 # =================================
                                 # TOTALES COMPROBACION
                                 # =================================
