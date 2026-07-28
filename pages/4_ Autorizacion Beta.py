@@ -2691,8 +2691,6 @@ if has_viaticos:
 
                 "Maria.garcia@palosgarza.com",
 
-                "cristobal.ochoa@set-freight.com",
-
                 "practicas.auditoria@palosgarzalogistics.com"
             ]
 
@@ -3083,10 +3081,12 @@ if has_viaticos:
                 resend.Emails.send({
 
                     "from":
-                        "onboarding@resend.dev",
+                        "PG Data Analyst <notificaciones@pgdataanalyst.com>",
 
                     "to":
                         destinatarios,
+
+                    "cc": ["cristobal.ochoa@set-freight.com"],
 
                     "subject":
                         folio,
