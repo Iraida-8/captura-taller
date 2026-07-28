@@ -4690,6 +4690,17 @@ if has_viaticos:
                                     )
 
                                 # =================================
+                                # ARCHIVOS ADJUNTOS
+                                # =================================
+
+                                st.markdown("---")
+                                st.markdown("## 📎 Comprobantes Adjuntos")
+
+                                archivos = comprobacion_row.get("archivos", [])
+
+                                st.write(archivos)
+
+                                # =================================
                                 # TOTALES COMPROBACION
                                 # =================================
 
@@ -6197,21 +6208,6 @@ if has_viaticos:
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
-
-                                # =================================
-                                # ARCHIVOS ADJUNTOS
-                                # =================================
-
-                                st.markdown("---")
-                                st.markdown("## 📎 Comprobantes Adjuntos")
-
-                                archivos = comprobacion_row.get("archivos", [])
-
-                                if not archivos:
-                                    st.info("No hay comprobantes adjuntos.")
-                                else:
-
-                                    st.write(archivos)
 
                                 # =================================
                                 # TOTALES COMPROBACION
