@@ -4698,7 +4698,24 @@ if has_viaticos:
 
                                 archivos = comprobacion_row.get("archivos", [])
 
-                                st.write(archivos)
+                                if archivos:
+
+                                    for archivo in archivos:
+
+                                        path = archivo.get("path", "")
+                                        nombre = archivo.get("filename", "Archivo")
+
+                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+
+                                        st.link_button(
+                                            f"📎 {nombre}",
+                                            url,
+                                            use_container_width=True
+                                        )
+
+                                else:
+
+                                    st.info("No hay archivos adjuntos.")
 
                                 # =================================
                                 # TOTALES COMPROBACION
