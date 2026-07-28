@@ -4489,7 +4489,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {solicitud_row.get('motivo_viaje', '')}
                                     </div>
@@ -4539,7 +4539,7 @@ if has_viaticos:
                                         white-space:pre-wrap;
                                         font-size:18px;
                                         font-weight:600;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {comprobacion_row.get('nombre_empleado_solicita', '')}
                                     </div>
@@ -4561,7 +4561,7 @@ if has_viaticos:
                                         border:1px solid rgba(191,167,95,0.25);
                                         margin-bottom:20px;
                                         white-space:pre-wrap;
-                                        color:white;
+                                        color:#111;
                                     '>
                                         {comprobacion_row.get('observaciones', '')}
                                     </div>
