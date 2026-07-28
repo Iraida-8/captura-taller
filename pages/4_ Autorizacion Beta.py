@@ -3271,8 +3271,8 @@ if has_viaticos:
 
             # VERIFICANDO
             verificando = len(
-                df_solicitudes[
-                    df_solicitudes["estatus"] == "Verificar"
+                df_comprobaciones[
+                    df_comprobaciones["estatus"] == "Verificar"
                 ]
             )
 
