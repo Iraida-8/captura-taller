@@ -2771,7 +2771,7 @@ if has_viaticos:
             # EMAIL TEST MODE
             # =================================
 
-            EMAIL_TEST_MODE = True
+            EMAIL_TEST_MODE = False
             EMAIL_TEST_RECIPIENT = (
                 "aldo.sanchez@palosgarzalogistics.com"
             )
