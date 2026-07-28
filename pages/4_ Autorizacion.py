@@ -2691,8 +2691,6 @@ if has_viaticos:
 
                 "Maria.garcia@palosgarza.com",
 
-                "cristobal.ochoa@set-freight.com",
-
                 "practicas.auditoria@palosgarzalogistics.com"
             ]
 
@@ -2773,7 +2771,7 @@ if has_viaticos:
             # EMAIL TEST MODE
             # =================================
 
-            EMAIL_TEST_MODE = True
+            EMAIL_TEST_MODE = False
             EMAIL_TEST_RECIPIENT = (
                 "aldo.sanchez@palosgarzalogistics.com"
             )
@@ -3083,10 +3081,12 @@ if has_viaticos:
                 resend.Emails.send({
 
                     "from":
-                        "onboarding@resend.dev",
+                        "PG Data Analyst <notificaciones@pgdataanalyst.com>",
 
                     "to":
                         destinatarios,
+
+                    "cc": ["cristobal.ochoa@set-freight.com"],
 
                     "subject":
                         folio,
