@@ -26,7 +26,17 @@ st.set_page_config(
     page_title="Consulta de Reparación BETA",
     layout="wide"
 )
-
+# =================================
+# Page configuration
+# =================================
+st.set_page_config(
+    page_title=(
+        "Consulta de Reparación BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Consulta de Reparación"
+    ),
+    layout="wide"
+)
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
@@ -49,6 +59,31 @@ def get_supabase():
     )
 
 supabase = get_supabase()
+
+# =================================
+# USER DATA
+# =================================
+user = st.session_state.user
+
+# =================================
+# AUDIT
+# =================================
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
 
 # =================================
 # HARD RESET ON PAGE LOAD
@@ -830,6 +865,10 @@ with refacciones_tab:
             data=df_partes_final.to_csv(index=False).encode("utf-8-sig"),
             file_name=f"Refacciones_{empresa}.csv",
             mime="text/csv",
+            on_click=lambda: log_activity(
+                "Descargó Reporte de Refacciones",
+                "Consulta de Reparación"
+            ),
             use_container_width=True,
         )
         st.caption(f"Total de refacciones: {len(df_partes_final)}")
@@ -948,6 +987,10 @@ with reportes_tab:
             data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
             file_name=f"Ordenes_Internas_{empresa}.csv",
             mime="text/csv",
+            on_click=lambda: log_activity(
+                "Descargó Reporte de Órdenes Internas",
+                "Consulta de Reparación"
+            ),
             use_container_width=True,
         )
 
@@ -996,6 +1039,10 @@ with reportes_tab:
                 data=df_tabla_externa.to_csv(index=False).encode("utf-8-sig"),
                 file_name=f"OSTES_{empresa}.csv",
                 mime="text/csv",
+                on_click=lambda: log_activity(
+                    "Descargó Reporte de Órdenes Externas",
+                    "Consulta de Reparación"
+                ),
                 use_container_width=True,
             )
 
