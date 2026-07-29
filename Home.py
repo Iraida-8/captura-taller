@@ -87,7 +87,6 @@ if not st.session_state.logged_in:
             )
 
         st.image(img, width="stretch")
-        st.write(st.__version__)
 
 # =================================
 # CHANGELOG LOAD
