@@ -365,6 +365,35 @@ if st.session_state.auth_view == "reset_request":
 
 if st.session_state.logged_in:
 
-    st.success("User logged in")
+    access = st.session_state.user.get("access", [])
 
-    st.write(st.session_state.user)
+    if "beta" in access:
+
+        nav = {
+            "Inicio": [
+                st.Page(
+                    "pages/dashboard_beta.py",
+                    title="Dashboard",
+                    default=True,
+                ),
+            ],
+        }
+
+    else:
+
+        nav = {
+            "Inicio": [
+                st.Page(
+                    "pages/dashboard.py",
+                    title="Dashboard",
+                    default=True,
+                ),
+            ],
+        }
+
+    pg = st.navigation(
+        nav,
+        position="top",
+    )
+
+    pg.run()
