@@ -59,6 +59,36 @@ def get_supabase():
 supabase = get_supabase()
 
 # -------------------------------
+# AUDIT
+# -------------------------------
+
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
+
+if not st.session_state.get("dashboard_loaded", False):
+
+    log_activity(
+        "Regresó al Dashboard",
+        "Dashboard"
+    )
+
+    st.session_state.dashboard_loaded = True
+
+# -------------------------------
 # CHANGELOG
 # -------------------------------
 changelog_path = Path(__file__).parent.parent / "Changelog.json"
@@ -513,6 +543,14 @@ Permite registrar solicitudes de taller, generar Bonos de Operadores y administr
                 key="btn_operacion",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Solicitudes y Pases",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
                 )
@@ -551,6 +589,14 @@ if show_gestion:
                     key="btn_gestion_operacion",
                     use_container_width=True,
                 ):
+
+                    log_activity(
+                        "Abrir módulo - Gestión de Órdenes y Pases",
+                        "Dashboard"
+                    )
+
+                    st.session_state.dashboard_loaded = False
+
                     st.switch_page(
                         f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
                     )
@@ -604,6 +650,14 @@ Permite consultar el historial completo de reparaciones, órdenes y servicios re
                 key="btn_consultar_reparacion",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Historial de Reparación",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+                
                 st.switch_page(
                     f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
                 )
@@ -635,6 +689,14 @@ Permite consultar el historial de Bonos de Operadores, así como su información
                 key="btn_consulta_bonos_operador",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Consulta Bonos de Operadores",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py"
                 )
@@ -694,6 +756,14 @@ Permite consultar archivos PDF de reparación y generar reportes operativos de i
                 key="btn_extras",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Extras",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/5_ Extras{PAGE_SUFFIX}.py"
                 )
@@ -722,14 +792,22 @@ if show_gps:
 Permite visualizar la ubicación en tiempo real de las unidades, consultar indicadores operativos y dar seguimiento a la flota.
 """)
 
-                if st.button(
-                    "Abrir módulo",
-                    key="btn_gps_tracking",
-                    use_container_width=True,
-                ):
-                    st.switch_page(
-                        f"pages/11_ api_pull{PAGE_SUFFIX}.py"
-                    )
+            if st.button(
+                "Abrir módulo",
+                key="btn_gps_tracking",
+                use_container_width=True,
+            ):
+
+                log_activity(
+                    "Abrir módulo - Rastreador GPS",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+
+                st.switch_page(
+                    f"pages/11_ api_pull{PAGE_SUFFIX}.py"
+                )
 
 st.divider()
 
@@ -780,6 +858,12 @@ Permite generar el Reporte Mensual del Historial de Reparaciones, consolidando l
                 key="btn_prepara_reportes",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Preparación de Reportes",
+                    "Dashboard"
+                )
+
                 st.switch_page(
                     f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py"
                 )
@@ -811,6 +895,14 @@ Permite administrar la información maestra del sistema, incluyendo catálogos, 
                 key="btn_gestion_unidades",
                 use_container_width=True,
             ):
+
+                log_activity(
+                    "Abrir módulo - Gestión de Base de Datos",
+                    "Dashboard"
+                )
+
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/8_ Gestion de Base de Datos{PAGE_SUFFIX}.py"
                 )
@@ -841,6 +933,14 @@ Permite ejecutar pruebas, validar modelos y experimentar con herramientas de int
             key="btn_ai_testing",
             use_container_width=True,
         ):
+
+            log_activity(
+                "Abrir módulo - Pruebas de IA",
+                "Dashboard"
+            )
+
+            st.session_state.dashboard_loaded = False
+
             st.switch_page(
                 f"pages/12_ AI_tests{PAGE_SUFFIX}.py"
             )
