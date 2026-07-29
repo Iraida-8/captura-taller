@@ -44,7 +44,11 @@ supabase = get_supabase_client()
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Gestión de Órdenes y Pases",
+    page_title=(
+        "Gestión de Órdenes y Pases BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Gestión de Órdenes y Pases"
+    ),
     layout="wide"
 )
 
@@ -2684,6 +2688,27 @@ if has_viaticos:
             )
 
             # =================================
+            # AUDIT
+            # =================================
+
+            def log_activity(action, page):
+
+                try:
+
+                    supabase.table("user_activity_log").insert({
+
+                        "user_id": user.get("id"),
+                        "user_name": user.get("name"),
+                        "login_counter": st.session_state.get("login_counter"),
+                        "action": action,
+                        "page": page,
+
+                    }).execute()
+
+                except Exception as e:
+                    print(e)
+
+            # =================================
             # EMAIL CONFIG
             # =================================
 
@@ -3972,7 +3997,10 @@ if has_viaticos:
                                     f"No se pudo enviar correo: {e}"
                                 )
 
-
+                            log_activity(
+                                f"Autorizó Solicitud: {row.get('folio_solicitud', '')}",
+                                "Gestión de Viáticos"
+                            )
 
                             st.success("Solicitud aprobada")
                             st.cache_data.clear()
@@ -4074,6 +4102,11 @@ if has_viaticos:
                                 st.warning(
                                     f"No se pudo enviar correo: {e}"
                                 )
+
+                            log_activity(
+                                f"Rechazó Solicitud: {row.get('folio_solicitud', '')}",
+                                "Gestión de Viáticos"
+                            )
 
                             st.error("Solicitud rechazada")
                             st.cache_data.clear()
@@ -4897,6 +4930,11 @@ if has_viaticos:
                                                 f"No se pudo enviar correo: {e}"
                                             )
 
+                                        log_activity(
+                                            f"Autorizó Comprobación: {folio_actual}",
+                                            "Gestión de Viáticos"
+                                        )
+
                                         st.success(
                                             "Solicitud concluida"
                                         )
@@ -5006,6 +5044,11 @@ if has_viaticos:
                                             st.warning(
                                                 f"No se pudo enviar correo: {e}"
                                             )
+
+                                        log_activity(
+                                            f"Rechazó Comprobación: {folio_actual}",
+                                            "Gestión de Viáticos"
+                                        )
 
                                         st.error(
                                             "Solicitud rechazada"
