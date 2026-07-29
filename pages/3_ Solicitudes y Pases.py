@@ -50,6 +50,27 @@ st.set_page_config(
 # -------------------------------
 load_css()
 
+# -------------------------------
+# AUDIT
+# -------------------------------
+
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
+
 # =================================
 # Navigation
 # =================================
@@ -97,27 +118,6 @@ if has_pases:
             )
 
         supabase = get_supabase()
-
-        # -------------------------------
-        # AUDIT
-        # -------------------------------
-
-        def log_activity(action, page):
-
-            try:
-
-                supabase.table("user_activity_log").insert({
-
-                    "user_id": user.get("id"),
-                    "user_name": user.get("name"),
-                    "login_counter": st.session_state.get("login_counter"),
-                    "action": action,
-                    "page": page,
-
-                }).execute()
-
-            except Exception as e:
-                print(e)
 
         @st.cache_data(ttl=3600)
         def cargar_unidades_supabase(empresa_codigo):
