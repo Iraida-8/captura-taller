@@ -37,7 +37,11 @@ require_access("pase_taller")
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Solicitudes y Pases BETA",
+    page_title=(
+        "Solicitudes y Pases BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Solicitudes y Pases"
+    ),
     layout="wide"
 )
 
