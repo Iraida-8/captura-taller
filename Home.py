@@ -7,8 +7,6 @@ from PIL import Image
 import json
 from pages.css import load_css
 
-st.write(st.__version__)
-
 # =================================
 # Page configuration
 # =================================
@@ -89,6 +87,7 @@ if not st.session_state.logged_in:
             )
 
         st.image(img, width="stretch")
+        st.write(st.__version__)
 
 # =================================
 # CHANGELOG LOAD
