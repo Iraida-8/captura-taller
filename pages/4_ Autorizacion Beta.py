@@ -44,7 +44,7 @@ supabase = get_supabase_client()
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Gestión de Órdenes y Pases",
+    page_title="Gestión de Órdenes y Pases BETA",
     layout="wide"
 )
 
