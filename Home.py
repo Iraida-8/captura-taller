@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
 import json
+from datetime import datetime
 from pages.css import load_css
 
 # =================================
@@ -211,7 +212,7 @@ if st.session_state.auth_view == "login":
             profile_res = (
                 supabase
                 .table("profiles")
-                .select("full_name, login_count, role, access")
+                .select("full_name, login_count, last_login, role, access")
                 .eq("id", user_id)
                 .maybe_single()
                 .execute()
@@ -223,17 +224,43 @@ if st.session_state.auth_view == "login":
                 else {}
             )
 
+            current_login_count = profile_data.get("login_count", 0) + 1
+            current_login = datetime.now().isoformat()
+
+            supabase.table("profiles").update({
+
+                "login_count": current_login_count,
+                "last_login": current_login
+
+            }).eq("id", user_id).execute()
+
             access = profile_data.get("access", [])
 
             st.session_state.logged_in = True
+            st.session_state.login_counter = current_login_count
+            st.session_state.last_login = current_login
+
             st.session_state.user = {
                 "id": user_id,
                 "email": res.user.email,
                 "name": profile_data.get("full_name"),
-                "login_count": profile_data.get("login_count", 0),
+                "login_count": current_login_count,
                 "role": profile_data.get("role", "user"),
                 "access": access
             }
+
+            supabase.table("user_activity_log").insert({
+
+                "user_id": user_id,
+                "user_name": profile_data.get("full_name"),
+
+                "login_counter": current_login_count,
+                "last_login": current_login,
+
+                "action": "Login",
+                "page": "Home"
+
+            }).execute()
 
             if "beta" in access:
                 st.switch_page("pages/dashboard_beta.py")
