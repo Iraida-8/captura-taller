@@ -71,22 +71,18 @@ if (
 # LOGIN / RESET REQUEST VIEW
 # =================================
 
-if not st.session_state.logged_in:
+assets_dir = Path(__file__).parent / "assets"
+logo_path = assets_dir / "color_pgl.png"
 
-    assets_dir = Path(__file__).parent / "assets"
-    logo_path = assets_dir / "color_pgl.png"
-
-    if logo_path.exists():
-        img = Image.open(logo_path)
-
-        if img.width > 600:
-            ratio = 600 / img.width
-            img = img.resize(
-                (600, int(img.height * ratio)),
-                Image.LANCZOS
-            )
-
-        st.image(img, width="stretch")
+if logo_path.exists():
+    img = Image.open(logo_path)
+    if img.width > 600:
+        ratio = 600 / img.width
+        img = img.resize(
+            (600, int(img.height * ratio)),
+            Image.LANCZOS
+        )
+    st.image(img, width="stretch")
 
 # =================================
 # CHANGELOG LOAD
@@ -138,10 +134,7 @@ def show_changelog():
 # =================================
 # LOGIN VIEW
 # =================================
-if (
-    not st.session_state.logged_in
-    and st.session_state.auth_view == "login"
-):
+if st.session_state.auth_view == "login":
 
     st.markdown(
         """
@@ -242,8 +235,10 @@ if (
                 "access": access
             }
 
-            st.session_state.logged_in = True
-            st.rerun()
+            if "beta" in access:
+                st.switch_page("pages/dashboard_beta.py")
+            else:
+                st.switch_page("pages/dashboard.py")
 
         except Exception as e:
             st.error(str(e))
@@ -256,10 +251,7 @@ if (
 # RESET PASSWORD VIEW (OTP FLOW)
 # =================================
 
-if (
-    not st.session_state.logged_in
-    and st.session_state.auth_view == "reset_request"
-):
+if st.session_state.auth_view == "reset_request":
 
     st.title("Restablecer contraseña")
 
@@ -368,42 +360,3 @@ if (
     if back_btn:
         st.session_state.auth_view = "login"
         st.rerun()
-
-# =================================
-# APPLICATION
-# =================================
-
-if st.session_state.logged_in:
-
-    access = st.session_state.user.get("access", [])
-
-    if "beta" in access:
-
-        nav = {
-            "Inicio": [
-                st.Page(
-                    "pages/dashboard_beta.py",
-                    title="Dashboard",
-                    default=True,
-                ),
-            ],
-        }
-
-    else:
-
-        nav = {
-            "Inicio": [
-                st.Page(
-                    "pages/dashboard.py",
-                    title="Dashboard",
-                    default=True,
-                ),
-            ],
-        }
-
-    pg = st.navigation(
-        nav,
-        position="top",
-    )
-
-    pg.run()
