@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
 import json
-from datetime import datetime
 from pages.css import load_css
 
 # =================================
@@ -212,7 +211,7 @@ if st.session_state.auth_view == "login":
             profile_res = (
                 supabase
                 .table("profiles")
-                .select("full_name, login_count, last_login, role, access")
+                .select("full_name, login_count, role, access")
                 .eq("id", user_id)
                 .maybe_single()
                 .execute()
@@ -225,12 +224,10 @@ if st.session_state.auth_view == "login":
             )
 
             current_login_count = profile_data.get("login_count", 0) + 1
-            current_login = datetime.now().isoformat()
 
             supabase.table("profiles").update({
 
-                "login_count": current_login_count,
-                "last_login": current_login
+                "login_count": current_login_count
 
             }).eq("id", user_id).execute()
 
@@ -238,7 +235,6 @@ if st.session_state.auth_view == "login":
 
             st.session_state.logged_in = True
             st.session_state.login_counter = current_login_count
-            st.session_state.last_login = current_login
 
             st.session_state.user = {
                 "id": user_id,
@@ -255,7 +251,6 @@ if st.session_state.auth_view == "login":
                 "user_name": profile_data.get("full_name"),
 
                 "login_counter": current_login_count,
-                "last_login": current_login,
 
                 "action": "Login",
                 "page": "Home"
