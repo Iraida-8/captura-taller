@@ -134,7 +134,10 @@ def show_changelog():
 # =================================
 # LOGIN VIEW
 # =================================
-if st.session_state.auth_view == "login":
+if (
+    not st.session_state.logged_in
+    and st.session_state.auth_view == "login"
+):
 
     st.markdown(
         """
@@ -249,7 +252,10 @@ if st.session_state.auth_view == "login":
 # RESET PASSWORD VIEW (OTP FLOW)
 # =================================
 
-if st.session_state.auth_view == "reset_request":
+if (
+    not st.session_state.logged_in
+    and st.session_state.auth_view == "reset_request"
+):
 
     st.title("Restablecer contraseña")
 
