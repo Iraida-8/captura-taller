@@ -52,7 +52,7 @@ def to_excel_bytes(dfs_dict):
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Preparación de Reportes",
+    page_title="Preparación de Reportes BETA",
     layout="wide"
 )
 

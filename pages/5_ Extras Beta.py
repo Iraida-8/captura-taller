@@ -30,7 +30,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Módulos Extras",
+    page_title="Módulos Extras BETA",
     layout="wide"
 )
 

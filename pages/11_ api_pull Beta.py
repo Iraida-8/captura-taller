@@ -27,7 +27,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Rastreador y Seguimiento GPS de Unidades",
+    page_title="Rastreador y Seguimiento GPS de Unidades BETA",
     layout="wide"
 )
 

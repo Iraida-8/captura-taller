@@ -19,7 +19,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="AI STOOF",
+    page_title="AI STOOF BEETA",
     layout="wide"
 )
 

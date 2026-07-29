@@ -23,7 +23,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="GESTIÓN DE BASE DE DATOS",
+    page_title="GESTIÓN DE BASE DE DATOS BETA",
     layout="wide"
 )
 
