@@ -23,7 +23,11 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Consulta Bono Operadores",
+    page_title=(
+        "Consulta Bono Operadores BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Consulta Bono Operadores"
+    ),
     layout="wide"
 )
 
@@ -54,6 +58,26 @@ def get_supabase():
     )
 
 supabase = get_supabase()
+
+# =================================
+# AUDIT
+# =================================
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
 
 # =================================
 # Navigation
@@ -300,6 +324,10 @@ st.download_button(
     data=excel_buffer.getvalue(),
     file_name=f"Bonos_Operadores_{datetime.now():%Y%m%d}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    on_click=lambda: log_activity(
+        "Descargó Reporte Bono Operadores",
+        "Consulta Bono Operadores"
+    ),
     use_container_width=True
 )
 
