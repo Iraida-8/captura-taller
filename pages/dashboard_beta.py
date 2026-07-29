@@ -79,6 +79,15 @@ def log_activity(action, page):
     except Exception as e:
         print(e)
 
+if not st.session_state.get("dashboard_loaded", False):
+
+    log_activity(
+        "Regresó al Dashboard",
+        "Dashboard"
+    )
+
+    st.session_state.dashboard_loaded = True
+
 # -------------------------------
 # CHANGELOG
 # -------------------------------
@@ -540,6 +549,8 @@ Permite registrar solicitudes de taller, generar Bonos de Operadores y administr
                     "Dashboard"
                 )
 
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
                 )
@@ -583,6 +594,8 @@ if show_gestion:
                         "Abrir módulo - Gestión de Órdenes y Pases",
                         "Dashboard"
                     )
+
+                    st.session_state.dashboard_loaded = False
 
                     st.switch_page(
                         f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
@@ -643,6 +656,8 @@ Permite consultar el historial completo de reparaciones, órdenes y servicios re
                     "Dashboard"
                 )
 
+                st.session_state.dashboard_loaded = False
+                
                 st.switch_page(
                     f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
                 )
@@ -679,6 +694,8 @@ Permite consultar el historial de Bonos de Operadores, así como su información
                     "Abrir módulo - Consulta Bonos de Operadores",
                     "Dashboard"
                 )
+
+                st.session_state.dashboard_loaded = False
 
                 st.switch_page(
                     f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py"
@@ -745,6 +762,8 @@ Permite consultar archivos PDF de reparación y generar reportes operativos de i
                     "Dashboard"
                 )
 
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/5_ Extras{PAGE_SUFFIX}.py"
                 )
@@ -783,6 +802,8 @@ Permite visualizar la ubicación en tiempo real de las unidades, consultar indic
                     "Abrir módulo - Rastreador GPS",
                     "Dashboard"
                 )
+
+                st.session_state.dashboard_loaded = False
 
                 st.switch_page(
                     f"pages/11_ api_pull{PAGE_SUFFIX}.py"
@@ -880,6 +901,8 @@ Permite administrar la información maestra del sistema, incluyendo catálogos, 
                     "Dashboard"
                 )
 
+                st.session_state.dashboard_loaded = False
+
                 st.switch_page(
                     f"pages/8_ Gestion de Base de Datos{PAGE_SUFFIX}.py"
                 )
@@ -915,6 +938,8 @@ Permite ejecutar pruebas, validar modelos y experimentar con herramientas de int
                 "Abrir módulo - Pruebas de IA",
                 "Dashboard"
             )
+
+            st.session_state.dashboard_loaded = False
 
             st.switch_page(
                 f"pages/12_ AI_tests{PAGE_SUFFIX}.py"
