@@ -1,5 +1,4 @@
 import streamlit as st
-from datetime import datetime
 from auth import require_login
 from pathlib import Path
 from PIL import Image
@@ -70,11 +69,7 @@ def log_activity(action, page):
 
             "user_id": user.get("id"),
             "user_name": user.get("name"),
-
             "login_counter": st.session_state.get("login_counter"),
-
-            "last_login": st.session_state.get("last_login"),
-
             "action": action,
             "page": page,
 
