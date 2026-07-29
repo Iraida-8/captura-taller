@@ -175,3 +175,146 @@ def render_navbar():
         '<div class="omega-divider"></div>',
         unsafe_allow_html=True
     )
+    # ===========================
+    # CONSULTAS
+    # ===========================
+
+    with consultas:
+
+        with st.popover("🔍 Consultas"):
+
+            if _has_access(
+                access,
+                [
+                    "consultar_reparacion",
+                ],
+            ):
+
+                if st.button(
+                    "Historial de Reparación",
+                    use_container_width=True,
+                    key="nav_historial",
+                ):
+
+                    st.switch_page(
+                        f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
+                    )
+
+            if _has_access(
+                access,
+                [
+                    "consulta_bonos_operador",
+                ],
+            ):
+
+                if st.button(
+                    "Consulta Bonos",
+                    use_container_width=True,
+                    key="nav_consulta_bonos",
+                ):
+
+                    st.switch_page(
+                        f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py"
+                    )
+
+    # ===========================
+    # EXTRAS
+    # ===========================
+
+    with extras:
+
+        with st.popover("⚙ Extras"):
+
+            if _has_access(
+                access,
+                [
+                    "ifuel",
+                    "lector_pdf",
+                ],
+            ):
+
+                if st.button(
+                    "Extras",
+                    use_container_width=True,
+                    key="nav_extras",
+                ):
+
+                    st.switch_page(
+                        f"pages/5_ Extras{PAGE_SUFFIX}.py"
+                    )
+
+            if _has_access(
+                access,
+                [
+                    "gps_tracking",
+                ],
+            ):
+
+                if st.button(
+                    "GPS Tracking",
+                    use_container_width=True,
+                    key="nav_gps",
+                ):
+
+                    st.switch_page(
+                        f"pages/11_ api_pull{PAGE_SUFFIX}.py"
+                    )
+
+    # ===========================
+    # ADMINISTRACIÓN
+    # ===========================
+
+    with admin:
+
+        with st.popover("🗄 Administración"):
+
+            if _has_access(
+                access,
+                [
+                    "prepara_reportes",
+                ],
+            ):
+
+                if st.button(
+                    "Preparación de Reportes",
+                    use_container_width=True,
+                    key="nav_reportes",
+                ):
+
+                    st.switch_page(
+                        f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py"
+                    )
+
+            if _has_access(
+                access,
+                [
+                    "gestion_unidades",
+                ],
+            ):
+
+                if st.button(
+                    "Base de Datos",
+                    use_container_width=True,
+                    key="nav_database",
+                ):
+
+                    st.switch_page(
+                        f"pages/8_ Gestion de Base de Datos{PAGE_SUFFIX}.py"
+                    )
+
+            if _has_access(
+                access,
+                [
+                    "ai_testing",
+                ],
+            ):
+
+                if st.button(
+                    "Pruebas IA",
+                    use_container_width=True,
+                    key="nav_ai",
+                ):
+
+                    st.switch_page(
+                        f"pages/12_ AI_tests{PAGE_SUFFIX}.py"
+                    )
