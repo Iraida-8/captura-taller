@@ -35,14 +35,14 @@ if REQUIRED_RELEASE not in access:
 # -------------------------------
 # TITLE
 # -------------------------------
-#st.set_page_config(
-    #page_title=(
-     #   "Dashboard - OMEGA BETA"
-    #    if REQUIRED_RELEASE.lower() == "beta"
-   #     else "Dashboard - OMEGA"
-  #  ),
- #   layout="wide"
-#)
+st.set_page_config(
+    page_title=(
+        "Dashboard - OMEGA BETA"
+        if REQUIRED_RELEASE.lower() == "beta"
+        else "Dashboard - OMEGA"
+    ),
+    layout="wide"
+)
 
 # -------------------------------
 # PAGE STYLE
