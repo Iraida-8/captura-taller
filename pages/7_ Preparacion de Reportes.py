@@ -52,10 +52,13 @@ def to_excel_bytes(dfs_dict):
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Preparación de Reportes",
+    page_title=(
+        "Preparación de Reportes BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Preparación de Reportes"
+    ),
     layout="wide"
 )
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
@@ -67,15 +70,38 @@ load_css()
 require_login()
 require_access("prepara_reportes")
 
+user = st.session_state.user
+
 # =================================
-# Page Cache and State Management
+# SUPABASE
 # =================================
+
 @st.cache_resource
-def get_supabase_client():
+def get_supabase():
+
     return create_client(
         st.secrets["SUPABASE_URL"],
         st.secrets["SUPABASE_SERVICE_KEY"]
     )
+
+supabase = get_supabase()
+
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
 
 # =================================
 # Navigation
@@ -93,7 +119,7 @@ st.title("📊 Consulta, Carga, Preparación y Generación de Reportes")
 # =================================
 @st.cache_data
 def load_refacciones_igloo():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     all_data = []
     limit = 1000
@@ -124,7 +150,7 @@ def load_refacciones_igloo():
 
 @st.cache_data
 def load_ostes_igloo():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     all_data = []
     limit = 1000
@@ -155,7 +181,7 @@ def load_ostes_igloo():
 
 @st.cache_data
 def load_mano_obra_igloo():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
 
     all_data = []
     limit = 1000
@@ -186,7 +212,7 @@ def load_mano_obra_igloo():
 
 @st.cache_data
 def load_refacciones_lincoln():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -201,7 +227,7 @@ def load_refacciones_lincoln():
 
 @st.cache_data
 def load_ostes_lincoln():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -216,7 +242,7 @@ def load_ostes_lincoln():
 
 @st.cache_data
 def load_mano_obra_lincoln():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -231,7 +257,7 @@ def load_mano_obra_lincoln():
 
 @st.cache_data
 def load_refacciones_picus():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -246,7 +272,7 @@ def load_refacciones_picus():
 
 @st.cache_data
 def load_ostes_picus():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -261,7 +287,7 @@ def load_ostes_picus():
 
 @st.cache_data
 def load_mano_obra_picus():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -276,7 +302,7 @@ def load_mano_obra_picus():
 
 @st.cache_data
 def load_refacciones_setfreight():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -291,7 +317,7 @@ def load_refacciones_setfreight():
 
 @st.cache_data
 def load_ostes_setfreight():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -306,7 +332,7 @@ def load_ostes_setfreight():
 
 @st.cache_data
 def load_mano_obra_setfreight():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -321,7 +347,7 @@ def load_mano_obra_setfreight():
 
 @st.cache_data
 def load_refacciones_logis():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -336,7 +362,7 @@ def load_refacciones_logis():
 
 @st.cache_data
 def load_ostes_logis():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -351,7 +377,7 @@ def load_ostes_logis():
 
 @st.cache_data
 def load_mano_obra_logis():
-    supabase = get_supabase_client()
+    supabase = get_supabase()
     all_data, limit, offset = [], 1000, 0
 
     while True:
@@ -368,7 +394,7 @@ def load_mano_obra_logis():
 @st.cache_data
 def load_vehicle_units():
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
 
         response = supabase.table("vehicle_units").select("*").execute()
         df = pd.DataFrame(response.data)
@@ -386,7 +412,7 @@ def load_vehicle_units():
 @st.cache_data
 def load_proveedores_iva():
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
 
         response = supabase.table("proveedores_iva").select("*").execute()
         df = pd.DataFrame(response.data)
@@ -404,7 +430,7 @@ def load_proveedores_iva():
 @st.cache_data
 def load_parts():
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
 
         all_data = []
         limit = 1000
@@ -455,6 +481,11 @@ if "modo_reportes" not in st.session_state:
 with col_a:
     if st.button("📄 Consultar Reportes", use_container_width=True):
 
+        log_activity(
+            "Seleccionó Consultar Reportes",
+            "Preparación de Reportes"
+        )
+
         keys_to_delete = [
             "ordenes_IGLOO", "ordenes_LINCOLN_FREIGHT", "ordenes_PICUS",
             "ordenes_SET_FREIGHT_INTERNATIONAL", "ordenes_SET_LOGIS_PLUS",
@@ -473,6 +504,11 @@ with col_a:
 
 with col_b:
     if st.button("📤 Cargar Reportes", use_container_width=True):
+
+        log_activity(
+            "Seleccionó Cargar Reportes",
+            "Preparación de Reportes"
+        )
 
         keys_to_delete = [
             "consulta_empresa",
@@ -1021,7 +1057,7 @@ def display_report_section(report_type, df_initial, empresa):
 # =================================
 def upload_to_supabase(df, table_name):
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
 
         df = normalize_columns_for_supabase(df)
         df = clean_for_insert(df)
@@ -1084,7 +1120,7 @@ def read_file(file):
 @st.cache_data
 def load_tc():
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
 
         response = supabase.table("tc_mensual").select("*").execute()
 
