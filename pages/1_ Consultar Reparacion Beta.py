@@ -901,66 +901,12 @@ with reportes_tab:
                 key=f"tabla_{columna}"
             )
 
-# =================================
-# TABLA COMPLETA - INTERNAS (2025+)
-# =================================
-st.subheader("Todas las Órdenes Internas")
-
-df_tabla_interna = df.copy()
-
-# Aplicar todos los filtros seleccionados
-for columna, valor in filtros_seleccionados.items():
-
-    if valor == "Todas":
-        continue
-
-    if columna in df_tabla_interna.columns:
-        df_tabla_interna = df_tabla_interna[
-            df_tabla_interna[columna]
-            .astype(str)
-            .str.strip() == valor
-        ]
-
-if df_tabla_interna.empty:
-    st.info("No hay órdenes internas.")
-else:
-
-    columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
-    columnas_mostrar = [
-        c for c in df_tabla_interna.columns
-        if c not in columnas_ocultar
-    ]
-
-    if "Fecha Registro" in df_tabla_interna.columns:
-        df_tabla_interna = df_tabla_interna.sort_values(
-            "Fecha Registro",
-            ascending=False
-        )
-
-    st.dataframe(
-        df_tabla_interna[columnas_mostrar],
-        hide_index=True,
-        use_container_width=True
-    )
-
-    st.download_button(
-        "⬇ Descargar Órdenes Internas",
-        data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
-        file_name=f"Ordenes_Internas_{empresa}.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
-
-    st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
-
-
     # =================================
-    # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
+    # TABLA COMPLETA - INTERNAS (2025+)
     # =================================
-    st.divider()
-    st.subheader("Todas las Órdenes Externas (OSTES)")
+    st.subheader("Todas las Órdenes Internas")
 
-    df_tabla_externa = df_ostes.copy()
+    df_tabla_interna = df.copy()
 
     # Aplicar todos los filtros seleccionados
     for columna, valor in filtros_seleccionados.items():
@@ -968,38 +914,92 @@ else:
         if valor == "Todas":
             continue
 
-        if columna in df_tabla_externa.columns:
-            df_tabla_externa = df_tabla_externa[
-                df_tabla_externa[columna]
+        if columna in df_tabla_interna.columns:
+            df_tabla_interna = df_tabla_interna[
+                df_tabla_interna[columna]
                 .astype(str)
                 .str.strip() == valor
             ]
 
-    if df_tabla_externa.empty:
-        st.info("No hay registros externos.")
+    if df_tabla_interna.empty:
+        st.info("No hay órdenes internas.")
     else:
 
-        if "Fecha OSTE" in df_tabla_externa.columns:
-            df_tabla_externa = df_tabla_externa.sort_values(
-                "Fecha OSTE",
+        columnas_ocultar = ["DIFERENCIA", "COMENTARIOS"]
+        columnas_mostrar = [
+            c for c in df_tabla_interna.columns
+            if c not in columnas_ocultar
+        ]
+
+        if "Fecha Registro" in df_tabla_interna.columns:
+            df_tabla_interna = df_tabla_interna.sort_values(
+                "Fecha Registro",
                 ascending=False
             )
 
         st.dataframe(
-            df_tabla_externa,
+            df_tabla_interna[columnas_mostrar],
             hide_index=True,
             use_container_width=True
         )
 
         st.download_button(
-            "⬇ Descargar Órdenes Externas",
-            data=df_tabla_externa.to_csv(index=False).encode("utf-8-sig"),
-            file_name=f"OSTES_{empresa}.csv",
+            "⬇ Descargar Órdenes Internas",
+            data=df_tabla_interna[columnas_mostrar].to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"Ordenes_Internas_{empresa}.csv",
             mime="text/csv",
             use_container_width=True,
         )
 
-        st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
+        st.caption(f"Total de órdenes internas: {len(df_tabla_interna)}")
+
+
+        # =================================
+        # TABLA COMPLETA - EXTERNAS (OSTES 2025+)
+        # =================================
+        st.divider()
+        st.subheader("Todas las Órdenes Externas (OSTES)")
+
+        df_tabla_externa = df_ostes.copy()
+
+        # Aplicar todos los filtros seleccionados
+        for columna, valor in filtros_seleccionados.items():
+
+            if valor == "Todas":
+                continue
+
+            if columna in df_tabla_externa.columns:
+                df_tabla_externa = df_tabla_externa[
+                    df_tabla_externa[columna]
+                    .astype(str)
+                    .str.strip() == valor
+                ]
+
+        if df_tabla_externa.empty:
+            st.info("No hay registros externos.")
+        else:
+
+            if "Fecha OSTE" in df_tabla_externa.columns:
+                df_tabla_externa = df_tabla_externa.sort_values(
+                    "Fecha OSTE",
+                    ascending=False
+                )
+
+            st.dataframe(
+                df_tabla_externa,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.download_button(
+                "⬇ Descargar Órdenes Externas",
+                data=df_tabla_externa.to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"OSTES_{empresa}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+            st.caption(f"Total de órdenes externas: {len(df_tabla_externa)}")
 
 # =================================
 # VIEW MODAL
