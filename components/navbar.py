@@ -1,12 +1,17 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 
-# ============================================================
+# ==========================================================
 # HELPERS
-# ============================================================
+# ==========================================================
 
-def has_access(user_access, permissions):
-    return any(p in user_access for p in permissions)
+def has_access(user_access, permission):
+
+    if permission is None:
+        return True
+
+    return permission in user_access
 
 
 def get_page_suffix():
@@ -16,411 +21,144 @@ def get_page_suffix():
     return " Beta" if "beta" in access else ""
 
 
-def logout():
+# ==========================================================
+# NAVIGATION CONFIGURATION
+# ==========================================================
 
-    st.session_state.logged_in = False
-    st.session_state.user = None
+NAVIGATION = [
 
-    st.switch_page("Home.py")
+    {
+        "title": "HOME",
 
+        "items": [
 
-# ============================================================
-# NAVBAR
-# ============================================================
+            {
+                "label": "Dashboard",
+                "permission": None,
+                "page": "pages/dashboard_beta.py",
+            }
 
-def render_navbar():
+        ]
+    },
 
-    user = st.session_state.user
+    {
+        "title": "SOLICITUDES Y PASES",
 
-    access = user.get("access", [])
+        "items": [
 
-    PAGE_SUFFIX = get_page_suffix()
+            {
+                "label": "Captura de Pases",
+                "permission": "pase_taller",
+                "page": "pages/3_ Solicitudes y Pases{suffix}.py",
+            },
 
-    # =======================================================
-    # CSS
-    # =======================================================
+            {
+                "label": "Bono Operadores",
+                "permission": "bonos_operador",
+                "page": "pages/3_ Solicitudes y Pases{suffix}.py",
+            },
 
-    st.markdown(
-        """
-<style>
+        ]
+    },
 
-div[data-testid="stHorizontalBlock"]{
-    align-items:center;
-}
+    {
+        "title": "GESTIÓN DE ÓRDENES Y PASES",
 
-div[data-testid="stPopover"] > button{
+        "items": [
 
-    width:100%;
+            {
+                "label": "Autorización",
+                "permission": "autorizacion",
+                "page": "pages/4_ Autorizacion{suffix}.py",
+            },
 
-    background:none !important;
+            {
+                "label": "Gestión de Viáticos",
+                "permission": "gestion_viaticos",
+                "page": "pages/9_ Gestion Viaticos{suffix}.py",
+            },
 
-    border:none !important;
+        ]
+    },
 
-    color:white !important;
+    {
+        "title": "CONSULTAS E HISTORIALES",
 
-    font-weight:700;
+        "items": [
 
-    font-size:14px;
+            {
+                "label": "Consultar Reparación",
+                "permission": "consultar_reparacion",
+                "page": "pages/1_ Consultar Reparacion{suffix}.py",
+            },
 
-    box-shadow:none !important;
-}
+            {
+                "label": "Consulta Bonos",
+                "permission": "consulta_bonos_operador",
+                "page": "pages/14_ Consulta Bonos{suffix}.py",
+            },
 
-div[data-testid="stPopover"] > button:hover{
+        ]
+    },
 
-    background:rgba(255,255,255,.12)!important;
-}
+    {
+        "title": "EXTRAS",
 
-div.stButton > button{
+        "items": [
 
-    width:100%;
-}
+            {
+                "label": "Lector PDF",
+                "permission": "lector_pdf",
+                "page": "pages/5_ Extras{suffix}.py",
+            },
 
-.navbar{
+            {
+                "label": "Reporte iFuel",
+                "permission": "ifuel",
+                "page": "pages/5_ Extras{suffix}.py",
+            },
 
-    background:#151F6D;
+        ]
+    },
 
-    padding:12px 18px;
-
-    border-radius:12px;
-
-    margin-bottom:20px;
-}
-
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # =======================================================
-    # BAR
-    # =======================================================
-
-    st.markdown(
-        '<div class="navbar">',
-        unsafe_allow_html=True,
-    )
-
-    home,\
-    solicitudes,\
-    gestion,\
-    consultas,\
-    extras,\
-    gps,\
-    administracion,\
-    cuenta = st.columns(
-        [1.0,2.2,2.7,2.4,1.3,1.9,2.2,1.3]
-    )
-
-    # =======================================================
-    # HOME
-    # =======================================================
-
-    with home:
-
-        if st.button(
-            "HOME",
-            use_container_width=True,
-            key="nav_home",
-        ):
-
-            st.switch_page(
-                "pages/dashboard_beta.py"
-            )
-
-    # =======================================================
-    # SOLICITUDES Y PASES
-    # =======================================================
-
-    with solicitudes:
-
-        with st.popover("SOLICITUDES Y PASES"):
-
-            if has_access(
-                access,
-                [
-                    "pase_taller",
-                ]
-            ):
-
-                if st.button(
-                    "Captura de Pases",
-                    use_container_width=True,
-                    key="nav_pases",
-                ):
-
-                    st.switch_page(
-                        f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "bonos_operador",
-                ]
-            ):
-
-                if st.button(
-                    "Bono Operadores",
-                    use_container_width=True,
-                    key="nav_bonos",
-                ):
-
-                    st.switch_page(
-                        f"pages/3_ Solicitudes y Pases{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # GESTION DE ORDENES Y PASES
-    # =======================================================
-
-    with gestion:
-
-        with st.popover("GESTIÓN DE ÓRDENES Y PASES"):
-#
-            if has_access(
-                access,
-                [
-                    "autorizacion",
-                ]
-            ):
-
-                if st.button(
-                    "Autorización",
-                    use_container_width=True,
-                    key="nav_autorizacion",
-                ):
-
-                    st.switch_page(
-                        f"pages/4_ Autorizacion{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "gestion_viaticos",
-                ]
-            ):
-
-                if st.button(
-                    "Gestión de Viáticos",
-                    use_container_width=True,
-                    key="nav_viaticos",
-                ):
-
-                    st.switch_page(
-                        f"pages/9_ Gestion Viaticos{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # CONSULTAS E HISTORIALES
-    # =======================================================
-
-    with consultas:
-
-        with st.popover("CONSULTAS E HISTORIALES"):
-
-            if has_access(
-                access,
-                [
-                    "consultar_reparacion",
-                ]
-            ):
-
-                if st.button(
-                    "Consultar Reparación",
-                    use_container_width=True,
-                    key="nav_consultar_reparacion",
-                ):
-
-                    st.switch_page(
-                        f"pages/1_ Consultar Reparacion{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "consulta_bonos_operador",
-                ]
-            ):
-
-                if st.button(
-                    "Consulta de Bonos",
-                    use_container_width=True,
-                    key="nav_consulta_bonos",
-                ):
-
-                    st.switch_page(
-                        f"pages/14_ Consulta Bonos{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # EXTRAS
-    # =======================================================
-
-    with extras:
-
-        with st.popover("EXTRAS"):
-            if has_access(
-                access,
-                [
-                    "lector_pdf",
-                ]
-            ):
-
-                if st.button(
-                    "Lector PDF",
-                    use_container_width=True,
-                    key="nav_pdf",
-                ):
-
-                    st.switch_page(
-                        f"pages/5_ Extras{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "ifuel",
-                ]
-            ):
-
-                if st.button(
-                    "Reporte iFuel",
-                    use_container_width=True,
-                    key="nav_ifuel",
-                ):
-
-                    st.switch_page(
-                        f"pages/5_ Extras{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # SEGUIMIENTO GPS
-    # =======================================================
-
-    with gps:
-
-        with st.popover("SEGUIMIENTO GPS"):
-
-            if has_access(
-                access,
-                [
-                    "gps_tracking",
-                ]
-            ):
-
-                if st.button(
-                    "Rastreador GPS",
-                    use_container_width=True,
-                    key="nav_gps",
-                ):
-
-                    st.switch_page(
-                        f"pages/11_ api_pull{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # ADMINISTRACIÓN
-    # =======================================================
-
-    with administracion:
-
-        with st.popover("ADMINISTRACIÓN"):
-
-            if has_access(
-                access,
-                [
-                    "prepara_reportes",
-                ]
-            ):
-
-                if st.button(
-                    "Preparación de Reportes",
-                    use_container_width=True,
-                    key="nav_reportes",
-                ):
-
-                    st.switch_page(
-                        f"pages/7_ Preparacion de Reportes{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "gestion_unidades",
-                ]
-            ):
-
-                if st.button(
-                    "Gestión Base de Datos",
-                    use_container_width=True,
-                    key="nav_database",
-                ):
-
-                    st.switch_page(
-                        f"pages/8_ Gestion de Base de Datos{PAGE_SUFFIX}.py"
-                    )
-
-            if has_access(
-                access,
-                [
-                    "ai_testing",
-                ]
-            ):
-
-                if st.button(
-                    "Pruebas IA",
-                    use_container_width=True,
-                    key="nav_ai",
-                ):
-
-                    st.switch_page(
-                        f"pages/12_ AI_tests{PAGE_SUFFIX}.py"
-                    )
-
-    # =======================================================
-    # CUENTA
-    # =======================================================
-
-    with cuenta:
-
-        with st.popover("CUENTA"):
-                        
-                        st.markdown(
-                            f"**{user.get('name', 'Usuario')}**"
-                        )
-
-                        if user.get("email"):
-                            st.caption(user["email"])
-
-                        st.divider()
-
-                        if st.button(
-                            "Cerrar sesión",
-                            use_container_width=True,
-                            key="nav_logout",
-                        ):
-                            logout()
-
-    # =======================================================
-    # CLOSE NAVBAR
-    # =======================================================
-
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <style>
-
-        hr{
-            margin-top:0.25rem;
-            margin-bottom:1rem;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    {
+        "title": "SEGUIMIENTO GPS",
+
+        "items": [
+
+            {
+                "label": "Rastreador GPS",
+                "permission": "gps_tracking",
+                "page": "pages/11_ api_pull{suffix}.py",
+            },
+
+        ]
+    },
+
+    {
+        "title": "ADMINISTRACIÓN",
+
+        "items": [
+
+            {
+                "label": "Preparación de Reportes",
+                "permission": "prepara_reportes",
+                "page": "pages/7_ Preparacion de Reportes{suffix}.py",
+            },
+
+            {
+                "label": "Gestión Base de Datos",
+                "permission": "gestion_unidades",
+                "page": "pages/8_ Gestion de Base de Datos{suffix}.py",
+            },
+
+            {
+                "label": "Pruebas IA",
+                "permission": "ai_testing",
+                "page": "pages/12_ AI_tests{suffix}.py",
+            },
+
+        ]
+    },
+
+]
