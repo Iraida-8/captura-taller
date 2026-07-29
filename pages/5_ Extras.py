@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import math
+from supabase import create_client
 import numpy as np
 from io import BytesIO
 from auth import require_login, require_access
@@ -30,10 +31,13 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Módulos Extras",
+    page_title=(
+        "Módulos Extras BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "Módulos Extras"
+    ),
     layout="wide"
 )
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
@@ -56,6 +60,39 @@ user_access = {
     access.lower()
     for access in st.session_state["user"].get("access", [])
 }
+
+user = st.session_state.user
+
+# =================================
+# SUPABASE
+# =================================
+
+@st.cache_resource
+def get_supabase():
+
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_SERVICE_KEY"]
+    )
+
+supabase = get_supabase()
+
+def log_activity(action, page):
+
+    try:
+
+        supabase.table("user_activity_log").insert({
+
+            "user_id": user.get("id"),
+            "user_name": user.get("name"),
+            "login_counter": st.session_state.get("login_counter"),
+            "action": action,
+            "page": page,
+
+        }).execute()
+
+    except Exception as e:
+        print(e)
 
 # =================================
 # TABS
@@ -88,6 +125,11 @@ elif has_lector:
 if has_ifuel:
 
     with tab_ifuel:
+
+        log_activity(
+            "Abrió módulo Fuel Solutions",
+            "Módulos Extras"
+        )
 
         st.title("⛽ Reporte iFuel")
 
@@ -336,6 +378,11 @@ if has_ifuel:
 if has_lector:
 
     with tab_lector:
+
+        log_activity(
+            "Abrió módulo Lector PDF",
+            "Módulos Extras"
+        )
 
         COLS = [
             "EMPRESA", "#FACTURA", "UUID", "FECHA FACTURA",
