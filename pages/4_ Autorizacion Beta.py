@@ -3452,8 +3452,10 @@ if has_viaticos:
             # =================================
             # MODAL
             # =================================
-            @st.dialog("Detalle de Solicitud")
-
+            @st.dialog(
+                "Detalle de Solicitud",
+                width="large",
+            )
             def modal_ver_solicitud(row):
 
                 st.markdown(
@@ -4365,7 +4367,10 @@ if has_viaticos:
                             # =================================
                             # MODAL
                             # =================================
-                            @st.dialog("Detalle de Comprobación")
+                            @st.dialog(
+                                "Detalle de Comprobación",
+                                width="large",
+                            )
                             def modal_verificacion():
 
                                 # =================================
@@ -5785,7 +5790,10 @@ if has_viaticos:
                             # =================================
                             # MODAL
                             # =================================
-                            @st.dialog("Detalle de Comprobación")
+                            @st.dialog(
+                                "Detalle de Comprobación",
+                                width="large",
+                            )
                             def modal_verificacion_finalizada():
 
                                 # =================================
