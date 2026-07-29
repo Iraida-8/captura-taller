@@ -71,18 +71,22 @@ if (
 # LOGIN / RESET REQUEST VIEW
 # =================================
 
-assets_dir = Path(__file__).parent / "assets"
-logo_path = assets_dir / "color_pgl.png"
+if not st.session_state.logged_in:
 
-if logo_path.exists():
-    img = Image.open(logo_path)
-    if img.width > 600:
-        ratio = 600 / img.width
-        img = img.resize(
-            (600, int(img.height * ratio)),
-            Image.LANCZOS
-        )
-    st.image(img, width="stretch")
+    assets_dir = Path(__file__).parent / "assets"
+    logo_path = assets_dir / "color_pgl.png"
+
+    if logo_path.exists():
+        img = Image.open(logo_path)
+
+        if img.width > 600:
+            ratio = 600 / img.width
+            img = img.resize(
+                (600, int(img.height * ratio)),
+                Image.LANCZOS
+            )
+
+        st.image(img, width="stretch")
 
 # =================================
 # CHANGELOG LOAD
