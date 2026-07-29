@@ -7,7 +7,6 @@ import json
 import streamlit.components.v1 as components
 from supabase import create_client
 from pages.css import load_css
-from components.navbar import render_navbar
 
 # -------------------------------
 # Security gate
@@ -49,7 +48,6 @@ st.set_page_config(
 # PAGE STYLE
 # -------------------------------
 load_css()
-render_navbar()
 
 @st.cache_resource
 def get_supabase():
