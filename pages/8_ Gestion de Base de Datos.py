@@ -23,10 +23,13 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="GESTIÓN DE BASE DE DATOS",
+    page_title=(
+        "GESTIÓN DE BASE DE DATOS BETA"
+        if APP_CHANNEL.upper() == "BETA"
+        else "GESTIÓN DE BASE DE DATOS"
+    ),
     layout="wide"
 )
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
@@ -82,12 +85,14 @@ if is_admin:
         tab_proveedores,
         tab_tc,
         tab_admin,
+        tab_audit,
     ) = st.tabs([
         "Gestión, Creación y Carga de Unidades",
         "Refacciones",
         "Proveedores IVA",
         "TC Mensual",
         "👤 Administración de Usuarios",
+        "📋 Audit",
     ])
 
 else:
@@ -259,6 +264,7 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
+df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1931,3 +1937,18 @@ with tab_admin:
                 st.success("Usuario actualizado correctamente.")
 
                 st.rerun()
+
+# ==========================================
+# AUDIT
+# ==========================================
+
+with tab_audit:
+
+    st.subheader("User Activity Audit")
+
+    st.dataframe(
+        df_activity,
+        use_container_width=True,
+        hide_index=True,
+        height=700,
+    )
