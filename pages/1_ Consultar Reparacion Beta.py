@@ -23,7 +23,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Consulta de Reparación BEETA",
+    page_title="Consulta de Reparación BETA",
     layout="wide"
 )
 
