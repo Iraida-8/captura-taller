@@ -23,7 +23,7 @@ DASHBOARD_PAGE = (
 # Page configuration
 # =================================
 st.set_page_config(
-    page_title="Consulta Bono Operadores",
+    page_title="Consulta Bono Operadores BETA",
     layout="wide"
 )
 
