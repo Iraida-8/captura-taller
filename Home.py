@@ -236,7 +236,7 @@ if st.session_state.auth_view == "login":
             }
 
             if "beta" in access:
-                st.switch_page("pages/dashboard_beta.py")
+                st.switch_page("pages/app_beta.py")
             else:
                 st.switch_page("pages/dashboard.py")
 
