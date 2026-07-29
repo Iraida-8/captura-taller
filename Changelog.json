@@ -2,32 +2,40 @@
     {
     "version": "2.07.29.26",
     "date": "29/07/2026",
-    "changes": [
-        "Implementación del nuevo módulo Consulta de Reparación para consulta unificada de Mano de Obra Interna, Mano de Obra Externa (OSTES) y Refacciones por empresa",
-        "Integración de carga dinámica de información desde Supabase para IGLOO TRANSPORT, LINCOLN FREIGHT, PICUS, SET LOGIS PLUS y SET FREIGHT INTERNATIONAL",
-        "Normalización automática de columnas y formatos de datos para unificar la estructura de información entre empresas",
-        "Implementación de filtros globales por Unidad y Factura con aplicación simultánea sobre órdenes internas y externas",
-        "Incorporación de paginación para tarjetas de Mano de Obra Interna y Mano de Obra Externa mostrando 10 registros por página",
-        "Implementación de tarjetas de consulta con apertura de modal de detalle para órdenes internas y externas",
-        "Rediseño del modal de Detalle de Reparación ampliando el ancho de visualización para mejorar la consulta de información",
-        "Incorporación de la pestaña Reportes Mano de Obra con filtros avanzados y exportación de Órdenes Internas y Órdenes Externas (OSTES)",
-        "Integración de la pestaña Refacciones con filtros independientes por Unidad y Parte, visualización dinámica de columnas por empresa y exportación de resultados",
-        "Corrección de la distribución de contenido entre pestañas para evitar la visualización de las tablas de Mano de Obra dentro de la pestaña Refacciones",
-        "Aplicación de bloqueo automático para mostrar únicamente registros correspondientes al año 2025 en adelante",
-        "Mejoras generales de organización del código, rendimiento y experiencia de consulta del módulo Consulta de Reparación"
+    "changes": 
+        [
+            "Implementación del nuevo módulo Consulta de Reparación para consulta unificada de Mano de Obra Interna, Mano de Obra Externa (OSTES) y Refacciones por empresa",
+            "Integración de carga dinámica de información desde Supabase para IGLOO TRANSPORT, LINCOLN FREIGHT, PICUS, SET LOGIS PLUS y SET FREIGHT INTERNATIONAL",
+            "Normalización automática de columnas y formatos de datos para unificar la estructura de información entre empresas",
+            "Implementación de filtros globales por Unidad y Factura con aplicación simultánea sobre órdenes internas y externas",
+            "Incorporación de paginación para tarjetas de Mano de Obra Interna y Mano de Obra Externa mostrando 10 registros por página",
+            "Implementación de tarjetas de consulta con apertura de modal de detalle para órdenes internas y externas",
+            "Rediseño del modal de Detalle de Reparación ampliando el ancho de visualización para mejorar la consulta de información",
+            "Incorporación de la pestaña Reportes Mano de Obra con filtros avanzados y exportación de Órdenes Internas y Órdenes Externas (OSTES)",
+            "Integración de la pestaña Refacciones con filtros independientes por Unidad y Parte, visualización dinámica de columnas por empresa y exportación de resultados",
+            "Corrección de la distribución de contenido entre pestañas para evitar la visualización de las tablas de Mano de Obra dentro de la pestaña Refacciones",
+            "Aplicación de bloqueo automático para mostrar únicamente registros correspondientes al año 2025 en adelante",
+            "Implementación del sistema global de registro de actividad (User Activity Log) para auditoría de acciones realizadas por los usuarios",
+            "Integración de registro automático de acciones en módulos críticos del sistema (consultas, cargas, modificaciones y procesos administrativos)",
+            "Incorporación del contador de sesión (Login Counter) para asociar cada actividad con una sesión específica del usuario",
+            "Creación de la nueva pestaña Audit exclusiva para administradores con visualización del historial completo de actividad almacenado en Supabase",
+            "Implementación del registro de auditoría para operaciones CRUD y reemplazo masivo de tablas dentro del módulo Gestión de Base de Datos",
+            "Mejoras generales de organización del código, rendimiento y experiencia de consulta del módulo Consulta de Reparación"
         ]
     },
+
     {
     "version": "2.07.28.26",
     "date": "28/07/2026",
-    "changes": [
-        "Implementación de notificaciones automáticas por correo electrónico para el módulo de Solicitudes y Gestión de Viáticos",
-        "Integración de envío de notificaciones por cambio de estatus durante el proceso de revisión, aprobación, rechazo y conclusión de solicitudes",
-        "Optimización de la distribución automática de destinatarios considerando empresa, usuario solicitante y participantes del flujo de autorización",
-        "Implementación del sistema de carga y almacenamiento de comprobantes de gastos en Supabase Storage",
-        "Integración de consulta y descarga de comprobantes adjuntos desde los modales de Verificación y Solicitudes Finalizadas",
-        "Incorporación de validaciones para manejo de archivos adjuntos y visualización de mensajes cuando no existen comprobantes disponibles",
-        "Mejoras generales de estabilidad, rendimiento y experiencia de usuario en el módulo de Gestión de Viáticos"
+    "changes": 
+        [
+            "Implementación de notificaciones automáticas por correo electrónico para el módulo de Solicitudes y Gestión de Viáticos",
+            "Integración de envío de notificaciones por cambio de estatus durante el proceso de revisión, aprobación, rechazo y conclusión de solicitudes",
+            "Optimización de la distribución automática de destinatarios considerando empresa, usuario solicitante y participantes del flujo de autorización",
+            "Implementación del sistema de carga y almacenamiento de comprobantes de gastos en Supabase Storage",
+            "Integración de consulta y descarga de comprobantes adjuntos desde los modales de Verificación y Solicitudes Finalizadas",
+            "Incorporación de validaciones para manejo de archivos adjuntos y visualización de mensajes cuando no existen comprobantes disponibles",
+            "Mejoras generales de estabilidad, rendimiento y experiencia de usuario en el módulo de Gestión de Viáticos"
         ]
     },
 
