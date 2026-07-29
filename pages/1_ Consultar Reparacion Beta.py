@@ -1009,7 +1009,10 @@ if st.session_state.get("modal_orden"):
     r = st.session_state.modal_orden
     tipo = st.session_state.get("modal_tipo", "interna")
 
-    @st.dialog("Detalle de la Reparación")
+    @st.dialog(
+        "Detalle de la Reparación",
+        width="large",
+    )
     def modal():
 
         def safe(x):
