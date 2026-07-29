@@ -11,7 +11,7 @@ import re
 # =================================
 
 APP_CHANNEL = "BETA"
-# APP_CHANNEL = "RELEASE"
+#APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
@@ -97,6 +97,27 @@ if has_pases:
             )
 
         supabase = get_supabase()
+
+        # -------------------------------
+        # AUDIT
+        # -------------------------------
+
+        def log_activity(action, page):
+
+            try:
+
+                supabase.table("user_activity_log").insert({
+
+                    "user_id": user.get("id"),
+                    "user_name": user.get("name"),
+                    "login_counter": st.session_state.get("login_counter"),
+                    "action": action,
+                    "page": page,
+
+                }).execute()
+
+            except Exception as e:
+                print(e)
 
         @st.cache_data(ttl=3600)
         def cargar_unidades_supabase(empresa_codigo):
@@ -692,6 +713,11 @@ if has_pases:
 
             folio_real = append_pase_to_sheet(payload)
 
+            log_activity(
+                f"Pase {folio_real} creado",
+                "Solicitudes y Pases"
+            )
+
             # important → clear force flag after using it
             st.session_state.forzar_guardado = False
 
@@ -1258,6 +1284,11 @@ if has_bonos:
 
                         }).execute()
 
+                        log_activity(
+                            "Nuevo formulario bono",
+                            "Solicitudes y Pases"
+                        )
+
                         st.session_state["mostrar_popup_envio"] = True
                         st.rerun()
 
@@ -1282,6 +1313,6 @@ if has_bonos:
                             key="btn_ok_popup"
                         ):
                             st.session_state["mostrar_popup_envio"] = False
-                            st.switch_page("pages/dashboard.py")
+                            st.switch_page(DASHBOARD_PAGE)
 
                     popup_envio()
