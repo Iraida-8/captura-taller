@@ -235,10 +235,8 @@ if st.session_state.auth_view == "login":
                 "access": access
             }
 
-            if "beta" in access:
-                st.switch_page("pages/app_beta.py")
-            else:
-                st.switch_page("pages/dashboard.py")
+            st.session_state.logged_in = True
+            st.rerun()
 
         except Exception as e:
             st.error(str(e))
@@ -360,3 +358,13 @@ if st.session_state.auth_view == "reset_request":
     if back_btn:
         st.session_state.auth_view = "login"
         st.rerun()
+
+# =================================
+# APPLICATION
+# =================================
+
+if st.session_state.logged_in:
+
+    st.success("User logged in")
+
+    st.write(st.session_state.user)
