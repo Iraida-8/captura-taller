@@ -331,6 +331,29 @@ except Exception as e:
     st.error(f"Unexpected error: {e}")
 
 # =========================================================
+# GLOBAL DATA PREP
+# =========================================================
+if "df" in locals() and not df.empty:
+
+    df = df.copy()
+
+    df["label"] = df["label"].astype(str)
+
+    df["inst_speed"] = pd.to_numeric(
+        df["inst_speed"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["odometer"] = pd.to_numeric(
+        df["odometer"],
+        errors="coerce"
+    ).fillna(0)
+
+    df["voltage"] = pd.to_numeric(
+        df["voltage"],
+        errors="coerce"
+    ).fillna(0)
+# =========================================================
 # KPI DASHBOARD
 # =========================================================
 if (
@@ -409,29 +432,6 @@ if (
         ):
             st.session_state.gps_company_filter = "TODAS"
             st.rerun()
-
-    # =========================================
-    # DATA PREP
-    # =========================================
-
-    df = df.copy()
-
-    df["label"] = df["label"].astype(str)
-
-    df["inst_speed"] = pd.to_numeric(
-        df["inst_speed"],
-        errors="coerce"
-    ).fillna(0)
-
-    df["odometer"] = pd.to_numeric(
-        df["odometer"],
-        errors="coerce"
-    ).fillna(0)
-
-    df["voltage"] = pd.to_numeric(
-        df["voltage"],
-        errors="coerce"
-    ).fillna(0)
 
     # =========================================
     # COMPANY MASKS
