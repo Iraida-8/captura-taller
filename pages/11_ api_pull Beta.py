@@ -193,7 +193,7 @@ setInterval(updateCountdown, 1000);
 with timer_placeholder:
     components.html(
         timer_html,
-        height=80
+        height=100
     )
 
 #==============================================================================================================
