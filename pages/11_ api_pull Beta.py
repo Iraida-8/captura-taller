@@ -95,22 +95,14 @@ st.session_state.setdefault("modal_gps_unit", None)
 # =================================
 # Top navigation
 # =================================
-left_nav, right_nav = st.columns([1, 3])
+st.write("")
 
-with left_nav:
+if st.button("⬅ Volver al Dashboard"):
 
-    if st.button(
-        "⬅ Volver al Dashboard",
-        use_container_width=True
-    ):
+    st.session_state["_reset_gps_page"] = True
+    st.session_state.modal_gps_unit = None
 
-        st.session_state["_reset_gps_page"] = True
-        st.session_state.modal_gps_unit = None
-
-        st.switch_page(DASHBOARD_PAGE)
-
-with right_nav:
-    timer_placeholder = st.empty()
+    st.switch_page(DASHBOARD_PAGE)
 
 st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
 
@@ -189,12 +181,6 @@ setInterval(updateCountdown, 1000);
 
 </script>
 """
-
-with timer_placeholder:
-    components.html(
-        timer_html,
-        height=100
-    )
 
 #==============================================================================================================
 # GPS INSIGHT AUTH
