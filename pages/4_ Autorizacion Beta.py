@@ -1347,6 +1347,7 @@ if has_autorizacion:
         st.session_state.setdefault("modal_reporte", None)
         st.session_state.setdefault("modal_factura", None)
         st.session_state.setdefault("modal_factura_open", False)
+        st.session_state.setdefault("modal_reabrir", None)
         st.session_state.setdefault("refaccion_seleccionada", None)
         st.session_state.setdefault(
             "servicios_df",
@@ -2491,7 +2492,7 @@ if has_autorizacion:
                             "🔓 Re-Abrir",
                             use_container_width=True
                         ):
-                            st.session_state.reabrir_modo = True
+                            st.session_state.modal_reabrir = r
                             st.rerun()
 
                 with c3:
