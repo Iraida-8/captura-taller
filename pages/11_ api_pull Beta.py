@@ -120,17 +120,11 @@ tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs
 
 REFRESH_SECONDS = 300  # 5 minutes
 
-# =============================================
-# AUTO REFRESH
-# =============================================
 st_autorefresh(
     interval=REFRESH_SECONDS * 1000,
     key="gps_auto_refresh"
 )
 
-# =============================================
-# LIVE JAVASCRIPT COUNTDOWN
-# =============================================
 timer_html = f"""
 <div id="gps-refresh-timer" style="
     background:#1B267A;
@@ -181,6 +175,10 @@ setInterval(updateCountdown, 1000);
 
 </script>
 """
+components.html(
+    timer_html,
+    height=70,
+)
 
 #==============================================================================================================
 # GPS INSIGHT AUTH
