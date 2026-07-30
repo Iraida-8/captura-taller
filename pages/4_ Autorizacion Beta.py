@@ -62,6 +62,13 @@ load_css()
 # =================================
 require_login()
 
+current_user = st.session_state["user"]
+
+user_role = current_user.get("role", "").lower()
+
+is_admin = user_role == "admin"
+is_manager = user_role == "manager"
+
 user_access = {
     access.lower()
     for access in st.session_state["user"].get("access", [])
@@ -86,7 +93,7 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
-
+st.write(current_user.get("role"))
 # =================================
 # MODULES
 # =================================
