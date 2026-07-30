@@ -1348,6 +1348,8 @@ if has_autorizacion:
         st.session_state.setdefault("modal_factura", None)
         st.session_state.setdefault("modal_factura_open", False)
         st.session_state.setdefault("refaccion_seleccionada", None)
+        st.session_state.setdefault("reabrir_modo", False)
+        st.session_state.setdefault("reabrir_motivo", "")
         st.session_state.setdefault(
             "servicios_df",
             pd.DataFrame(columns=[
@@ -2470,18 +2472,35 @@ if has_autorizacion:
                 # METRIC
                 # =====================================================
                 st.divider()
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
 
                 with c1:
-                    if st.button("Cancelar"):
+                    if st.button("Cancelar Orden"):
                         st.session_state.modal_reporte = None
                         st.rerun()
 
                 with c2:
 
+                    if (
+                        (is_admin or is_manager)
+                        and r["Estado"] in [
+                            "Cerrado / Terminado",
+                            "Cerrado / Cancelado"
+                        ]
+                    ):
+
+                        if st.button(
+                            "🔓 Re-Abrir",
+                            use_container_width=True
+                        ):
+                            st.session_state.reabrir_modo = True
+                            st.rerun()
+
+                with c3:
+
                     mostrar_aceptar = True
 
-                    label_btn = "Guardar cambios" if editable_estado else "Cerrar"
+                    label_btn = "Guardar cambios" if editable_estado else "Cerrar Ventana"
 
                     if mostrar_aceptar and st.button(label_btn, type="primary"):
 
