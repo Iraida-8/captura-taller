@@ -162,7 +162,7 @@ function updateCountdown() {{
     seconds = String(seconds).padStart(2, "0");
 
     document.getElementById("countdown").innerHTML =
-        `${{minutes}}:${{seconds}}`;
+        minutes + ":" + seconds;
 
     totalSeconds--;
 
