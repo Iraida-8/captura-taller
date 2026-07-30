@@ -105,18 +105,13 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.title("🛰️  Rastreador y Seguimiento GPS de Unidades")
 
-selected_section = st.segmented_control(
-    "Sección",
-    [
-        "📊 Dashboard",
-        "🚛 Seguimiento",
-        "🗺️ Mapa",
-        "📈 Historial",
-        "🧪 Testbench",
-    ],
-    default="📊 Dashboard",
-    key="gps_section",
-)
+tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs([
+    "📊 Dashboard",
+    "🚛 Seguimiento",
+    "🗺️ Mapa",
+    "📈 Historial",
+    "🧪 Testbench",
+])
 
 # =====================================================
 # AUTO REFRESH TIMER
@@ -353,411 +348,406 @@ if "df" in locals() and not df.empty:
         df["voltage"],
         errors="coerce"
     ).fillna(0)
+
 # =========================================================
 # KPI DASHBOARD
 # =========================================================
-if (
-    selected_section == "📊 Dashboard"
-    and "df" in locals()
-    and not df.empty
-):
+with tab_dashboard:
 
-    st.divider()
+    if "df" in locals() and not df.empty:
 
-    st.header("📊 Dashboard Operativo GPS")
+        st.header("📊 Dashboard Operativo GPS")
 
-    # =========================================
-    # COMPANY FILTERS
-    # =========================================
+        # =========================================
+        # COMPANY FILTERS
+        # =========================================
 
-    st.session_state.setdefault(
-        "gps_company_filter",
-        "TODAS"
-    )
+        st.session_state.setdefault(
+            "gps_company_filter",
+            "TODAS"
+        )
 
-    active_filter = st.session_state.gps_company_filter
+        active_filter = st.session_state.gps_company_filter
 
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-    with c1:
-        if st.button(
-            "PICUS",
-            use_container_width=True,
-            type="primary" if active_filter == "PICUS" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "PICUS"
-            st.rerun()
+        with c1:
+            if st.button(
+                "PICUS",
+                use_container_width=True,
+                type="primary" if active_filter == "PICUS" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "PICUS"
+                st.rerun()
 
-    with c2:
-        if st.button(
-            "LINCOLN",
-            use_container_width=True,
-            type="primary" if active_filter == "LINCOLN" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "LINCOLN"
-            st.rerun()
+        with c2:
+            if st.button(
+                "LINCOLN",
+                use_container_width=True,
+                type="primary" if active_filter == "LINCOLN" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "LINCOLN"
+                st.rerun()
 
-    with c3:
-        if st.button(
-            "SET FREIGHT",
-            use_container_width=True,
-            type="primary" if active_filter == "SET FREIGHT" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "SET FREIGHT"
-            st.rerun()
+        with c3:
+            if st.button(
+                "SET FREIGHT",
+                use_container_width=True,
+                type="primary" if active_filter == "SET FREIGHT" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "SET FREIGHT"
+                st.rerun()
 
-    with c4:
-        if st.button(
-            "SET LOGIS",
-            use_container_width=True,
-            type="primary" if active_filter == "SET LOGIS" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "SET LOGIS"
-            st.rerun()
+        with c4:
+            if st.button(
+                "SET LOGIS",
+                use_container_width=True,
+                type="primary" if active_filter == "SET LOGIS" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "SET LOGIS"
+                st.rerun()
 
-    with c5:
-        if st.button(
-            "OTROS",
-            use_container_width=True,
-            type="primary" if active_filter == "OTROS" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "OTROS"
-            st.rerun()
+        with c5:
+            if st.button(
+                "OTROS",
+                use_container_width=True,
+                type="primary" if active_filter == "OTROS" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "OTROS"
+                st.rerun()
 
-    with c6:
-        if st.button(
-            "TODAS",
-            use_container_width=True,
-            type="primary" if active_filter == "TODAS" else "secondary"
-        ):
-            st.session_state.gps_company_filter = "TODAS"
-            st.rerun()
+        with c6:
+            if st.button(
+                "TODAS",
+                use_container_width=True,
+                type="primary" if active_filter == "TODAS" else "secondary"
+            ):
+                st.session_state.gps_company_filter = "TODAS"
+                st.rerun()
 
-    # =========================================
-    # COMPANY MASKS
-    # =========================================
+        # =========================================
+        # COMPANY MASKS
+        # =========================================
 
-    picus_mask = (
-        df["label"].str.upper().str.contains("PI", na=False)
-    ) | (
-        df["label"].str.upper().str.match(r"^P\d+", na=False)
-    )
-
-    lincoln_mask = (
-        df["label"].str.upper().str.contains("LF", na=False)
-    ) | (
-        df["label"].str.upper().str.match(r"^L\d+", na=False)
-    )
-
-    set_freight_mask = (
-        df["label"].str.upper().str.contains("SET", na=False)
-    )
-
-    set_logis_mask = (
-        df["label"].str.upper().str.contains("SPL", na=False)
-    ) | (
-        df["label"].str.upper().str.contains("STL", na=False)
-    )
-
-    otros_mask = ~(
-        picus_mask
-        | lincoln_mask
-        | set_freight_mask
-        | set_logis_mask
-    )
-
-    company_filter = st.session_state.get(
-        "gps_company_filter",
-        "TODAS"
-    )
-
-    # =========================================
-    # FILTER DATAFRAME
-    # =========================================
-
-    if company_filter == "PICUS":
-        df = df[picus_mask]
-
-    elif company_filter == "LINCOLN":
-        df = df[lincoln_mask]
-
-    elif company_filter == "SET FREIGHT":
-        df = df[set_freight_mask]
-
-    elif company_filter == "SET LOGIS":
-        df = df[set_logis_mask]
-
-    elif company_filter == "OTROS":
-        df = df[otros_mask]
-
-    # =========================================
-    # SPEED NORMALIZATION
-    # =========================================
-
-    KM_TO_MILES = 0.621371
-    MILES_TO_KM = 1.60934
-
-    # Force clean numeric speeds
-    df["speed_calc"] = pd.to_numeric(
-        df["inst_speed"],
-        errors="coerce"
-    ).fillna(0.0).astype(float)
-
-    if company_filter == "TODAS":
-
-        picus_rows = (
+        picus_mask = (
             df["label"].str.upper().str.contains("PI", na=False)
         ) | (
             df["label"].str.upper().str.match(r"^P\d+", na=False)
         )
 
-        lincoln_rows = (
+        lincoln_mask = (
             df["label"].str.upper().str.contains("LF", na=False)
         ) | (
             df["label"].str.upper().str.match(r"^L\d+", na=False)
         )
 
-        set_freight_rows = (
-            df["label"].str.upper().str.contains(
-                "SET",
-                na=False
-            )
+        set_freight_mask = (
+            df["label"].str.upper().str.contains("SET", na=False)
         )
 
-        set_logis_rows = (
-            df["label"].str.upper().str.contains(
-                "SPL",
-                na=False
-            )
+        set_logis_mask = (
+            df["label"].str.upper().str.contains("SPL", na=False)
         ) | (
-            df["label"].str.upper().str.contains(
-                "STL",
-                na=False
-            )
+            df["label"].str.upper().str.contains("STL", na=False)
         )
 
-        otros_rows = ~(
-            picus_rows
-            | lincoln_rows
-            | set_freight_rows
-            | set_logis_rows
+        otros_mask = ~(
+            picus_mask
+            | lincoln_mask
+            | set_freight_mask
+            | set_logis_mask
         )
 
-        # PICUS + OTROS are KM/H
-        kmh_rows = (
-            picus_rows
-            | otros_rows
+        company_filter = st.session_state.get(
+            "gps_company_filter",
+            "TODAS"
         )
 
-        # PICUS + OTROS are KM/H
-        kmh_rows = (
-            picus_rows
-            | otros_rows
-        )
+        # =========================================
+        # FILTER DATAFRAME
+        # =========================================
 
-        # Convert KM/H fleets to MPH
-        df["speed_calc"] = (
-            df["speed_calc"]
-            * (
-                1 + kmh_rows.astype(float) * (KM_TO_MILES - 1)
-            )
-        )
+        if company_filter == "PICUS":
+            df = df[picus_mask]
 
-    elif company_filter in [
-        "PICUS",
-        "OTROS"
-    ]:
+        elif company_filter == "LINCOLN":
+            df = df[lincoln_mask]
 
-        # Display native KM/H
+        elif company_filter == "SET FREIGHT":
+            df = df[set_freight_mask]
+
+        elif company_filter == "SET LOGIS":
+            df = df[set_logis_mask]
+
+        elif company_filter == "OTROS":
+            df = df[otros_mask]
+
+        # =========================================
+        # SPEED NORMALIZATION
+        # =========================================
+
+        KM_TO_MILES = 0.621371
+        MILES_TO_KM = 1.60934
+
+        # Force clean numeric speeds
         df["speed_calc"] = pd.to_numeric(
             df["inst_speed"],
             errors="coerce"
         ).fillna(0.0).astype(float)
-
-    else:
-
-        # Lincoln / Set Freight / Set Logis
-        # already operate in MPH
-        df["speed_calc"] = pd.to_numeric(
-            df["inst_speed"],
-            errors="coerce"
-        ).fillna(0.0).astype(float)
-
-    # =========================================
-    # UNIT CLASSIFICATION
-    # =========================================
-
-    cajas_df = df[
-        df["label"]
-        .str.lower()
-        .str.contains("caja", na=False)
-    ].copy()
-
-    trucks_df = df[
-        ~df["label"]
-        .str.lower()
-        .str.contains("caja", na=False)
-    ].copy()
-
-    # =========================================
-    # FORMAT SPEED
-    # =========================================
-
-    def format_speed(speed):
-
-        speed = round(float(speed), 1)
 
         if company_filter == "TODAS":
 
-            kmh = round(
-                speed * MILES_TO_KM,
-                1
+            picus_rows = (
+                df["label"].str.upper().str.contains("PI", na=False)
+            ) | (
+                df["label"].str.upper().str.match(r"^P\d+", na=False)
             )
 
-            return f"{speed} mph ({kmh} km/h)"
+            lincoln_rows = (
+                df["label"].str.upper().str.contains("LF", na=False)
+            ) | (
+                df["label"].str.upper().str.match(r"^L\d+", na=False)
+            )
+
+            set_freight_rows = (
+                df["label"].str.upper().str.contains(
+                    "SET",
+                    na=False
+                )
+            )
+
+            set_logis_rows = (
+                df["label"].str.upper().str.contains(
+                    "SPL",
+                    na=False
+                )
+            ) | (
+                df["label"].str.upper().str.contains(
+                    "STL",
+                    na=False
+                )
+            )
+
+            otros_rows = ~(
+                picus_rows
+                | lincoln_rows
+                | set_freight_rows
+                | set_logis_rows
+            )
+
+            # PICUS + OTROS are KM/H
+            kmh_rows = (
+                picus_rows
+                | otros_rows
+            )
+
+            # PICUS + OTROS are KM/H
+            kmh_rows = (
+                picus_rows
+                | otros_rows
+            )
+
+            # Convert KM/H fleets to MPH
+            df["speed_calc"] = (
+                df["speed_calc"]
+                * (
+                    1 + kmh_rows.astype(float) * (KM_TO_MILES - 1)
+                )
+            )
 
         elif company_filter in [
             "PICUS",
             "OTROS"
         ]:
 
-            return f"{speed} km/h"
+            # Display native KM/H
+            df["speed_calc"] = pd.to_numeric(
+                df["inst_speed"],
+                errors="coerce"
+            ).fillna(0.0).astype(float)
 
         else:
 
-            return f"{speed} mph"
+            # Lincoln / Set Freight / Set Logis
+            # already operate in MPH
+            df["speed_calc"] = pd.to_numeric(
+                df["inst_speed"],
+                errors="coerce"
+            ).fillna(0.0).astype(float)
 
-    # =========================================
-    # KPI FUNCTION
-    # =========================================
+        # =========================================
+        # UNIT CLASSIFICATION
+        # =========================================
 
-    def render_kpis(dataframe, title):
-
-        total_units = len(dataframe)
-
-        moving_units = (
-            dataframe["speed_calc"] > 0
-        ).sum()
-
-        stopped_units = (
-            dataframe["speed_calc"] <= 0
-        ).sum()
-
-        ignition_on = (
-            dataframe["ignition"]
-            .astype(str)
+        cajas_df = df[
+            df["label"]
             .str.lower()
-            .eq("on")
-            .sum()
-        )
+            .str.contains("caja", na=False)
+        ].copy()
 
-        ignition_off = (
-            dataframe["ignition"]
-            .astype(str)
+        trucks_df = df[
+            ~df["label"]
             .str.lower()
-            .eq("off")
-            .sum()
+            .str.contains("caja", na=False)
+        ].copy()
+
+        # =========================================
+        # FORMAT SPEED
+        # =========================================
+
+        def format_speed(speed):
+
+            speed = round(float(speed), 1)
+
+            if company_filter == "TODAS":
+
+                kmh = round(
+                    speed * MILES_TO_KM,
+                    1
+                )
+
+                return f"{speed} mph ({kmh} km/h)"
+
+            elif company_filter in [
+                "PICUS",
+                "OTROS"
+            ]:
+
+                return f"{speed} km/h"
+
+            else:
+
+                return f"{speed} mph"
+
+        # =========================================
+        # KPI FUNCTION
+        # =========================================
+
+        def render_kpis(dataframe, title):
+
+            total_units = len(dataframe)
+
+            moving_units = (
+                dataframe["speed_calc"] > 0
+            ).sum()
+
+            stopped_units = (
+                dataframe["speed_calc"] <= 0
+            ).sum()
+
+            ignition_on = (
+                dataframe["ignition"]
+                .astype(str)
+                .str.lower()
+                .eq("on")
+                .sum()
+            )
+
+            ignition_off = (
+                dataframe["ignition"]
+                .astype(str)
+                .str.lower()
+                .eq("off")
+                .sum()
+            )
+
+            avg_speed = (
+                dataframe["speed_calc"]
+                .fillna(0)
+                .mean()
+                if not dataframe.empty
+                else 0
+            )
+
+            max_speed = (
+                dataframe["speed_calc"]
+                .fillna(0)
+                .max()
+                if not dataframe.empty
+                else 0
+            )
+
+            low_voltage = (
+                dataframe["voltage"] < 11
+            ).sum()
+
+            panic_active = 0
+
+            if "inputs" in dataframe.columns:
+
+                for val in dataframe["inputs"]:
+
+                    if isinstance(val, dict):
+
+                        if (
+                            str(
+                                val.get(
+                                    "Panic Button",
+                                    "off"
+                                )
+                            ).lower()
+                            == "on"
+                        ):
+                            panic_active += 1
+
+            st.subheader(title)
+
+            c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+            c1.metric("🚛 Total", total_units)
+            c2.metric("🟢 Movimiento", moving_units)
+            c3.metric("🔴 Detenidas", stopped_units)
+            c4.metric("⚡ Ignición ON", ignition_on)
+            c5.metric("⛔ Ignición OFF", ignition_off)
+
+            c6.metric(
+                "🏎️ Vel. Promedio",
+                format_speed(avg_speed)
+            )
+
+            c7, c8, c9 = st.columns(3)
+
+            c7.metric(
+                "🔥 Velocidad Máxima",
+                format_speed(max_speed)
+            )
+
+            c8.metric(
+                "🔋 Voltaje Bajo",
+                low_voltage
+            )
+
+            c9.metric(
+                "🚨 Pánico",
+                panic_active
+            )
+
+            st.divider()
+
+        # =========================================
+        # RENDER
+        # =========================================
+
+        render_kpis(
+            trucks_df,
+            "🚛 KPIs Tractocamiones"
         )
 
-        avg_speed = (
-            dataframe["speed_calc"]
-            .fillna(0)
-            .mean()
-            if not dataframe.empty
-            else 0
+        render_kpis(
+            cajas_df,
+            "📦 KPIs Cajas / Remolques"
         )
 
-        max_speed = (
-            dataframe["speed_calc"]
-            .fillna(0)
-            .max()
-            if not dataframe.empty
-            else 0
+        render_kpis(
+            df,
+            "🌐 KPIs Generales"
         )
-
-        low_voltage = (
-            dataframe["voltage"] < 11
-        ).sum()
-
-        panic_active = 0
-
-        if "inputs" in dataframe.columns:
-
-            for val in dataframe["inputs"]:
-
-                if isinstance(val, dict):
-
-                    if (
-                        str(
-                            val.get(
-                                "Panic Button",
-                                "off"
-                            )
-                        ).lower()
-                        == "on"
-                    ):
-                        panic_active += 1
-
-        st.subheader(title)
-
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-        c1.metric("🚛 Total", total_units)
-        c2.metric("🟢 Movimiento", moving_units)
-        c3.metric("🔴 Detenidas", stopped_units)
-        c4.metric("⚡ Ignición ON", ignition_on)
-        c5.metric("⛔ Ignición OFF", ignition_off)
-
-        c6.metric(
-            "🏎️ Vel. Promedio",
-            format_speed(avg_speed)
-        )
-
-        c7, c8, c9 = st.columns(3)
-
-        c7.metric(
-            "🔥 Velocidad Máxima",
-            format_speed(max_speed)
-        )
-
-        c8.metric(
-            "🔋 Voltaje Bajo",
-            low_voltage
-        )
-
-        c9.metric(
-            "🚨 Pánico",
-            panic_active
-        )
-
-        st.divider()
-
-    # =========================================
-    # RENDER
-    # =========================================
-
-    render_kpis(
-        trucks_df,
-        "🚛 KPIs Tractocamiones"
-    )
-
-    render_kpis(
-        cajas_df,
-        "📦 KPIs Cajas / Remolques"
-    )
-
-    render_kpis(
-        df,
-        "🌐 KPIs Generales"
-    )
-
-    st.divider()
     
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
 
-if selected_section == "🚛 Seguimiento":
+with tab_seguimiento:
 
     def get_speed_display(row):
 
@@ -1669,7 +1659,8 @@ if selected_section == "🚛 Seguimiento":
 # =====================================================
 # LIVE GPS MAP
 # =====================================================
-if selected_section == "🗺️ Mapa":
+with tab_mapa:
+
     st.subheader("🗺️ Mapa GPS de Unidades")
 
     map_df = df.copy()
@@ -2022,9 +2013,7 @@ if selected_section == "🗺️ Mapa":
 # =====================================================
 # UNIT TRIP HISTORY
 # =====================================================
-if selected_section == "📈 Historial":
-
-    st.divider()
+with tab_historial:
 
     st.header("📈 Historial de Viajes de Unidad")
 
@@ -2382,7 +2371,7 @@ if selected_section == "📈 Historial":
 # =====================================================
 # GPS INSIGHT API TESTBENCH
 # =====================================================
-if selected_section == "🧪 Testbench":
+with tab_testbench:
         
     st.divider()
 
