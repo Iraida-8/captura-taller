@@ -175,6 +175,10 @@ setInterval(updateCountdown, 1000);
 
 </script>
 """
+components.html(
+    timer_html,
+    height=70,
+)
 
 #==============================================================================================================
 # GPS INSIGHT AUTH
