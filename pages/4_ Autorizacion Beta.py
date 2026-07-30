@@ -1761,7 +1761,7 @@ if has_autorizacion:
             # =================================
             # ROW 2
             # =================================
-            f6, f7, f8, f9, f10 = st.columns(5)
+            f6, f7, f8, f9, f10, f11 = st.columns(6)
 
             with f6:
 
@@ -1801,12 +1801,26 @@ if has_autorizacion:
                 )
 
             with f9:
+
+                capturo_lista = sorted(
+                    pases_df["Capturo"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                )
+
+                f_capturo = st.selectbox(
+                    "Capturó",
+                    ["Todos"] + capturo_lista,
+                )
+
+            with f10:
                 buscar = st.button(
                     "🔍 Buscar",
                     use_container_width=True,
                 )
 
-            with f10:
+            with f11:
                 limpiar = st.button(
                     "🧹 Limpiar",
                     use_container_width=True,
@@ -1886,6 +1900,11 @@ if has_autorizacion:
                 if f_unidad != "Selecciona unidad":
                     resultados = resultados[
                         resultados["No. de Unidad"].astype(str) == f_unidad]
+                    
+                if f_capturo != "Todos":
+                    resultados = resultados[
+                        resultados["Capturo"] == f_capturo
+                    ]
 
                 if f_fecha:
                     resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
@@ -1893,8 +1912,8 @@ if has_autorizacion:
                 st.divider()
                 st.subheader("Resultados")
 
-                h1, h2, h3, h4, h5, h6, h7, h8, h9, h10 = st.columns(
-                    [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
+                h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11 = st.columns(
+                    [1,2,2,2,2,2,2,2,2,3,2]
                 )
 
                 h1.markdown("**Acción**")
@@ -1905,14 +1924,15 @@ if has_autorizacion:
                 h6.markdown("**Empresa**")
                 h7.markdown("**Unidad**")
                 h8.markdown("**Estado**")
-                h9.markdown("**Descripción**")
-                h10.markdown("**Fecha**")
+                h9.markdown("**Capturó**")
+                h10.markdown("**Descripción**")
+                h11.markdown("**Fecha**")
 
                 st.divider()
 
                 for _, row in resultados.iterrows():
-                    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = st.columns(
-                        [1, 2, 2, 2, 2, 2, 2, 2, 3, 2]
+                    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11 = st.columns(
+                        [1,2,2,2,2,2,2,2,2,3,2]
                     )
 
                     editable = row["Estado"] in [
@@ -1953,13 +1973,15 @@ if has_autorizacion:
 
                     c8.write(row["Estado"])
 
+                    c9.write(row.get("Capturo", ""))
+
                     descripcion = row.get("Descripcion Problema", "")
                     if isinstance(descripcion, str) and len(descripcion) > 80:
                         descripcion = descripcion[:80] + "..."
 
-                    c9.write(descripcion)
+                    c10.write(descripcion)
 
-                    c10.write(
+                    c11.write(
                         row["Fecha"].date()
                         if pd.notna(row["Fecha"])
                         else ""
@@ -2025,7 +2047,7 @@ if has_autorizacion:
             # =================================
             # ROW 2
             # =================================
-            f6, f7, f8, f9, f10 = st.columns(5)
+            f6, f7, f8, f9, f10, f11 = st.columns(6)
 
             with f6:
 
@@ -2069,6 +2091,21 @@ if has_autorizacion:
                     "Fecha de Captura",
                     value=None,
                     key="report_fecha"
+                )
+
+            with f9:
+
+                capturo_lista = sorted(
+                    pases_df["Capturo"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                )
+
+                f_capturo = st.selectbox(
+                    "Capturó",
+                    ["Todos"] + capturo_lista,
+                    key="report_capturo"
                 )
 
             # =================================
@@ -2225,6 +2262,11 @@ if has_autorizacion:
                     resultados["No. de Unidad"]
                     .astype(str)
                     == f_unidad
+                ]
+
+            if f_capturo != "Todos":
+                resultados = resultados[
+                    resultados["Capturo"] == f_capturo
                 ]
 
             if f_fecha:
