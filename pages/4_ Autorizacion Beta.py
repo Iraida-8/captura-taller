@@ -2558,6 +2558,37 @@ if has_autorizacion:
 
                 with c1:
                     if st.button("Cancelar Orden"):
+
+                        usuario = (
+                            st.session_state.user.get("name")
+                            or st.session_state.user.get("email")
+                        )
+
+                        actualizar_estado_pase(
+                            r["Empresa"],
+                            r["NoFolio"],
+                            "Cerrado / Cancelado"
+                        )
+
+                        registrar_cambio_log(
+                            usuario=usuario,
+                            empresa=r["Empresa"],
+                            folio=r["NoFolio"],
+                            tipo_cambio="Cancelación de Orden",
+                            estado_anterior=r["Estado"],
+                            estado_nuevo="Cerrado / Cancelado",
+                            oste_anterior=clean(r.get("Oste")),
+                            oste_nuevo=clean(r.get("Oste"))
+                        )
+
+                        registrar_cambio_estado_sin_servicios(
+                            r["NoFolio"],
+                            usuario,
+                            "Cerrado / Cancelado"
+                        )
+
+                        refresh_cached_data()
+
                         st.session_state.modal_reporte = None
                         st.rerun()
 
