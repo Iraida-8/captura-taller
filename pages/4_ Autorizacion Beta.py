@@ -2554,236 +2554,276 @@ if has_autorizacion:
                 # METRIC
                 # =====================================================
                 st.divider()
-                c1, c2, c3 = st.columns(3)
 
-                with c1:
-                    if st.button("Cancelar Orden"):
+                estado_actual = r["Estado"]
+                es_abierta = estado_actual in [
+                    "Inicio / Nuevo",
+                    "En Curso / Proceso"
+                ]
 
-                        usuario = (
-                            st.session_state.user.get("name")
-                            or st.session_state.user.get("email")
-                        )
+                # =====================================================
+                # OPEN ORDERS
+                # =====================================================
+                if es_abierta:
 
-                        actualizar_estado_pase(
-                            r["Empresa"],
-                            r["NoFolio"],
-                            "Cerrado / Cancelado"
-                        )
+                    c1, c2, c3 = st.columns(3)
 
-                        registrar_cambio_log(
-                            usuario=usuario,
-                            empresa=r["Empresa"],
-                            folio=r["NoFolio"],
-                            tipo_cambio="Cancelación de Orden",
-                            estado_anterior=r["Estado"],
-                            estado_nuevo="Cerrado / Cancelado",
-                            oste_anterior=clean(r.get("Oste")),
-                            oste_nuevo=clean(r.get("Oste"))
-                        )
-
-                        registrar_cambio_estado_sin_servicios(
-                            r["NoFolio"],
-                            usuario,
-                            "Cerrado / Cancelado"
-                        )
-
-                        refresh_cached_data()
-
-                        st.session_state.modal_reporte = None
-                        st.rerun()
-
-                with c2:
-
-                    if (
-                        (is_admin or is_manager)
-                        and r["Estado"] in [
-                            "Cerrado / Terminado",
-                            "Cerrado / Cancelado"
-                        ]
-                    ):
+                    # =================================
+                    # CANCELAR ORDEN
+                    # =================================
+                    with c1:
 
                         if st.button(
-                            "🔓 Re-Abrir",
+                            "Cancelar Orden",
                             use_container_width=True
                         ):
-                            st.session_state.modal_reabrir = r
-                            st.rerun()
 
-                with c3:
-
-                    mostrar_aceptar = True
-
-                    label_btn = "Guardar cambios" if editable_estado else "Cerrar Ventana"
-
-                    if mostrar_aceptar and st.button(label_btn, type="primary"):
-
-                        usuario = (
-                            st.session_state.user.get("name")
-                            or st.session_state.user.get("email")
-                        )
-        
-                        # =================================
-                        # UPDATE DESCRIPCION IF CHANGED
-                        # =================================
-                        descripcion_original = descripcion_actual or ""
-                        descripcion_nueva = descripcion_editada or ""
-
-                        if descripcion_nueva.strip() != descripcion_original.strip():
-
-                            actualizar_descripcion_pase(
-                                r["Empresa"],
-                                r["NoFolio"],
-                                descripcion_nueva.strip()
+                            usuario = (
+                                st.session_state.user.get("name")
+                                or st.session_state.user.get("email")
                             )
-
-                            registrar_cambio_log(
-                                usuario=usuario,
-                                empresa=r["Empresa"],
-                                folio=r["NoFolio"],
-                                tipo_cambio="Edición Descripción",
-                                estado_anterior=r["Estado"],
-                                estado_nuevo=r["Estado"],
-                                comentario="Descripción modificada"
-                            )
-
-                        estado_actual = r["Estado"]
-
-                        if nuevo_estado != estado_actual:
 
                             actualizar_estado_pase(
                                 r["Empresa"],
                                 r["NoFolio"],
-                                nuevo_estado
+                                "Cerrado / Cancelado"
                             )
 
                             registrar_cambio_log(
                                 usuario=usuario,
                                 empresa=r["Empresa"],
                                 folio=r["NoFolio"],
-                                tipo_cambio="Cambio Estado",
-                                estado_anterior=estado_actual,
-                                estado_nuevo=nuevo_estado,
+                                tipo_cambio="Cancelación de Orden",
+                                estado_anterior=r["Estado"],
+                                estado_nuevo="Cerrado / Cancelado",
                                 oste_anterior=clean(r.get("Oste")),
                                 oste_nuevo=clean(r.get("Oste"))
                             )
 
-                        if "interno" not in tipo_proveedor:
-                            if oste_val.strip() != clean(r.get("Oste")):
+                            registrar_cambio_estado_sin_servicios(
+                                r["NoFolio"],
+                                usuario,
+                                "Cerrado / Cancelado"
+                            )
 
-                                oste_anterior = clean(r.get("Oste"))
-                                oste_nuevo = clean(oste_val)
+                            refresh_cached_data()
+                            st.session_state.modal_reporte = None
+                            st.rerun()
 
-                                actualizar_oste_pase(
+                    # =================================
+                    # GUARDAR CAMBIOS
+                    # =================================
+                    with c2:
+
+                        if st.button(
+                            "Guardar Cambios",
+                            type="primary",
+                            use_container_width=True
+                        ):
+
+                            usuario = (
+                                st.session_state.user.get("name")
+                                or st.session_state.user.get("email")
+                            )
+
+                            # =================================
+                            # UPDATE DESCRIPCION
+                            # =================================
+                            descripcion_original = descripcion_actual or ""
+                            descripcion_nueva = descripcion_editada or ""
+
+                            if descripcion_nueva.strip() != descripcion_original.strip():
+
+                                actualizar_descripcion_pase(
                                     r["Empresa"],
                                     r["NoFolio"],
-                                    oste_nuevo
+                                    descripcion_nueva.strip()
                                 )
 
                                 registrar_cambio_log(
                                     usuario=usuario,
                                     empresa=r["Empresa"],
                                     folio=r["NoFolio"],
-                                    tipo_cambio="Actualización OSTE",
-                                    estado_anterior=nuevo_estado,
-                                    estado_nuevo=nuevo_estado,
-                                    oste_anterior=oste_anterior,
-                                    oste_nuevo=oste_nuevo
+                                    tipo_cambio="Edición Descripción",
+                                    estado_anterior=r["Estado"],
+                                    estado_nuevo=r["Estado"],
+                                    comentario="Descripción modificada"
                                 )
-                            
-                        # =================================
-                        # UPDATE NO. DE REPORTE IF CHANGED
-                        # =================================
-                        reporte_original = clean(
-                            r.get("No. de Reporte", "")
-                        )
 
-                        try:
-                            reporte_original = str(int(float(reporte_original))) if reporte_original else ""
-                        except:
-                            reporte_original = str(reporte_original).strip()
+                            estado_actual = r["Estado"]
 
-                        reporte_nuevo = clean(reporte_editado)
+                            if nuevo_estado != estado_actual:
 
-                        try:
-                            reporte_nuevo = str(int(float(reporte_nuevo))) if reporte_nuevo else ""
-                        except:
-                            reporte_nuevo = str(reporte_nuevo).strip()
+                                actualizar_estado_pase(
+                                    r["Empresa"],
+                                    r["NoFolio"],
+                                    nuevo_estado
+                                )
 
-                        if reporte_nuevo != reporte_original:
+                                registrar_cambio_log(
+                                    usuario=usuario,
+                                    empresa=r["Empresa"],
+                                    folio=r["NoFolio"],
+                                    tipo_cambio="Cambio Estado",
+                                    estado_anterior=estado_actual,
+                                    estado_nuevo=nuevo_estado,
+                                    oste_anterior=clean(r.get("Oste")),
+                                    oste_nuevo=clean(r.get("Oste"))
+                                )
 
-                            actualizar_no_reporte_pase(
-                                r["Empresa"],
-                                r["NoFolio"],
-                                reporte_nuevo
+                            if "interno" not in tipo_proveedor:
+                                if oste_val.strip() != clean(r.get("Oste")):
+
+                                    oste_anterior = clean(r.get("Oste"))
+                                    oste_nuevo = clean(oste_val)
+
+                                    actualizar_oste_pase(
+                                        r["Empresa"],
+                                        r["NoFolio"],
+                                        oste_nuevo
+                                    )
+
+                                    registrar_cambio_log(
+                                        usuario=usuario,
+                                        empresa=r["Empresa"],
+                                        folio=r["NoFolio"],
+                                        tipo_cambio="Actualización OSTE",
+                                        estado_anterior=nuevo_estado,
+                                        estado_nuevo=nuevo_estado,
+                                        oste_anterior=oste_anterior,
+                                        oste_nuevo=oste_nuevo
+                                    )
+
+                            # =================================
+                            # UPDATE NO. REPORTE
+                            # =================================
+                            reporte_original = clean(
+                                r.get("No. de Reporte", "")
                             )
 
-                            registrar_cambio_log(
-                                usuario=usuario,
-                                empresa=r["Empresa"],
-                                folio=r["NoFolio"],
-                                tipo_cambio="Actualización No. de Reporte",
-                                estado_anterior=r["Estado"],
-                                estado_nuevo=r["Estado"],
-                                comentario=f"No. de Reporte actualizado: {reporte_original} → {reporte_nuevo}"
+                            try:
+                                reporte_original = str(int(float(reporte_original))) if reporte_original else ""
+                            except:
+                                reporte_original = str(reporte_original).strip()
+
+                            reporte_nuevo = clean(reporte_editado)
+
+                            try:
+                                reporte_nuevo = str(int(float(reporte_nuevo))) if reporte_nuevo else ""
+                            except:
+                                reporte_nuevo = str(reporte_nuevo).strip()
+
+                            if reporte_nuevo != reporte_original:
+
+                                actualizar_no_reporte_pase(
+                                    r["Empresa"],
+                                    r["NoFolio"],
+                                    reporte_nuevo
+                                )
+
+                                registrar_cambio_log(
+                                    usuario=usuario,
+                                    empresa=r["Empresa"],
+                                    folio=r["NoFolio"],
+                                    tipo_cambio="Actualización No. de Reporte",
+                                    estado_anterior=r["Estado"],
+                                    estado_nuevo=r["Estado"],
+                                    comentario=f"No. de Reporte actualizado: {reporte_original} → {reporte_nuevo}"
+                                )
+
+                            # =================================
+                            # CREATE MILESTONE
+                            # =================================
+                            df_serv = st.session_state.servicios_df
+
+                            sin_partes = (
+                                df_serv.empty
+                                or "Parte" not in df_serv.columns
+                                or df_serv["Parte"].astype(str).str.strip().eq("").all()
                             )
 
-                        # =====================================================
-                        # CREATE MILESTONE ROW IF NO REAL SERVICES
-                        # =====================================================
-                        df_serv = st.session_state.servicios_df
+                            if sin_partes:
+                                registrar_cambio_estado_sin_servicios(
+                                    r["NoFolio"],
+                                    usuario,
+                                    nuevo_estado
+                                )
 
-                        sin_partes = (
-                            df_serv.empty
-                            or "Parte" not in df_serv.columns
-                            or df_serv["Parte"].astype(str).str.strip().eq("").all()
-                        )
+                            df_final = edited_df.copy()
 
-                        if sin_partes:
-                            registrar_cambio_estado_sin_servicios(
+                            if "Tipo De Parte" in df_final.columns:
+                                df_final["Tipo De Parte"] = (
+                                    df_final["Tipo De Parte"]
+                                    .fillna("")
+                                    .astype(str)
+                                    .str.strip()
+                                )
+
+                                df_final.loc[
+                                    df_final["Tipo De Parte"] == "",
+                                    "Tipo De Parte"
+                                ] = "Mano de Obra"
+
+                            if "Parte" in df_final.columns:
+                                df_final["Parte"] = (
+                                    df_final["Parte"]
+                                    .fillna("")
+                                    .astype(str)
+                                    .str.strip()
+                                )
+
+                            st.session_state.servicios_df = df_final
+
+                            guardar_servicios_refacciones(
                                 r["NoFolio"],
                                 usuario,
+                                st.session_state.servicios_df,
                                 nuevo_estado
                             )
 
-                        # Normalize edited dataframe
-                        df_final = edited_df.copy()
+                            refresh_cached_data()
+                            st.session_state.modal_reporte = None
+                            st.rerun()
 
-                        # Ensure columns exist
-                        if "Tipo De Parte" in df_final.columns:
-                            df_final["Tipo De Parte"] = (
-                                df_final["Tipo De Parte"]
-                                .fillna("")
-                                .astype(str)
-                                .str.strip()
+                    # =================================
+                    # CERRAR
+                    # =================================
+                    with c3:
+
+                        if st.button(
+                            "Cerrar Ventana",
+                            use_container_width=True
+                        ):
+                            st.session_state.modal_reporte = None
+                            st.rerun()
+
+                # =====================================================
+                # CLOSED ORDERS
+                # =====================================================
+                else:
+
+                    c1, c2 = st.columns(2)
+
+                    with c1:
+
+                        if (
+                            (is_admin or is_manager)
+                            and st.button(
+                                "🔓 Re-Abrir",
+                                use_container_width=True
                             )
+                        ):
+                            st.session_state.modal_reabrir = r
+                            st.rerun()
 
-                            # If empty → default to Mano de Obra
-                            df_final.loc[
-                                df_final["Tipo De Parte"] == "",
-                                "Tipo De Parte"
-                            ] = "Mano de Obra"
+                    with c2:
 
-                        # Clean Parte column as well
-                        if "Parte" in df_final.columns:
-                            df_final["Parte"] = (
-                                df_final["Parte"]
-                                .fillna("")
-                                .astype(str)
-                                .str.strip()
-                            )
-
-                        st.session_state.servicios_df = df_final
-
-                        guardar_servicios_refacciones(
-                            r["NoFolio"],
-                            usuario,
-                            st.session_state.servicios_df,
-                            nuevo_estado
-                        )
-                        
-                        refresh_cached_data()
-                        st.session_state.modal_reporte = None
-                        st.rerun()
+                        if st.button(
+                            "Cerrar Ventana",
+                            use_container_width=True
+                        ):
+                            st.session_state.modal_reporte = None
+                            st.rerun()
 
             modal()
             st.session_state.modal_reporte = None
