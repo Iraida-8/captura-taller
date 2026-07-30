@@ -1576,6 +1576,59 @@ if has_autorizacion:
                 "terminado",
             )
 
+        # =================================
+        # RE-ABRIR MODAL
+        # =================================
+        if st.session_state.get("modal_reabrir"):
+
+            data_reabrir = st.session_state.modal_reabrir
+
+            @st.dialog("Re-Abrir Orden")
+
+            def modal_reabrir():
+
+                st.markdown(
+                    f"**No. de Folio:** {data_reabrir['NoFolio']}"
+                )
+
+                st.markdown(
+                    f"**Empresa:** {data_reabrir['Empresa']}"
+                )
+
+                motivo = st.text_area(
+                    "Motivo de la Re-Apertura",
+                    height=150,
+                    placeholder="Ingrese el motivo..."
+                )
+
+                st.divider()
+
+                c1, c2 = st.columns(2)
+
+                with c1:
+
+                    if st.button(
+                        "Cancelar",
+                        use_container_width=True
+                    ):
+                        st.session_state.modal_reabrir = None
+                        st.rerun()
+
+                with c2:
+
+                    if st.button(
+                        "Confirmar Re-Apertura",
+                        type="primary",
+                        use_container_width=True
+                    ):
+
+                        if motivo.strip() == "":
+                            st.warning("Debe capturar un motivo.")
+                            st.stop()
+
+                        # We'll put the update logic here next step.
+
+            modal_reabrir()
 
         # =================================
         # FACTURA MODAL
