@@ -104,7 +104,7 @@ if st.button("⬅ Volver al Dashboard"):
 
     st.switch_page(DASHBOARD_PAGE)
 
-title_col, timer_col = st.columns([7, 3])
+title_col, timer_col = st.columns([8, 2])
 
 with title_col:
     st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
@@ -130,21 +130,20 @@ st_autorefresh(
 
 timer_html = f"""
 <div id="gps-refresh-timer" style="
-    background:#1B267A;
-    border:1px solid rgba(191,167,95,0.25);
-    padding:12px;
-    border-radius:14px;
     margin-top:10px;
-    margin-bottom:20px;
-    text-align:center;
-    color:white;
-    font-weight:700;
-    font-size:1rem;
+    text-align:right;
+    font-size:16px;
+    font-weight:600;
+    color:#000000;
+    font-family:sans-serif;
+    white-space:nowrap;
 ">
-    🔄 Actualización automática en:
+    🔄 Actualización automática en
     <span id="countdown" style="
         color:#BFA75F;
-        font-size:1.1rem;
+        font-weight:800;
+        font-size:18px;
+        margin-left:6px;
     ">
         05:00
     </span>
@@ -159,8 +158,8 @@ function updateCountdown() {{
     let minutes = Math.floor(totalSeconds / 60);
     let seconds = totalSeconds % 60;
 
-    minutes = String(minutes).padStart(2, '0');
-    seconds = String(seconds).padStart(2, '0');
+    minutes = String(minutes).padStart(2, "0");
+    seconds = String(seconds).padStart(2, "0");
 
     document.getElementById("countdown").innerHTML =
         `${{minutes}}:${{seconds}}`;
@@ -173,7 +172,6 @@ function updateCountdown() {{
 }}
 
 updateCountdown();
-
 setInterval(updateCountdown, 1000);
 
 </script>
