@@ -1969,35 +1969,187 @@ if can_view_audit:
 
     with tab_audit:
 
-        tab_activity, tab_auditlog, tab_audit = st.tabs([
+        st.title("📋 Centro de Auditoría")
+
+        # ======================================================
+        # COMBINE ALL TABLES
+        # ======================================================
+
+        df1 = df_activity.copy()
+        df1["SOURCE"] = "User Activity"
+
+        df2 = df_audit_log.copy()
+        df2["SOURCE"] = "Audit Log"
+
+        df3 = df_audit.copy()
+        df3["SOURCE"] = "AUDIT"
+
+        audit_frames = [x for x in [df1, df2, df3] if not x.empty]
+
+        if audit_frames:
+            df_all = pd.concat(audit_frames, ignore_index=True)
+        else:
+            df_all = pd.DataFrame()
+
+        # ======================================================
+        # KPI DASHBOARD
+        # ======================================================
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        with c1:
+            st.metric(
+                "Total Registros",
+                len(df_all)
+            )
+
+        with c2:
+            st.metric(
+                "User Activity",
+                len(df_activity)
+            )
+
+        with c3:
+            st.metric(
+                "Audit Log",
+                len(df_audit_log)
+            )
+
+        with c4:
+            st.metric(
+                "AUDIT",
+                len(df_audit)
+            )
+
+        st.divider()
+
+        # ======================================================
+        # FILTERS
+        # ======================================================
+
+        col1, col2, col3 = st.columns([2,2,4])
+
+        with col1:
+
+            source_filter = st.multiselect(
+                "Origen",
+                ["User Activity","Audit Log","AUDIT"],
+                default=["User Activity","Audit Log","AUDIT"]
+            )
+
+        with col2:
+
+            search = st.text_input(
+                "Buscar"
+            )
+
+        with col3:
+
+            st.write("")
+            st.write("")
+            clear = st.button(
+                "Limpiar Filtros",
+                use_container_width=True
+            )
+
+        filtered = df_all.copy()
+
+        if source_filter:
+            filtered = filtered[
+                filtered["SOURCE"].isin(source_filter)
+            ]
+
+        if search:
+
+            mask = filtered.astype(str)\
+                .apply(
+                    lambda c: c.str.contains(
+                        search,
+                        case=False,
+                        na=False
+                    )
+                )\
+                .any(axis=1)
+
+            filtered = filtered[mask]
+
+        # ======================================================
+        # EXPORT
+        # ======================================================
+
+        excel_buffer = BytesIO()
+
+        with pd.ExcelWriter(
+            excel_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            filtered.to_excel(
+                writer,
+                index=False,
+                sheet_name="Audit"
+            )
+
+        excel_buffer.seek(0)
+
+        st.download_button(
+            "📥 Descargar Reporte Filtrado",
+            data=excel_buffer,
+            file_name="Audit_Report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+
+        st.divider()
+
+        # ======================================================
+        # MASTER TIMELINE
+        # ======================================================
+
+        st.subheader("Timeline General")
+
+        st.dataframe(
+            filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=450
+        )
+
+        st.divider()
+
+        # ======================================================
+        # RAW TABLES
+        # ======================================================
+
+        raw1, raw2, raw3 = st.tabs([
             "User Activity",
             "Audit Log",
-            "AUDIT",
+            "AUDIT"
         ])
 
-        with tab_activity:
+        with raw1:
 
             st.dataframe(
                 df_activity,
                 use_container_width=True,
                 hide_index=True,
-                height=650,
+                height=450
             )
 
-        with tab_auditlog:
+        with raw2:
 
             st.dataframe(
                 df_audit_log,
                 use_container_width=True,
                 hide_index=True,
-                height=650,
+                height=450
             )
 
-        with tab_audit:
+        with raw3:
 
             st.dataframe(
                 df_audit,
                 use_container_width=True,
                 hide_index=True,
-                height=650,
+                height=450
             )
