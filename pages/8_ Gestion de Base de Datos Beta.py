@@ -283,8 +283,9 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
-df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
-df_audit = load_table("audit_log") if is_admin else pd.DataFrame()
+df_activity = load_table("user_activity_log") if can_view_audit else pd.DataFrame()
+df_audit_log = load_table("audit_log") if can_view_audit else pd.DataFrame()
+df_audit = load_table("AUDIT") if can_view_audit else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1968,14 +1969,13 @@ if can_view_audit:
 
     with tab_audit:
 
-        tab_activity, tab_database = st.tabs([
+        tab_activity, tab_auditlog, tab_audit = st.tabs([
             "User Activity",
-            "Database Audit",
+            "Audit Log",
+            "AUDIT",
         ])
 
         with tab_activity:
-
-            st.subheader("User Activity")
 
             st.dataframe(
                 df_activity,
@@ -1984,9 +1984,16 @@ if can_view_audit:
                 height=650,
             )
 
-        with tab_database:
+        with tab_auditlog:
 
-            st.subheader("Database Audit")
+            st.dataframe(
+                df_audit_log,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
+
+        with tab_audit:
 
             st.dataframe(
                 df_audit,
