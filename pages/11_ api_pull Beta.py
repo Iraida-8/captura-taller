@@ -62,23 +62,6 @@ def get_supabase():
     )
 
 supabase = get_supabase()
-
-def log_activity(action, page):
-
-    try:
-
-        supabase.table("user_activity_log").insert({
-
-            "user_id": user.get("id"),
-            "user_name": user.get("name"),
-            "login_counter": st.session_state.get("login_counter"),
-            "action": action,
-            "page": page,
-
-        }).execute()
-
-    except Exception as e:
-        print(e)
         
 # =================================
 # Defensive modal reset
