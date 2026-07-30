@@ -104,7 +104,10 @@ if st.button("⬅ Volver al Dashboard"):
 
     st.switch_page(DASHBOARD_PAGE)
 
-st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
+title_col, timer_col = st.columns([7, 3])
+
+with title_col:
+    st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
 
 tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs([
     "📊 Dashboard",
@@ -175,10 +178,11 @@ setInterval(updateCountdown, 1000);
 
 </script>
 """
-components.html(
-    timer_html,
-    height=70,
-)
+with timer_col:
+    components.html(
+        timer_html,
+        height=70,
+    )
 
 #==============================================================================================================
 # GPS INSIGHT AUTH
