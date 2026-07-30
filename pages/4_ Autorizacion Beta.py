@@ -93,7 +93,7 @@ if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 
 st.divider()
-st.write(current_user.get("role"))
+
 # =================================
 # MODULES
 # =================================
