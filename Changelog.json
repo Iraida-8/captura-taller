@@ -1,5 +1,20 @@
 [
     {
+    "version": "2.07.30.26",
+    "date": "30/07/2026",
+    "changes":
+        [
+            "Rediseño de la sección de acciones del modal Detalle del Pase de Taller para mostrar dinámicamente los controles según el estatus de la orden",
+            "Implementación de visualización condicional de botones para órdenes abiertas mostrando únicamente Cancelar Orden, Guardar Cambios y Cerrar Ventana",
+            "Implementación de visualización condicional para órdenes cerradas mostrando únicamente las opciones Re-Abrir Orden (Administradores y Managers) y Cerrar Ventana",
+            "Conservación del flujo completo de re-apertura de órdenes incluyendo captura obligatoria de motivo y registro automático en el historial de auditoría",
+            "Incorporación del nuevo filtro Capturó dentro del módulo Buscar Pase de Taller para facilitar la localización de órdenes por usuario capturista",
+            "Integración del nuevo filtro Capturó dentro del módulo Descarga y Consulta de Reportes con aplicación directa sobre la generación de reportes",
+            "Adición de la columna Capturó al listado de resultados del módulo Buscar Pase de Taller para mostrar el usuario responsable de la captura de cada orden",
+            "Mejoras generales de organización de la interfaz, usabilidad y experiencia de consulta dentro del módulo Gestión de Órdenes y Pases"
+        ]
+    },
+    {
     "version": "2.07.29.26",
     "date": "29/07/2026",
     "changes": 
