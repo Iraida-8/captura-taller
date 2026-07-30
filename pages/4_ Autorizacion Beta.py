@@ -1348,8 +1348,6 @@ if has_autorizacion:
         st.session_state.setdefault("modal_factura", None)
         st.session_state.setdefault("modal_factura_open", False)
         st.session_state.setdefault("refaccion_seleccionada", None)
-        st.session_state.setdefault("reabrir_modo", False)
-        st.session_state.setdefault("reabrir_motivo", "")
         st.session_state.setdefault(
             "servicios_df",
             pd.DataFrame(columns=[
@@ -2467,24 +2465,7 @@ if has_autorizacion:
                     disabled=not editable_servicios,
                     column_config=column_config,
                 )
-                # ==========================================
-                # RE-APERTURA
-                # ==========================================
-                if st.session_state.reabrir_modo:
-
-                    st.divider()
-
-                    st.warning(
-                        "Esta orden será regresada al estado 'En Curso / Proceso'."
-                    )
-
-                    motivo_reapertura = st.text_area(
-                        "Motivo de la Re-Apertura",
-                        key="reabrir_motivo",
-                        height=120,
-                        placeholder="Ingrese el motivo por el cual esta orden será re-abierta..."
-                    )      
-
+                
                 # =====================================================
                 # METRIC
                 # =====================================================
@@ -2506,14 +2487,12 @@ if has_autorizacion:
                         ]
                     ):
 
-                        if not st.session_state.reabrir_modo:
-
-                            if st.button(
-                                "🔓 Re-Abrir",
-                                use_container_width=True
-                            ):
-                                st.session_state.reabrir_modo = True
-                                st.rerun()
+                        if st.button(
+                            "🔓 Re-Abrir",
+                            use_container_width=True
+                        ):
+                            st.session_state.reabrir_modo = True
+                            st.rerun()
 
                 with c3:
 
