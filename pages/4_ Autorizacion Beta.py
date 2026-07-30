@@ -1626,7 +1626,37 @@ if has_autorizacion:
                             st.warning("Debe capturar un motivo.")
                             st.stop()
 
-                        # We'll put the update logic here next step.
+                        usuario = (
+                            st.session_state.user.get("name")
+                            or st.session_state.user.get("email")
+                        )
+
+                        actualizar_estado_pase(
+                            data_reabrir["Empresa"],
+                            data_reabrir["NoFolio"],
+                            "En Curso / Proceso"
+                        )
+
+                        registrar_cambio_log(
+                            usuario=usuario,
+                            empresa=data_reabrir["Empresa"],
+                            folio=data_reabrir["NoFolio"],
+                            tipo_cambio="Re-Apertura de Orden",
+                            estado_anterior=data_reabrir["Estado"],
+                            estado_nuevo="En Curso / Proceso",
+                            oste_anterior=clean(data_reabrir.get("Oste")),
+                            oste_nuevo=clean(data_reabrir.get("Oste")),
+                            comentario=motivo.strip()
+                        )
+
+                        refresh_cached_data()
+
+                        st.session_state.modal_reabrir = None
+                        st.session_state.modal_reporte = None
+                        st.session_state.modal_factura = None
+                        st.session_state.modal_factura_open = False
+
+                        st.rerun()
 
             modal_reabrir()
 
