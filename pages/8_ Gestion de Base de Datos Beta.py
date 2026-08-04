@@ -42,10 +42,7 @@ load_css()
 require_login()
 require_access("gestion_unidades")
 current_user = st.session_state["user"]
-role = current_user.get("role")
-
-is_admin = role == "admin"
-can_view_audit = role in ["admin", "manager"]
+is_admin = current_user.get("role") == "admin"
 
 # FORCE RESET EVERY TIME PAGE LOADS
 if st.session_state.get("_reset_gestion_page", True):
@@ -96,22 +93,6 @@ if is_admin:
         "Proveedores IVA",
         "TC Mensual",
         "👤 Administración de Usuarios",
-        "📋 Audit",
-    ])
-
-elif can_view_audit:
-
-    (
-        tab_unidades,
-        tab_refacciones,
-        tab_proveedores,
-        tab_tc,
-        tab_audit,
-    ) = st.tabs([
-        "Gestión, Creación y Carga de Unidades",
-        "Refacciones",
-        "Proveedores IVA",
-        "TC Mensual",
         "📋 Audit",
     ])
 
@@ -284,9 +265,7 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
-df_activity = load_table("user_activity_log") if can_view_audit else pd.DataFrame()
-df_audit_log = load_table("audit_log") if can_view_audit else pd.DataFrame()
-df_audit = load_table("AUDIT") if can_view_audit else pd.DataFrame()
+df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1401,9 +1380,15 @@ with tab_proveedores:
                     ]
                 ].copy()
 
+                records_df["clave"] = (
+                    pd.to_numeric(records_df["clave"], errors="coerce")
+                    .round()
+                    .astype("Int64")
+                )
+
                 records_df = records_df.replace({np.nan: None})
 
-                records = records_df.to_dict("records")
+                records = records_df.where(pd.notnull(records_df), None).to_dict("records")
 
                 supabase.table("proveedores_iva") \
                     .delete() \
@@ -1412,9 +1397,14 @@ with tab_proveedores:
 
                 if records:
 
-                    supabase.table("proveedores_iva") \
-                        .insert(records) \
-                        .execute()
+                    try:
+                        supabase.table("proveedores_iva") \
+                            .insert(records) \
+                            .execute()
+
+                    except Exception as e:
+                        st.exception(e)
+                        st.stop()
                     
                 log_action(
                     "REPLACE",
@@ -1799,206 +1789,178 @@ with tab_tc:
 # ADMINISTRACIÓN DE USUARIOS
 # ==========================================
 
-if is_admin:
-
-    with tab_admin:
+with tab_admin:
     
-        USER_ROLES = [
-            "admin",
-            "manager",
-            "field_user",
-            "regular_user",
-        ]
+    USER_ROLES = [
+        "admin",
+        "manager",
+        "field_user",
+        "regular_user",
+    ]
 
-        BRANCHES = [
-            "beta",
-            "release",
-        ]
+    BRANCHES = [
+        "beta",
+        "release",
+    ]
 
-        ENTERPRISES = [
-            "picus",
-            "igloo",
-            "lincoln",
-            "setlogis",
-            "setfreight",
-        ]
+    ENTERPRISES = [
+        "picus",
+        "igloo",
+        "lincoln",
+        "setlogis",
+        "setfreight",
+    ]
 
-        PAGE_PERMITS = [
-            "consulta_reportes",
-            "consultar_reparacion",
-            "lector_pdf",
-            "pase_taller",
-            "autorizacion",
-            "ifuel",
-            "prepara_reportes",
-            "gestion_unidades",
-            "solicitud_viaticos",
-            "gestion_viaticos",
-            "gps_tracking",
-            "ai_testing",
-            "bonos_operador",
-            "consulta_bonos_operador",
-        ]
+    PAGE_PERMITS = [
+        "consulta_reportes",
+        "consultar_reparacion",
+        "lector_pdf",
+        "pase_taller",
+        "autorizacion",
+        "ifuel",
+        "prepara_reportes",
+        "gestion_unidades",
+        "solicitud_viaticos",
+        "gestion_viaticos",
+        "gps_tracking",
+        "ai_testing",
+        "bonos_operador",
+        "consulta_bonos_operador",
+    ]
 
-        st.subheader("Administración de Usuarios")
+    st.subheader("Administración de Usuarios")
 
-        st.dataframe(
-            df_profiles,
-            use_container_width=True,
-            hide_index=True,
-            height=350,
+    st.dataframe(
+        df_profiles,
+        use_container_width=True,
+        hide_index=True,
+        height=350,
+    )
+
+    st.divider()
+
+    st.subheader("Modificar Usuario")
+
+    if df_profiles.empty:
+
+        st.info("No existen usuarios.")
+
+    else:
+
+        selected_email = st.selectbox(
+            "Usuario",
+            sorted(df_profiles["email"].tolist())
         )
 
-        st.divider()
+        row = df_profiles[
+            df_profiles["email"] == selected_email
+        ].iloc[0]
 
-        st.subheader("Modificar Usuario")
+        access = row["access"] or []
 
-        if df_profiles.empty:
+        selected_branch = next(
+            (x for x in BRANCHES if x in access),
+            "release"
+        )
 
-            st.info("No existen usuarios.")
+        selected_enterprises = [
+            x for x in ENTERPRISES
+            if x in access
+        ]
 
-        else:
+        selected_pages = [
+            x for x in PAGE_PERMITS
+            if x in access
+        ]
 
-            selected_email = st.selectbox(
-                "Usuario",
-                sorted(df_profiles["email"].tolist())
+        with st.form("edit_profile"):
+
+            st.text_input(
+                "Email",
+                value=row["email"],
+                disabled=True,
             )
 
-            row = df_profiles[
-                df_profiles["email"] == selected_email
-            ].iloc[0]
-
-            access = row["access"] or []
-
-            selected_branch = next(
-                (x for x in BRANCHES if x in access),
-                "release"
+            full_name = st.text_input(
+                "Nombre",
+                value=row["full_name"] or ""
             )
 
-            selected_enterprises = [
-                x for x in ENTERPRISES
-                if x in access
-            ]
+            role = st.selectbox(
+                "Rol",
+                USER_ROLES,
+                index=USER_ROLES.index(row["role"])
+                if row["role"] in USER_ROLES
+                else 0
+            )
 
-            selected_pages = [
-                x for x in PAGE_PERMITS
-                if x in access
-            ]
+            branch = st.radio(
+                "Branch",
+                BRANCHES,
+                index=BRANCHES.index(selected_branch),
+                horizontal=True,
+            )
 
-            with st.form("edit_profile"):
+            enterprises = st.multiselect(
+                "Empresas",
+                ENTERPRISES,
+                default=selected_enterprises,
+            )
 
-                st.text_input(
-                    "Email",
-                    value=row["email"],
-                    disabled=True,
+            permissions = st.multiselect(
+                "Permisos",
+                PAGE_PERMITS,
+                default=selected_pages,
+            )
+
+            save = st.form_submit_button(
+                "Guardar Cambios",
+                use_container_width=True
+            )
+
+            if save:
+
+                access = (
+                    [branch]
+                    + enterprises
+                    + permissions
                 )
 
-                full_name = st.text_input(
-                    "Nombre",
-                    value=row["full_name"] or ""
+                supabase.table("profiles") \
+                    .update({
+
+                        "full_name": full_name.strip(),
+                        "role": role,
+                        "access": access
+
+                    }) \
+                    .eq("id", row["id"]) \
+                    .execute()
+
+                log_action(
+                    "UPDATE",
+                    "profiles",
+                    row["email"],
+                    f"Actualizó usuario {row['email']}"
                 )
 
-                role = st.selectbox(
-                    "Rol",
-                    USER_ROLES,
-                    index=USER_ROLES.index(row["role"])
-                    if row["role"] in USER_ROLES
-                    else 0
-                )
+                st.cache_data.clear()
 
-                branch = st.radio(
-                    "Branch",
-                    BRANCHES,
-                    index=BRANCHES.index(selected_branch),
-                    horizontal=True,
-                )
+                st.success("Usuario actualizado correctamente.")
 
-                enterprises = st.multiselect(
-                    "Empresas",
-                    ENTERPRISES,
-                    default=selected_enterprises,
-                )
-
-                permissions = st.multiselect(
-                    "Permisos",
-                    PAGE_PERMITS,
-                    default=selected_pages,
-                )
-
-                save = st.form_submit_button(
-                    "Guardar Cambios",
-                    use_container_width=True
-                )
-
-                if save:
-
-                    access = (
-                        [branch]
-                        + enterprises
-                        + permissions
-                    )
-
-                    supabase.table("profiles") \
-                        .update({
-
-                            "full_name": full_name.strip(),
-                            "role": role,
-                            "access": access
-
-                        }) \
-                        .eq("id", row["id"]) \
-                        .execute()
-
-                    log_action(
-                        "UPDATE",
-                        "profiles",
-                        row["email"],
-                        f"Actualizó usuario {row['email']}"
-                    )
-
-                    st.cache_data.clear()
-
-                    st.success("Usuario actualizado correctamente.")
-
-                    st.rerun()
+                st.rerun()
 
 # ==========================================
 # AUDIT
 # ==========================================
 
-if can_view_audit:
+with tab_audit:
 
-    with tab_audit:
+    st.subheader("User Activity Audit")
 
-        tab_activity, tab_auditlog, tab_audit = st.tabs([
-            "User Activity",
-            "Audit Log",
-            "AUDIT",
-        ])
-
-        with tab_activity:
-
-            st.dataframe(
-                df_activity,
-                use_container_width=True,
-                hide_index=True,
-                height=650,
-            )
-
-        with tab_auditlog:
-
-            st.dataframe(
-                df_audit_log,
-                use_container_width=True,
-                hide_index=True,
-                height=650,
-            )
-
-        with tab_audit:
-
-            st.dataframe(
-                df_audit,
-                use_container_width=True,
-                hide_index=True,
-                height=650,
-            )
+    st.dataframe(
+        df_activity,
+        use_container_width=True,
+        hide_index=True,
+        height=700,
+    )
