@@ -1380,9 +1380,15 @@ with tab_proveedores:
                     ]
                 ].copy()
 
+                records_df["clave"] = (
+                    pd.to_numeric(records_df["clave"], errors="coerce")
+                    .round()
+                    .astype("Int64")
+                )
+
                 records_df = records_df.replace({np.nan: None})
 
-                records = records_df.to_dict("records")
+                records = records_df.where(pd.notnull(records_df), None).to_dict("records")
 
                 supabase.table("proveedores_iva") \
                     .delete() \
