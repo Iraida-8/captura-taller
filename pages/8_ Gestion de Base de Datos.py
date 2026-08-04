@@ -742,7 +742,7 @@ with tab_unidades:
                 # Delete existing rows
                 supabase.table("vehicle_units") \
                     .delete() \
-                    .neq("id", 0) \
+                    .neq("unidad", "") \
                     .execute()
 
                 # Add timestamps
