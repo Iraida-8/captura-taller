@@ -5,6 +5,7 @@ from auth import require_login, require_access
 from datetime import datetime, timezone
 from pages.css import load_css
 from io import BytesIO
+import numpy as np
 
 # =================================
 # RELEASE CHANNEL
@@ -1369,19 +1370,19 @@ with tab_proveedores:
                     st.error("El archivo no contiene las columnas requeridas.")
                     st.stop()
 
-                records = (
-                    new_df[
-                        [
-                            "proveedor",
-                            "iva_pct",
-                            "isr_pct",
-                            "formula",
-                            "clave"
-                        ]
+                records_df = new_df[
+                    [
+                        "proveedor",
+                        "iva_pct",
+                        "isr_pct",
+                        "formula",
+                        "clave"
                     ]
-                    .where(pd.notna(new_df), None)
-                    .to_dict("records")
-                )
+                ].copy()
+
+                records_df = records_df.replace({np.nan: None})
+
+                records = records_df.to_dict("records")
 
                 supabase.table("proveedores_iva") \
                     .delete() \
