@@ -1379,7 +1379,7 @@ with tab_proveedores:
                             "clave"
                         ]
                     ]
-                    .fillna("")
+                    .where(pd.notna(new_df), None)
                     .to_dict("records")
                 )
 
@@ -1390,9 +1390,14 @@ with tab_proveedores:
 
                 if records:
 
-                    supabase.table("proveedores_iva") \
-                        .insert(records) \
-                        .execute()
+                    try:
+                        supabase.table("proveedores_iva") \
+                            .insert(records) \
+                            .execute()
+
+                    except Exception as e:
+                        st.exception(e)
+                        st.stop()
                     
                 log_action(
                     "REPLACE",
