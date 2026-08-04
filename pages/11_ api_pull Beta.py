@@ -2131,8 +2131,12 @@ with tab_historial:
 
                 activity_df = pd.DataFrame(data)
 
-                # Keep ALL records returned by GPS Insight
-                trip_df = activity_df.copy()
+                # =====================================
+                # ONLY REAL TRIPS
+                # =====================================
+                trip_df = activity_df[
+                    activity_df["trip_type"] == "T"
+                ].copy()
 
                 if trip_df.empty:
 
