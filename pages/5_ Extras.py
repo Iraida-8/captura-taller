@@ -301,73 +301,286 @@ if has_ifuel:
             return output
 
         # -----------------------------
+        # Deteccion flexible de hoja/columnas
+        # -----------------------------
+        IFUEL_REQUIRED_COLUMNS = ("FSID", "FSJSON", "FSCreatedAt")
+
+        def normalize_excel_label(value):
+            """Compara nombres ignorando espacios, guiones y mayusculas."""
+            return "".join(ch for ch in str(value).casefold() if ch.isalnum())
+
+        def find_matching_column(columns, expected):
+            expected_normalized = normalize_excel_label(expected)
+            return next(
+                (
+                    column
+                    for column in columns
+                    if normalize_excel_label(column) == expected_normalized
+                ),
+                None,
+            )
+
+        def inspect_ifuel_sheets(excel_file):
+            """Lee solo encabezados para sugerir la hoja de datos sin cargar el libro."""
+            inspected = []
+            for position, sheet_name in enumerate(excel_file.sheet_names):
+                try:
+                    columns = list(
+                        pd.read_excel(excel_file, sheet_name=sheet_name, nrows=0).columns
+                    )
+                except Exception:
+                    columns = []
+
+                matches = {
+                    expected: find_matching_column(columns, expected)
+                    for expected in IFUEL_REQUIRED_COLUMNS
+                }
+                score = sum(value is not None for value in matches.values())
+
+                # En empate, favorece nombres parecidos a "Fuel Solutions".
+                name_bonus = int("fuelsolutions" in normalize_excel_label(sheet_name))
+                inspected.append({
+                    "position": position,
+                    "sheet_name": sheet_name,
+                    "columns": columns,
+                    "matches": matches,
+                    "score": score,
+                    "name_bonus": name_bonus,
+                })
+
+            return inspected
+
+        def column_selector(label, expected, columns, suggested, key_suffix):
+            no_column = "-- No disponible --"
+            options = [no_column] + columns
+            default_index = options.index(suggested) if suggested in options else 0
+            selected = st.selectbox(
+                label,
+                options,
+                index=default_index,
+                key=f"ifuel_{expected}_{key_suffix}",
+            )
+            return None if selected == no_column else selected
+
+        # -----------------------------
         # App flow
         # -----------------------------
         if uploaded:
+            try:
+                excel_file = pd.ExcelFile(uploaded)
+                inspected_sheets = inspect_ifuel_sheets(excel_file)
 
-            base = pd.read_excel(
-                uploaded,
-                sheet_name="Fuel Solutions",
-                usecols=["FSID", "FSJSON", "FSCreatedAt"]
-            )
+                if not inspected_sheets:
+                    st.error("El archivo no contiene hojas que se puedan leer.")
+                else:
+                    suggested_sheet = max(
+                        inspected_sheets,
+                        key=lambda item: (
+                            item["score"],
+                            item["name_bonus"],
+                            -item["position"],
+                        ),
+                    )
 
-            base["FSCreatedAt"] = pd.to_datetime(base["FSCreatedAt"], errors="coerce")
-            base = base.dropna(subset=["FSCreatedAt"])
-            base["Year"] = base["FSCreatedAt"].dt.year
-            base["Month"] = base["FSCreatedAt"].dt.month
+                    st.markdown("#### Configuración de origen")
+                    st.caption(
+                        "Selecciona la hoja que contiene los registros iFuel. "
+                        "Las demás hojas del libro son opcionales y se omiten."
+                    )
 
-            years = sorted(base["Year"].unique().tolist())
-            year = st.selectbox("Año", years, index=len(years) - 1 if years else 0)
+                    sheet_names = [item["sheet_name"] for item in inspected_sheets]
+                    selected_sheet = st.selectbox(
+                        "Hoja de datos iFuel",
+                        sheet_names,
+                        index=sheet_names.index(suggested_sheet["sheet_name"]),
+                    )
 
-            months = sorted(base.loc[base["Year"] == year, "Month"].unique().tolist())
-            month = st.selectbox("Mes", months, index=len(months) - 1 if months else 0)
+                    selected_info = next(
+                        item
+                        for item in inspected_sheets
+                        if item["sheet_name"] == selected_sheet
+                    )
+                    available_columns = selected_info["columns"]
 
-            filtered = base[(base["Year"] == year) & (base["Month"] == month)]
-            st.caption(f"Registros filtrados: {len(filtered):,} (Año={year}, Mes={month})")
+                    with st.expander("Asignar columnas", expanded=selected_info["score"] < 3):
+                        st.caption(
+                            "La asignación se propone automáticamente; cámbiala solo "
+                            "si los encabezados del archivo son distintos."
+                        )
+                        column_mapping = {
+                            expected: column_selector(
+                                f"{expected} corresponde a",
+                                expected,
+                                available_columns,
+                                selected_info["matches"][expected],
+                                normalize_excel_label(selected_sheet),
+                            )
+                            for expected in IFUEL_REQUIRED_COLUMNS
+                        }
 
-            trips_df, purchases_df, onroute_df = build_tables(filtered)
+                    missing_columns = [
+                        expected
+                        for expected, source in column_mapping.items()
+                        if source is None
+                    ]
+                    selected_sources = [
+                        source for source in column_mapping.values() if source is not None
+                    ]
 
-            if not purchases_df.empty:
-                purchases_df["is_pilot_group_purchase"] = purchases_df["location"].apply(is_pilot_group)
-                total = len(purchases_df)
-                group_count = int(purchases_df["is_pilot_group_purchase"].sum())
-                other_count = total - group_count
+                    if missing_columns:
+                        st.warning(
+                            "Asigna las columnas requeridas para continuar: "
+                            + ", ".join(missing_columns)
+                        )
+                    elif len(set(selected_sources)) != len(selected_sources):
+                        st.warning("Cada campo requerido debe corresponder a una columna distinta.")
+                    else:
+                        base = pd.read_excel(
+                            excel_file,
+                            sheet_name=selected_sheet,
+                            usecols=selected_sources,
+                        ).rename(
+                            columns={source: expected for expected, source in column_mapping.items()}
+                        )
 
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Cargas (total)", f"{total:,}")
-                c2.metric("Cargas Pilot/Flying J", f"{group_count / total * 100:.1f}%")
-                c3.metric("Cargas en otras", f"{other_count / total * 100:.1f}%")
+                        base["FSCreatedAt"] = pd.to_datetime(
+                            base["FSCreatedAt"], errors="coerce"
+                        )
+                        invalid_dates = int(base["FSCreatedAt"].isna().sum())
+                        base = base.dropna(subset=["FSCreatedAt"])
 
-            comparativo_df = build_comparativo(purchases_df, onroute_df)
+                        if invalid_dates:
+                            st.info(
+                                f"Se omitieron {invalid_dates:,} registros sin fecha válida."
+                            )
 
-            st.subheader("Tabla 1: Trip")
-            st.dataframe(trips_df, use_container_width=True)
+                        if base.empty:
+                            st.warning(
+                                "La hoja seleccionada no contiene registros con fecha válida."
+                            )
+                        else:
+                            base["Period"] = base["FSCreatedAt"].dt.strftime("%Y-%m")
+                            available_periods = sorted(base["Period"].unique().tolist())
 
-            st.subheader("Tabla 2: Fuel Purchases")
-            st.dataframe(purchases_df, use_container_width=True)
+                            select_all_periods = st.checkbox(
+                                "Incluir todos los periodos disponibles",
+                                value=False,
+                            )
 
-            st.subheader("Tabla 3: Stations On Route")
-            st.dataframe(onroute_df, use_container_width=True)
+                            if select_all_periods:
+                                selected_periods = available_periods
+                                st.caption(
+                                    f"Se incluirán los {len(available_periods):,} "
+                                    "periodos disponibles."
+                                )
+                            else:
+                                selected_periods = sorted(
+                                    st.multiselect(
+                                        "Periodos a incluir",
+                                        available_periods,
+                                        default=[available_periods[-1]],
+                                        help=(
+                                            "Puedes seleccionar uno o varios meses. "
+                                            "Cada periodo usa el formato AAAA-MM."
+                                        ),
+                                    )
+                                )
 
-            st.subheader("Tabla 4: Comparativo Non-Pilot")
-            if comparativo_df.empty:
-                st.info("No se generó comparativo.")
-            else:
-                st.dataframe(comparativo_df, use_container_width=True)
+                            filtered = base[
+                                base["Period"].isin(selected_periods)
+                            ].copy()
 
-            excel_bytes = to_excel_bytes(
-                trips_df,
-                purchases_df,
-                onroute_df,
-                comparativo_df
-            )
+                            if not selected_periods:
+                                st.warning(
+                                    "Selecciona al menos un periodo para generar el reporte."
+                                )
+                                period_suffix = "sin_periodos"
+                            elif len(selected_periods) == 1:
+                                period_suffix = selected_periods[0]
+                            elif select_all_periods:
+                                period_suffix = (
+                                    f"todos_{selected_periods[0]}_a_{selected_periods[-1]}"
+                                )
+                            else:
+                                period_suffix = (
+                                    f"{len(selected_periods)}_periodos_"
+                                    f"{selected_periods[0]}_a_{selected_periods[-1]}"
+                                )
 
-            st.download_button(
-                "⬇️ Descargar Excel (4 hojas)",
-                data=excel_bytes,
-                file_name=f"fuel_solutions_{year}_{month:02d}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+                            if selected_periods:
+                                periods_summary = (
+                                    ", ".join(selected_periods)
+                                    if len(selected_periods) <= 6
+                                    else f"{len(selected_periods):,} periodos seleccionados"
+                                )
+                                st.caption(
+                                    f"Registros filtrados: {len(filtered):,} "
+                                    f"({periods_summary})"
+                                )
+
+                            trips_df, purchases_df, onroute_df = build_tables(filtered)
+
+                            if not purchases_df.empty:
+                                purchases_df["is_pilot_group_purchase"] = purchases_df[
+                                    "location"
+                                ].apply(is_pilot_group)
+                                total = len(purchases_df)
+                                group_count = int(
+                                    purchases_df["is_pilot_group_purchase"].sum()
+                                )
+                                other_count = total - group_count
+
+                                c1, c2, c3 = st.columns(3)
+                                c1.metric("Cargas (total)", f"{total:,}")
+                                c2.metric(
+                                    "Cargas Pilot/Flying J",
+                                    f"{group_count / total * 100:.1f}%",
+                                )
+                                c3.metric(
+                                    "Cargas en otras",
+                                    f"{other_count / total * 100:.1f}%",
+                                )
+
+                            comparativo_df = build_comparativo(purchases_df, onroute_df)
+
+                            st.subheader("Tabla 1: Trip")
+                            st.dataframe(trips_df, use_container_width=True)
+
+                            st.subheader("Tabla 2: Fuel Purchases")
+                            st.dataframe(purchases_df, use_container_width=True)
+
+                            st.subheader("Tabla 3: Stations On Route")
+                            st.dataframe(onroute_df, use_container_width=True)
+
+                            st.subheader("Tabla 4: Comparativo Non-Pilot")
+                            if comparativo_df.empty:
+                                st.info("No se generó comparativo.")
+                            else:
+                                st.dataframe(comparativo_df, use_container_width=True)
+
+                            excel_bytes = to_excel_bytes(
+                                trips_df,
+                                purchases_df,
+                                onroute_df,
+                                comparativo_df,
+                            )
+
+                            if selected_periods:
+                                st.download_button(
+                                    "⬇️ Descargar Excel (4 hojas)",
+                                    data=excel_bytes,
+                                    file_name=f"fuel_solutions_{period_suffix}.xlsx",
+                                    mime=(
+                                        "application/vnd.openxmlformats-officedocument."
+                                        "spreadsheetml.sheet"
+                                    ),
+                                )
+            except Exception as exc:
+                st.error(
+                    "No se pudo leer el archivo. Verifica que sea un Excel válido "
+                    "y revisa la asignación de hoja/columnas."
+                )
+                st.caption(f"Detalle técnico: {exc}")
 
         else:
             st.info("Sube el Excel para comenzar.")
