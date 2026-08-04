@@ -18,8 +18,8 @@ from typing import List, Dict, Any, Tuple
 # RELEASE CHANNEL
 # =================================
 
-APP_CHANNEL = "BETA"
-#APP_CHANNEL = "RELEASE"
+#APP_CHANNEL = "BETA"
+APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
@@ -459,24 +459,64 @@ if has_ifuel:
                                 "La hoja seleccionada no contiene registros con fecha válida."
                             )
                         else:
-                            base["Year"] = base["FSCreatedAt"].dt.year
-                            base["Month"] = base["FSCreatedAt"].dt.month
+                            base["Period"] = base["FSCreatedAt"].dt.strftime("%Y-%m")
+                            available_periods = sorted(base["Period"].unique().tolist())
 
-                            years = sorted(base["Year"].unique().tolist())
-                            year = st.selectbox("Año", years, index=len(years) - 1)
-
-                            months = sorted(
-                                base.loc[base["Year"] == year, "Month"].unique().tolist()
+                            select_all_periods = st.checkbox(
+                                "Incluir todos los periodos disponibles",
+                                value=False,
                             )
-                            month = st.selectbox("Mes", months, index=len(months) - 1)
+
+                            if select_all_periods:
+                                selected_periods = available_periods
+                                st.caption(
+                                    f"Se incluirán los {len(available_periods):,} "
+                                    "periodos disponibles."
+                                )
+                            else:
+                                selected_periods = sorted(
+                                    st.multiselect(
+                                        "Periodos a incluir",
+                                        available_periods,
+                                        default=[available_periods[-1]],
+                                        help=(
+                                            "Puedes seleccionar uno o varios meses. "
+                                            "Cada periodo usa el formato AAAA-MM."
+                                        ),
+                                    )
+                                )
 
                             filtered = base[
-                                (base["Year"] == year) & (base["Month"] == month)
-                            ]
-                            st.caption(
-                                f"Registros filtrados: {len(filtered):,} "
-                                f"(Año={year}, Mes={month})"
-                            )
+                                base["Period"].isin(selected_periods)
+                            ].copy()
+
+                            if not selected_periods:
+                                st.warning(
+                                    "Selecciona al menos un periodo para generar el reporte."
+                                )
+                                period_suffix = "sin_periodos"
+                            elif len(selected_periods) == 1:
+                                period_suffix = selected_periods[0]
+                            elif select_all_periods:
+                                period_suffix = (
+                                    f"todos_{selected_periods[0]}_a_{selected_periods[-1]}"
+                                )
+                            else:
+                                period_suffix = (
+                                    f"{len(selected_periods)}_periodos_"
+                                    f"{selected_periods[0]}_a_{selected_periods[-1]}"
+                                )
+
+                            if selected_periods:
+                                periods_summary = (
+                                    ", ".join(selected_periods)
+                                    if len(selected_periods) <= 6
+                                    else f"{len(selected_periods):,} periodos seleccionados"
+                                )
+                                st.caption(
+                                    f"Registros filtrados: {len(filtered):,} "
+                                    f"({periods_summary})"
+                                )
 
                             trips_df, purchases_df, onroute_df = build_tables(filtered)
 
@@ -525,15 +565,16 @@ if has_ifuel:
                                 comparativo_df,
                             )
 
-                            st.download_button(
-                                "⬇️ Descargar Excel (4 hojas)",
-                                data=excel_bytes,
-                                file_name=f"fuel_solutions_{year}_{month:02d}.xlsx",
-                                mime=(
-                                    "application/vnd.openxmlformats-officedocument."
-                                    "spreadsheetml.sheet"
-                                ),
-                            )
+                            if selected_periods:
+                                st.download_button(
+                                    "⬇️ Descargar Excel (4 hojas)",
+                                    data=excel_bytes,
+                                    file_name=f"fuel_solutions_{period_suffix}.xlsx",
+                                    mime=(
+                                        "application/vnd.openxmlformats-officedocument."
+                                        "spreadsheetml.sheet"
+                                    ),
+                                )
             except Exception as exc:
                 st.error(
                     "No se pudo leer el archivo. Verifica que sea un Excel válido "
