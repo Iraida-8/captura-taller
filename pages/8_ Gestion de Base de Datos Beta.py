@@ -2049,9 +2049,8 @@ if is_admin:
                     st.markdown("##### Últimas 5 acciones")
 
                     latest_actions_display = latest_actions[
-                        ["action_date", "action", "page"]
+                        ["action", "page"]
                     ].rename(columns={
-                        "action_date": "Fecha",
                         "action": "Acción",
                         "page": "Página"
                     })
