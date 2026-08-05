@@ -266,6 +266,8 @@ df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
+df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
+df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1960,11 +1962,308 @@ if is_admin:
 
     with tab_audit:
 
-        st.subheader("User Activity Audit")
+        st.subheader("Actividad por Usuario")
 
-        st.dataframe(
-            df_activity,
-            use_container_width=True,
-            hide_index=True,
-            height=700,
+        users = sorted(
+            set(df_activity["user_name"].dropna().astype(str))
+            | set(df_audit_log["user_name"].dropna().astype(str))
+            | set(df_audit["usuario"].dropna().astype(str))
         )
+
+        selected_user = st.selectbox(
+            "Usuario",
+            ["Todos"] + users
+        )
+
+        activity_filtered = df_activity.copy()
+        auditlog_filtered = df_audit_log.copy()
+        audit_filtered = df_audit.copy()
+
+        if selected_user != "Todos":
+
+            activity_filtered = activity_filtered[
+                activity_filtered["user_name"] == selected_user
+            ]
+
+            auditlog_filtered = auditlog_filtered[
+                auditlog_filtered["user_name"] == selected_user
+            ]
+
+            audit_filtered = audit_filtered[
+                audit_filtered["usuario"] == selected_user
+            ]
+
+        (
+            tab_navigation,
+            tab_database,
+            tab_authorization,
+        ) = st.tabs([
+            "🧭 Actividad de Navegación",
+            "🛠️ Auditoría Base de Datos",
+            "✅ Auditoría Autorizaciones",
+        ])
+
+        # ==========================================
+        # USER NAVIGATION
+        # ==========================================
+
+        with tab_navigation:
+
+            st.caption(
+                "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
+            )
+
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if activity_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_login = (
+                    activity_filtered
+                    .sort_values("action_date", ascending=False)
+                    .iloc[0]
+                )
+
+                latest_actions = (
+                    activity_filtered
+                    .sort_values("action_date", ascending=False)
+                    .head(5)
+                )
+
+                col1, col2 = st.columns([1, 2])
+
+                with col1:
+
+                    st.metric(
+                        "Último Login",
+                        int(latest_login["login_counter"])
+                    )
+
+                with col2:
+
+                    st.markdown("##### Últimas 5 acciones")
+
+                    latest_actions_display = latest_actions[
+                        ["action", "page"]
+                    ].rename(columns={
+                        "action": "Acción",
+                        "page": "Página"
+                    })
+
+                    st.dataframe(
+                        latest_actions_display,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=215,
+                    )
+
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+                st.subheader("Historial de Actividad de Navegación")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                activity_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Actividad_Navegacion.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+
+            st.dataframe(
+                activity_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
+
+        # ==========================================
+        # DATABASE AUDIT
+        # ==========================================
+
+        with tab_database:
+
+            st.caption(
+                "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
+            )
+
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if auditlog_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_change = (
+                    auditlog_filtered
+                    .sort_values("created_at", ascending=False)
+                    .iloc[0]
+                )
+
+                latest_changes = (
+                    auditlog_filtered
+                    .sort_values("created_at", ascending=False)
+                    .head(5)
+                )
+
+                col1, col2 = st.columns([1, 2])
+
+                with col1:
+
+                    st.metric(
+                        "Última Tabla Modificada",
+                        latest_change["table_name"]
+                    )
+
+                with col2:
+
+                    st.markdown("##### Últimos 5 cambios")
+
+                    latest_changes_display = latest_changes[
+                        ["table_name", "details"]
+                    ].rename(columns={
+                        "table_name": "Tabla",
+                        "details": "Detalle"
+                    })
+
+                    st.dataframe(
+                        latest_changes_display,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=215,
+                    )
+
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+
+                st.subheader("Historial de Cambios en Base de Datos")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                auditlog_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Auditoria_Base_Datos.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+
+            st.dataframe(
+                auditlog_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
+
+        # ==========================================
+        # AUTHORIZATION AUDIT
+        # ==========================================
+
+        with tab_authorization:
+
+            st.caption(
+                "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
+            )
+
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if audit_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_entries = (
+                    audit_filtered
+                    .sort_values("timestamp", ascending=False)
+                    .head(5)
+                )
+
+                st.markdown("##### Últimas 5 acciones")
+
+                latest_entries_display = latest_entries[
+                    ["empresa", "no. de folio", "tipo cambio"]
+                ].rename(columns={
+                    "empresa": "Empresa",
+                    "no. de folio": "No. de Folio",
+                    "tipo cambio": "Tipo de Cambio"
+                })
+
+                st.dataframe(
+                    latest_entries_display,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=215,
+                )
+
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+
+                st.subheader("Historial del Módulo de Autorización")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                audit_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Auditoria_Autorizacion.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+
+            st.dataframe(
+                audit_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )

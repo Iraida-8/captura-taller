@@ -8,11 +8,16 @@
             "Implementación de control de visibilidad para las pestañas Administración de Usuarios y Audit utilizando el rol del usuario (admin) en lugar de los permisos del campo Access",
             "Corrección del flujo de navegación para evitar referencias a pestañas administrativas en usuarios sin privilegios de administrador",
             "Integración del registro de auditoría para operaciones de Inserción, Modificación, Eliminación y Reemplazo Masivo de información en todos los catálogos administrados",
+            "Extensión del registro de auditoría para incluir la descarga de reportes administrativos desde el módulo Audit",
             "Optimización del proceso de reemplazo masivo del catálogo de Unidades mediante validación de columnas requeridas y normalización automática de datos importados",
             "Corrección del proceso de eliminación previa durante el reemplazo del catálogo de Unidades para compatibilidad con llaves primarias tipo UUID",
             "Mejoras al manejo de errores durante operaciones masivas de carga para facilitar el diagnóstico de errores provenientes de Supabase y PostgreSQL",
-            "Preparación del módulo Audit para consolidar múltiples fuentes de auditoría dentro de una misma interfaz administrativa",
-            "Preparación para la incorporación de visualización independiente de las tablas User Activity Log, Audit Log y AUDIT mediante pestañas dedicadas",
+            "Rediseño completo del módulo Audit mediante un filtro global por usuario que consolida la información proveniente de User Activity Log, Audit Log y AUDIT",
+            "Implementación de pestañas independientes para Navegación de Usuarios, Auditoría de Base de Datos y Auditoría del Módulo de Autorización",
+            "Incorporación de indicadores KPI para cada categoría de auditoría, mostrando información reciente y resumida de la actividad del usuario seleccionado",
+            "Implementación de paneles de actividad reciente para mostrar las últimas acciones registradas utilizando ordenamiento cronológico por fecha y hora",
+            "Incorporación de exportación individual a Excel para cada uno de los reportes de auditoría respetando el filtro de usuario aplicado",
+            "Mejoras visuales al módulo Audit mediante descripciones funcionales, separación de secciones, encabezados descriptivos y organización de tablas para facilitar el análisis de actividad",
             "Mejoras generales de estabilidad, seguridad, mantenimiento y experiencia de administración del Portal OMEGA"
         ]
     },
