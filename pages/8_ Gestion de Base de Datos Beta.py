@@ -178,22 +178,29 @@ if st.session_state.get("delete_modal"):
 # Load Data
 # =================================
 @st.cache_data(ttl=60)
-def load_table(table_name, order_column="id"):
+def load_table(table_name):
 
     page_size = 1000
-    offset = 0
+    start = 0
     all_rows = []
 
     while True:
 
-        response = (
-            supabase
-            .table(table_name)
-            .select("*")
-            .order(order_column)
-            .range(offset, offset + page_size - 1)
-            .execute()
-        )
+        try:
+
+            response = (
+                supabase
+                .table(table_name)
+                .select("*", count="exact")
+                .range(start, start + page_size - 1)
+                .execute()
+            )
+
+        except Exception as e:
+
+            st.error(f"Error cargando {table_name}")
+            st.exception(e)
+            raise
 
         rows = response.data or []
 
@@ -202,7 +209,7 @@ def load_table(table_name, order_column="id"):
         if len(rows) < page_size:
             break
 
-        offset += page_size
+        start += page_size
 
     df = pd.DataFrame(all_rows)
 
