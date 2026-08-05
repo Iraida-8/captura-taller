@@ -269,10 +269,6 @@ df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
 df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 
-st.write("user_activity_log:", len(df_activity))
-st.write("audit_log:", len(df_audit_log))
-st.write("AUDIT:", len(df_audit))
-
 # ==========================================
 # UNIDADES
 # ==========================================
