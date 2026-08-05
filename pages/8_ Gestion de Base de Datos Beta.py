@@ -266,6 +266,8 @@ df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
+df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
+df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 
 # ==========================================
 # UNIDADES
@@ -1960,11 +1962,41 @@ if is_admin:
 
     with tab_audit:
 
-        st.subheader("User Activity Audit")
+        audit_tab1, audit_tab2, audit_tab3 = st.tabs([
+            "User Activity Log",
+            "Audit Log",
+            "AUDIT"
+        ])
 
-        st.dataframe(
-            df_activity,
-            use_container_width=True,
-            hide_index=True,
-            height=700,
-        )
+        with audit_tab1:
+
+            st.subheader("User Activity Log")
+
+            st.dataframe(
+                df_activity,
+                use_container_width=True,
+                hide_index=True,
+                height=700,
+            )
+
+        with audit_tab2:
+
+            st.subheader("Audit Log")
+
+            st.dataframe(
+                df_audit_log,
+                use_container_width=True,
+                hide_index=True,
+                height=700,
+            )
+
+        with audit_tab3:
+
+            st.subheader("AUDIT")
+
+            st.dataframe(
+                df_audit,
+                use_container_width=True,
+                hide_index=True,
+                height=700,
+            )
