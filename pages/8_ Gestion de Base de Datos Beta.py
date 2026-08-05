@@ -178,33 +178,36 @@ if st.session_state.get("delete_modal"):
 # Load Data
 # =================================
 @st.cache_data(ttl=60)
-def load_table(table_name):
+def load_table(table_name, order_column="id"):
 
     page_size = 1000
-    start = 0
+    offset = 0
     all_rows = []
 
     while True:
+
         response = (
             supabase
             .table(table_name)
             .select("*")
-            .range(start, start + page_size - 1)
+            .order(order_column)
+            .range(offset, offset + page_size - 1)
             .execute()
         )
 
-        data = response.data
+        rows = response.data or []
 
-        if not data:
+        all_rows.extend(rows)
+
+        if len(rows) < page_size:
             break
 
-        all_rows.extend(data)
-        start += page_size
+        offset += page_size
 
     df = pd.DataFrame(all_rows)
 
     if not df.empty:
-        df.columns = [col.lower() for col in df.columns]
+        df.columns = [c.lower() for c in df.columns]
 
     return df
 
@@ -265,10 +268,26 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
-df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
-df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
-df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 
+df_activity = load_table(
+    "user_activity_log",
+    "id"
+) if is_admin else pd.DataFrame()
+
+df_audit_log = load_table(
+    "audit_log",
+    "id"
+) if is_admin else pd.DataFrame()
+
+df_audit = load_table(
+    "AUDIT",
+    "timestamp"
+) if is_admin else pd.DataFrame()
+
+if is_admin:
+    st.write("Activity:", len(df_activity))
+    st.write("Audit Log:", len(df_audit_log))
+    st.write("AUDIT:", len(df_audit))
 # ==========================================
 # UNIDADES
 # ==========================================
