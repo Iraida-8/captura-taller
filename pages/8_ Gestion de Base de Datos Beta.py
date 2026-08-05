@@ -1993,7 +1993,10 @@ if is_admin:
                 audit_filtered["usuario"] == selected_user
             ]
 
-        st.markdown("### User Activity Log")
+        st.markdown("### 🧭 User Navigation Activity")
+        st.caption(
+            "Tracks user navigation throughout the application, including logins, page visits, and module access."
+        )
 
         st.dataframe(
             activity_filtered,
@@ -2004,7 +2007,10 @@ if is_admin:
 
         st.divider()
 
-        st.markdown("### Audit Log")
+        st.markdown("### 🛠️ Administrative Database Audit")
+        st.caption(
+            "Tracks database modifications performed by Administrators and Managers, including inserts, updates, deletions, and table replacements."
+        )
 
         st.dataframe(
             auditlog_filtered,
@@ -2015,7 +2021,10 @@ if is_admin:
 
         st.divider()
 
-        st.markdown("### AUDIT")
+        st.markdown("### ✅ Authorization Workflow Audit")
+        st.caption(
+            "Tracks all user actions performed within the Authorization module, including approvals, rejections, and workflow status changes."
+        )
 
         st.dataframe(
             audit_filtered,
