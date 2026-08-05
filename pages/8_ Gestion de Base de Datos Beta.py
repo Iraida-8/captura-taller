@@ -1993,9 +1993,9 @@ if is_admin:
                 audit_filtered["usuario"] == selected_user
             ]
 
-        st.markdown("### 🧭 User Navigation Activity")
+        st.markdown("### 🧭 Actividad de Navegación de Usuarios")
         st.caption(
-            "Tracks user navigation throughout the application, including logins, page visits, and module access."
+            "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
         )
 
         st.dataframe(
@@ -2007,9 +2007,9 @@ if is_admin:
 
         st.divider()
 
-        st.markdown("### 🛠️ Administrative Database Audit")
+        st.markdown("### 🛠️ Auditoría de Cambios en Base de Datos")
         st.caption(
-            "Tracks database modifications performed by Administrators and Managers, including inserts, updates, deletions, and table replacements."
+            "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
         )
 
         st.dataframe(
@@ -2021,9 +2021,9 @@ if is_admin:
 
         st.divider()
 
-        st.markdown("### ✅ Authorization Workflow Audit")
+        st.markdown("### ✅ Auditoría del Módulo de Autorización")
         st.caption(
-            "Tracks all user actions performed within the Authorization module, including approvals, rejections, and workflow status changes."
+            "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
         )
 
         st.dataframe(
