@@ -2013,7 +2013,55 @@ if is_admin:
                 "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
             )
 
-            # KPIs HERE
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if activity_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_login = (
+                    activity_filtered
+                    .sort_values("action_date", ascending=False)
+                    .iloc[0]
+                )
+
+                latest_actions = (
+                    activity_filtered
+                    .sort_values("action_date", ascending=False)
+                    .head(5)
+                )
+
+                col1, col2 = st.columns([1, 2])
+
+                with col1:
+
+                    st.metric(
+                        "Último Login",
+                        int(latest_login["login_counter"])
+                    )
+
+                with col2:
+
+                    st.markdown("##### Últimas 5 acciones")
+
+                    latest_actions_display = latest_actions[
+                        ["action_date", "action", "page"]
+                    ].rename(columns={
+                        "action_date": "Fecha",
+                        "action": "Acción",
+                        "page": "Página"
+                    })
+
+                    st.dataframe(
+                        latest_actions_display,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=215,
+                    )
 
             st.dataframe(
                 activity_filtered,
