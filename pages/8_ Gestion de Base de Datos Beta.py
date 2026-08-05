@@ -275,26 +275,13 @@ df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
+df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
+df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
+df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 
-df_activity = load_table(
-    "user_activity_log",
-    "id"
-) if is_admin else pd.DataFrame()
-
-df_audit_log = load_table(
-    "audit_log",
-    "id"
-) if is_admin else pd.DataFrame()
-
-df_audit = load_table(
-    "AUDIT",
-    "timestamp"
-) if is_admin else pd.DataFrame()
-
-if is_admin:
-    st.write("Activity:", len(df_activity))
-    st.write("Audit Log:", len(df_audit_log))
-    st.write("AUDIT:", len(df_audit))
+st.write("user_activity_log:", len(df_activity))
+st.write("audit_log:", len(df_audit_log))
+st.write("AUDIT:", len(df_audit))
 # ==========================================
 # UNIDADES
 # ==========================================
