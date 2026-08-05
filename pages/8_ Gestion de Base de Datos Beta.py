@@ -2062,6 +2062,33 @@ if is_admin:
                         height=215,
                     )
 
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+                st.subheader("Historial de Actividad de Navegación")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                activity_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Actividad_Navegacion.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+
             st.dataframe(
                 activity_filtered,
                 use_container_width=True,
