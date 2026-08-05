@@ -185,36 +185,26 @@ def load_table(table_name):
     all_rows = []
 
     while True:
+        response = (
+            supabase
+            .table(table_name)
+            .select("*")
+            .range(start, start + page_size - 1)
+            .execute()
+        )
 
-        try:
+        data = response.data
 
-            response = (
-                supabase
-                .table(table_name)
-                .select("*", count="exact")
-                .range(start, start + page_size - 1)
-                .execute()
-            )
-
-        except Exception as e:
-
-            st.error(f"Error cargando {table_name}")
-            st.exception(e)
-            raise
-
-        rows = response.data or []
-
-        all_rows.extend(rows)
-
-        if len(rows) < page_size:
+        if not data:
             break
 
+        all_rows.extend(data)
         start += page_size
 
     df = pd.DataFrame(all_rows)
 
     if not df.empty:
-        df.columns = [c.lower() for c in df.columns]
+        df.columns = [col.lower() for col in df.columns]
 
     return df
 
@@ -282,6 +272,7 @@ df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 st.write("user_activity_log:", len(df_activity))
 st.write("audit_log:", len(df_audit_log))
 st.write("AUDIT:", len(df_audit))
+
 # ==========================================
 # UNIDADES
 # ==========================================
