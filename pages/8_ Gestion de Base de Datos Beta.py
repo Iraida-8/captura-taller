@@ -2200,7 +2200,66 @@ if is_admin:
                 "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
             )
 
-            # KPIs HERE
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if audit_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_entries = (
+                    audit_filtered
+                    .sort_values("timestamp", ascending=False)
+                    .head(5)
+                )
+
+                st.markdown("##### Últimas 5 acciones")
+
+                latest_entries_display = latest_entries[
+                    ["empresa", "no. de folio", "tipo cambio"]
+                ].rename(columns={
+                    "empresa": "Empresa",
+                    "no. de folio": "No. de Folio",
+                    "tipo cambio": "Tipo de Cambio"
+                })
+
+                st.dataframe(
+                    latest_entries_display,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=215,
+                )
+
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+
+                st.subheader("Historial del Módulo de Autorización")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                audit_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Auditoria_Autorizacion.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
 
             st.dataframe(
                 audit_filtered,
