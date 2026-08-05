@@ -1962,41 +1962,64 @@ if is_admin:
 
     with tab_audit:
 
-        audit_tab1, audit_tab2, audit_tab3 = st.tabs([
-            "User Activity Log",
-            "Audit Log",
-            "AUDIT"
-        ])
+        st.subheader("Actividad por Usuario")
 
-        with audit_tab1:
+        users = sorted(
+            set(df_activity["user_name"].dropna().astype(str))
+            | set(df_audit_log["user_name"].dropna().astype(str))
+            | set(df_audit["usuario"].dropna().astype(str))
+        )
 
-            st.subheader("User Activity Log")
+        selected_user = st.selectbox(
+            "Usuario",
+            ["Todos"] + users
+        )
 
-            st.dataframe(
-                df_activity,
-                use_container_width=True,
-                hide_index=True,
-                height=700,
-            )
+        activity_filtered = df_activity.copy()
+        auditlog_filtered = df_audit_log.copy()
+        audit_filtered = df_audit.copy()
 
-        with audit_tab2:
+        if selected_user != "Todos":
 
-            st.subheader("Audit Log")
+            activity_filtered = activity_filtered[
+                activity_filtered["user_name"] == selected_user
+            ]
 
-            st.dataframe(
-                df_audit_log,
-                use_container_width=True,
-                hide_index=True,
-                height=700,
-            )
+            auditlog_filtered = auditlog_filtered[
+                auditlog_filtered["user_name"] == selected_user
+            ]
 
-        with audit_tab3:
+            audit_filtered = audit_filtered[
+                audit_filtered["usuario"] == selected_user
+            ]
 
-            st.subheader("AUDIT")
+        st.markdown("### User Activity Log")
 
-            st.dataframe(
-                df_audit,
-                use_container_width=True,
-                hide_index=True,
-                height=700,
-            )
+        st.dataframe(
+            activity_filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=250,
+        )
+
+        st.divider()
+
+        st.markdown("### Audit Log")
+
+        st.dataframe(
+            auditlog_filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=250,
+        )
+
+        st.divider()
+
+        st.markdown("### AUDIT")
+
+        st.dataframe(
+            audit_filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=250,
+        )

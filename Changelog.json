@@ -1,5 +1,23 @@
 [
     {
+    "version": "2.08.05.26",
+    "date": "05/08/2026",
+    "changes":
+        [
+            "Ampliación del módulo Gestión de Base de Datos para incorporar administración visual de usuarios basada en Roles, Branch, Empresas y Permisos",
+            "Implementación de control de visibilidad para las pestañas Administración de Usuarios y Audit utilizando el rol del usuario (admin) en lugar de los permisos del campo Access",
+            "Corrección del flujo de navegación para evitar referencias a pestañas administrativas en usuarios sin privilegios de administrador",
+            "Integración del registro de auditoría para operaciones de Inserción, Modificación, Eliminación y Reemplazo Masivo de información en todos los catálogos administrados",
+            "Optimización del proceso de reemplazo masivo del catálogo de Unidades mediante validación de columnas requeridas y normalización automática de datos importados",
+            "Corrección del proceso de eliminación previa durante el reemplazo del catálogo de Unidades para compatibilidad con llaves primarias tipo UUID",
+            "Mejoras al manejo de errores durante operaciones masivas de carga para facilitar el diagnóstico de errores provenientes de Supabase y PostgreSQL",
+            "Preparación del módulo Audit para consolidar múltiples fuentes de auditoría dentro de una misma interfaz administrativa",
+            "Preparación para la incorporación de visualización independiente de las tablas User Activity Log, Audit Log y AUDIT mediante pestañas dedicadas",
+            "Mejoras generales de estabilidad, seguridad, mantenimiento y experiencia de administración del Portal OMEGA"
+        ]
+    },
+
+    {
     "version": "2.07.30.26",
     "date": "30/07/2026",
     "changes":
