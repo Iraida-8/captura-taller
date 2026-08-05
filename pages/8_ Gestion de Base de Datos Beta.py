@@ -1993,42 +1993,69 @@ if is_admin:
                 audit_filtered["usuario"] == selected_user
             ]
 
-        st.markdown("### 🧭 Actividad de Navegación de Usuarios")
-        st.caption(
-            "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
-        )
+        (
+            tab_navigation,
+            tab_database,
+            tab_authorization,
+        ) = st.tabs([
+            "🧭 Actividad de Navegación",
+            "🛠️ Auditoría Base de Datos",
+            "✅ Auditoría Autorizaciones",
+        ])
 
-        st.dataframe(
-            activity_filtered,
-            use_container_width=True,
-            hide_index=True,
-            height=250,
-        )
+        # ==========================================
+        # USER NAVIGATION
+        # ==========================================
 
-        st.divider()
+        with tab_navigation:
 
-        st.markdown("### 🛠️ Auditoría de Cambios en Base de Datos")
-        st.caption(
-            "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
-        )
+            st.caption(
+                "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
+            )
 
-        st.dataframe(
-            auditlog_filtered,
-            use_container_width=True,
-            hide_index=True,
-            height=250,
-        )
+            # KPIs HERE
 
-        st.divider()
+            st.dataframe(
+                activity_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
 
-        st.markdown("### ✅ Auditoría del Módulo de Autorización")
-        st.caption(
-            "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
-        )
+        # ==========================================
+        # DATABASE AUDIT
+        # ==========================================
 
-        st.dataframe(
-            audit_filtered,
-            use_container_width=True,
-            hide_index=True,
-            height=250,
-        )
+        with tab_database:
+
+            st.caption(
+                "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
+            )
+
+            # KPIs HERE
+
+            st.dataframe(
+                auditlog_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
+
+        # ==========================================
+        # AUTHORIZATION AUDIT
+        # ==========================================
+
+        with tab_authorization:
+
+            st.caption(
+                "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
+            )
+
+            # KPIs HERE
+
+            st.dataframe(
+                audit_filtered,
+                use_container_width=True,
+                hide_index=True,
+                height=650,
+            )
