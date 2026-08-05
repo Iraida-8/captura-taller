@@ -2106,7 +2106,66 @@ if is_admin:
                 "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
             )
 
-            # KPIs HERE
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if auditlog_filtered.empty:
+
+                st.info("No existen registros para el usuario seleccionado.")
+
+            else:
+
+                latest_change = (
+                    auditlog_filtered
+                    .sort_values("created_at", ascending=False)
+                    .iloc[0]
+                )
+
+                col1, col2 = st.columns([1, 2])
+
+                with col1:
+
+                    st.metric(
+                        "Última Tabla Modificada",
+                        latest_change["table_name"]
+                    )
+
+                with col2:
+
+                    st.markdown("##### Última acción realizada")
+
+                    st.info(
+                        latest_change["details"]
+                    )
+
+            st.divider()
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+
+                st.subheader("Historial de Cambios en Base de Datos")
+
+            with col2:
+
+                excel_buffer = BytesIO()
+
+                auditlog_filtered.to_excel(
+                    excel_buffer,
+                    index=False,
+                    engine="openpyxl"
+                )
+
+                excel_buffer.seek(0)
+
+                st.download_button(
+                    "📥 Descargar",
+                    data=excel_buffer,
+                    file_name="Auditoria_Base_Datos.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
 
             st.dataframe(
                 auditlog_filtered,
