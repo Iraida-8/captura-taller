@@ -2122,6 +2122,12 @@ if is_admin:
                     .iloc[0]
                 )
 
+                latest_changes = (
+                    auditlog_filtered
+                    .sort_values("created_at", ascending=False)
+                    .head(5)
+                )
+
                 col1, col2 = st.columns([1, 2])
 
                 with col1:
@@ -2133,10 +2139,20 @@ if is_admin:
 
                 with col2:
 
-                    st.markdown("##### Última acción realizada")
+                    st.markdown("##### Últimos 5 cambios")
 
-                    st.info(
-                        latest_change["details"]
+                    latest_changes_display = latest_changes[
+                        ["table_name", "details"]
+                    ].rename(columns={
+                        "table_name": "Tabla",
+                        "details": "Detalle"
+                    })
+
+                    st.dataframe(
+                        latest_changes_display,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=215,
                     )
 
             st.divider()
