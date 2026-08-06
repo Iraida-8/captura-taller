@@ -214,6 +214,10 @@ if has_ifuel:
                         "price": p.get("price"),
                         "include": p.get("include"),
                         "interstate_exit": p.get("interstate_exit"),
+                        # A partir de 2026 algunas paradas llegan sin loc_id/lat/lng/interstate_exit
+                        # en el JSON de origen (no es un error del reporte, es como lo manda iFuel).
+                        # Dejamos esto marcado explícitamente en vez de un NaN silencioso.
+                        "sin_coordenadas": p.get("lat") is None or p.get("lng") is None,
                     })
 
                 fsor = payload.get("fuelStationOnRoute")
@@ -259,6 +263,10 @@ if has_ifuel:
             if df.empty:
                 return pd.DataFrame()
 
+            # Reindexamos UNA sola vez, antes de calcular nada, para que "df" y
+            # "nearest" queden garantizados en el mismo orden/longitud al concatenar.
+            df = df.reset_index(drop=True)
+
             def nearest_station(row):
                 grp = grouped.get(row["FSID"])
                 if grp is None or grp.empty or pd.isna(row["lat"]) or pd.isna(row["lng"]):
@@ -280,8 +288,22 @@ if has_ifuel:
                     "distance_to_nearest_pilotgroup_miles": float(dists[i])
                 })
 
-            nearest = df.apply(nearest_station, axis=1)
-            comp = pd.concat([df.reset_index(drop=True), nearest], axis=1)
+            nearest = df.apply(nearest_station, axis=1).reset_index(drop=True)
+
+            # Salvaguarda anti-desfase: si por cualquier razón "df" y "nearest"
+            # no quedaran perfectamente alineados, mejor truena aquí con un
+            # mensaje claro que entregar un Excel con filas corridas/NaN falsos.
+            assert len(df) == len(nearest), (
+                f"Desalineación detectada en comparativo: df={len(df)} filas, "
+                f"nearest={len(nearest)} filas."
+            )
+
+            comp = pd.concat([df, nearest], axis=1)
+
+            assert comp["FSID"].notna().all(), (
+                "Se generaron filas de comparativo sin FSID: revisar build_comparativo."
+            )
+
             comp["price_diff_per_gallon_vs_pilotgroup"] = comp["price"] - comp["nearest_pilotgroup_price"]
             comp["est_cost_diff"] = comp["price_diff_per_gallon_vs_pilotgroup"] * comp["fuelToPurchase"]
 
@@ -530,6 +552,8 @@ if has_ifuel:
                                 )
                                 other_count = total - group_count
 
+                                sin_coords = int(purchases_df["sin_coordenadas"].sum())
+
                                 c1, c2, c3 = st.columns(3)
                                 c1.metric("Cargas (total)", f"{total:,}")
                                 c2.metric(
@@ -540,6 +564,16 @@ if has_ifuel:
                                     "Cargas en otras",
                                     f"{other_count / total * 100:.1f}%",
                                 )
+
+                                if sin_coords:
+                                    st.warning(
+                                        f"⚠️ {sin_coords:,} de {total:,} paradas "
+                                        f"({sin_coords / total * 100:.1f}%) llegaron en el "
+                                        "archivo sin loc_id/lat/lng/interstate_exit (así lo "
+                                        "manda iFuel este año para algunas estaciones). Esas "
+                                        "filas no pueden entrar al comparativo de distancia y "
+                                        "quedan marcadas en la columna 'sin_coordenadas'."
+                                    )
 
                             comparativo_df = build_comparativo(purchases_df, onroute_df)
 
