@@ -1951,14 +1951,30 @@ with tab_mapa:
 
         if not landmark_map_df.empty:
 
+            # -----------------------------------------
+            # LANDMARK HOVER CONTENT
+            # -----------------------------------------
+            landmark_map_df["tooltip_html"] = (
+                landmark_map_df.apply(
+                    lambda row:
+                        f"""
+                        <b>📍 Landmark:</b> {row.get("label", "-")}<br/>
+                        <b>Cuenta:</b> {row.get("gps_account", "-")}
+                        """,
+                    axis=1
+                )
+            )
+
             landmark_polygon_layer = pdk.Layer(
                 "PolygonLayer",
                 data=landmark_map_df,
 
                 get_polygon="polygon_coordinates",
 
-                get_fill_color=[21, 31, 109, 70],
+                # Subtle fill
+                get_fill_color=[21, 31, 109, 35],
 
+                # Visible perimeter
                 get_line_color=[21, 31, 109, 220],
 
                 line_width_min_pixels=2,
@@ -1966,40 +1982,37 @@ with tab_mapa:
                 filled=True,
                 stroked=True,
 
+                # Required for hover
                 pickable=True,
                 auto_highlight=True,
             )
 
-            landmark_text_layer = pdk.Layer(
-                "TextLayer",
-                data=landmark_map_df,
-
-                get_position="label_position",
-
-                get_text="label",
-
-                get_size=16,
-
-                get_color=[21, 31, 109, 255],
-
-                get_angle=0,
-
-                get_text_anchor="'middle'",
-
-                get_alignment_baseline="'center'",
-
-                billboard=True,
-
-                pickable=False,
-            )
-
             landmark_layers = [
                 landmark_polygon_layer,
-                landmark_text_layer,
             ]
 
         # =============================================
-        # PYDECK LAYER
+        # VEHICLE TOOLTIP CONTENT
+        # =============================================
+
+        map_df["tooltip_html"] = (
+            map_df.apply(
+                lambda row:
+                    f"""
+                    <b>Unidad:</b> {row.get("label", "-")}<br/>
+                    <b>Latitud:</b> {row.get("latitude", "-")}<br/>
+                    <b>Longitud:</b> {row.get("longitude", "-")}<br/>
+                    <b>Velocidad:</b> {row.get("speed_display", "-")}<br/>
+                    <b>Ignición:</b> {row.get("ignition", "-")}<br/>
+                    <b>Tiempo detenido:</b> {row.get("speed_label", "-")}<br/>
+                    <b>Dirección:</b> {row.get("address", "-")}
+                    """,
+                axis=1
+            )
+        )
+
+        # =============================================
+        # PYDECK VEHICLE LAYER
         # =============================================
         layer = pdk.Layer(
             "ScatterplotLayer",
@@ -2034,15 +2047,7 @@ with tab_mapa:
         # TOOLTIP
         # =============================================
         tooltip = {
-            "html": """
-                <b>Unidad:</b> {label} <br/>
-                <b>Latitud:</b> {latitude} <br/>
-                <b>Longitud:</b> {longitude} <br/>
-                <b>Velocidad:</b> {speed_display} <br/>
-                <b>Ignición:</b> {ignition} <br/>
-                <b>Tiempo detenido:</b> {speed_label} <br/>
-                <b>Dirección:</b> {address}
-            """,
+            "html": "{tooltip_html}",
             "style": {
                 "backgroundColor": "#1B267A",
                 "color": "white"
