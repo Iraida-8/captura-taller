@@ -1657,16 +1657,15 @@ with tab_mapa:
 
             points = []
 
-            for point in value.split("-"):
+            # Each coordinate is separated by whitespace.
+            # DO NOT split on "-" because longitude can be negative.
+            coordinate_pairs = value.strip().split()
 
-                point = point.strip()
-
-                if not point:
-                    continue
+            for coordinate in coordinate_pairs:
 
                 try:
 
-                    parts = point.split(",")
+                    parts = coordinate.split(",")
 
                     longitude = float(parts[0])
                     latitude = float(parts[1])
