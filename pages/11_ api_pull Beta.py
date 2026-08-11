@@ -1640,6 +1640,78 @@ with tab_mapa:
             f"Error cargando landmarks: {e}"
         )
 
+    # =============================================
+    # LANDMARK POLYGON PREPARATION
+    # =============================================
+
+    landmark_map_df = pd.DataFrame()
+
+    if "landmark_df" in locals() and not landmark_df.empty:
+
+        landmark_map_df = landmark_df.copy()
+
+        def parse_landmark_coordinates(value):
+
+            if not isinstance(value, str):
+                return []
+
+            points = []
+
+            for point in value.split("-"):
+
+                point = point.strip()
+
+                if not point:
+                    continue
+
+                try:
+
+                    parts = point.split(",")
+
+                    longitude = float(parts[0])
+                    latitude = float(parts[1])
+
+                    points.append(
+                        [longitude, latitude]
+                    )
+
+                except (ValueError, IndexError):
+                    continue
+
+            return points
+
+        landmark_map_df["polygon_coordinates"] = (
+            landmark_map_df["coordinates"]
+            .apply(parse_landmark_coordinates)
+        )
+
+        # Keep only valid polygons
+        landmark_map_df = landmark_map_df[
+            landmark_map_df["polygon_coordinates"].apply(
+                lambda x: len(x) >= 3
+            )
+        ].copy()
+
+        def get_landmark_center(points):
+
+            if not points:
+                return [0, 0]
+
+            longitude = sum(
+                point[0] for point in points
+            ) / len(points)
+
+            latitude = sum(
+                point[1] for point in points
+            ) / len(points)
+
+            return [longitude, latitude]
+
+        landmark_map_df["label_position"] = (
+            landmark_map_df["polygon_coordinates"]
+            .apply(get_landmark_center)
+        )
+
     st.subheader("🗺️ Mapa GPS de Unidades")
 
     map_df = df.copy()
@@ -1873,6 +1945,61 @@ with tab_mapa:
         )
 
         # =============================================
+        # LANDMARK POLYGON LAYER
+        # =============================================
+
+        landmark_layers = []
+
+        if not landmark_map_df.empty:
+
+            landmark_polygon_layer = pdk.Layer(
+                "PolygonLayer",
+                data=landmark_map_df,
+
+                get_polygon="polygon_coordinates",
+
+                get_fill_color=[21, 31, 109, 70],
+
+                get_line_color=[21, 31, 109, 220],
+
+                line_width_min_pixels=2,
+
+                filled=True,
+                stroked=True,
+
+                pickable=True,
+                auto_highlight=True,
+            )
+
+            landmark_text_layer = pdk.Layer(
+                "TextLayer",
+                data=landmark_map_df,
+
+                get_position="label_position",
+
+                get_text="label",
+
+                get_size=16,
+
+                get_color=[21, 31, 109, 255],
+
+                get_angle=0,
+
+                get_text_anchor="'middle'",
+
+                get_alignment_baseline="'center'",
+
+                billboard=True,
+
+                pickable=False,
+            )
+
+            landmark_layers = [
+                landmark_polygon_layer,
+                landmark_text_layer,
+            ]
+
+        # =============================================
         # PYDECK LAYER
         # =============================================
         layer = pdk.Layer(
@@ -1940,7 +2067,7 @@ with tab_mapa:
             pdk.Deck(
                 height=700,
 
-                layers=[layer],
+                layers=landmark_layers + [layer],
 
                 initial_view_state=view_state,
 
