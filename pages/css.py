@@ -186,44 +186,41 @@ def load_css():
         COMPANY FILTER BUTTONS
         ===================================================== */
 
-        /* ---------------------------------
-        INACTIVE COMPANY BUTTON
+        /* INACTIVE
         Blue background / blue border / white text
-        --------------------------------- */
+        */
 
-        div[class*="st-key-company_filter_"] button{
+        div.st-key-company_filters button[kind="secondary"]{
 
             background:#151F6D !important;
             background-color:#151F6D !important;
 
             color:#FFFFFF !important;
+            -webkit-text-fill-color:#FFFFFF !important;
 
             border:1px solid #151F6D !important;
 
             opacity:1 !important;
-
-            -webkit-text-fill-color:#FFFFFF !important;
         }
 
-        div[class*="st-key-company_filter_"] button *{
+        div.st-key-company_filters button[kind="secondary"] *{
 
             color:#FFFFFF !important;
-
             -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
-        /* ---------------------------------
-        HOVER
+        /* HOVER
         Gold background / gold border / white text
-        --------------------------------- */
+        */
 
-        div[class*="st-key-company_filter_"] button:hover{
+        div.st-key-company_filters button[kind="secondary"]:hover{
 
             background:#BFA75F !important;
             background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
+            -webkit-text-fill-color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
 
@@ -232,55 +229,48 @@ def load_css():
             transform:translateY(-2px);
         }
 
-        div[class*="st-key-company_filter_"] button:hover *{
+        div.st-key-company_filters button[kind="secondary"]:hover *{
 
             color:#FFFFFF !important;
-
             -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
-        /* ---------------------------------
-        ACTIVE / SELECTED
+        /* ACTIVE
         Gold background / gold border / white text
-        --------------------------------- */
+        */
 
-        div[class*="st-key-company_filter_"]
-        button[kind="primary"]{
+        div.st-key-company_filters button[kind="primary"]{
 
             background:#BFA75F !important;
             background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
+            -webkit-text-fill-color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
 
             opacity:1 !important;
-
-            -webkit-text-fill-color:#FFFFFF !important;
         }
 
-        div[class*="st-key-company_filter_"]
-        button[kind="primary"] *{
+        div.st-key-company_filters button[kind="primary"] *{
 
             color:#FFFFFF !important;
-
             -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
-        /* ---------------------------------
-        ACTIVE HOVER
-        Same gold appearance
-        --------------------------------- */
+        /* ACTIVE + HOVER
+        Remains gold
+        */
 
-        div[class*="st-key-company_filter_"]
-        button[kind="primary"]:hover{
+        div.st-key-company_filters button[kind="primary"]:hover{
 
             background:#BFA75F !important;
             background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
+            -webkit-text-fill-color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
 
@@ -289,11 +279,9 @@ def load_css():
             transform:translateY(-2px);
         }
 
-        div[class*="st-key-company_filter_"]
-        button[kind="primary"]:hover *{
+        div.st-key-company_filters button[kind="primary"]:hover *{
 
             color:#FFFFFF !important;
-
             -webkit-text-fill-color:#FFFFFF !important;
         }
 
