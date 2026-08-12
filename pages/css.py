@@ -143,9 +143,42 @@ def load_css():
 
             border-radius:10px;
 
+            background:#151F6D !important;
+
+            background-color:#151F6D !important;
+
+            color:#FFFFFF !important;
+
+            border:1px solid #151F6D !important;
+
             font-weight:600;
 
             transition:all .2s ease;
+        }
+
+        div.stButton button *{
+
+            color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
+        }
+
+        div.stButton button:hover{
+
+            background:#BFA75F !important;
+
+            background-color:#BFA75F !important;
+
+            color:#FFFFFF !important;
+
+            border:1px solid #BFA75F !important;
+        }
+
+        div.stButton button:hover *{
+
+            color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
