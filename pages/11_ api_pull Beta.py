@@ -190,8 +190,6 @@ st.session_state.setdefault(
     False
 )
 
-# Pause automatic refresh while the fleet history
-# report is being displayed/generated.
 if not st.session_state.gps_history_report_generated:
 
     st_autorefresh(
@@ -281,7 +279,7 @@ else:
             """,
             unsafe_allow_html=True
         )
-        
+
 #==============================================================================================================
 # GPS INSIGHT AUTH
 #==============================================================================================================
