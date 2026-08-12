@@ -158,14 +158,18 @@ def load_css():
         Blue background / blue border / white text
         --------------------------------- */
 
-        div[class*="st-key-company_filter_"]
-        button[kind="secondary"]{
+        div[class*="st-key-company_filter_"] button{
 
             background:#151F6D !important;
 
             color:#FFFFFF !important;
 
             border:1px solid #151F6D !important;
+        }
+
+        div[class*="st-key-company_filter_"] button *{
+
+            color:#FFFFFF !important;
         }
 
         div[class*="st-key-company_filter_"]
