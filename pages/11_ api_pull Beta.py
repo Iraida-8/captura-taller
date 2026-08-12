@@ -1873,6 +1873,9 @@ with tab_mapa:
     # MAP FILTERS
     # =============================================
 
+    # Keep a clean copy of all valid GPS units.
+    map_source_df = map_df.copy()
+
     filter_col1, filter_col2 = st.columns(2)
 
     # =============================================
@@ -1901,7 +1904,7 @@ with tab_mapa:
     with filter_col2:
 
         map_unit_options = sorted(
-            map_df["label"]
+            map_source_df["label"]
             .dropna()
             .astype(str)
             .unique()
@@ -1913,6 +1916,12 @@ with tab_mapa:
             ["Todas"] + map_unit_options,
             key="map_unit_filter"
         )
+
+    # =============================================
+    # RESET FILTERED DATA
+    # =============================================
+
+    map_df = map_source_df.copy()
 
     # =============================================
     # APPLY STATUS FILTER
