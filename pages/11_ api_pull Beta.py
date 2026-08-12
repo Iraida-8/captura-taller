@@ -2343,9 +2343,6 @@ with tab_historial:
                 f"&end={end_str}"
             )
 
-            st.code(url)      # temporary debug
-            st.json(vehicle_row.to_dict())   # temporary debug
-
             response = requests.get(
                 url,
                 timeout=60
@@ -2577,6 +2574,10 @@ with tab_historial:
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True
                     )
+
+
+
+
 
     except Exception as e:
 
