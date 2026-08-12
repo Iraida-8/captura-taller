@@ -92,6 +92,73 @@ title_col, timer_col = st.columns([8, 2])
 with title_col:
     st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
 
+# =========================================
+# COMPANY FILTERS
+# =========================================
+
+st.session_state.setdefault(
+    "gps_company_filter",
+    "TODAS"
+)
+
+active_filter = st.session_state.gps_company_filter
+
+c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+with c1:
+    if st.button(
+        "PICUS",
+        use_container_width=True,
+        type="primary" if active_filter == "PICUS" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "PICUS"
+        st.rerun()
+
+with c2:
+    if st.button(
+        "LINCOLN",
+        use_container_width=True,
+        type="primary" if active_filter == "LINCOLN" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "LINCOLN"
+        st.rerun()
+
+with c3:
+    if st.button(
+        "SET FREIGHT",
+        use_container_width=True,
+        type="primary" if active_filter == "SET FREIGHT" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "SET FREIGHT"
+        st.rerun()
+
+with c4:
+    if st.button(
+        "SET LOGIS",
+        use_container_width=True,
+        type="primary" if active_filter == "SET LOGIS" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "SET LOGIS"
+        st.rerun()
+
+with c5:
+    if st.button(
+        "OTROS",
+        use_container_width=True,
+        type="primary" if active_filter == "OTROS" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "OTROS"
+        st.rerun()
+
+with c6:
+    if st.button(
+        "TODAS",
+        use_container_width=True,
+        type="primary" if active_filter == "TODAS" else "secondary"
+    ):
+        st.session_state.gps_company_filter = "TODAS"
+        st.rerun()
+
 tab_dashboard, tab_seguimiento, tab_mapa, tab_historial = st.tabs([
     "📊 Dashboard",
     "🚛 Seguimiento",
@@ -335,73 +402,6 @@ with tab_dashboard:
     if "df" in locals() and not df.empty:
 
         st.header("📊 Dashboard Operativo GPS")
-
-        # =========================================
-        # COMPANY FILTERS
-        # =========================================
-
-        st.session_state.setdefault(
-            "gps_company_filter",
-            "TODAS"
-        )
-
-        active_filter = st.session_state.gps_company_filter
-
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-        with c1:
-            if st.button(
-                "PICUS",
-                use_container_width=True,
-                type="primary" if active_filter == "PICUS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "PICUS"
-                st.rerun()
-
-        with c2:
-            if st.button(
-                "LINCOLN",
-                use_container_width=True,
-                type="primary" if active_filter == "LINCOLN" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "LINCOLN"
-                st.rerun()
-
-        with c3:
-            if st.button(
-                "SET FREIGHT",
-                use_container_width=True,
-                type="primary" if active_filter == "SET FREIGHT" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "SET FREIGHT"
-                st.rerun()
-
-        with c4:
-            if st.button(
-                "SET LOGIS",
-                use_container_width=True,
-                type="primary" if active_filter == "SET LOGIS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "SET LOGIS"
-                st.rerun()
-
-        with c5:
-            if st.button(
-                "OTROS",
-                use_container_width=True,
-                type="primary" if active_filter == "OTROS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "OTROS"
-                st.rerun()
-
-        with c6:
-            if st.button(
-                "TODAS",
-                use_container_width=True,
-                type="primary" if active_filter == "TODAS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "TODAS"
-                st.rerun()
 
         # =========================================
         # COMPANY MASKS
