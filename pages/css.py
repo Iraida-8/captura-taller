@@ -172,20 +172,13 @@ def load_css():
             color:#FFFFFF !important;
         }
 
-        div[class*="st-key-company_filter_"]
-        button[kind="secondary"] *{
-
-            color:#FFFFFF !important;
-        }
-
 
         /* ---------------------------------
         INACTIVE COMPANY BUTTON HOVER
         Gold background / gold border / white text
         --------------------------------- */
 
-        div[class*="st-key-company_filter_"]
-        button[kind="secondary"]:hover{
+        div[class*="st-key-company_filter_"] button:hover{
 
             background:#BFA75F !important;
 
@@ -196,8 +189,7 @@ def load_css():
             transform:translateY(-2px);
         }
 
-        div[class*="st-key-company_filter_"]
-        button[kind="secondary"]:hover *{
+        div[class*="st-key-company_filter_"] button:hover *{
 
             color:#FFFFFF !important;
         }
@@ -227,7 +219,7 @@ def load_css():
 
         /* ---------------------------------
         ACTIVE COMPANY BUTTON HOVER
-        Same appearance
+        Same gold appearance
         --------------------------------- */
 
         div[class*="st-key-company_filter_"]
