@@ -2575,7 +2575,381 @@ with tab_historial:
                         use_container_width=True
                     )
 
+        # =====================================================
+        # GENERAL FLEET TRIP HISTORY
+        # =====================================================
 
+        st.divider()
+
+        st.subheader("📊 Historial General de Flotilla")
+
+        st.write(
+            "Reporte consolidado de viajes de todas las unidades "
+            "para el rango de fechas seleccionado."
+        )
+
+        # =====================================================
+        # COLLECT ALL UNIT TRIPS
+        # =====================================================
+
+        all_trip_data = []
+
+        fleet_units = sorted(
+            df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        fleet_progress = st.progress(
+            0,
+            text="Preparando historial de flotilla..."
+        )
+
+        total_units = len(fleet_units)
+
+        for index, fleet_unit in enumerate(fleet_units):
+
+            try:
+
+                # =============================================
+                # GET UNIT TOKEN
+                # =============================================
+
+                fleet_vehicle_row = (
+                    df.loc[df["label"] == fleet_unit]
+                    .iloc[0]
+                )
+
+                fleet_token = fleet_vehicle_row["session_token"]
+
+                # =============================================
+                # BUILD REQUEST
+                # =============================================
+
+                fleet_url = (
+                    "https://api.gpsinsight.com/v2/"
+                    "vehicle/trips"
+                    f"?session_token={fleet_token}"
+                    f"&vehicle={fleet_unit}"
+                    f"&start={start_str}"
+                    f"&end={end_str}"
+                )
+
+                # =============================================
+                # REQUEST
+                # =============================================
+
+                fleet_response = requests.get(
+                    fleet_url,
+                    timeout=60
+                )
+
+                fleet_response.raise_for_status()
+
+                fleet_result = fleet_response.json()
+
+                fleet_data = fleet_result.get(
+                    "data",
+                    []
+                )
+
+                # =============================================
+                # PROCESS TRIPS
+                # =============================================
+
+                if fleet_data:
+
+                    fleet_activity_df = pd.DataFrame(
+                        fleet_data
+                    )
+
+                    # Only real trips
+                    if "trip_type" in fleet_activity_df.columns:
+
+                        fleet_trip_df = fleet_activity_df[
+                            fleet_activity_df["trip_type"] == "T"
+                        ].copy()
+
+                    else:
+
+                        fleet_trip_df = pd.DataFrame()
+
+                    # =========================================
+                    # ADD UNIT
+                    # =========================================
+
+                    if not fleet_trip_df.empty:
+
+                        fleet_trip_df.insert(
+                            0,
+                            "Unidad",
+                            fleet_unit
+                        )
+
+                        all_trip_data.append(
+                            fleet_trip_df
+                        )
+
+            except Exception as unit_error:
+
+                st.warning(
+                    f"No fue posible obtener viajes de {fleet_unit}: "
+                    f"{unit_error}"
+                )
+
+            # =============================================
+            # UPDATE PROGRESS
+            # =============================================
+
+            progress_value = (
+                (index + 1) / total_units
+                if total_units
+                else 1
+            )
+
+            fleet_progress.progress(
+                progress_value,
+                text=(
+                    f"Consultando {index + 1} de "
+                    f"{total_units} unidades..."
+                )
+            )
+
+        fleet_progress.empty()
+
+        # =====================================================
+        # COMBINE ALL TRIPS
+        # =====================================================
+
+        if all_trip_data:
+
+            fleet_trip_df = pd.concat(
+                all_trip_data,
+                ignore_index=True
+            )
+
+            # =============================================
+            # NUMERIC CLEANUP
+            # =============================================
+
+            numeric_cols = [
+                "trip_distance",
+                "max_speed",
+                "avg_speed",
+                "trip_duration"
+            ]
+
+            for col in numeric_cols:
+
+                if col in fleet_trip_df.columns:
+
+                    fleet_trip_df[col] = pd.to_numeric(
+                        fleet_trip_df[col],
+                        errors="coerce"
+                    ).fillna(0)
+
+            # =============================================
+            # DISPLAY TABLE
+            # =============================================
+
+            fleet_display = fleet_trip_df.copy()
+
+            # Determine display units per vehicle.
+            def fleet_distance_unit(unit):
+
+                unit_label = str(unit).upper()
+
+                is_kmh = (
+                    "PI" in unit_label
+                    or unit_label.startswith("P")
+                )
+
+                is_lincoln = (
+                    "LF" in unit_label
+                    or unit_label.startswith("L")
+                )
+
+                is_set_freight = (
+                    "SET" in unit_label
+                )
+
+                is_set_logis = (
+                    "SPL" in unit_label
+                    or "STL" in unit_label
+                )
+
+                is_otros = not (
+                    is_kmh
+                    or is_lincoln
+                    or is_set_freight
+                    or is_set_logis
+                )
+
+                return (
+                    "km"
+                    if (is_kmh or is_otros)
+                    else "mi"
+                )
+
+            def fleet_speed_unit(unit):
+
+                return (
+                    "km/h"
+                    if fleet_distance_unit(unit) == "km"
+                    else "mph"
+                )
+
+            # =============================================
+            # DISPLAY DISTANCE
+            # =============================================
+
+            fleet_display["Distancia"] = (
+                fleet_display.apply(
+                    lambda row:
+                    f"{round(float(row.get('trip_distance', 0)), 1)} "
+                    f"{fleet_distance_unit(row['Unidad'])}",
+                    axis=1
+                )
+            )
+
+            # =============================================
+            # DISPLAY DURATION
+            # =============================================
+
+            fleet_display["Duración"] = (
+                fleet_display["trip_duration"]
+                .apply(
+                    lambda x:
+                    f"{int(x // 3600)}h "
+                    f"{int((x % 3600) // 60)}m"
+                )
+            )
+
+            # =============================================
+            # DISPLAY MAX SPEED
+            # =============================================
+
+            fleet_display["Vel Máxima"] = (
+                fleet_display.apply(
+                    lambda row:
+                    f"{round(float(row.get('max_speed', 0)), 1)} "
+                    f"{fleet_speed_unit(row['Unidad'])}",
+                    axis=1
+                )
+            )
+
+            # =============================================
+            # DISPLAY AVG SPEED
+            # =============================================
+
+            fleet_display["Vel Promedio"] = (
+                fleet_display.apply(
+                    lambda row:
+                    f"{round(float(row.get('avg_speed', 0)), 1)} "
+                    f"{fleet_speed_unit(row['Unidad'])}",
+                    axis=1
+                )
+            )
+
+            # =============================================
+            # FINAL TABLE COLUMNS
+            # =============================================
+
+            fleet_display = fleet_display[[
+                "Unidad",
+                "trip_start",
+                "trip_end",
+                "Distancia",
+                "Duración",
+                "Vel Máxima",
+                "Vel Promedio"
+            ]].copy()
+
+            fleet_display.rename(
+                columns={
+                    "trip_start": "Inicio",
+                    "trip_end": "Fin"
+                },
+                inplace=True
+            )
+
+            # =============================================
+            # SORT
+            # =============================================
+
+            fleet_display.sort_values(
+                by=[
+                    "Unidad",
+                    "Inicio"
+                ],
+                inplace=True
+            )
+
+            fleet_display.reset_index(
+                drop=True,
+                inplace=True
+            )
+
+            # =============================================
+            # SUMMARY
+            # =============================================
+
+            st.info(
+                f"Unidades consultadas: {len(fleet_units)}  |  "
+                f"Unidades con viajes: "
+                f"{fleet_display['Unidad'].nunique()}  |  "
+                f"Viajes encontrados: {len(fleet_display)}"
+            )
+
+            # =============================================
+            # TABLE
+            # =============================================
+
+            st.dataframe(
+                fleet_display,
+                use_container_width=True,
+                height=700
+            )
+
+            # =============================================
+            # EXPORT
+            # =============================================
+
+            fleet_export_buffer = io.BytesIO()
+
+            with pd.ExcelWriter(
+                fleet_export_buffer,
+                engine="openpyxl"
+            ) as writer:
+
+                fleet_trip_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Historial Flotilla"
+                )
+
+            fleet_export_buffer.seek(0)
+
+            st.download_button(
+                label="💾 Descargar Historial General de Flotilla",
+                data=fleet_export_buffer,
+                file_name="Historial_General_Flotilla.xlsx",
+                mime=(
+                    "application/"
+                    "vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True
+            )
+
+        else:
+
+            st.warning(
+                "No se encontraron viajes para ninguna unidad "
+                "en el rango de fechas seleccionado."
+            )
 
 
 
