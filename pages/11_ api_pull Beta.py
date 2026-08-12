@@ -1483,8 +1483,6 @@ with tab_mapa:
     # =====================================================
     # LANDMARKS
     # =====================================================
-    st.divider()
-
     st.header("📍 Landmarks GPS Insight")
 
     try:
@@ -1872,20 +1870,53 @@ with tab_mapa:
     )
 
     # =============================================
-    # MAP STATUS FILTER
+    # MAP FILTERS
     # =============================================
-    map_status_filter = st.selectbox(
-        "Estado en mapa",
-        [
-            "Todas",
-            "🟢 En Movimiento",
-            "🟠 Detenido < 1 Hora",
-            "🔴 Detenido 1-6 Horas",
-            "🟥 Detenido 6-24 Horas",
-            "⚫ Detenido +1 Día"
-        ],
-        key="map_status_filter"
-    )
+
+    filter_col1, filter_col2 = st.columns(2)
+
+    # =============================================
+    # STATUS FILTER
+    # =============================================
+
+    with filter_col1:
+
+        map_status_filter = st.selectbox(
+            "Estado en mapa",
+            [
+                "Todas",
+                "🟢 En Movimiento",
+                "🟠 Detenido < 1 Hora",
+                "🔴 Detenido 1-6 Horas",
+                "🟥 Detenido 6-24 Horas",
+                "⚫ Detenido +1 Día"
+            ],
+            key="map_status_filter"
+        )
+
+    # =============================================
+    # UNIT FILTER
+    # =============================================
+
+    with filter_col2:
+
+        map_unit_options = sorted(
+            map_df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        map_unit_filter = st.selectbox(
+            "Unidad en mapa",
+            ["Todas"] + map_unit_options,
+            key="map_unit_filter"
+        )
+
+    # =============================================
+    # APPLY STATUS FILTER
+    # =============================================
 
     if map_status_filter == "🟢 En Movimiento":
 
@@ -1898,7 +1929,10 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 60)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 60
+            )
         ]
 
     elif map_status_filter == "🔴 Detenido 1-6 Horas":
@@ -1906,9 +1940,15 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 60)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 60
+            )
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 360)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 360
+            )
         ]
 
     elif map_status_filter == "🟥 Detenido 6-24 Horas":
@@ -1916,9 +1956,15 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 360)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 360
+            )
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 1440)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 1440
+            )
         ]
 
     elif map_status_filter == "⚫ Detenido +1 Día":
@@ -1926,21 +1972,23 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 1440)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 1440
+            )
         ]
 
+    # =============================================
+    # APPLY UNIT FILTER
+    # =============================================
 
-    if not map_df.empty:
+    if map_unit_filter != "Todas":
 
-        st.info(
-            """
-🟢 En Movimiento  
-🟠 Detenido < 1 Hora  
-🔴 Detenido Varias Horas  
-🟥 Detenido +1 Día  
-⚫ Detenido Crítico
-            """
-        )
+        map_df = map_df[
+            map_df["label"]
+            .astype(str)
+            .eq(map_unit_filter)
+        ]
 
         # =============================================
         # LANDMARK POLYGON LAYER
@@ -2077,8 +2125,9 @@ with tab_mapa:
         )
 
         # =============================================
-        # GPS COORDINATE TABLE
+        # GPS COORDINATE REPORT
         # =============================================
+
         with st.expander(
             "📍 Coordenadas de Unidades",
             expanded=False
@@ -2096,7 +2145,13 @@ with tab_mapa:
 
             coords_df.rename(
                 columns={
-                    "speed_display": "Velocidad"
+                    "label": "Unidad",
+                    "latitude": "Latitud",
+                    "longitude": "Longitud",
+                    "address": "Dirección",
+                    "ignition": "Ignición",
+                    "speed_display": "Velocidad",
+                    "speed_label": "Tiempo detenido"
                 },
                 inplace=True
             )
@@ -2105,6 +2160,37 @@ with tab_mapa:
                 coords_df,
                 use_container_width=True,
                 height=300
+            )
+
+            # =========================================
+            # DOWNLOAD COORDINATES REPORT
+            # =========================================
+
+            coordinates_buffer = io.BytesIO()
+
+            with pd.ExcelWriter(
+                coordinates_buffer,
+                engine="openpyxl"
+            ) as writer:
+
+                coords_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Coordenadas"
+                )
+
+            coordinates_buffer.seek(0)
+
+            st.download_button(
+                label="💾 Descargar Coordenadas de Unidades",
+                data=coordinates_buffer,
+                file_name="Coordenadas_Unidades_GPS.xlsx",
+                mime=(
+                    "application/"
+                    "vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True
             )
 
     else:
