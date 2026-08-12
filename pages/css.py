@@ -136,30 +136,37 @@ def load_css():
         }
 
         /* =========================
-           PRIMARY BUTTONS
+        BUTTONS
         ========================= */
 
         div.stButton button{
 
             border-radius:10px;
 
-            background:#151F6D !important;
-
-            color:#FFFFFF !important;
-
-            border:none !important;
-
             font-weight:600;
 
             transition:.2s;
         }
 
-        div.stButton button *{
+        /* =========================
+        PRIMARY BUTTONS
+        ========================= */
 
-            color:inherit !important;
+        div.stButton button[kind="primary"]{
+
+            background:#151F6D !important;
+
+            color:#FFFFFF !important;
+
+            border:none !important;
         }
 
-        div.stButton button:hover{
+        div.stButton button[kind="primary"] *{
+
+            color:#FFFFFF !important;
+        }
+
+        div.stButton button[kind="primary"]:hover{
 
             background:#BFA75F !important;
 
@@ -169,34 +176,37 @@ def load_css():
         }
 
         /* =========================
-           LOGOUT BUTTON
+        SECONDARY BUTTONS
         ========================= */
 
-        button[kind="secondary"]{
-
-            display:block;
-
-            margin-left:auto;
-
-            margin-right:auto;
-
-            border-radius:12px;
+        div.stButton button[kind="secondary"]{
 
             background:transparent !important;
 
-            border:1px solid #BFA75F !important;
-
             color:#BFA75F !important;
 
-            font-weight:600;
+            border:1px solid #BFA75F !important;
         }
 
-        button[kind="secondary"]:hover{
+        div.stButton button[kind="secondary"] *{
+
+            color:#BFA75F !important;
+        }
+
+        div.stButton button[kind="secondary"]:hover{
 
             background:#BFA75F !important;
 
             color:#151F6D !important;
+
+            transform:translateY(-2px);
         }
+
+        div.stButton button[kind="secondary"]:hover *{
+
+            color:#151F6D !important;
+        }
+
         /* =========================
            INPUTS / SELECTS
         ========================= */
