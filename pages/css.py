@@ -161,30 +161,40 @@ def load_css():
         div[class*="st-key-company_filter_"] button{
 
             background:#151F6D !important;
+            background-color:#151F6D !important;
 
             color:#FFFFFF !important;
 
             border:1px solid #151F6D !important;
+
+            opacity:1 !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
         div[class*="st-key-company_filter_"] button *{
 
             color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
         /* ---------------------------------
-        INACTIVE COMPANY BUTTON HOVER
+        HOVER
         Gold background / gold border / white text
         --------------------------------- */
 
         div[class*="st-key-company_filter_"] button:hover{
 
             background:#BFA75F !important;
+            background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
+
+            opacity:1 !important;
 
             transform:translateY(-2px);
         }
@@ -192,11 +202,13 @@ def load_css():
         div[class*="st-key-company_filter_"] button:hover *{
 
             color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
         /* ---------------------------------
-        ACTIVE COMPANY BUTTON
+        ACTIVE / SELECTED
         Gold background / gold border / white text
         --------------------------------- */
 
@@ -204,21 +216,28 @@ def load_css():
         button[kind="primary"]{
 
             background:#BFA75F !important;
+            background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
+
+            opacity:1 !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
         div[class*="st-key-company_filter_"]
         button[kind="primary"] *{
 
             color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
 
         /* ---------------------------------
-        ACTIVE COMPANY BUTTON HOVER
+        ACTIVE HOVER
         Same gold appearance
         --------------------------------- */
 
@@ -226,10 +245,13 @@ def load_css():
         button[kind="primary"]:hover{
 
             background:#BFA75F !important;
+            background-color:#BFA75F !important;
 
             color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
+
+            opacity:1 !important;
 
             transform:translateY(-2px);
         }
@@ -238,6 +260,8 @@ def load_css():
         button[kind="primary"]:hover *{
 
             color:#FFFFFF !important;
+
+            -webkit-text-fill-color:#FFFFFF !important;
         }
 
         /* =========================
