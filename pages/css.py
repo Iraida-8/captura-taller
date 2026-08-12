@@ -145,66 +145,103 @@ def load_css():
 
             font-weight:600;
 
-            transition:.2s;
+            transition:all .2s ease;
         }
 
-        /* =========================
-        PRIMARY BUTTONS
-        ========================= */
 
-        div.stButton button[kind="primary"]{
+        /* =====================================================
+        COMPANY FILTER BUTTONS
+        ===================================================== */
+
+        /* ---------------------------------
+        INACTIVE COMPANY BUTTON
+        Blue background / blue border / white text
+        --------------------------------- */
+
+        div[class*="st-key-company_filter_"]
+        button[kind="secondary"]{
 
             background:#151F6D !important;
 
             color:#FFFFFF !important;
 
-            border:none !important;
+            border:1px solid #151F6D !important;
         }
 
-        div.stButton button[kind="primary"] *{
+        div[class*="st-key-company_filter_"]
+        button[kind="secondary"] *{
 
             color:#FFFFFF !important;
         }
 
-        div.stButton button[kind="primary"]:hover{
+
+        /* ---------------------------------
+        INACTIVE COMPANY BUTTON HOVER
+        Gold background / gold border / white text
+        --------------------------------- */
+
+        div[class*="st-key-company_filter_"]
+        button[kind="secondary"]:hover{
 
             background:#BFA75F !important;
 
             color:#FFFFFF !important;
 
+            border:1px solid #BFA75F !important;
+
             transform:translateY(-2px);
         }
 
-        /* =========================
-        SECONDARY BUTTONS
-        ========================= */
+        div[class*="st-key-company_filter_"]
+        button[kind="secondary"]:hover *{
 
-        div.stButton button[kind="secondary"]{
+            color:#FFFFFF !important;
+        }
 
-            background:transparent !important;
 
-            color:#BFA75F !important;
+        /* ---------------------------------
+        ACTIVE COMPANY BUTTON
+        Gold background / gold border / white text
+        --------------------------------- */
+
+        div[class*="st-key-company_filter_"]
+        button[kind="primary"]{
+
+            background:#BFA75F !important;
+
+            color:#FFFFFF !important;
 
             border:1px solid #BFA75F !important;
         }
 
-        div.stButton button[kind="secondary"] *{
+        div[class*="st-key-company_filter_"]
+        button[kind="primary"] *{
 
-            color:#BFA75F !important;
+            color:#FFFFFF !important;
         }
 
-        div.stButton button[kind="secondary"]:hover{
+
+        /* ---------------------------------
+        ACTIVE COMPANY BUTTON HOVER
+        Same appearance
+        --------------------------------- */
+
+        div[class*="st-key-company_filter_"]
+        button[kind="primary"]:hover{
 
             background:#BFA75F !important;
 
-            color:#151F6D !important;
+            color:#FFFFFF !important;
+
+            border:1px solid #BFA75F !important;
 
             transform:translateY(-2px);
         }
 
-        div.stButton button[kind="secondary"]:hover *{
+        div[class*="st-key-company_filter_"]
+        button[kind="primary"]:hover *{
 
-            color:#151F6D !important;
+            color:#FFFFFF !important;
         }
 
         /* =========================
