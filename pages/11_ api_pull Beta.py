@@ -2632,8 +2632,8 @@ with tab_historial:
         if not st.session_state.gps_history_report_generated:
 
             st.info(
-                "El reporte general no se genera automáticamente. "
                 "Presiona el botón para consultar todas las unidades."
+                "Se deshabilitará temporalmente la actualización automática de la página mientras se genera el reporte."
             )
 
             if st.button(
@@ -2641,10 +2641,9 @@ with tab_historial:
                 type="primary",
                 use_container_width=True
             ):
-
                 st.session_state.gps_history_report_generated = True
 
-                st.rerun()
+                st.stop()
 
         else:
 

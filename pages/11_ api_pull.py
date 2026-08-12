@@ -84,6 +84,7 @@ if st.button("⬅ Volver al Dashboard"):
 
     st.session_state["_reset_gps_page"] = True
     st.session_state.modal_gps_unit = None
+    st.session_state.gps_history_report_generated = False
 
     st.switch_page(DASHBOARD_PAGE)
 
@@ -92,12 +93,90 @@ title_col, timer_col = st.columns([8, 2])
 with title_col:
     st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
 
-tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs([
+# =========================================
+# COMPANY FILTERS
+# =========================================
+
+st.session_state.setdefault(
+    "gps_company_filter",
+    "TODAS"
+)
+
+with st.container(key="company_filters"):
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+    with c1:
+        if st.button(
+            "PICUS",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "PICUS"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "PICUS"
+            st.rerun()
+
+    with c2:
+        if st.button(
+            "LINCOLN",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "LINCOLN"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "LINCOLN"
+            st.rerun()
+
+    with c3:
+        if st.button(
+            "SET FREIGHT",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "SET FREIGHT"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "SET FREIGHT"
+            st.rerun()
+
+    with c4:
+        if st.button(
+            "SET LOGIS",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "SET LOGIS"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "SET LOGIS"
+            st.rerun()
+
+    with c5:
+        if st.button(
+            "OTROS",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "OTROS"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "OTROS"
+            st.rerun()
+
+    with c6:
+        if st.button(
+            "TODAS",
+            use_container_width=True,
+            type="primary"
+            if st.session_state.gps_company_filter == "TODAS"
+            else "secondary"
+        ):
+            st.session_state.gps_company_filter = "TODAS"
+            st.rerun()
+
+tab_dashboard, tab_seguimiento, tab_mapa, tab_historial = st.tabs([
     "📊 Dashboard",
     "🚛 Seguimiento",
     "🗺️ Mapa",
     "📈 Historial",
-    "🧪 Testbench",
 ])
 
 # =====================================================
@@ -106,64 +185,100 @@ tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs
 
 REFRESH_SECONDS = 300  # 5 minutes
 
-st_autorefresh(
-    interval=REFRESH_SECONDS * 1000,
-    key="gps_auto_refresh"
+st.session_state.setdefault(
+    "gps_history_report_generated",
+    False
 )
 
-timer_html = f"""
-<div id="gps-refresh-timer" style="
-    margin-top:10px;
-    text-align:right;
-    font-size:16px;
-    font-weight:600;
-    color:#000000;
-    font-family:sans-serif;
-    white-space:nowrap;
-">
-    🔄 Actualización automática en
-    <span id="countdown" style="
-        color:#BFA75F;
-        font-weight:800;
-        font-size:18px;
-        margin-left:6px;
-    ">
-        05:00
-    </span>
-</div>
+if not st.session_state.gps_history_report_generated:
 
-<script>
-
-let totalSeconds = {REFRESH_SECONDS};
-
-function updateCountdown() {{
-
-    let minutes = Math.floor(totalSeconds / 60);
-    let seconds = totalSeconds % 60;
-
-    minutes = String(minutes).padStart(2, "0");
-    seconds = String(seconds).padStart(2, "0");
-
-    document.getElementById("countdown").innerHTML =
-        minutes + ":" + seconds;
-
-    totalSeconds--;
-
-    if (totalSeconds < 0) {{
-        totalSeconds = {REFRESH_SECONDS};
-    }}
-}}
-
-updateCountdown();
-setInterval(updateCountdown, 1000);
-
-</script>
-"""
-with timer_col:
-    components.html(
-        timer_html,
-        height=70,
+    st_autorefresh(
+        interval=REFRESH_SECONDS * 1000,
+        key="gps_auto_refresh"
     )
+
+# =====================================================
+# TIMER DISPLAY
+# =====================================================
+
+if not st.session_state.gps_history_report_generated:
+
+    timer_html = f"""
+    <div id="gps-refresh-timer" style="
+        margin-top:10px;
+        text-align:right;
+        font-size:16px;
+        font-weight:600;
+        color:#000000;
+        font-family:sans-serif;
+        white-space:nowrap;
+    ">
+        🔄 Actualización automática en
+        <span id="countdown" style="
+            color:#BFA75F;
+            font-weight:800;
+            font-size:18px;
+            margin-left:6px;
+        ">
+            05:00
+        </span>
+    </div>
+
+    <script>
+
+    let totalSeconds = {REFRESH_SECONDS};
+
+    function updateCountdown() {{
+
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+
+        minutes = String(minutes).padStart(2, "0");
+        seconds = String(seconds).padStart(2, "0");
+
+        document.getElementById("countdown").innerHTML =
+            minutes + ":" + seconds;
+
+        totalSeconds--;
+
+        if (totalSeconds < 0) {{
+            totalSeconds = {REFRESH_SECONDS};
+        }}
+    }}
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    </script>
+    """
+
+    with timer_col:
+
+        components.html(
+            timer_html,
+            height=70,
+        )
+
+else:
+
+    with timer_col:
+
+        st.markdown(
+            """
+            <div style="
+                margin-top:10px;
+                text-align:right;
+                font-size:16px;
+                font-weight:600;
+                color:#BFA75F;
+                font-family:sans-serif;
+                white-space:nowrap;
+            ">
+                ⏸️ Actualización automática pausada
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 #==============================================================================================================
 # GPS INSIGHT AUTH
@@ -336,73 +451,6 @@ with tab_dashboard:
     if "df" in locals() and not df.empty:
 
         st.header("📊 Dashboard Operativo GPS")
-
-        # =========================================
-        # COMPANY FILTERS
-        # =========================================
-
-        st.session_state.setdefault(
-            "gps_company_filter",
-            "TODAS"
-        )
-
-        active_filter = st.session_state.gps_company_filter
-
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-        with c1:
-            if st.button(
-                "PICUS",
-                use_container_width=True,
-                type="primary" if active_filter == "PICUS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "PICUS"
-                st.rerun()
-
-        with c2:
-            if st.button(
-                "LINCOLN",
-                use_container_width=True,
-                type="primary" if active_filter == "LINCOLN" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "LINCOLN"
-                st.rerun()
-
-        with c3:
-            if st.button(
-                "SET FREIGHT",
-                use_container_width=True,
-                type="primary" if active_filter == "SET FREIGHT" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "SET FREIGHT"
-                st.rerun()
-
-        with c4:
-            if st.button(
-                "SET LOGIS",
-                use_container_width=True,
-                type="primary" if active_filter == "SET LOGIS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "SET LOGIS"
-                st.rerun()
-
-        with c5:
-            if st.button(
-                "OTROS",
-                use_container_width=True,
-                type="primary" if active_filter == "OTROS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "OTROS"
-                st.rerun()
-
-        with c6:
-            if st.button(
-                "TODAS",
-                use_container_width=True,
-                type="primary" if active_filter == "TODAS" else "secondary"
-            ):
-                st.session_state.gps_company_filter = "TODAS"
-                st.rerun()
 
         # =========================================
         # COMPANY MASKS
@@ -1484,8 +1532,6 @@ with tab_mapa:
     # =====================================================
     # LANDMARKS
     # =====================================================
-    st.divider()
-
     st.header("📍 Landmarks GPS Insight")
 
     try:
@@ -1587,57 +1633,128 @@ with tab_mapa:
             # =====================================
             # TABLE
             # =====================================
-            with st.expander(
-                "📋 Tabla de Landmarks",
-                expanded=False
-            ):
+            #with st.expander(
+            #    "📋 Tabla de Landmarks",
+            #    expanded=False
+            #):
 
-                st.dataframe(
-                    landmark_df,
-                    use_container_width=True,
-                    height=500
-                )
+            #    st.dataframe(
+            #        landmark_df,
+            #        use_container_width=True,
+            #        height=500
+            #    )
 
             # =====================================
             # EXPORT
             # =====================================
-            landmark_buffer = io.BytesIO()
+            #landmark_buffer = io.BytesIO()
 
-            with pd.ExcelWriter(
-                landmark_buffer,
-                engine="openpyxl"
-            ) as writer:
+            #with pd.ExcelWriter(
+            #    landmark_buffer,
+            #    engine="openpyxl"
+            #) as writer:
 
-                landmark_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Landmarks"
-                )
+            #    landmark_df.to_excel(
+            #        writer,
+            #        index=False,
+            #        sheet_name="Landmarks"
+            #    )
 
-            landmark_buffer.seek(0)
+            #landmark_buffer.seek(0)
 
-            st.download_button(
-                label="💾 Descargar Landmarks",
-                data=landmark_buffer,
-                file_name="Landmarks_GPS.xlsx",
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
+            #st.download_button(
+            #    label="💾 Descargar Landmarks",
+            #    data=landmark_buffer,
+            #    file_name="Landmarks_GPS.xlsx",
+            #    mime=(
+            #        "application/"
+            #        "vnd.openxmlformats-officedocument."
+            #        "spreadsheetml.sheet"
+            #    ),
+            #    use_container_width=True
+            #)
 
-        else:
+        #else:
 
-            st.warning(
-                "No se encontraron landmarks."
-            )
+        #    st.warning(
+        #        "No se encontraron landmarks."
+        #    )
 
     except Exception as e:
 
         st.error(
             f"Error cargando landmarks: {e}"
+        )
+
+    # =============================================
+    # LANDMARK POLYGON PREPARATION
+    # =============================================
+
+    landmark_map_df = pd.DataFrame()
+
+    if "landmark_df" in locals() and not landmark_df.empty:
+
+        landmark_map_df = landmark_df.copy()
+
+        def parse_landmark_coordinates(value):
+
+            if not isinstance(value, str):
+                return []
+
+            points = []
+
+            # Each coordinate is separated by whitespace.
+            # DO NOT split on "-" because longitude can be negative.
+            coordinate_pairs = value.strip().split()
+
+            for coordinate in coordinate_pairs:
+
+                try:
+
+                    parts = coordinate.split(",")
+
+                    longitude = float(parts[0])
+                    latitude = float(parts[1])
+
+                    points.append(
+                        [longitude, latitude]
+                    )
+
+                except (ValueError, IndexError):
+                    continue
+
+            return points
+
+        landmark_map_df["polygon_coordinates"] = (
+            landmark_map_df["coordinates"]
+            .apply(parse_landmark_coordinates)
+        )
+
+        # Keep only valid polygons
+        landmark_map_df = landmark_map_df[
+            landmark_map_df["polygon_coordinates"].apply(
+                lambda x: len(x) >= 3
+            )
+        ].copy()
+
+        def get_landmark_center(points):
+
+            if not points:
+                return [0, 0]
+
+            longitude = sum(
+                point[0] for point in points
+            ) / len(points)
+
+            latitude = sum(
+                point[1] for point in points
+            ) / len(points)
+
+            return [longitude, latitude]
+
+        landmark_map_df["label_position"] = (
+            landmark_map_df["polygon_coordinates"]
+            .apply(get_landmark_center)
         )
 
     st.subheader("🗺️ Mapa GPS de Unidades")
@@ -1802,20 +1919,42 @@ with tab_mapa:
     )
 
     # =============================================
-    # MAP STATUS FILTER
+    # MAP FILTERS
     # =============================================
-    map_status_filter = st.selectbox(
-        "Estado en mapa",
-        [
-            "Todas",
-            "🟢 En Movimiento",
-            "🟠 Detenido < 1 Hora",
-            "🔴 Detenido 1-6 Horas",
-            "🟥 Detenido 6-24 Horas",
-            "⚫ Detenido +1 Día"
-        ],
-        key="map_status_filter"
-    )
+
+    # Keep a clean copy of all valid GPS units.
+    map_source_df = map_df.copy()
+
+    filter_col1, filter_col2 = st.columns(2)
+
+    # =============================================
+    # STATUS FILTER
+    # =============================================
+
+    with filter_col1:
+
+        map_status_filter = st.selectbox(
+            "Estado en mapa",
+            [
+                "Todas",
+                "🟢 En Movimiento",
+                "🟠 Detenido < 1 Hora",
+                "🔴 Detenido 1-6 Horas",
+                "🟥 Detenido 6-24 Horas",
+                "⚫ Detenido +1 Día"
+            ],
+            key="map_status_filter"
+        )
+
+    # =============================================
+    # RESET FILTERED DATA
+    # =============================================
+
+    map_df = map_source_df.copy()
+
+    # =============================================
+    # APPLY STATUS FILTER
+    # =============================================
 
     if map_status_filter == "🟢 En Movimiento":
 
@@ -1828,7 +1967,10 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 60)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 60
+            )
         ]
 
     elif map_status_filter == "🔴 Detenido 1-6 Horas":
@@ -1836,9 +1978,15 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 60)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 60
+            )
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 360)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 360
+            )
         ]
 
     elif map_status_filter == "🟥 Detenido 6-24 Horas":
@@ -1846,9 +1994,15 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 360)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 360
+            )
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) < 1440)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) < 1440
+            )
         ]
 
     elif map_status_filter == "⚫ Detenido +1 Día":
@@ -1856,25 +2010,114 @@ with tab_mapa:
         map_df = map_df[
             (map_df["inst_speed"] <= 0)
             &
-            (map_df["speed_label"].apply(extract_stopped_minutes) >= 1440)
+            (
+                map_df["speed_label"]
+                .apply(extract_stopped_minutes) >= 1440
+            )
         ]
 
+    # =============================================
+    # UNIT FILTER
+    # =============================================
+
+    with filter_col2:
+
+        # The Unidad dropdown is populated from the
+        # dataset already filtered by Estado en mapa.
+        map_unit_options = sorted(
+            map_df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        map_unit_filter = st.selectbox(
+            "Unidad en mapa",
+            ["Todas"] + map_unit_options,
+            key="map_unit_filter"
+        )
+
+    # =============================================
+    # APPLY UNIT FILTER
+    # =============================================
+
+    if map_unit_filter != "Todas":
+
+        map_df = map_df[
+            map_df["label"]
+            .astype(str)
+            .eq(map_unit_filter)
+        ]
+        
+    # =============================================
+    # DISPLAY MAP ONLY IF DATA EXISTS
+    # =============================================
 
     if not map_df.empty:
 
-        st.info(
-            """
-🟢 En Movimiento  
-🟠 Detenido < 1 Hora  
-🔴 Detenido Varias Horas  
-🟥 Detenido +1 Día  
-⚫ Detenido Crítico
-            """
+        # =============================================
+        # LANDMARK POLYGON LAYER
+        # =============================================
+
+        landmark_layers = []
+
+        if not landmark_map_df.empty:
+
+            landmark_map_df["tooltip_title"] = (
+                "📍 " + landmark_map_df["label"].astype(str)
+            )
+
+            landmark_map_df["tooltip_info"] = (
+                "Cuenta: "
+                + landmark_map_df["gps_account"].astype(str)
+            )
+
+            landmark_polygon_layer = pdk.Layer(
+                "PolygonLayer",
+                data=landmark_map_df,
+
+                get_polygon="polygon_coordinates",
+
+                get_fill_color=[21, 31, 109, 55],
+
+                get_line_color=[21, 31, 109, 230],
+
+                line_width_min_pixels=5,
+                line_width_max_pixels=8,
+
+                filled=True,
+                stroked=True,
+
+                pickable=True,
+                auto_highlight=True,
+            )
+
+            landmark_layers = [
+                landmark_polygon_layer,
+            ]
+
+        # =============================================
+        # VEHICLE TOOLTIP FIELDS
+        # =============================================
+
+        map_df["tooltip_title"] = (
+            "🚛 " + map_df["label"].astype(str)
+        )
+
+        map_df["tooltip_info"] = (
+            "Latitud: " + map_df["latitude"].astype(str)
+            + " | Longitud: " + map_df["longitude"].astype(str)
+            + " | Velocidad: " + map_df["speed_display"].astype(str)
+            + " | Ignición: " + map_df["ignition"].astype(str)
+            + " | Tiempo detenido: " + map_df["speed_label"].astype(str)
+            + " | Dirección: " + map_df["address"].astype(str)
         )
 
         # =============================================
-        # PYDECK LAYER
+        # PYDECK VEHICLE LAYER
         # =============================================
+
         layer = pdk.Layer(
             "ScatterplotLayer",
             data=map_df,
@@ -1883,9 +2126,6 @@ with tab_mapa:
 
             get_fill_color="color",
 
-            # =====================================
-            # INTERACTIVE SCALING
-            # =====================================
             radius_units="pixels",
 
             get_radius=12,
@@ -1907,15 +2147,11 @@ with tab_mapa:
         # =============================================
         # TOOLTIP
         # =============================================
+
         tooltip = {
             "html": """
-                <b>Unidad:</b> {label} <br/>
-                <b>Latitud:</b> {latitude} <br/>
-                <b>Longitud:</b> {longitude} <br/>
-                <b>Velocidad:</b> {speed_display} <br/>
-                <b>Ignición:</b> {ignition} <br/>
-                <b>Tiempo detenido:</b> {speed_label} <br/>
-                <b>Dirección:</b> {address}
+                <b>{tooltip_title}</b><br/>
+                {tooltip_info}
             """,
             "style": {
                 "backgroundColor": "#1B267A",
@@ -1926,6 +2162,7 @@ with tab_mapa:
         # =============================================
         # VIEW STATE
         # =============================================
+
         view_state = pdk.ViewState(
             latitude=map_df["latitude"].mean(),
             longitude=map_df["longitude"].mean(),
@@ -1936,11 +2173,12 @@ with tab_mapa:
         # =============================================
         # DISPLAY MAP
         # =============================================
+
         st.pydeck_chart(
             pdk.Deck(
                 height=700,
 
-                layers=[layer],
+                layers=landmark_layers + [layer],
 
                 initial_view_state=view_state,
 
@@ -1952,8 +2190,9 @@ with tab_mapa:
         )
 
         # =============================================
-        # GPS COORDINATE TABLE
+        # GPS COORDINATE REPORT
         # =============================================
+
         with st.expander(
             "📍 Coordenadas de Unidades",
             expanded=False
@@ -1971,7 +2210,13 @@ with tab_mapa:
 
             coords_df.rename(
                 columns={
-                    "speed_display": "Velocidad"
+                    "label": "Unidad",
+                    "latitude": "Latitud",
+                    "longitude": "Longitud",
+                    "address": "Dirección",
+                    "ignition": "Ignición",
+                    "speed_display": "Velocidad",
+                    "speed_label": "Tiempo detenido"
                 },
                 inplace=True
             )
@@ -1982,10 +2227,41 @@ with tab_mapa:
                 height=300
             )
 
+            # =========================================
+            # DOWNLOAD COORDINATES REPORT
+            # =========================================
+
+            coordinates_buffer = io.BytesIO()
+
+            with pd.ExcelWriter(
+                coordinates_buffer,
+                engine="openpyxl"
+            ) as writer:
+
+                coords_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Coordenadas"
+                )
+
+            coordinates_buffer.seek(0)
+
+            st.download_button(
+                label="💾 Descargar Coordenadas de Unidades",
+                data=coordinates_buffer,
+                file_name="Coordenadas_Unidades_GPS.xlsx",
+                mime=(
+                    "application/"
+                    "vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True
+            )
+
     else:
 
         st.warning(
-            "No se encontraron coordenadas GPS válidas."
+            "No se encontraron unidades que coincidan con los filtros seleccionados."
         )
 
 
@@ -2103,9 +2379,6 @@ with tab_historial:
                 f"&start={start_str}"
                 f"&end={end_str}"
             )
-
-            st.code(url)      # temporary debug
-            st.json(vehicle_row.to_dict())   # temporary debug
 
             response = requests.get(
                 url,
@@ -2339,66 +2612,48 @@ with tab_historial:
                         use_container_width=True
                     )
 
-    except Exception as e:
+        # =====================================================
+        # GENERAL FLEET TRIP HISTORY
+        # =====================================================
 
-        st.error(
-            f"Error consultando historial: {e}"
+        st.divider()
+
+        st.subheader("📊 Historial General de Flotilla")
+
+        st.write(
+            "Reporte consolidado de viajes de todas las unidades "
+            "para el rango de fechas seleccionado."
         )
 
+        # =====================================================
+        # GENERATE REPORT BUTTON
+        # =====================================================
 
-#tests
-# =====================================================
-# GPS INSIGHT API TESTBENCH
-# =====================================================
-with tab_testbench:
+        if not st.session_state.gps_history_report_generated:
 
-    st.header("🧪 GPS Insight API Testbench")
+            st.info(
+                "Presiona el botón para consultar todas las unidades."
+                "Se deshabilitará temporalmente la actualización automática de la página mientras se genera el reporte."
+            )
 
-    st.caption(
-        "Pruebas manuales de endpoints GPS Insight."
-    )
+            if st.button(
+                "📊 Generar Reporte",
+                type="primary",
+                use_container_width=True
+            ):
+                st.session_state.gps_history_report_generated = True
 
-    # =====================================================
-    # ENDPOINT SELECTOR
-    # =====================================================
-    endpoint_options = {
-        "Vehicle Location":
-            "vehicle/location",
+                st.stop()
 
-        "Vehicle Attributes":
-            "vehicle/getattributes",
+        else:
 
-        "Vehicle List":
-            "vehicle/list",
+            # =================================================
+            # COLLECT ALL UNIT TRIPS
+            # =================================================
 
-        "Vehicle Groups":
-            "vehicle/listvehiclegroups",
+            all_trip_data = []
 
-        "Trips":
-            "vehicle/trips"
-    }
-
-    tb1, tb2 = st.columns(2)
-
-    with tb1:
-
-        selected_label = st.selectbox(
-            "Endpoint",
-            list(endpoint_options.keys())
-        )
-
-    endpoint = endpoint_options[selected_label]
-
-    # =====================================================
-    # VEHICLE DROPDOWN
-    # =====================================================
-    with tb2:
-
-        vehicle_options = []
-
-        if "label" in df.columns:
-
-            vehicle_options = sorted(
+            fleet_units = sorted(
                 df["label"]
                 .dropna()
                 .astype(str)
@@ -2406,202 +2661,369 @@ with tab_testbench:
                 .tolist()
             )
 
-        tb_vehicle = st.selectbox(
-            "Unidad",
-            ["Todos"] + vehicle_options
-        )
-
-    # =====================================================
-    # DATE FILTERS (TRIPS)
-    # =====================================================
-    if endpoint == "vehicle/trips":
-
-        d1, d2 = st.columns(2)
-
-        with d1:
-
-            tb_start = st.date_input(
-                "Fecha Inicio",
-                value=pd.to_datetime("2026-05-01"),
-                key="tb_start"
+            fleet_progress = st.progress(
+                0,
+                text="Preparando historial de flotilla..."
             )
 
-        with d2:
+            total_units = len(fleet_units)
 
-            tb_end = st.date_input(
-                "Fecha Fin",
-                value=datetime.today(),
-                key="tb_end"
-            )
+            for index, fleet_unit in enumerate(fleet_units):
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-    if st.button(
-        "🚀 Ejecutar Endpoint",
-        use_container_width=True
-    ):
+                try:
 
-        try:
+                    # =============================================
+                    # GET UNIT TOKEN
+                    # =============================================
 
-            # =========================================
-            # BUILD URL
-            # =========================================
-            test_url = (
-                "https://api.gpsinsight.com/v2/"
-                f"{endpoint}"
-                f"?session_token={PICUS_TOKEN}"
-            )
-
-            # =========================================
-            # VEHICLE FILTER
-            # =========================================
-            if tb_vehicle != "Todos":
-
-                test_url += (
-                    f"&vehicle={tb_vehicle}"
-                )
-
-            # =========================================
-            # TRIPS DATES
-            # =========================================
-            if endpoint == "vehicle/trips":
-
-                test_url += (
-                    f"&start={tb_start.strftime('%m/%d/%Y')}"
-                    f"&end={tb_end.strftime('%m/%d/%Y')}"
-                )
-
-            # =========================================
-            # REQUEST
-            # =========================================
-            tb_response = requests.get(
-                test_url,
-                timeout=60
-            )
-
-            tb_response.raise_for_status()
-
-            tb_json = tb_response.json()
-
-            # =========================================
-            # STATUS
-            # =========================================
-            st.success(
-                "Endpoint ejecutado correctamente."
-            )
-
-            # =========================================
-            # REQUEST URL
-            # =========================================
-            st.subheader("🔗 Request URL")
-
-            st.code(
-                test_url,
-                language="text"
-            )
-
-            # =========================================
-            # RAW RESPONSE
-            # =========================================
-            with st.expander(
-                "📦 Raw JSON Response",
-                expanded=True
-            ):
-
-                st.json(tb_json)
-
-            # =========================================
-            # TABLE VIEW
-            # =========================================
-            if "data" in tb_json:
-
-                if isinstance(tb_json["data"], list):
-
-                    tb_df = pd.DataFrame(
-                        tb_json["data"]
+                    fleet_vehicle_row = (
+                        df.loc[df["label"] == fleet_unit]
+                        .iloc[0]
                     )
 
-                    if not tb_df.empty:
+                    fleet_token = fleet_vehicle_row["session_token"]
 
-                        st.subheader(
-                            "📋 Data Table"
+                    # =============================================
+                    # BUILD REQUEST
+                    # =============================================
+
+                    fleet_url = (
+                        "https://api.gpsinsight.com/v2/"
+                        "vehicle/trips"
+                        f"?session_token={fleet_token}"
+                        f"&vehicle={fleet_unit}"
+                        f"&start={start_str}"
+                        f"&end={end_str}"
+                    )
+
+                    # =============================================
+                    # REQUEST
+                    # =============================================
+
+                    fleet_response = requests.get(
+                        fleet_url,
+                        timeout=60
+                    )
+
+                    fleet_response.raise_for_status()
+
+                    fleet_result = fleet_response.json()
+
+                    fleet_data = fleet_result.get(
+                        "data",
+                        []
+                    )
+
+                    # =============================================
+                    # PROCESS TRIPS
+                    # =============================================
+
+                    if fleet_data:
+
+                        fleet_activity_df = pd.DataFrame(
+                            fleet_data
                         )
 
-                        st.write(
-                            "Columnas:",
-                            tb_df.columns.tolist()
-                        )
+                        if "trip_type" in fleet_activity_df.columns:
 
-                        st.dataframe(
-                            tb_df,
-                            use_container_width=True,
-                            height=500
-                        )
+                            fleet_trip_df = fleet_activity_df[
+                                fleet_activity_df["trip_type"] == "T"
+                            ].copy()
 
-                        export_buffer = io.BytesIO()
+                        else:
 
-                        with pd.ExcelWriter(
-                            export_buffer,
-                            engine="openpyxl"
-                        ) as writer:
+                            fleet_trip_df = pd.DataFrame()
 
-                            tb_df.to_excel(
-                                writer,
-                                index=False,
-                                sheet_name="API_Test"
+                        # =========================================
+                        # ADD UNIT
+                        # =========================================
+
+                        if not fleet_trip_df.empty:
+
+                            fleet_trip_df.insert(
+                                0,
+                                "Unidad",
+                                fleet_unit
                             )
 
-                        export_buffer.seek(0)
+                            all_trip_data.append(
+                                fleet_trip_df
+                            )
 
-                        st.download_button(
-                            label="💾 Descargar Resultado",
-                            data=export_buffer,
-                            file_name=(
-                                f"{endpoint.replace('/', '_')}.xlsx"
-                            ),
-                            mime=(
-                                "application/"
-                                "vnd.openxmlformats-officedocument."
-                                "spreadsheetml.sheet"
-                            ),
-                            use_container_width=True
-                        )
+                except Exception as unit_error:
 
-                    else:
-
-                        st.warning(
-                            "El endpoint no regresó datos."
-                        )
-
-                elif isinstance(tb_json["data"], dict):
-
-                    st.subheader(
-                        "📋 Data Object"
+                    st.warning(
+                        f"No fue posible obtener viajes de "
+                        f"{fleet_unit}: {unit_error}"
                     )
 
-                    st.json(tb_json["data"])
+                # =============================================
+                # UPDATE PROGRESS
+                # =============================================
 
-                else:
+                progress_value = (
+                    (index + 1) / total_units
+                    if total_units
+                    else 1
+                )
 
-                    st.info(
-                        "El endpoint no contiene una estructura tabular."
+                fleet_progress.progress(
+                    progress_value,
+                    text=(
+                        f"Consultando {index + 1} de "
+                        f"{total_units} unidades..."
                     )
+                )
+
+            fleet_progress.empty()
+
+            # =================================================
+            # COMBINE ALL TRIPS
+            # =================================================
+
+            if all_trip_data:
+
+                fleet_trip_df = pd.concat(
+                    all_trip_data,
+                    ignore_index=True
+                )
+
+                # =============================================
+                # NUMERIC CLEANUP
+                # =============================================
+
+                numeric_cols = [
+                    "trip_distance",
+                    "max_speed",
+                    "avg_speed",
+                    "trip_duration"
+                ]
+
+                for col in numeric_cols:
+
+                    if col in fleet_trip_df.columns:
+
+                        fleet_trip_df[col] = pd.to_numeric(
+                            fleet_trip_df[col],
+                            errors="coerce"
+                        ).fillna(0)
+
+                # =============================================
+                # DISPLAY TABLE
+                # =============================================
+
+                fleet_display = fleet_trip_df.copy()
+
+                # =============================================
+                # DISTANCE UNIT
+                # =============================================
+
+                def fleet_distance_unit(unit):
+
+                    unit_label = str(unit).upper()
+
+                    picus = (
+                        "PI" in unit_label
+                        or unit_label.startswith("P")
+                    )
+
+                    otros = not (
+                        picus
+                        or "LF" in unit_label
+                        or unit_label.startswith("L")
+                        or "SET" in unit_label
+                        or "SPL" in unit_label
+                        or "STL" in unit_label
+                    )
+
+                    return (
+                        "km"
+                        if picus or otros
+                        else "mi"
+                    )
+
+                # =============================================
+                # SPEED UNIT
+                # =============================================
+
+                def fleet_speed_unit(unit):
+
+                    return (
+                        "km/h"
+                        if fleet_distance_unit(unit) == "km"
+                        else "mph"
+                    )
+
+                # =============================================
+                # DISTANCE
+                # =============================================
+
+                if "trip_distance" in fleet_display.columns:
+
+                    fleet_display["Distancia"] = (
+                        fleet_display.apply(
+                            lambda row:
+                            f"{round(float(row['trip_distance']), 1)} "
+                            f"{fleet_distance_unit(row['Unidad'])}",
+                            axis=1
+                        )
+                    )
+
+                # =============================================
+                # DURATION
+                # =============================================
+
+                if "trip_duration" in fleet_display.columns:
+
+                    fleet_display["Duración"] = (
+                        fleet_display["trip_duration"]
+                        .apply(
+                            lambda x:
+                            f"{int(x // 3600)}h "
+                            f"{int((x % 3600) // 60)}m"
+                        )
+                    )
+
+                # =============================================
+                # MAX SPEED
+                # =============================================
+
+                if "max_speed" in fleet_display.columns:
+
+                    fleet_display["Vel Máxima"] = (
+                        fleet_display.apply(
+                            lambda row:
+                            f"{round(float(row['max_speed']), 1)} "
+                            f"{fleet_speed_unit(row['Unidad'])}",
+                            axis=1
+                        )
+                    )
+
+                # =============================================
+                # AVG SPEED
+                # =============================================
+
+                if "avg_speed" in fleet_display.columns:
+
+                    fleet_display["Vel Promedio"] = (
+                        fleet_display.apply(
+                            lambda row:
+                            f"{round(float(row['avg_speed']), 1)} "
+                            f"{fleet_speed_unit(row['Unidad'])}",
+                            axis=1
+                        )
+                    )
+
+                # =============================================
+                # RENAME DATES
+                # =============================================
+
+                fleet_display.rename(
+                    columns={
+                        "trip_start": "Inicio",
+                        "trip_end": "Fin"
+                    },
+                    inplace=True
+                )
+
+                # =============================================
+                # DISPLAY TABLE
+                # =============================================
+
+                preferred_columns = [
+                    "Unidad",
+                    "Inicio",
+                    "Fin",
+                    "Distancia",
+                    "Duración",
+                    "Vel Máxima",
+                    "Vel Promedio"
+                ]
+
+                available_columns = [
+                    col
+                    for col in preferred_columns
+                    if col in fleet_display.columns
+                ]
+
+                fleet_display = fleet_display[
+                    available_columns
+                ]
+
+                fleet_display.sort_values(
+                    by=[
+                        col
+                        for col in ["Unidad", "Inicio"]
+                        if col in fleet_display.columns
+                    ],
+                    inplace=True
+                )
+
+                fleet_display.reset_index(
+                    drop=True,
+                    inplace=True
+                )
+
+                # =============================================
+                # SUMMARY
+                # =============================================
+
+                st.success(
+                    f"Reporte generado correctamente. "
+                    f"Unidades: {fleet_display['Unidad'].nunique()} | "
+                    f"Viajes: {len(fleet_display)}"
+                )
+
+                # =============================================
+                # TABLE
+                # =============================================
+
+                st.dataframe(
+                    fleet_display,
+                    use_container_width=True,
+                    height=700
+                )
+
+                # =============================================
+                # EXPORT
+                # =============================================
+
+                fleet_export_buffer = io.BytesIO()
+
+                with pd.ExcelWriter(
+                    fleet_export_buffer,
+                    engine="openpyxl"
+                ) as writer:
+
+                    fleet_trip_df.to_excel(
+                        writer,
+                        index=False,
+                        sheet_name="Historial Flotilla"
+                    )
+
+                fleet_export_buffer.seek(0)
+
+                st.download_button(
+                    label="💾 Descargar Historial General de Flotilla",
+                    data=fleet_export_buffer,
+                    file_name="Historial_General_Flotilla.xlsx",
+                    mime=(
+                        "application/"
+                        "vnd.openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+                    use_container_width=True
+                )
 
             else:
 
                 st.warning(
-                    "La respuesta no contiene la llave 'data'."
+                    "No se encontraron viajes para ninguna unidad "
+                    "en el rango de fechas seleccionado."
                 )
 
-        except requests.exceptions.RequestException as e:
+    except Exception as e:
 
-            st.error(
-                f"Request failed: {e}"
-            )
-
-        except Exception as e:
-
-            st.error(
-                f"Unexpected error: {e}"
-            )
+        st.error(
+            f"Error consultando historial: {e}"
+        )
