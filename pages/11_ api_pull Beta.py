@@ -1898,26 +1898,6 @@ with tab_mapa:
         )
 
     # =============================================
-    # UNIT FILTER
-    # =============================================
-
-    with filter_col2:
-
-        map_unit_options = sorted(
-            map_source_df["label"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        map_unit_filter = st.selectbox(
-            "Unidad en mapa",
-            ["Todas"] + map_unit_options,
-            key="map_unit_filter"
-        )
-
-    # =============================================
     # RESET FILTERED DATA
     # =============================================
 
@@ -1988,6 +1968,28 @@ with tab_mapa:
         ]
 
     # =============================================
+    # UNIT FILTER
+    # =============================================
+
+    with filter_col2:
+
+        # The Unidad dropdown is populated from the
+        # dataset already filtered by Estado en mapa.
+        map_unit_options = sorted(
+            map_df["label"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        map_unit_filter = st.selectbox(
+            "Unidad en mapa",
+            ["Todas"] + map_unit_options,
+            key="map_unit_filter"
+        )
+
+    # =============================================
     # APPLY UNIT FILTER
     # =============================================
 
@@ -1998,7 +2000,7 @@ with tab_mapa:
             .astype(str)
             .eq(map_unit_filter)
         ]
-
+        
     # =============================================
     # DISPLAY MAP ONLY IF DATA EXISTS
     # =============================================
