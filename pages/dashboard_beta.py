@@ -137,7 +137,7 @@ with col_logout:
         """
         <style>
 
-        div.stButton > button[kind="secondary"]{
+        div.st-key-btn_logout_admin button[kind="secondary"]{
             width:100%;
             height:48px;
 
@@ -159,7 +159,7 @@ with col_logout:
             box-shadow:0 4px 12px rgba(0,0,0,.18);
         }
 
-        div.stButton > button[kind="secondary"]:hover{
+        div.st-key-btn_logout_admin button[kind="secondary"]:hover{
             background:#D0B56C;
             color:white !important;
         }
