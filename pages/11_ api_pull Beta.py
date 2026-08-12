@@ -1586,16 +1586,16 @@ with tab_mapa:
             # =====================================
             # TABLE
             # =====================================
-            with st.expander(
-                "📋 Tabla de Landmarks",
-                expanded=False
-            ):
+            #with st.expander(
+            #    "📋 Tabla de Landmarks",
+            #    expanded=False
+            #):
 
-                st.dataframe(
-                    landmark_df,
-                    use_container_width=True,
-                    height=500
-                )
+            #    st.dataframe(
+            #        landmark_df,
+            #        use_container_width=True,
+            #        height=500
+            #    )
 
             # =====================================
             # EXPORT
