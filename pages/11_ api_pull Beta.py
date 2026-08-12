@@ -101,15 +101,15 @@ st.session_state.setdefault(
     "TODAS"
 )
 
-active_filter = st.session_state.gps_company_filter
-
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 with c1:
     if st.button(
         "PICUS",
         use_container_width=True,
-        type="primary" if active_filter == "PICUS" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "PICUS"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "PICUS"
         st.rerun()
@@ -118,7 +118,9 @@ with c2:
     if st.button(
         "LINCOLN",
         use_container_width=True,
-        type="primary" if active_filter == "LINCOLN" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "LINCOLN"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "LINCOLN"
         st.rerun()
@@ -127,7 +129,9 @@ with c3:
     if st.button(
         "SET FREIGHT",
         use_container_width=True,
-        type="primary" if active_filter == "SET FREIGHT" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "SET FREIGHT"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "SET FREIGHT"
         st.rerun()
@@ -136,7 +140,9 @@ with c4:
     if st.button(
         "SET LOGIS",
         use_container_width=True,
-        type="primary" if active_filter == "SET LOGIS" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "SET LOGIS"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "SET LOGIS"
         st.rerun()
@@ -145,7 +151,9 @@ with c5:
     if st.button(
         "OTROS",
         use_container_width=True,
-        type="primary" if active_filter == "OTROS" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "OTROS"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "OTROS"
         st.rerun()
@@ -154,7 +162,9 @@ with c6:
     if st.button(
         "TODAS",
         use_container_width=True,
-        type="primary" if active_filter == "TODAS" else "secondary"
+        type="primary"
+        if st.session_state.gps_company_filter == "TODAS"
+        else "secondary"
     ):
         st.session_state.gps_company_filter = "TODAS"
         st.rerun()

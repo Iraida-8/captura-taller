@@ -1,5 +1,30 @@
 [
     {
+    "version": "2.08.12.26",
+    "date": "12/08/2026",
+    "changes":
+        [
+            "Ampliación del módulo Rastreador y Seguimiento GPS de Unidades para incorporar consulta y visualización de Landmarks provenientes de las cuentas PICUS y PGL de GPS Insight",
+            "Implementación de procesamiento y conversión de las coordenadas de Landmarks para generar polígonos geográficos a partir de la información proporcionada por GPS Insight",
+            "Corrección de la interpretación de coordenadas de Landmarks para respetar el formato Longitud, Latitud utilizado por GPS Insight y evitar desplazamientos incorrectos de las zonas geográficas",
+            "Implementación de visualización de Landmarks mediante polígonos sobre el Mapa GPS de Unidades, incluyendo perímetro, relleno y resaltado interactivo",
+            "Incorporación de información descriptiva de los Landmarks mediante tooltips al interactuar con sus polígonos, evitando mostrar permanentemente los nombres sobre el mapa para reducir la saturación visual",
+            "Mejoras de visibilidad de los polígonos de Landmarks mediante ajuste de grosor de perímetro, relleno y comportamiento visual para facilitar su identificación en diferentes niveles de zoom",
+            "Eliminación de la visualización de la Tabla de Landmarks para mantener la información técnica fuera de la interfaz principal del usuario",
+            "Eliminación del botón de descarga de Landmarks, manteniendo únicamente los indicadores KPI de Total Landmarks, PICUS, PGL y Landmarks Circulares",
+            "Incorporación de reporte descargable de Coordenadas de Unidades desde el Mapa GPS de Unidades mediante archivo Excel",
+            "Implementación de filtro Estado en mapa para clasificar las unidades por movimiento, tiempo detenido y rangos de inactividad",
+            "Implementación de filtro Unidad en mapa mediante selección individual por label de unidad",
+            "Corrección de la interacción entre los filtros Estado en mapa y Unidad en mapa para permitir que el filtro de Estado limite únicamente las opciones disponibles del filtro de Unidad, sin afectar las opciones del filtro de Estado de forma inversa",
+            "Corrección del comportamiento de los filtros del mapa para permitir combinaciones Todas/Todas, Estado/Unidad y Unidad/Todas sin pérdida de información ni bloqueo de la visualización del mapa",
+            "Corrección del flujo de renderizado del Mapa GPS de Unidades para garantizar que la construcción del mapa se ejecute también cuando los filtros se encuentran establecidos en Todas",
+            "Eliminación completa de la pestaña Test Bench del módulo de Rastreo GPS",
+            "Reubicación de los filtros globales de compañía fuera de las pestañas Dashboard, Seguimiento, Mapa e Historial para mantenerlos permanentemente visibles y aplicables a todo el módulo",
+            "Conservación del comportamiento global de los filtros de compañía PICUS, LINCOLN, SET FREIGHT, SET LOGIS, OTROS y TODAS sobre todas las pestañas del módulo",
+            "Mejoras generales de visualización, filtrado, navegación y experiencia de usuario del módulo Rastreador y Seguimiento GPS de Unidades"
+        ]
+    },
+    {
     "version": "2.08.05.26",
     "date": "05/08/2026",
     "changes":
