@@ -1999,6 +1999,12 @@ with tab_mapa:
             .eq(map_unit_filter)
         ]
 
+    # =============================================
+    # DISPLAY MAP ONLY IF DATA EXISTS
+    # =============================================
+
+    if not map_df.empty:
+
         # =============================================
         # LANDMARK POLYGON LAYER
         # =============================================
@@ -2022,13 +2028,10 @@ with tab_mapa:
 
                 get_polygon="polygon_coordinates",
 
-                # Landmark fill
                 get_fill_color=[21, 31, 109, 55],
 
-                # Strong perimeter so the shape remains recognizable when zoomed out
                 get_line_color=[21, 31, 109, 230],
 
-                # Maintain a visible perimeter at low zoom levels
                 line_width_min_pixels=5,
                 line_width_max_pixels=8,
 
@@ -2108,6 +2111,7 @@ with tab_mapa:
         # =============================================
         # VIEW STATE
         # =============================================
+
         view_state = pdk.ViewState(
             latitude=map_df["latitude"].mean(),
             longitude=map_df["longitude"].mean(),
@@ -2118,6 +2122,7 @@ with tab_mapa:
         # =============================================
         # DISPLAY MAP
         # =============================================
+
         st.pydeck_chart(
             pdk.Deck(
                 height=700,
@@ -2205,7 +2210,7 @@ with tab_mapa:
     else:
 
         st.warning(
-            "No se encontraron coordenadas GPS válidas."
+            "No se encontraron unidades que coincidan con los filtros seleccionados."
         )
 
 
