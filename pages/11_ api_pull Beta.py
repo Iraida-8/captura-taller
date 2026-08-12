@@ -199,60 +199,89 @@ if not st.session_state.gps_history_report_generated:
         key="gps_auto_refresh"
     )
 
-timer_html = f"""
-<div id="gps-refresh-timer" style="
-    margin-top:10px;
-    text-align:right;
-    font-size:16px;
-    font-weight:600;
-    color:#000000;
-    font-family:sans-serif;
-    white-space:nowrap;
-">
-    🔄 Actualización automática en
-    <span id="countdown" style="
-        color:#BFA75F;
-        font-weight:800;
-        font-size:18px;
-        margin-left:6px;
+# =====================================================
+# TIMER DISPLAY
+# =====================================================
+
+if not st.session_state.gps_history_report_generated:
+
+    timer_html = f"""
+    <div id="gps-refresh-timer" style="
+        margin-top:10px;
+        text-align:right;
+        font-size:16px;
+        font-weight:600;
+        color:#000000;
+        font-family:sans-serif;
+        white-space:nowrap;
     ">
-        05:00
-    </span>
-</div>
+        🔄 Actualización automática en
+        <span id="countdown" style="
+            color:#BFA75F;
+            font-weight:800;
+            font-size:18px;
+            margin-left:6px;
+        ">
+            05:00
+        </span>
+    </div>
 
-<script>
+    <script>
 
-let totalSeconds = {REFRESH_SECONDS};
+    let totalSeconds = {REFRESH_SECONDS};
 
-function updateCountdown() {{
+    function updateCountdown() {{
 
-    let minutes = Math.floor(totalSeconds / 60);
-    let seconds = totalSeconds % 60;
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
 
-    minutes = String(minutes).padStart(2, "0");
-    seconds = String(seconds).padStart(2, "0");
+        minutes = String(minutes).padStart(2, "0");
+        seconds = String(seconds).padStart(2, "0");
 
-    document.getElementById("countdown").innerHTML =
-        minutes + ":" + seconds;
+        document.getElementById("countdown").innerHTML =
+            minutes + ":" + seconds;
 
-    totalSeconds--;
+        totalSeconds--;
 
-    if (totalSeconds < 0) {{
-        totalSeconds = {REFRESH_SECONDS};
+        if (totalSeconds < 0) {{
+            totalSeconds = {REFRESH_SECONDS};
+        }}
     }}
-}}
 
-updateCountdown();
-setInterval(updateCountdown, 1000);
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
 
-</script>
-"""
-with timer_col:
-    components.html(
-        timer_html,
-        height=70,
-    )
+    </script>
+    """
 
+    with timer_col:
+
+        components.html(
+            timer_html,
+            height=70,
+        )
+
+else:
+
+    with timer_col:
+
+        st.markdown(
+            """
+            <div style="
+                margin-top:10px;
+                text-align:right;
+                font-size:16px;
+                font-weight:600;
+                color:#BFA75F;
+                font-family:sans-serif;
+                white-space:nowrap;
+            ">
+                ⏸️ Actualización automática pausada
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
 #==============================================================================================================
 # GPS INSIGHT AUTH
 #==============================================================================================================
