@@ -1600,38 +1600,38 @@ with tab_mapa:
             # =====================================
             # EXPORT
             # =====================================
-            landmark_buffer = io.BytesIO()
+            #landmark_buffer = io.BytesIO()
 
-            with pd.ExcelWriter(
-                landmark_buffer,
-                engine="openpyxl"
-            ) as writer:
+            #with pd.ExcelWriter(
+            #    landmark_buffer,
+            #    engine="openpyxl"
+            #) as writer:
 
-                landmark_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Landmarks"
-                )
+            #    landmark_df.to_excel(
+            #        writer,
+            #        index=False,
+            #        sheet_name="Landmarks"
+            #    )
 
-            landmark_buffer.seek(0)
+            #landmark_buffer.seek(0)
 
-            st.download_button(
-                label="💾 Descargar Landmarks",
-                data=landmark_buffer,
-                file_name="Landmarks_GPS.xlsx",
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
+            #st.download_button(
+            #    label="💾 Descargar Landmarks",
+            #    data=landmark_buffer,
+            #    file_name="Landmarks_GPS.xlsx",
+            #    mime=(
+            #        "application/"
+            #        "vnd.openxmlformats-officedocument."
+            #        "spreadsheetml.sheet"
+            #    ),
+            #    use_container_width=True
+            #)
 
-        else:
+        #else:
 
-            st.warning(
-                "No se encontraron landmarks."
-            )
+        #    st.warning(
+        #        "No se encontraron landmarks."
+        #    )
 
     except Exception as e:
 
