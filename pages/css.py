@@ -148,13 +148,12 @@ def load_css():
             transition:all .2s ease;
         }
 
-
         /* =====================================================
         COMPANY FILTER BUTTONS
         ===================================================== */
 
         /* ---------------------------------
-        INACTIVE COMPANY BUTTON
+        INACTIVE
         Blue background / blue border / white text
         --------------------------------- */
 
@@ -176,7 +175,7 @@ def load_css():
 
 
         /* ---------------------------------
-        INACTIVE COMPANY BUTTON HOVER
+        INACTIVE HOVER
         Gold background / gold border / white text
         --------------------------------- */
 
@@ -200,7 +199,7 @@ def load_css():
 
 
         /* ---------------------------------
-        ACTIVE COMPANY BUTTON
+        ACTIVE
         Gold background / gold border / white text
         --------------------------------- */
 
@@ -222,8 +221,8 @@ def load_css():
 
 
         /* ---------------------------------
-        ACTIVE COMPANY BUTTON HOVER
-        Same appearance
+        ACTIVE HOVER
+        Same gold appearance
         --------------------------------- */
 
         div[class*="st-key-company_filter_"]
