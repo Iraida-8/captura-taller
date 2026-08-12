@@ -141,7 +141,7 @@ with col_logout:
             width:100%;
             height:48px;
 
-            background:#F4F6FB;
+            background:#151F6D;
             color:white !important;
 
             border:none;
