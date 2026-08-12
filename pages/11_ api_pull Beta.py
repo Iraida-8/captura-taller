@@ -284,7 +284,7 @@ else:
 # GPS INSIGHT AUTH
 #==============================================================================================================
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def get_gps_token(
     username,
     app_token
