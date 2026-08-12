@@ -92,7 +92,7 @@ title_col, timer_col = st.columns([8, 2])
 with title_col:
     st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
 
-tab_dashboard, tab_seguimiento, tab_mapa, tab_historial, tab_testbench = st.tabs([
+tab_dashboard, tab_seguimiento, tab_mapa, tab_historial = st.tabs([
     "📊 Dashboard",
     "🚛 Seguimiento",
     "🗺️ Mapa",
