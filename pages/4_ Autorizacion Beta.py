@@ -3949,14 +3949,12 @@ if has_viaticos:
 
                                 "Descripcion":
                                     st.column_config.TextColumn(
-                                        "Descripcion",
-                                        disabled=True
+                                        "Descripcion"
                                     ),
 
                                 "Monto":
                                     st.column_config.NumberColumn(
                                         "Monto",
-                                        disabled=True,
                                         format="$ %.2f"
                                     ),
 
@@ -3992,6 +3990,31 @@ if has_viaticos:
                                     orient="records"
                                 )
                             )
+
+                            for i, concepto_original in enumerate(conceptos):
+
+                                if i < len(conceptos_actualizados):
+
+                                    conceptos_actualizados[i]["Tipo"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Tipo",
+                                            concepto_original.get("Tipo", "")
+                                        )
+                                    )
+
+                                    conceptos_actualizados[i]["Descripcion"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Descripcion",
+                                            concepto_original.get("Descripcion", "")
+                                        )
+                                    )
+
+                                    conceptos_actualizados[i]["Monto"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Monto",
+                                            concepto_original.get("Monto", 0)
+                                        )
+                                    )
 
                             # =================================
                             # RECALCULAR TOTAL ESTIMADO
