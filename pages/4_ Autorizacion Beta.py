@@ -3932,9 +3932,19 @@ if has_viaticos:
                             column_config={
 
                                 "Tipo":
-                                    st.column_config.TextColumn(
+                                    st.column_config.SelectboxColumn(
                                         "Tipo",
-                                        disabled=True
+                                        options=[
+                                            "Selecciona un tipo",
+                                            "ALIMENTOS VIAJE",
+                                            "CASETAS Y PEAJES",
+                                            "ESTACIONAMIENTO VIAJE",
+                                            "GASOLINA VIAJE",
+                                            "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                            "ATENCION/PRESENTE CLIENTES VIAJE",
+                                            "OTROS"
+                                        ],
+                                        required=True
                                     ),
 
                                 "Descripcion":
