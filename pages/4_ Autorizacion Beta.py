@@ -6348,7 +6348,8 @@ if has_viaticos:
                                             use_container_width=True,
                                             hide_index=True,
                                             disabled=True,
-                                            height=350
+                                            height=350,
+                                            key="solicitud_detalles_verificacion"
                                         )
 
                                     else:
@@ -6454,7 +6455,8 @@ if has_viaticos:
                                             use_container_width=True,
                                             hide_index=True,
                                             disabled=True,
-                                            height=350
+                                            height=350,
+                                            key="solicitud_detalles_finalizada"
                                         )
 
                                     else:
