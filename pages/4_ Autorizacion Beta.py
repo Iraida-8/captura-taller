@@ -4824,6 +4824,114 @@ if has_viaticos:
                                 )
 
                                 # =================================
+                                # MONTO SOLICITADO
+                                # =================================
+
+                                st.markdown("---")
+
+                                conceptos_solicitud = (
+                                    solicitud_row.get(
+                                        "conceptos",
+                                        []
+                                    )
+                                )
+
+                                monto_solicitado = 0.0
+
+                                for item in conceptos_solicitud:
+
+                                    try:
+                                        monto_solicitado += float(
+                                            item.get(
+                                                "Monto",
+                                                0
+                                            ) or 0
+                                        )
+
+                                    except:
+                                        pass
+
+                                st.markdown(
+                                    f"""
+                                    <div style='
+                                        font-size:26px;
+                                        font-weight:800;
+                                        color:#BFA75F;
+                                        margin-top:10px;
+                                        margin-bottom:10px;
+                                    '>
+                                        Monto Solicitado:
+                                        ${monto_solicitado:,.2f}
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+
+                                st.markdown(
+                                    "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
+                                    unsafe_allow_html=True
+                                )
+
+                                with st.expander(
+                                    "",
+                                    expanded=False
+                                ):
+
+                                    if conceptos_solicitud:
+
+                                        df_sol = pd.DataFrame(
+                                            conceptos_solicitud
+                                        )
+
+                                        columnas_solicitud = [
+                                            "Tipo",
+                                            "Descripcion",
+                                            "Monto",
+                                            "Tipo Cambio",
+                                            "Aprobado",
+                                            "Razon"
+                                        ]
+
+                                        for col_name in columnas_solicitud:
+
+                                            if col_name not in df_sol.columns:
+                                                df_sol[col_name] = ""
+
+                                        df_sol = df_sol[
+                                            columnas_solicitud
+                                        ]
+
+                                        if "Monto" in df_sol.columns:
+
+                                            df_sol["Monto"] = (
+                                                pd.to_numeric(
+                                                    df_sol["Monto"],
+                                                    errors="coerce"
+                                                )
+                                                .fillna(0)
+                                                .apply(
+                                                    lambda x:
+                                                    f"${x:,.2f}"
+                                                )
+                                            )
+
+                                        st.data_editor(
+                                            df_sol,
+                                            use_container_width=True,
+                                            hide_index=True,
+                                            disabled=True,
+                                            height=350,
+                                            key="solicitud_detalles_verificacion"
+                                        )
+
+                                    else:
+
+                                        st.info(
+                                            "No hay conceptos."
+                                        )
+
+
+                                # =================================
                                 # CONCEPTOS COMPROBACION
                                 # =================================
 
@@ -6350,113 +6458,6 @@ if has_viaticos:
                                             disabled=True,
                                             height=350,
                                             key="solicitud_detalles_verificacion"
-                                        )
-
-                                    else:
-
-                                        st.info(
-                                            "No hay conceptos."
-                                        )
-
-                                # =================================
-                                # MONTO SOLICITADO
-                                # =================================
-
-                                st.markdown("---")
-
-                                conceptos_solicitud = (
-                                    solicitud_row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
-
-                                monto_solicitado = 0.0
-
-                                for item in conceptos_solicitud:
-
-                                    try:
-                                        monto_solicitado += float(
-                                            item.get(
-                                                "Monto",
-                                                0
-                                            ) or 0
-                                        )
-
-                                    except:
-                                        pass
-
-                                st.markdown(
-                                    f"""
-                                    <div style='
-                                        font-size:26px;
-                                        font-weight:800;
-                                        color:#BFA75F;
-                                        margin-top:10px;
-                                        margin-bottom:10px;
-                                    '>
-                                        Monto Solicitado:
-                                        ${monto_solicitado:,.2f}
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                                st.markdown(
-                                    "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
-                                    unsafe_allow_html=True
-                                )
-
-                                with st.expander(
-                                    "",
-                                    expanded=False
-                                ):
-
-                                    if conceptos_solicitud:
-
-                                        df_sol = pd.DataFrame(
-                                            conceptos_solicitud
-                                        )
-
-                                        columnas_solicitud = [
-                                            "Tipo",
-                                            "Descripcion",
-                                            "Monto",
-                                            "Tipo Cambio",
-                                            "Aprobado",
-                                            "Razon"
-                                        ]
-
-                                        for col_name in columnas_solicitud:
-
-                                            if col_name not in df_sol.columns:
-                                                df_sol[col_name] = ""
-
-                                        df_sol = df_sol[
-                                            columnas_solicitud
-                                        ]
-
-                                        if "Monto" in df_sol.columns:
-
-                                            df_sol["Monto"] = (
-                                                pd.to_numeric(
-                                                    df_sol["Monto"],
-                                                    errors="coerce"
-                                                )
-                                                .fillna(0)
-                                                .apply(
-                                                    lambda x:
-                                                    f"${x:,.2f}"
-                                                )
-                                            )
-
-                                        st.data_editor(
-                                            df_sol,
-                                            use_container_width=True,
-                                            hide_index=True,
-                                            disabled=True,
-                                            height=350,
-                                            key="solicitud_detalles_finalizada"
                                         )
 
                                     else:
