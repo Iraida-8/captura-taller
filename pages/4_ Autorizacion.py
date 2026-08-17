@@ -3539,11 +3539,6 @@ if has_viaticos:
             )
 
             # =================================
-            # HEADER
-            # =================================
-            st.title("⚙ Gestión de Viáticos")
-
-            # =================================
             # KPI CARDS
             # =================================
             kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
@@ -3937,21 +3932,29 @@ if has_viaticos:
                             column_config={
 
                                 "Tipo":
-                                    st.column_config.TextColumn(
+                                    st.column_config.SelectboxColumn(
                                         "Tipo",
-                                        disabled=True
+                                        options=[
+                                            "Selecciona un tipo",
+                                            "ALIMENTOS VIAJE",
+                                            "CASETAS Y PEAJES",
+                                            "ESTACIONAMIENTO VIAJE",
+                                            "GASOLINA VIAJE",
+                                            "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                            "ATENCION/PRESENTE CLIENTES VIAJE",
+                                            "OTROS"
+                                        ],
+                                        required=True
                                     ),
 
                                 "Descripcion":
                                     st.column_config.TextColumn(
-                                        "Descripcion",
-                                        disabled=True
+                                        "Descripcion"
                                     ),
 
                                 "Monto":
                                     st.column_config.NumberColumn(
                                         "Monto",
-                                        disabled=True,
                                         format="$ %.2f"
                                     ),
 
@@ -3987,6 +3990,31 @@ if has_viaticos:
                                     orient="records"
                                 )
                             )
+
+                            for i, concepto_original in enumerate(conceptos):
+
+                                if i < len(conceptos_actualizados):
+
+                                    conceptos_actualizados[i]["Tipo"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Tipo",
+                                            concepto_original.get("Tipo", "")
+                                        )
+                                    )
+
+                                    conceptos_actualizados[i]["Descripcion"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Descripcion",
+                                            concepto_original.get("Descripcion", "")
+                                        )
+                                    )
+
+                                    conceptos_actualizados[i]["Monto"] = (
+                                        conceptos_actualizados[i].get(
+                                            "Monto",
+                                            concepto_original.get("Monto", 0)
+                                        )
+                                    )
 
                             # =================================
                             # RECALCULAR TOTAL ESTIMADO
@@ -4829,6 +4857,114 @@ if has_viaticos:
                                 )
 
                                 # =================================
+                                # MONTO SOLICITADO
+                                # =================================
+
+                                st.markdown("---")
+
+                                conceptos_solicitud = (
+                                    solicitud_row.get(
+                                        "conceptos",
+                                        []
+                                    )
+                                )
+
+                                monto_solicitado = 0.0
+
+                                for item in conceptos_solicitud:
+
+                                    try:
+                                        monto_solicitado += float(
+                                            item.get(
+                                                "Monto",
+                                                0
+                                            ) or 0
+                                        )
+
+                                    except:
+                                        pass
+
+                                st.markdown(
+                                    f"""
+                                    <div style='
+                                        font-size:26px;
+                                        font-weight:800;
+                                        color:#BFA75F;
+                                        margin-top:10px;
+                                        margin-bottom:10px;
+                                    '>
+                                        Monto Solicitado:
+                                        ${monto_solicitado:,.2f}
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+
+                                st.markdown(
+                                    "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
+                                    unsafe_allow_html=True
+                                )
+
+                                with st.expander(
+                                    "",
+                                    expanded=False
+                                ):
+
+                                    if conceptos_solicitud:
+
+                                        df_sol = pd.DataFrame(
+                                            conceptos_solicitud
+                                        )
+
+                                        columnas_solicitud = [
+                                            "Tipo",
+                                            "Descripcion",
+                                            "Monto",
+                                            "Tipo Cambio",
+                                            "Aprobado",
+                                            "Razon"
+                                        ]
+
+                                        for col_name in columnas_solicitud:
+
+                                            if col_name not in df_sol.columns:
+                                                df_sol[col_name] = ""
+
+                                        df_sol = df_sol[
+                                            columnas_solicitud
+                                        ]
+
+                                        if "Monto" in df_sol.columns:
+
+                                            df_sol["Monto"] = (
+                                                pd.to_numeric(
+                                                    df_sol["Monto"],
+                                                    errors="coerce"
+                                                )
+                                                .fillna(0)
+                                                .apply(
+                                                    lambda x:
+                                                    f"${x:,.2f}"
+                                                )
+                                            )
+
+                                        st.data_editor(
+                                            df_sol,
+                                            use_container_width=True,
+                                            hide_index=True,
+                                            disabled=True,
+                                            height=350,
+                                            key="solicitud_detalles_verificacion"
+                                        )
+
+                                    else:
+
+                                        st.info(
+                                            "No hay conceptos."
+                                        )
+
+
+                                # =================================
                                 # CONCEPTOS COMPROBACION
                                 # =================================
 
@@ -4913,8 +5049,14 @@ if has_viaticos:
                                         columnas_comprobacion
                                     ]
 
+                                    if "Fecha Factura" in df_comp.columns:
+
+                                        df_comp["Fecha Factura"] = pd.to_datetime(
+                                            df_comp["Fecha Factura"],
+                                            errors="coerce"
+                                        )
+
                                     currency_columns = [
-                                        "Monto",
                                         "Impuesto Acreditable",
                                         "Total Comprobado"
                                     ]
@@ -4923,23 +5065,44 @@ if has_viaticos:
 
                                         if col_name in df_comp.columns:
 
-                                            df_comp[col_name] = (
-                                                pd.to_numeric(
-                                                    df_comp[col_name],
-                                                    errors="coerce"
-                                                )
-                                                .fillna(0)
-                                                .apply(
-                                                    lambda x: f"${x:,.2f}"
-                                                )
-                                            )
+                                            df_comp[col_name] = pd.to_numeric(
+                                                df_comp[col_name],
+                                                errors="coerce"
+                                            ).fillna(0)
 
-                                    st.data_editor(
+                                    edited_df_comp = st.data_editor(
                                         df_comp,
                                         use_container_width=True,
                                         hide_index=True,
-                                        disabled=True,
-                                        height=350
+                                        height=350,
+                                        column_config={
+                                            "Tipo": st.column_config.SelectboxColumn(
+                                                "Tipo",
+                                                options=[
+                                                    "Selecciona un tipo",
+                                                    "ALIMENTOS VIAJE",
+                                                    "CASETAS Y PEAJES",
+                                                    "ESTACIONAMIENTO VIAJE",
+                                                    "GASOLINA VIAJE",
+                                                    "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                                    "ATENCION/PRESENTE CLIENTES VIAJE",
+                                                    "OTROS"
+                                                ],
+                                                required=True
+                                            ),
+
+                                            "Descripcion": st.column_config.TextColumn(
+                                                "Descripcion"
+                                            ),
+                                            "Monto": st.column_config.NumberColumn(
+                                                "Monto",
+                                                format="$ %.2f"
+                                            ),
+                                            "Fecha Factura": st.column_config.DateColumn(
+                                                "Fecha Factura",
+                                                format="YYYY-MM-DD"
+                                            )
+                                        }
                                     )
 
                                 else:
@@ -5045,6 +5208,56 @@ if has_viaticos:
                                     )
 
                                 st.markdown("---")
+
+                                if st.button(
+                                    "💾 Guardar Cambios",
+                                    use_container_width=True,
+                                    key=f"guardar_comprobacion_{comprobacion_row.get('id')}"
+                                ):
+
+                                    if "Fecha Factura" in edited_df_comp.columns:
+
+                                        edited_df_comp["Fecha Factura"] = (
+                                            edited_df_comp["Fecha Factura"]
+                                            .dt.strftime("%Y-%m-%d")
+                                        )
+
+                                    conceptos_actualizados = (
+                                        edited_df_comp.to_dict(
+                                            orient="records"
+                                        )
+                                    )
+
+                                    nuevo_total_comprobado = 0.0
+
+                                    for item in conceptos_actualizados:
+
+                                        try:
+                                            nuevo_total_comprobado += float(
+                                                item.get("Total Comprobado", 0) or 0
+                                            )
+                                        except:
+                                            pass
+
+                                    supabase.table(
+                                        "comprobacion_viaje"
+                                    ).update(
+                                        {
+                                            "conceptos": conceptos_actualizados,
+                                            "total_comprobado": nuevo_total_comprobado
+                                        }
+                                    ).eq(
+                                        "id",
+                                        comprobacion_row.get("id")
+                                    ).execute()
+
+                                    st.cache_data.clear()
+
+                                    st.success(
+                                        "Comprobación actualizada correctamente."
+                                    )
+
+                                    st.rerun()
 
                                 btn1, btn2 = st.columns(2)
 
@@ -6353,7 +6566,8 @@ if has_viaticos:
                                             use_container_width=True,
                                             hide_index=True,
                                             disabled=True,
-                                            height=350
+                                            height=350,
+                                            key="solicitud_detalles_verificacion"
                                         )
 
                                     else:
