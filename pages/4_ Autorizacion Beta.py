@@ -5098,8 +5098,9 @@ if has_viaticos:
                                                 "Monto",
                                                 format="$ %.2f"
                                             ),
-                                            "Fecha Factura": st.column_config.TextColumn(
-                                                "Fecha Factura"
+                                            "Fecha Factura": st.column_config.DateColumn(
+                                                "Fecha Factura",
+                                                format="YYYY-MM-DD"
                                             )
                                         }
                                     )
