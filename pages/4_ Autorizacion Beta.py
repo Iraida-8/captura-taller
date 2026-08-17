@@ -5215,6 +5215,13 @@ if has_viaticos:
                                     key=f"guardar_comprobacion_{comprobacion_row.get('id')}"
                                 ):
 
+                                    if "Fecha Factura" in edited_df_comp.columns:
+
+                                        edited_df_comp["Fecha Factura"] = (
+                                            edited_df_comp["Fecha Factura"]
+                                            .dt.strftime("%Y-%m-%d")
+                                        )
+
                                     conceptos_actualizados = (
                                         edited_df_comp.to_dict(
                                             orient="records"
