@@ -5057,7 +5057,6 @@ if has_viaticos:
                                         )
 
                                     currency_columns = [
-                                        "Monto",
                                         "Impuesto Acreditable",
                                         "Total Comprobado"
                                     ]
@@ -5066,18 +5065,12 @@ if has_viaticos:
 
                                         if col_name in df_comp.columns:
 
-                                            df_comp[col_name] = (
-                                                pd.to_numeric(
-                                                    df_comp[col_name],
-                                                    errors="coerce"
-                                                )
-                                                .fillna(0)
-                                                .apply(
-                                                    lambda x: f"${x:,.2f}"
-                                                )
-                                            )
+                                            df_comp[col_name] = pd.to_numeric(
+                                                df_comp[col_name],
+                                                errors="coerce"
+                                            ).fillna(0)
 
-                                    st.data_editor(
+                                    edited_df_comp = st.data_editor(
                                         df_comp,
                                         use_container_width=True,
                                         hide_index=True,
@@ -5215,6 +5208,49 @@ if has_viaticos:
                                     )
 
                                 st.markdown("---")
+
+                                if st.button(
+                                    "💾 Guardar Cambios",
+                                    use_container_width=True,
+                                    key=f"guardar_comprobacion_{comprobacion_row.get('id')}"
+                                ):
+
+                                    conceptos_actualizados = (
+                                        edited_df_comp.to_dict(
+                                            orient="records"
+                                        )
+                                    )
+
+                                    nuevo_total_comprobado = 0.0
+
+                                    for item in conceptos_actualizados:
+
+                                        try:
+                                            nuevo_total_comprobado += float(
+                                                item.get("Total Comprobado", 0) or 0
+                                            )
+                                        except:
+                                            pass
+
+                                    supabase.table(
+                                        "comprobacion_viaje"
+                                    ).update(
+                                        {
+                                            "conceptos": conceptos_actualizados,
+                                            "total_comprobado": nuevo_total_comprobado
+                                        }
+                                    ).eq(
+                                        "id",
+                                        comprobacion_row.get("id")
+                                    ).execute()
+
+                                    st.cache_data.clear()
+
+                                    st.success(
+                                        "Comprobación actualizada correctamente."
+                                    )
+
+                                    st.rerun()
 
                                 btn1, btn2 = st.columns(2)
 
