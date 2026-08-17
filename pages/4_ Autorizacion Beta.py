@@ -5049,6 +5049,13 @@ if has_viaticos:
                                         columnas_comprobacion
                                     ]
 
+                                    if "Fecha Factura" in df_comp.columns:
+
+                                        df_comp["Fecha Factura"] = pd.to_datetime(
+                                            df_comp["Fecha Factura"],
+                                            errors="coerce"
+                                        )
+
                                     currency_columns = [
                                         "Monto",
                                         "Impuesto Acreditable",
