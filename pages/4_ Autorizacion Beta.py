@@ -5092,6 +5092,10 @@ if has_viaticos:
                                             ),
                                             "Descripcion": st.column_config.TextColumn(
                                                 "Descripcion"
+                                            ),
+                                            "Monto": st.column_config.NumberColumn(
+                                                "Monto",
+                                                format="$ %.2f"
                                             )
                                         }
                                     )
