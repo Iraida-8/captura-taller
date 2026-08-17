@@ -5090,12 +5090,16 @@ if has_viaticos:
                                                 ],
                                                 required=True
                                             ),
+
                                             "Descripcion": st.column_config.TextColumn(
                                                 "Descripcion"
                                             ),
                                             "Monto": st.column_config.NumberColumn(
                                                 "Monto",
                                                 format="$ %.2f"
+                                            ),
+                                            "Fecha Factura": st.column_config.TextColumn(
+                                                "Fecha Factura"
                                             )
                                         }
                                     )
