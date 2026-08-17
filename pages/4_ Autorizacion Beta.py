@@ -5089,6 +5089,9 @@ if has_viaticos:
                                                     "OTROS"
                                                 ],
                                                 required=True
+                                            ),
+                                            "Descripcion": st.column_config.TextColumn(
+                                                "Descripcion"
                                             )
                                         }
                                     )
