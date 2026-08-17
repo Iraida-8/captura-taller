@@ -5074,8 +5074,23 @@ if has_viaticos:
                                         df_comp,
                                         use_container_width=True,
                                         hide_index=True,
-                                        disabled=True,
-                                        height=350
+                                        height=350,
+                                        column_config={
+                                            "Tipo": st.column_config.SelectboxColumn(
+                                                "Tipo",
+                                                options=[
+                                                    "Selecciona un tipo",
+                                                    "ALIMENTOS VIAJE",
+                                                    "CASETAS Y PEAJES",
+                                                    "ESTACIONAMIENTO VIAJE",
+                                                    "GASOLINA VIAJE",
+                                                    "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                                    "ATENCION/PRESENTE CLIENTES VIAJE",
+                                                    "OTROS"
+                                                ],
+                                                required=True
+                                            )
+                                        }
                                     )
 
                                 else:
