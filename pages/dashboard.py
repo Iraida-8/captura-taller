@@ -709,6 +709,7 @@ st.divider()
 show_extras = has_access([
     "ifuel",
     "lector_pdf",
+    "directorio_auxilio",
 ])
 
 show_gps = has_access([
@@ -734,6 +735,7 @@ if show_extras:
         section_extras = [
             "ifuel",
             "lector_pdf",
+            "directorio_auxilio",
         ]
 
         with st.container(border=True):
@@ -747,8 +749,9 @@ if show_extras:
 
 - 📄 Lector PDF
 - ⛽ Reporte iFuel
+- 🚨 Directorio Auxilio Carretero
 
-Permite consultar archivos PDF de reparación y generar reportes operativos de iFuel desde una única interfaz.
+Permite consultar archivos PDF de reparación, generar reportes operativos de iFuel y consultar el Directorio Auxilio Carretero, incluyendo información de proveedores de auxilio y servicios de emergencia 911 desde una única interfaz.
 """)
 
             if st.button(

@@ -99,25 +99,36 @@ def log_activity(action, page):
 # =================================
 has_ifuel = "ifuel" in user_access
 has_lector = "lector_pdf" in user_access
+has_directorio = "directorio_auxilio" in user_access
 
-if not (has_ifuel or has_lector):
+if not (has_ifuel or has_lector or has_directorio):
     st.error("No tienes permisos para acceder a este módulo.")
     st.stop()
 
-if has_ifuel and has_lector:
+visible_tabs = []
+tab_keys = []
 
-    tab_ifuel, tab_lector = st.tabs([
-        "⛽ Fuel Solutions / iFuel",
-        "📄 Lector PDF",
-    ])
+if has_ifuel:
+    visible_tabs.append("⛽ Fuel Solutions / iFuel")
+    tab_keys.append("ifuel")
 
-elif has_ifuel:
+if has_lector:
+    visible_tabs.append("📄 Lector PDF")
+    tab_keys.append("lector")
 
-    tab_ifuel = st.container()
+if has_directorio:
+    visible_tabs.append("🚨 Directorio Auxilio Carretero")
+    tab_keys.append("directorio")
 
-elif has_lector:
+if len(visible_tabs) > 1:
+    tab_objects = st.tabs(visible_tabs)
+    tab_map = dict(zip(tab_keys, tab_objects))
+else:
+    tab_map = {tab_keys[0]: st.container()}
 
-    tab_lector = st.container()
+tab_ifuel = tab_map.get("ifuel")
+tab_lector = tab_map.get("lector")
+tab_directorio = tab_map.get("directorio")
 
 # =================================
 # I FUEL
@@ -618,6 +629,88 @@ if has_ifuel:
 
         else:
             st.info("Sube el Excel para comenzar.")
+
+# =================================
+# DIRECTORIO AUXILIO CARRETERO
+# =================================
+if has_directorio:
+
+    with tab_directorio:
+
+        log_activity(
+            "Abrió módulo Directorio Auxilio Carretero",
+            "Módulos Extras"
+        )
+
+        st.title("🚨 Directorio Auxilio Carretero")
+        st.caption(
+            "Consulta información de proveedores de auxilio carretero "
+            "y servicios de emergencia 911."
+        )
+
+        directorio_subtabs = st.tabs([
+            "🚨 Directorio",
+            "📞 Auxilio Carretero 911",
+        ])
+
+        # ---------------------------------
+        # DIRECTORIO PRINCIPAL
+        # ---------------------------------
+        with directorio_subtabs[0]:
+
+            try:
+                response = (
+                    supabase
+                    .table("directorio_auxilio_carretero")
+                    .select("*")
+                    .order("id")
+                    .execute()
+                )
+
+                df_directorio = pd.DataFrame(response.data or [])
+
+                if df_directorio.empty:
+                    st.info("No hay registros en el Directorio Auxilio Carretero.")
+                else:
+                    st.dataframe(
+                        df_directorio,
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+            except Exception as exc:
+                st.error("No se pudo cargar el Directorio Auxilio Carretero.")
+                st.caption(f"Detalle técnico: {exc}")
+
+        # ---------------------------------
+        # AUXILIO CARRETERO 911
+        # ---------------------------------
+        with directorio_subtabs[1]:
+
+            try:
+                response = (
+                    supabase
+                    .table("directorio_auxilio_carretero_911")
+                    .select("*")
+                    .order("id")
+                    .execute()
+                )
+
+                df_directorio_911 = pd.DataFrame(response.data or [])
+
+                if df_directorio_911.empty:
+                    st.info("No hay registros en el Directorio Auxilio Carretero 911.")
+                else:
+                    st.dataframe(
+                        df_directorio_911,
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+            except Exception as exc:
+                st.error("No se pudo cargar el Directorio Auxilio Carretero 911.")
+                st.caption(f"Detalle técnico: {exc}")
+
 
 # =================================
 # LECTOR PDF
