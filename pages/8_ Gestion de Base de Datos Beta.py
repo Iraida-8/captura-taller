@@ -3116,6 +3116,7 @@ if is_admin:
             "ai_testing",
             "bonos_operador",
             "consulta_bonos_operador",
+            "directorio_auxilio",
         ]
 
         st.subheader("Administración de Usuarios")
