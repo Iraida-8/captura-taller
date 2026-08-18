@@ -101,34 +101,43 @@ has_ifuel = "ifuel" in user_access
 has_lector = "lector_pdf" in user_access
 has_directorio = "directorio_auxilio" in user_access
 
-if not (has_ifuel or has_lector or has_directorio):
+tab_labels = []
+
+if has_ifuel:
+    tab_labels.append("⛽ Fuel Solutions / iFuel")
+
+if has_lector:
+    tab_labels.append("📄 Lector PDF")
+
+if has_directorio:
+    tab_labels.append("🚨 Directorio Auxilio Carretero")
+
+
+if not tab_labels:
     st.error("No tienes permisos para acceder a este módulo.")
     st.stop()
 
-visible_tabs = []
-tab_keys = []
+
+tabs = st.tabs(tab_labels)
+
+tab_index = 0
+
+tab_ifuel = None
+tab_lector = None
+tab_directorio = None
+
 
 if has_ifuel:
-    visible_tabs.append("⛽ Fuel Solutions / iFuel")
-    tab_keys.append("ifuel")
+    tab_ifuel = tabs[tab_index]
+    tab_index += 1
 
 if has_lector:
-    visible_tabs.append("📄 Lector PDF")
-    tab_keys.append("lector")
+    tab_lector = tabs[tab_index]
+    tab_index += 1
 
 if has_directorio:
-    visible_tabs.append("🚨 Directorio Auxilio Carretero")
-    tab_keys.append("directorio")
-
-if len(visible_tabs) > 1:
-    tab_objects = st.tabs(visible_tabs)
-    tab_map = dict(zip(tab_keys, tab_objects))
-else:
-    tab_map = {tab_keys[0]: st.container()}
-
-tab_ifuel = tab_map.get("ifuel")
-tab_lector = tab_map.get("lector")
-tab_directorio = tab_map.get("directorio")
+    tab_directorio = tabs[tab_index]
+    tab_index += 1
 
 # =================================
 # I FUEL
@@ -637,79 +646,64 @@ if has_directorio:
 
     with tab_directorio:
 
-        log_activity(
-            "Abrió módulo Directorio Auxilio Carretero",
-            "Módulos Extras"
-        )
-
         st.title("🚨 Directorio Auxilio Carretero")
+
         st.caption(
             "Consulta información de proveedores de auxilio carretero "
-            "y servicios de emergencia 911."
+            "y servicios de emergencia."
         )
 
-        directorio_subtabs = st.tabs([
-            "🚨 Directorio",
-            "📞 Auxilio Carretero 911",
+        directorio_tab1, directorio_tab2 = st.tabs([
+            "📖 Directorio",
+            "🚨 Auxilio Carretero 911",
         ])
 
-        # ---------------------------------
-        # DIRECTORIO PRINCIPAL
-        # ---------------------------------
-        with directorio_subtabs[0]:
+        # =================================
+        # 1. DIRECTORIO
+        # =================================
+        with directorio_tab1:
 
-            try:
-                response = (
-                    supabase
-                    .table("directorio_auxilio_carretero")
-                    .select("*")
-                    .order("id")
-                    .execute()
+            response = (
+                supabase
+                .table("directorio_auxilio_carretero")
+                .select("*")
+                .execute()
+            )
+
+            if response.data:
+                df_directorio = pd.DataFrame(response.data)
+
+                st.dataframe(
+                    df_directorio,
+                    use_container_width=True,
+                    hide_index=True,
                 )
+            else:
+                st.info("No hay registros en el Directorio Auxilio Carretero.")
 
-                df_directorio = pd.DataFrame(response.data or [])
 
-                if df_directorio.empty:
-                    st.info("No hay registros en el Directorio Auxilio Carretero.")
-                else:
-                    st.dataframe(
-                        df_directorio,
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+        # =================================
+        # 2. AUXILIO CARRETERO 911
+        # =================================
+        with directorio_tab2:
 
-            except Exception as exc:
-                st.error("No se pudo cargar el Directorio Auxilio Carretero.")
-                st.caption(f"Detalle técnico: {exc}")
+            response_911 = (
+                supabase
+                .table("directorio_auxilio_carretero_911")
+                .select("*")
+                .execute()
+            )
 
-        # ---------------------------------
-        # AUXILIO CARRETERO 911
-        # ---------------------------------
-        with directorio_subtabs[1]:
+            if response_911.data:
+                df_911 = pd.DataFrame(response_911.data)
 
-            try:
-                response = (
-                    supabase
-                    .table("directorio_auxilio_carretero_911")
-                    .select("*")
-                    .order("id")
-                    .execute()
+                st.dataframe(
+                    df_911,
+                    use_container_width=True,
+                    hide_index=True,
                 )
-
-                df_directorio_911 = pd.DataFrame(response.data or [])
-
-                if df_directorio_911.empty:
-                    st.info("No hay registros en el Directorio Auxilio Carretero 911.")
-                else:
-                    st.dataframe(
-                        df_directorio_911,
-                        use_container_width=True,
-                        hide_index=True,
-                    )
-
-            except Exception as exc:
-                st.error("No se pudo cargar el Directorio Auxilio Carretero 911.")
-                st.caption(f"Detalle técnico: {exc}")
+            else:
+                st.info("No hay registros en Auxilio Carretero 911.")
 
 
 # =================================
