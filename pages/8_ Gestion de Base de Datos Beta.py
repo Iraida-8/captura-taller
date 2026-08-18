@@ -85,6 +85,7 @@ if is_admin:
         tab_refacciones,
         tab_proveedores,
         tab_tc,
+        tab_directorio,
         tab_admin,
         tab_audit,
     ) = st.tabs([
@@ -92,6 +93,7 @@ if is_admin:
         "Refacciones",
         "Proveedores IVA",
         "TC Mensual",
+        "Directorio Auxilio Carretero",
         "👤 Administración de Usuarios",
         "📋 Audit",
     ])
@@ -103,11 +105,13 @@ else:
         tab_refacciones,
         tab_proveedores,
         tab_tc,
+        tab_directorio,
     ) = st.tabs([
         "Gestión, Creación y Carga de Unidades",
         "Refacciones",
         "Proveedores IVA",
         "TC Mensual",
+        "Directorio Auxilio Carretero",
     ])
 
 if st.session_state.get("success_modal"):
@@ -264,6 +268,7 @@ df_units = load_table("vehicle_units")
 df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
+df_directorio = load_table("directorio_auxilio_carretero")
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
@@ -1786,6 +1791,759 @@ with tab_tc:
                 )
 
                 st.rerun()
+
+# ==========================================
+# DIRECTORIO AUXILIO CARRETERO
+# ==========================================
+with tab_directorio:
+
+    st.subheader("Directorio Auxilio Carretero")
+
+    directorio_columns = [
+        "id",
+        "estado",
+        "ciudad_municipio",
+        "corredor",
+        "categoria",
+        "proveedor",
+        "telefono_principal",
+        "telefono_alterno_whatsapp",
+        "direccion",
+        "horario",
+        "servicio_movil",
+        "equipo_pesado",
+        "cobertura_declarada",
+        "servicios",
+        "precio_criterio",
+        "calificacion_publica",
+        "resenas",
+        "nivel",
+        "validacion_telefonica",
+        "fecha_verificacion_web",
+        "proximidad_uso_sugerido",
+        "busqueda_en_maps",
+    ]
+
+    directorio_labels = {
+        "id": "ID",
+        "estado": "Estado",
+        "ciudad_municipio": "Ciudad / municipio",
+        "corredor": "Corredor",
+        "categoria": "Categoría",
+        "proveedor": "Proveedor",
+        "telefono_principal": "Teléfono principal",
+        "telefono_alterno_whatsapp": "Teléfono alterno / WhatsApp",
+        "direccion": "Dirección",
+        "horario": "Horario",
+        "servicio_movil": "Servicio móvil",
+        "equipo_pesado": "Equipo pesado",
+        "cobertura_declarada": "Cobertura declarada",
+        "servicios": "Servicios",
+        "precio_criterio": "Precio / criterio",
+        "calificacion_publica": "Calificación pública",
+        "resenas": "Reseñas",
+        "nivel": "Nivel",
+        "validacion_telefonica": "Validación telefónica",
+        "fecha_verificacion_web": "Fecha verificación web",
+        "proximidad_uso_sugerido": "Proximidad / uso sugerido",
+        "busqueda_en_maps": "Búsqueda en Maps",
+    }
+
+    directorio_excel_map = {
+        "ID": "id",
+        "Estado": "estado",
+        "Ciudad / municipio": "ciudad_municipio",
+        "Corredor": "corredor",
+        "Categoría": "categoria",
+        "Proveedor": "proveedor",
+        "Teléfono principal": "telefono_principal",
+        "Teléfono alterno / WhatsApp": "telefono_alterno_whatsapp",
+        "Dirección": "direccion",
+        "Horario": "horario",
+        "Servicio móvil": "servicio_movil",
+        "Equipo pesado": "equipo_pesado",
+        "Cobertura declarada": "cobertura_declarada",
+        "Servicios": "servicios",
+        "Precio / criterio": "precio_criterio",
+        "Calificación pública": "calificacion_publica",
+        "Reseñas": "resenas",
+        "Nivel": "nivel",
+        "Validación telefónica": "validacion_telefonica",
+        "Fecha verificación web": "fecha_verificacion_web",
+        "Proximidad / uso sugerido": "proximidad_uso_sugerido",
+        "Búsqueda en Maps": "busqueda_en_maps",
+    }
+
+    # ==========================================
+    # DOWNLOAD TABLE
+    # ==========================================
+    excel_buffer = BytesIO()
+
+    df_directorio_download = (
+        df_directorio.reindex(columns=directorio_columns)
+        if not df_directorio.empty
+        else pd.DataFrame(columns=directorio_columns)
+    )
+
+    df_directorio_download = df_directorio_download.rename(
+        columns=directorio_labels
+    )
+
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_directorio_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Directorio",
+        )
+
+    excel_buffer.seek(0)
+
+    st.download_button(
+        "📥 Descargar Tabla",
+        data=excel_buffer,
+        file_name="Directorio_Auxilio_Carretero.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TABLE
+    # ==========================================
+    st.dataframe(
+        df_directorio_download,
+        use_container_width=True,
+        hide_index=True,
+        height=450,
+    )
+
+    st.divider()
+
+    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
+        "➕ Agregar Entrada",
+        "✏️ Modificar Entrada",
+        "🗑 Eliminar Entrada",
+        "🔄 Reemplazar Tabla",
+    ])
+
+    # =====================================================
+    # ADD
+    # =====================================================
+    with tab_add:
+
+        with st.form("add_directorio"):
+
+            st.markdown("##### Información de la entrada")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                dir_id = st.text_input("ID")
+                estado = st.text_input("Estado")
+                ciudad_municipio = st.text_input("Ciudad / municipio")
+                corredor = st.text_input("Corredor")
+                categoria = st.text_input("Categoría")
+                proveedor = st.text_input("Proveedor")
+                telefono_principal = st.text_input("Teléfono principal")
+                telefono_alterno_whatsapp = st.text_input(
+                    "Teléfono alterno / WhatsApp"
+                )
+
+            with col2:
+                direccion = st.text_input("Dirección")
+                horario = st.text_input("Horario")
+                servicio_movil = st.text_input("Servicio móvil")
+                equipo_pesado = st.text_input("Equipo pesado")
+                cobertura_declarada = st.text_input("Cobertura declarada")
+                servicios = st.text_area("Servicios")
+                precio_criterio = st.text_input("Precio / criterio")
+
+            with col3:
+                calificacion_publica = st.number_input(
+                    "Calificación pública",
+                    min_value=0.0,
+                    max_value=5.0,
+                    value=0.0,
+                    step=0.1,
+                    format="%.1f",
+                )
+                resenas = st.text_input("Reseñas")
+                nivel = st.text_input("Nivel")
+                validacion_telefonica = st.text_input(
+                    "Validación telefónica"
+                )
+                fecha_verificacion_web = st.date_input(
+                    "Fecha verificación web",
+                    value=datetime.now().date(),
+                )
+                proximidad_uso_sugerido = st.text_area(
+                    "Proximidad / uso sugerido"
+                )
+                busqueda_en_maps = st.text_input("Búsqueda en Maps")
+
+            submitted = st.form_submit_button(
+                "Agregar Entrada",
+                use_container_width=True,
+            )
+
+            if submitted:
+
+                dir_id = dir_id.strip()
+
+                if not dir_id:
+                    st.error("El ID es obligatorio.")
+
+                elif not proveedor.strip():
+                    st.error("El proveedor es obligatorio.")
+
+                elif not df_directorio[
+                    df_directorio["id"].astype(str) == dir_id
+                ].empty:
+                    st.error("Ya existe una entrada con ese ID.")
+
+                else:
+
+                    record = {
+                        "id": dir_id,
+                        "estado": estado.strip(),
+                        "ciudad_municipio": ciudad_municipio.strip(),
+                        "corredor": corredor.strip(),
+                        "categoria": categoria.strip(),
+                        "proveedor": proveedor.strip(),
+                        "telefono_principal": telefono_principal.strip(),
+                        "telefono_alterno_whatsapp": telefono_alterno_whatsapp.strip(),
+                        "direccion": direccion.strip(),
+                        "horario": horario.strip(),
+                        "servicio_movil": servicio_movil.strip(),
+                        "equipo_pesado": equipo_pesado.strip(),
+                        "cobertura_declarada": cobertura_declarada.strip(),
+                        "servicios": servicios.strip(),
+                        "precio_criterio": precio_criterio.strip(),
+                        "calificacion_publica": float(calificacion_publica),
+                        "resenas": resenas.strip(),
+                        "nivel": nivel.strip(),
+                        "validacion_telefonica": validacion_telefonica.strip(),
+                        "fecha_verificacion_web": fecha_verificacion_web.isoformat(),
+                        "proximidad_uso_sugerido": proximidad_uso_sugerido.strip(),
+                        "busqueda_en_maps": busqueda_en_maps.strip(),
+                    }
+
+                    supabase.table(
+                        "directorio_auxilio_carretero"
+                    ).insert(record).execute()
+
+                    log_action(
+                        "INSERT",
+                        "directorio_auxilio_carretero",
+                        dir_id,
+                        f"Agregó entrada {dir_id} - {proveedor.strip()}",
+                    )
+
+                    st.cache_data.clear()
+                    st.success("Entrada agregada correctamente.")
+                    st.rerun()
+
+    # =====================================================
+    # EDIT
+    # =====================================================
+    with tab_edit:
+
+        if df_directorio.empty:
+
+            st.info("No existen entradas en el directorio.")
+
+        else:
+
+            df_directorio_edit = df_directorio.copy()
+
+            df_directorio_edit["display"] = (
+                df_directorio_edit["id"].astype(str)
+                + " — "
+                + df_directorio_edit["proveedor"].fillna("").astype(str)
+            )
+
+            selected_display = st.selectbox(
+                "Selecciona la entrada",
+                df_directorio_edit["display"].tolist(),
+                key="edit_directorio",
+            )
+
+            row = df_directorio_edit[
+                df_directorio_edit["display"] == selected_display
+            ].iloc[0]
+
+            def _str_value(value):
+                if pd.isna(value):
+                    return ""
+                return str(value)
+
+            with st.form("edit_directorio_form"):
+
+                st.markdown(
+                    f"##### Modificando: `{row['id']}`"
+                )
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    dir_id = st.text_input(
+                        "ID",
+                        value=_str_value(row["id"]),
+                    )
+                    estado = st.text_input(
+                        "Estado",
+                        value=_str_value(row["estado"]),
+                    )
+                    ciudad_municipio = st.text_input(
+                        "Ciudad / municipio",
+                        value=_str_value(row["ciudad_municipio"]),
+                    )
+                    corredor = st.text_input(
+                        "Corredor",
+                        value=_str_value(row["corredor"]),
+                    )
+                    categoria = st.text_input(
+                        "Categoría",
+                        value=_str_value(row["categoria"]),
+                    )
+                    proveedor = st.text_input(
+                        "Proveedor",
+                        value=_str_value(row["proveedor"]),
+                    )
+                    telefono_principal = st.text_input(
+                        "Teléfono principal",
+                        value=_str_value(row["telefono_principal"]),
+                    )
+                    telefono_alterno_whatsapp = st.text_input(
+                        "Teléfono alterno / WhatsApp",
+                        value=_str_value(row["telefono_alterno_whatsapp"]),
+                    )
+
+                with col2:
+                    direccion = st.text_input(
+                        "Dirección",
+                        value=_str_value(row["direccion"]),
+                    )
+                    horario = st.text_input(
+                        "Horario",
+                        value=_str_value(row["horario"]),
+                    )
+                    servicio_movil = st.text_input(
+                        "Servicio móvil",
+                        value=_str_value(row["servicio_movil"]),
+                    )
+                    equipo_pesado = st.text_input(
+                        "Equipo pesado",
+                        value=_str_value(row["equipo_pesado"]),
+                    )
+                    cobertura_declarada = st.text_input(
+                        "Cobertura declarada",
+                        value=_str_value(row["cobertura_declarada"]),
+                    )
+                    servicios = st.text_area(
+                        "Servicios",
+                        value=_str_value(row["servicios"]),
+                    )
+                    precio_criterio = st.text_input(
+                        "Precio / criterio",
+                        value=_str_value(row["precio_criterio"]),
+                    )
+
+                with col3:
+                    try:
+                        calificacion_value = float(row["calificacion_publica"])
+                        if pd.isna(calificacion_value):
+                            calificacion_value = 0.0
+                    except (TypeError, ValueError):
+                        calificacion_value = 0.0
+
+                    calificacion_publica = st.number_input(
+                        "Calificación pública",
+                        min_value=0.0,
+                        max_value=5.0,
+                        value=calificacion_value,
+                        step=0.1,
+                        format="%.1f",
+                    )
+
+                    resenas = st.text_input(
+                        "Reseñas",
+                        value=_str_value(row["resenas"]),
+                    )
+                    nivel = st.text_input(
+                        "Nivel",
+                        value=_str_value(row["nivel"]),
+                    )
+                    validacion_telefonica = st.text_input(
+                        "Validación telefónica",
+                        value=_str_value(row["validacion_telefonica"]),
+                    )
+
+                    try:
+                        fecha_actual = pd.to_datetime(
+                            row["fecha_verificacion_web"]
+                        ).date()
+                    except (TypeError, ValueError):
+                        fecha_actual = datetime.now().date()
+
+                    fecha_verificacion_web = st.date_input(
+                        "Fecha verificación web",
+                        value=fecha_actual,
+                    )
+                    proximidad_uso_sugerido = st.text_area(
+                        "Proximidad / uso sugerido",
+                        value=_str_value(row["proximidad_uso_sugerido"]),
+                    )
+                    busqueda_en_maps = st.text_input(
+                        "Búsqueda en Maps",
+                        value=_str_value(row["busqueda_en_maps"]),
+                    )
+
+                submitted = st.form_submit_button(
+                    "Guardar Cambios",
+                    use_container_width=True,
+                )
+
+                if submitted:
+
+                    dir_id = dir_id.strip()
+
+                    duplicate = df_directorio[
+                        (df_directorio["id"].astype(str) == dir_id)
+                        & (df_directorio["id"].astype(str) != str(row["id"]))
+                    ]
+
+                    if not dir_id:
+                        st.error("El ID es obligatorio.")
+
+                    elif not proveedor.strip():
+                        st.error("El proveedor es obligatorio.")
+
+                    elif not duplicate.empty:
+                        st.error("Ya existe otra entrada con ese ID.")
+
+                    else:
+
+                        update_data = {
+                            "id": dir_id,
+                            "estado": estado.strip(),
+                            "ciudad_municipio": ciudad_municipio.strip(),
+                            "corredor": corredor.strip(),
+                            "categoria": categoria.strip(),
+                            "proveedor": proveedor.strip(),
+                            "telefono_principal": telefono_principal.strip(),
+                            "telefono_alterno_whatsapp": telefono_alterno_whatsapp.strip(),
+                            "direccion": direccion.strip(),
+                            "horario": horario.strip(),
+                            "servicio_movil": servicio_movil.strip(),
+                            "equipo_pesado": equipo_pesado.strip(),
+                            "cobertura_declarada": cobertura_declarada.strip(),
+                            "servicios": servicios.strip(),
+                            "precio_criterio": precio_criterio.strip(),
+                            "calificacion_publica": float(calificacion_publica),
+                            "resenas": resenas.strip(),
+                            "nivel": nivel.strip(),
+                            "validacion_telefonica": validacion_telefonica.strip(),
+                            "fecha_verificacion_web": fecha_verificacion_web.isoformat(),
+                            "proximidad_uso_sugerido": proximidad_uso_sugerido.strip(),
+                            "busqueda_en_maps": busqueda_en_maps.strip(),
+                        }
+
+                        supabase.table(
+                            "directorio_auxilio_carretero"
+                        ).update(update_data).eq(
+                            "id", row["id"]
+                        ).execute()
+
+                        log_action(
+                            "UPDATE",
+                            "directorio_auxilio_carretero",
+                            dir_id,
+                            f"Modificó entrada {dir_id} - {proveedor.strip()}",
+                        )
+
+                        st.cache_data.clear()
+                        st.success("Entrada actualizada correctamente.")
+                        st.rerun()
+
+    # =====================================================
+    # DELETE
+    # =====================================================
+    with tab_delete:
+
+        if df_directorio.empty:
+
+            st.info("No existen entradas en el directorio.")
+
+        else:
+
+            df_directorio_delete = df_directorio.copy()
+
+            df_directorio_delete["display"] = (
+                df_directorio_delete["id"].astype(str)
+                + " — "
+                + df_directorio_delete["proveedor"].fillna("").astype(str)
+            )
+
+            selected_display = st.selectbox(
+                "Selecciona la entrada",
+                df_directorio_delete["display"].tolist(),
+                key="delete_directorio",
+            )
+
+            row = df_directorio_delete[
+                df_directorio_delete["display"] == selected_display
+            ].iloc[0]
+
+            st.warning(
+                f"⚠️ Se eliminará permanentemente la entrada "
+                f"**{row['id']} — {row['proveedor']}**."
+            )
+
+            if st.button(
+                "🗑 Eliminar Entrada",
+                type="primary",
+                use_container_width=True,
+                key="delete_directorio_button",
+            ):
+
+                supabase.table(
+                    "directorio_auxilio_carretero"
+                ).delete().eq(
+                    "id", row["id"]
+                ).execute()
+
+                log_action(
+                    "DELETE",
+                    "directorio_auxilio_carretero",
+                    str(row["id"]),
+                    f"Eliminó entrada {row['id']} - {row['proveedor']}",
+                )
+
+                st.cache_data.clear()
+                st.success("Entrada eliminada correctamente.")
+                st.rerun()
+
+    # =====================================================
+    # REPLACE TABLE
+    # =====================================================
+    with tab_replace:
+
+        st.warning(
+            "⚠️ Esta acción eliminará TODAS las entradas actuales "
+            "y las reemplazará con el archivo cargado."
+        )
+
+        uploaded = st.file_uploader(
+            "Selecciona el archivo",
+            type=["xlsx", "csv"],
+            key="directorio_replace",
+        )
+
+        if uploaded:
+
+            try:
+                if uploaded.name.lower().endswith(".csv"):
+                    new_df = pd.read_csv(uploaded)
+                else:
+                    # Sheet 1 / first worksheet
+                    new_df = pd.read_excel(uploaded, sheet_name=0)
+
+            except Exception as e:
+                st.error(
+                    f"No fue posible leer el archivo.\n\n{e}"
+                )
+                st.stop()
+
+            # Accept either the Supabase column names or the
+            # original Excel headers from "Directorio".
+            new_df.columns = [
+                str(c).strip()
+                for c in new_df.columns
+            ]
+
+            if set(directorio_excel_map).issubset(set(new_df.columns)):
+                new_df = new_df.rename(
+                    columns=directorio_excel_map
+                )
+            else:
+                new_df.columns = [
+                    str(c).strip().lower()
+                    for c in new_df.columns
+                ]
+
+            st.subheader("Vista previa")
+
+            preview = new_df.rename(
+                columns=directorio_labels
+            )
+
+            st.dataframe(
+                preview,
+                use_container_width=True,
+                hide_index=True,
+                height=350,
+            )
+
+            if st.button(
+                "🔄 Reemplazar Tabla Completa",
+                type="primary",
+                use_container_width=True,
+                key="replace_directorio",
+            ):
+
+                required = set(directorio_columns)
+
+                if not required.issubset(set(new_df.columns)):
+
+                    missing = sorted(
+                        required - set(new_df.columns)
+                    )
+
+                    st.error(
+                        "El archivo no contiene todas las columnas requeridas.\n\n"
+                        f"Faltantes: {', '.join(missing)}"
+                    )
+                    st.stop()
+
+                records_df = new_df[
+                    directorio_columns
+                ].copy()
+
+                # ID and text fields
+                text_columns = [
+                    c for c in directorio_columns
+                    if c not in {
+                        "calificacion_publica",
+                        "fecha_verificacion_web",
+                    }
+                ]
+
+                for column in text_columns:
+                    records_df[column] = (
+                        records_df[column]
+                        .where(records_df[column].notna(), "")
+                        .astype(str)
+                        .str.strip()
+                    )
+
+                # Numeric rating
+                records_df["calificacion_publica"] = pd.to_numeric(
+                    records_df["calificacion_publica"],
+                    errors="coerce",
+                )
+
+                records_df["calificacion_publica"] = (
+                    records_df["calificacion_publica"]
+                    .where(
+                        records_df["calificacion_publica"].notna(),
+                        None,
+                    )
+                )
+
+                # Date
+                records_df["fecha_verificacion_web"] = (
+                    pd.to_datetime(
+                        records_df["fecha_verificacion_web"],
+                        errors="coerce",
+                    )
+                    .dt.strftime("%Y-%m-%d")
+                )
+
+                records_df["fecha_verificacion_web"] = (
+                    records_df["fecha_verificacion_web"]
+                    .where(
+                        records_df["fecha_verificacion_web"].notna(),
+                        None,
+                    )
+                )
+
+                records = records_df.to_dict(
+                    "records"
+                )
+
+                # Remove NaN/NaT values that Supabase cannot accept.
+                cleaned_records = []
+
+                for record in records:
+                    cleaned = {}
+
+                    for key, value in record.items():
+
+                        if pd.isna(value):
+                            cleaned[key] = None
+                        else:
+                            cleaned[key] = value
+
+                    cleaned_records.append(cleaned)
+
+                # Validate IDs before deleting existing data.
+                ids = [
+                    str(record["id"]).strip()
+                    for record in cleaned_records
+                ]
+
+                if any(not record_id for record_id in ids):
+                    st.error(
+                        "Todas las entradas deben tener un ID."
+                    )
+                    st.stop()
+
+                if len(ids) != len(set(ids)):
+                    st.error(
+                        "El archivo contiene IDs duplicados."
+                    )
+                    st.stop()
+
+                if any(
+                    not str(record["proveedor"]).strip()
+                    for record in cleaned_records
+                ):
+                    st.error(
+                        "Todas las entradas deben tener un proveedor."
+                    )
+                    st.stop()
+
+                try:
+
+                    # Delete existing rows
+                    supabase.table(
+                        "directorio_auxilio_carretero"
+                    ).delete().neq(
+                        "id", ""
+                    ).execute()
+
+                    # Insert replacement data
+                    if cleaned_records:
+                        supabase.table(
+                            "directorio_auxilio_carretero"
+                        ).insert(
+                            cleaned_records
+                        ).execute()
+
+                except Exception as e:
+
+                    st.exception(e)
+                    st.stop()
+
+                log_action(
+                    "REPLACE",
+                    "directorio_auxilio_carretero",
+                    f"{len(cleaned_records)} registros",
+                    "Reemplazó completamente la tabla "
+                    "directorio_auxilio_carretero",
+                )
+
+                st.cache_data.clear()
+
+                st.success(
+                    f"Se cargaron correctamente "
+                    f"{len(cleaned_records)} entradas."
+                )
+
+                st.rerun()
+
 
 # ==========================================
 # ADMINISTRACIÓN DE USUARIOS
