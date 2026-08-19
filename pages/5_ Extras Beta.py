@@ -658,6 +658,92 @@ if has_directorio:
             "🚨 Auxilio Carretero 911",
         ])
 
+        def _dir_value(value):
+            if value is None or pd.isna(value):
+                return ""
+            return str(value).strip()
+
+        def _dir_options(df, column):
+            if column not in df.columns:
+                return []
+            return sorted(
+                v for v in df[column].dropna().astype(str).str.strip().unique()
+                if v
+            )
+
+        def _dir_filter(df, search_text, search_columns, filters):
+            result = df.copy()
+
+            if search_text.strip():
+                q = search_text.strip().casefold()
+                mask = pd.Series(False, index=result.index)
+                for column in search_columns:
+                    if column in result.columns:
+                        mask |= (
+                            result[column].fillna("").astype(str)
+                            .str.casefold()
+                            .str.contains(q, regex=False)
+                        )
+                result = result[mask]
+
+            for column, value in filters.items():
+                if column in result.columns and value != "Todos":
+                    result = result[
+                        result[column].fillna("").astype(str) == value
+                    ]
+
+            return result
+
+        st.markdown("""
+        <style>
+        .directorio-postit {
+            background: #fffdf0;
+            border: 1px solid rgba(191,167,95,.45);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 18px;
+            min-height: 205px;
+            box-shadow: 3px 4px 10px rgba(0,0,0,.12);
+        }
+        .directorio-postit-title {
+            font-size: 1.08rem;
+            font-weight: 800;
+            color: #151F6D;
+            margin-bottom: 4px;
+        }
+        .directorio-postit-subtitle {
+            font-size: .85rem;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .directorio-field {
+            margin: 6px 0;
+            line-height: 1.25;
+        }
+        .directorio-label {
+            font-weight: 700;
+            color: #151F6D;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        def _postit(title, subtitle, fields, icon="🚨"):
+            body = f"""
+            <div class="directorio-postit">
+                <div class="directorio-postit-title">{icon} {title}</div>
+                <div class="directorio-postit-subtitle">{subtitle}</div>
+            """
+            for label, value in fields:
+                value = _dir_value(value)
+                if value:
+                    body += (
+                        f'<div class="directorio-field">'
+                        f'<span class="directorio-label">{label}: </span>'
+                        f'{value}</div>'
+                    )
+            return body + "</div>"
+
         # =================================
         # 1. DIRECTORIO
         # =================================
@@ -670,17 +756,83 @@ if has_directorio:
                 .execute()
             )
 
-            if response.data:
-                df_directorio = pd.DataFrame(response.data)
-
-                st.dataframe(
-                    df_directorio,
-                    use_container_width=True,
-                    hide_index=True,
-                )
-            else:
+            if not response.data:
                 st.info("No hay registros en el Directorio Auxilio Carretero.")
+            else:
+                df = pd.DataFrame(response.data)
 
+                search = st.text_input(
+                    "🔎 Buscar",
+                    placeholder="Proveedor, ciudad, estado, servicio, teléfono...",
+                    key="directorio_search",
+                )
+
+                filter_columns = [
+                    c for c in [
+                        "estado",
+                        "ciudad_municipio",
+                        "corredor",
+                        "categoria",
+                        "servicio_movil",
+                        "equipo_pesado",
+                        "nivel",
+                    ] if c in df.columns
+                ]
+
+                filters = {}
+                filter_cols = st.columns(min(4, max(1, len(filter_columns))))
+
+                for i, column in enumerate(filter_columns):
+                    with filter_cols[i % len(filter_cols)]:
+                        filters[column] = st.selectbox(
+                            column.replace("_", " ").title(),
+                            ["Todos"] + _dir_options(df, column),
+                            key=f"dir_filter_{column}",
+                        )
+
+                filtered = _dir_filter(
+                    df,
+                    search,
+                    [
+                        "proveedor", "estado", "ciudad_municipio", "corredor",
+                        "categoria", "telefono_principal",
+                        "telefono_alterno_whatsapp", "direccion", "horario",
+                        "servicio_movil", "equipo_pesado",
+                        "cobertura_declarada", "servicios",
+                        "precio_criterio", "nivel",
+                    ],
+                    filters,
+                )
+
+                st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+
+                if filtered.empty:
+                    st.info("No se encontraron registros con los filtros seleccionados.")
+                else:
+                    for start_row in range(0, len(filtered), 3):
+                        row_cards = filtered.iloc[start_row:start_row + 3]
+                        cols = st.columns(3)
+
+                        for col, (_, row) in zip(cols, row_cards.iterrows()):
+                            with col:
+                                st.markdown(
+                                    _postit(
+                                        _dir_value(row.get("proveedor")),
+                                        _dir_value(row.get("categoria")),
+                                        [
+                                            ("📍 Ubicación", row.get("ciudad_municipio")),
+                                            ("🗺️ Estado", row.get("estado")),
+                                            ("🛣️ Corredor", row.get("corredor")),
+                                            ("📞 Teléfono", row.get("telefono_principal")),
+                                            ("📱 Alterno", row.get("telefono_alterno_whatsapp")),
+                                            ("🔧 Servicios", row.get("servicios")),
+                                            ("🚛 Equipo", row.get("equipo_pesado")),
+                                            ("🕐 Horario", row.get("horario")),
+                                            ("⭐ Nivel", row.get("nivel")),
+                                        ],
+                                    ),
+                                    unsafe_allow_html=True,
+                                )
 
         # =================================
         # 2. AUXILIO CARRETERO 911
@@ -694,17 +846,77 @@ if has_directorio:
                 .execute()
             )
 
-            if response_911.data:
-                df_911 = pd.DataFrame(response_911.data)
-
-                st.dataframe(
-                    df_911,
-                    use_container_width=True,
-                    hide_index=True,
-                )
-            else:
+            if not response_911.data:
                 st.info("No hay registros en Auxilio Carretero 911.")
+            else:
+                df = pd.DataFrame(response_911.data)
 
+                search = st.text_input(
+                    "🔎 Buscar",
+                    placeholder="Estado, corredor, contacto, servicio, teléfono...",
+                    key="directorio_911_search",
+                )
+
+                filter_columns = [
+                    c for c in [
+                        "estado_ambito",
+                        "corredor",
+                        "servicio",
+                        "nivel",
+                    ] if c in df.columns
+                ]
+
+                filters = {}
+                filter_cols = st.columns(min(4, max(1, len(filter_columns))))
+
+                for i, column in enumerate(filter_columns):
+                    with filter_cols[i % len(filter_cols)]:
+                        filters[column] = st.selectbox(
+                            column.replace("_", " ").title(),
+                            ["Todos"] + _dir_options(df, column),
+                            key=f"dir911_filter_{column}",
+                        )
+
+                filtered = _dir_filter(
+                    df,
+                    search,
+                    [
+                        "estado_ambito", "corredor", "contacto",
+                        "principal", "alterno", "servicio",
+                        "horario", "fuente", "nivel", "observaciones",
+                    ],
+                    filters,
+                )
+
+                st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+
+                if filtered.empty:
+                    st.info("No se encontraron registros con los filtros seleccionados.")
+                else:
+                    for start_row in range(0, len(filtered), 3):
+                        row_cards = filtered.iloc[start_row:start_row + 3]
+                        cols = st.columns(3)
+
+                        for col, (_, row) in zip(cols, row_cards.iterrows()):
+                            with col:
+                                st.markdown(
+                                    _postit(
+                                        _dir_value(row.get("contacto")),
+                                        _dir_value(row.get("servicio")),
+                                        [
+                                            ("📍 Estado", row.get("estado_ambito")),
+                                            ("🛣️ Corredor", row.get("corredor")),
+                                            ("📞 Principal", row.get("principal")),
+                                            ("📱 Alterno", row.get("alterno")),
+                                            ("🕐 Horario", row.get("horario")),
+                                            ("📚 Fuente", row.get("fuente")),
+                                            ("⭐ Nivel", row.get("nivel")),
+                                            ("📝 Observaciones", row.get("observaciones")),
+                                        ],
+                                        icon="📞",
+                                    ),
+                                    unsafe_allow_html=True,
+                                )
 
 # =================================
 # LECTOR PDF
