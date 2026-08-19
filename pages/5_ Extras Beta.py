@@ -790,49 +790,59 @@ if has_directorio:
                             key=f"dir_filter_{column}",
                         )
 
-                filtered = _dir_filter(
-                    df,
-                    search,
-                    [
-                        "proveedor", "estado", "ciudad_municipio", "corredor",
-                        "categoria", "telefono_principal",
-                        "telefono_alterno_whatsapp", "direccion", "horario",
-                        "servicio_movil", "equipo_pesado",
-                        "cobertura_declarada", "servicios",
-                        "precio_criterio", "nivel",
-                    ],
-                    filters,
+                st.divider()
+
+                show_results = st.button(
+                    "🔎 Mostrar resultados",
+                    key="dir_show_results",
+                    use_container_width=True,
                 )
 
-                st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+                if show_results:
+                    filtered = _dir_filter(
+                        df,
+                        search,
+                        [
+                            "proveedor", "estado", "ciudad_municipio", "corredor",
+                            "categoria", "telefono_principal",
+                            "telefono_alterno_whatsapp", "direccion", "horario",
+                            "servicio_movil", "equipo_pesado",
+                            "cobertura_declarada", "servicios",
+                            "precio_criterio", "nivel",
+                        ],
+                        filters,
+                    )
 
-                if filtered.empty:
-                    st.info("No se encontraron registros con los filtros seleccionados.")
-                else:
-                    for start_row in range(0, len(filtered), 3):
-                        row_cards = filtered.iloc[start_row:start_row + 3]
-                        cols = st.columns(3)
 
-                        for col, (_, row) in zip(cols, row_cards.iterrows()):
-                            with col:
-                                st.markdown(
-                                    _postit(
-                                        _dir_value(row.get("proveedor")),
-                                        _dir_value(row.get("categoria")),
-                                        [
-                                            ("📍 Ubicación", row.get("ciudad_municipio")),
-                                            ("🗺️ Estado", row.get("estado")),
-                                            ("🛣️ Corredor", row.get("corredor")),
-                                            ("📞 Teléfono", row.get("telefono_principal")),
-                                            ("📱 Alterno", row.get("telefono_alterno_whatsapp")),
-                                            ("🔧 Servicios", row.get("servicios")),
-                                            ("🚛 Equipo", row.get("equipo_pesado")),
-                                            ("🕐 Horario", row.get("horario")),
-                                            ("⭐ Nivel", row.get("nivel")),
-                                        ],
-                                    ),
-                                    unsafe_allow_html=True,
-                                )
+                    st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+
+                    if filtered.empty:
+                        st.info("No se encontraron registros con los filtros seleccionados.")
+                    else:
+                        for start_row in range(0, len(filtered), 3):
+                            row_cards = filtered.iloc[start_row:start_row + 3]
+                            cols = st.columns(3)
+
+                            for col, (_, row) in zip(cols, row_cards.iterrows()):
+                                with col:
+                                    st.markdown(
+                                        _postit(
+                                            _dir_value(row.get("proveedor")),
+                                            _dir_value(row.get("categoria")),
+                                            [
+                                                ("📍 Ubicación", row.get("ciudad_municipio")),
+                                                ("🗺️ Estado", row.get("estado")),
+                                                ("🛣️ Corredor", row.get("corredor")),
+                                                ("📞 Teléfono", row.get("telefono_principal")),
+                                                ("📱 Alterno", row.get("telefono_alterno_whatsapp")),
+                                                ("🔧 Servicios", row.get("servicios")),
+                                                ("🚛 Equipo", row.get("equipo_pesado")),
+                                                ("🕐 Horario", row.get("horario")),
+                                                ("⭐ Nivel", row.get("nivel")),
+                                            ],
+                                        ),
+                                        unsafe_allow_html=True,
+                                    )
 
         # =================================
         # 2. AUXILIO CARRETERO 911
@@ -877,46 +887,56 @@ if has_directorio:
                             key=f"dir911_filter_{column}",
                         )
 
-                filtered = _dir_filter(
-                    df,
-                    search,
-                    [
-                        "estado_ambito", "corredor", "contacto",
-                        "principal", "alterno", "servicio",
-                        "horario", "fuente", "nivel", "observaciones",
-                    ],
-                    filters,
+                st.divider()
+
+                show_results = st.button(
+                    "🔎 Mostrar resultados",
+                    key="dir911_show_results",
+                    use_container_width=True,
                 )
 
-                st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+                if show_results:
+                    filtered = _dir_filter(
+                        df,
+                        search,
+                        [
+                            "estado_ambito", "corredor", "contacto",
+                            "principal", "alterno", "servicio",
+                            "horario", "fuente", "nivel", "observaciones",
+                        ],
+                        filters,
+                    )
 
-                if filtered.empty:
-                    st.info("No se encontraron registros con los filtros seleccionados.")
-                else:
-                    for start_row in range(0, len(filtered), 3):
-                        row_cards = filtered.iloc[start_row:start_row + 3]
-                        cols = st.columns(3)
 
-                        for col, (_, row) in zip(cols, row_cards.iterrows()):
-                            with col:
-                                st.markdown(
-                                    _postit(
-                                        _dir_value(row.get("contacto")),
-                                        _dir_value(row.get("servicio")),
-                                        [
-                                            ("📍 Estado", row.get("estado_ambito")),
-                                            ("🛣️ Corredor", row.get("corredor")),
-                                            ("📞 Principal", row.get("principal")),
-                                            ("📱 Alterno", row.get("alterno")),
-                                            ("🕐 Horario", row.get("horario")),
-                                            ("📚 Fuente", row.get("fuente")),
-                                            ("⭐ Nivel", row.get("nivel")),
-                                            ("📝 Observaciones", row.get("observaciones")),
-                                        ],
-                                        icon="📞",
-                                    ),
-                                    unsafe_allow_html=True,
-                                )
+                    st.caption(f"Mostrando {len(filtered):,} de {len(df):,} registros")
+
+                    if filtered.empty:
+                        st.info("No se encontraron registros con los filtros seleccionados.")
+                    else:
+                        for start_row in range(0, len(filtered), 3):
+                            row_cards = filtered.iloc[start_row:start_row + 3]
+                            cols = st.columns(3)
+
+                            for col, (_, row) in zip(cols, row_cards.iterrows()):
+                                with col:
+                                    st.markdown(
+                                        _postit(
+                                            _dir_value(row.get("contacto")),
+                                            _dir_value(row.get("servicio")),
+                                            [
+                                                ("📍 Estado", row.get("estado_ambito")),
+                                                ("🛣️ Corredor", row.get("corredor")),
+                                                ("📞 Principal", row.get("principal")),
+                                                ("📱 Alterno", row.get("alterno")),
+                                                ("🕐 Horario", row.get("horario")),
+                                                ("📚 Fuente", row.get("fuente")),
+                                                ("⭐ Nivel", row.get("nivel")),
+                                                ("📝 Observaciones", row.get("observaciones")),
+                                            ],
+                                            icon="📞",
+                                        ),
+                                        unsafe_allow_html=True,
+                                    )
 
 # =================================
 # LECTOR PDF
