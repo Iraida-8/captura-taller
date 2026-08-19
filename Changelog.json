@@ -1,5 +1,38 @@
 [
     {
+    "version": "2.08.19.26",
+    "date": "19/08/2026",
+    "changes":
+        [
+            "Creación de la tabla Directorio Auxilio Carretero en Supabase para administrar información de proveedores de auxilio carretero",
+            "Implementación de políticas RLS para la tabla Directorio Auxilio Carretero, permitiendo consulta, inserción, actualización y eliminación para usuarios autenticados",
+            "Incorporación de la tabla Directorio Auxilio Carretero 911 en Supabase para administrar información de servicios de emergencia y auxilio carretero",
+            "Implementación de políticas RLS para la tabla Directorio Auxilio Carretero 911, manteniendo el mismo esquema de permisos de la tabla principal",
+            "Incorporación del permiso \"directorio_auxilio\" al módulo Administración de Usuarios para controlar el acceso al Directorio Auxilio Carretero",
+            "Integración del permiso \"directorio_auxilio\" en el Dashboard para mostrar la sección EXTRAS únicamente cuando el usuario cuenta con al menos uno de los permisos habilitados para dicho módulo",
+            "Actualización de la descripción de la sección EXTRAS para incorporar el módulo Directorio Auxilio Carretero y la información de servicios de emergencia 911",
+            "Implementación del tab Directorio Auxilio Carretero dentro de Módulos Extras, controlado mediante el permiso \"directorio_auxilio\"",
+            "Implementación de dos sub-tabs dentro de Directorio Auxilio Carretero para consultar independientemente la información de las tablas Directorio Auxilio Carretero y Directorio Auxilio Carretero 911",
+            "Reemplazo de la visualización directa de las tablas por una interfaz de consulta mediante búsqueda y filtros dinámicos",
+            "Implementación de filtros independientes para Directorio Auxilio Carretero y Directorio Auxilio Carretero 911, incluyendo la opción \"Todos\" para consultar la totalidad de los registros",
+            "Implementación de visualización de resultados mediante tarjetas tipo post-it en lugar de tablas, mostrando la información relevante de cada proveedor o servicio",
+            "Implementación de búsqueda por texto sobre múltiples campos de cada directorio para facilitar la localización de proveedores, contactos, servicios, teléfonos y ubicaciones",
+            "Implementación de separación visual entre los filtros y los resultados, evitando mostrar registros inicialmente y requiriendo la acción \"Mostrar resultados\" para desplegar los post-its",
+            "Mantenimiento sin cambios de los módulos iFuel y Lector PDF dentro de Módulos Extras"
+        ]
+    },
+    {
+    "version": "2.08.14.26",
+    "date": "19/08/2026",
+    "changes":
+        [
+        "Corrección del reporte descargable de Historial de Viajes de Unidad para limpiar el nombre de la unidad antes de generar el archivo Excel",
+        "Implementación de eliminación automática del prefijo de texto y espacio en el campo Unidad del reporte descargado, convirtiendo valores como \"Caja P1001\" en \"P1001\"",
+        "Conservación del nombre original de la unidad utilizado por GPS Insight para las consultas y procesamiento internos, aplicando la limpieza únicamente al valor exportado en el reporte",
+        "Mantenimiento sin cambios de la tabla Datos Completos GPS Insight, la consulta de viajes y el resto de la funcionalidad del Historial de Viajes de Unidad"
+        ]
+    },
+    {
     "version": "2.08.12.26",
     "date": "12/08/2026",
     "changes":
