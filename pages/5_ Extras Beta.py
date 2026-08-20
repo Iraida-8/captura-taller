@@ -9,6 +9,7 @@ from auth import require_login, require_access
 from pages.css import load_css
 import re
 import io
+import html
 import unicodedata
 import pdfplumber
 
@@ -725,10 +726,26 @@ if has_directorio:
             font-weight: 700;
             color: #151F6D;
         }
+        .directorio-maps {
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(21,31,109,.15);
+        }
+        .directorio-maps a {
+            display: inline-block;
+            font-weight: 800;
+            color: #151F6D !important;
+            text-decoration: none !important;
+        }
+        .directorio-maps a:hover {
+            text-decoration: underline !important;
+        }
         </style>
         """, unsafe_allow_html=True)
 
-        def _postit(title, subtitle, fields, icon="🚨"):
+        def _postit(title, subtitle, fields, icon="🚨", maps_url=None):
+            title = html.escape(_dir_value(title))
+            subtitle = html.escape(_dir_value(subtitle))
             body = f"""
             <div class="directorio-postit">
                 <div class="directorio-postit-title">{icon} {title}</div>
@@ -739,9 +756,16 @@ if has_directorio:
                 if value:
                     body += (
                         f'<div class="directorio-field">'
-                        f'<span class="directorio-label">{label}: </span>'
-                        f'{value}</div>'
+                        f'<span class="directorio-label">{html.escape(str(label))}: </span>'
+                        f'{html.escape(value)}</div>'
                     )
+            if maps_url:
+                safe_url = html.escape(_dir_value(maps_url), quote=True)
+                body += (
+                    '<div class="directorio-maps">'
+                    f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer">'
+                    '🗺️ Abrir ubicación en Google Maps ↗</a></div>'
+                )
             return body + "</div>"
 
         # =================================
@@ -833,13 +857,24 @@ if has_directorio:
                                                 ("📍 Ubicación", row.get("ciudad_municipio")),
                                                 ("🗺️ Estado", row.get("estado")),
                                                 ("🛣️ Corredor", row.get("corredor")),
+                                                ("🏷️ Categoría", row.get("categoria")),
                                                 ("📞 Teléfono", row.get("telefono_principal")),
                                                 ("📱 Alterno", row.get("telefono_alterno_whatsapp")),
-                                                ("🔧 Servicios", row.get("servicios")),
-                                                ("🚛 Equipo", row.get("equipo_pesado")),
+                                                ("🏠 Dirección", row.get("direccion")),
                                                 ("🕐 Horario", row.get("horario")),
-                                                ("⭐ Nivel", row.get("nivel")),
+                                                ("🚗 Servicio móvil", row.get("servicio_movil")),
+                                                ("🚛 Equipo pesado", row.get("equipo_pesado")),
+                                                ("🗺️ Cobertura", row.get("cobertura_declarada")),
+                                                ("🔧 Servicios", row.get("servicios")),
+                                                ("💰 Precio", row.get("precio_criterio")),
+                                                ("⭐ Calificación", row.get("calificacion_publica")),
+                                                ("💬 Reseñas", row.get("resenas")),
+                                                ("🏅 Nivel", row.get("nivel")),
+                                                ("📞 Validación", row.get("validacion_telefonica")),
+                                                ("📅 Verificación web", row.get("fecha_verificacion_web")),
+                                                ("📏 Proximidad sugerida", row.get("proximidad_uso_sugerido")),
                                             ],
+                                            maps_url=row.get("busqueda_en_maps"),
                                         ),
                                         unsafe_allow_html=True,
                                     )

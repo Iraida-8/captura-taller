@@ -23,7 +23,7 @@
     },
     {
     "version": "2.08.14.26",
-    "date": "19/08/2026",
+    "date": "17/08/2026",
     "changes":
         [
         "Corrección del reporte descargable de Historial de Viajes de Unidad para limpiar el nombre de la unidad antes de generar el archivo Excel",
