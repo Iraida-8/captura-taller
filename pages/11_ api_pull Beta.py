@@ -3,6 +3,7 @@ import requests
 import io
 import pandas as pd
 import json
+import re
 from supabase import create_client
 import pydeck as pdk
 from auth import require_login, require_access
@@ -10,12 +11,13 @@ import streamlit.components.v1 as components
 from datetime import datetime
 from pages.css import load_css
 
+
 # =================================
 # RELEASE CHANNEL
 # =================================
 
 APP_CHANNEL = "BETA"
-#APP_CHANNEL = "RELEASE"
+# APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
@@ -23,9 +25,11 @@ DASHBOARD_PAGE = (
     else "pages/dashboard.py"
 )
 
+
 # =================================
 # Page configuration
 # =================================
+
 st.set_page_config(
     page_title=(
         "Rastreador y Seguimiento GPS de Unidades BETA"
@@ -35,18 +39,23 @@ st.set_page_config(
     layout="wide"
 )
 
+
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
+
 load_css()
+
 
 # =================================
 # Security gates
 # =================================
+
 require_login()
 require_access("gps_tracking")
 
 user = st.session_state.user
+
 
 # =================================
 # SUPABASE
@@ -60,23 +69,33 @@ def get_supabase():
         st.secrets["SUPABASE_SERVICE_KEY"]
     )
 
+
 supabase = get_supabase()
-        
+
+
 # =================================
 # Defensive modal reset
 # =================================
+
 if st.session_state.get("_reset_gps_page", True):
 
     st.session_state.modal_gps_unit = None
 
     st.session_state["_reset_gps_page"] = False
 
+
 # Initialize modal state
-st.session_state.setdefault("modal_gps_unit", None)
+
+st.session_state.setdefault(
+    "modal_gps_unit",
+    None
+)
+
 
 # =================================
 # Top navigation
 # =================================
+
 st.write("")
 
 if st.button("⬅ Volver al Dashboard"):
@@ -87,7 +106,9 @@ if st.button("⬅ Volver al Dashboard"):
 
     st.switch_page(DASHBOARD_PAGE)
 
+
 st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
+
 
 # =========================================
 # COMPANY FILTERS
@@ -98,11 +119,13 @@ st.session_state.setdefault(
     "TODAS"
 )
 
+
 with st.container(key="company_filters"):
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
 
     with c1:
+
         if st.button(
             "PICUS",
             use_container_width=True,
@@ -110,10 +133,12 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "PICUS"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "PICUS"
             st.rerun()
 
     with c2:
+
         if st.button(
             "LINCOLN",
             use_container_width=True,
@@ -121,10 +146,12 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "LINCOLN"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "LINCOLN"
             st.rerun()
 
     with c3:
+
         if st.button(
             "SET FREIGHT",
             use_container_width=True,
@@ -132,10 +159,12 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "SET FREIGHT"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "SET FREIGHT"
             st.rerun()
 
     with c4:
+
         if st.button(
             "SET LOGIS",
             use_container_width=True,
@@ -143,10 +172,12 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "SET LOGIS"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "SET LOGIS"
             st.rerun()
 
     with c5:
+
         if st.button(
             "OTROS",
             use_container_width=True,
@@ -154,10 +185,12 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "OTROS"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "OTROS"
             st.rerun()
 
     with c6:
+
         if st.button(
             "TODAS",
             use_container_width=True,
@@ -165,8 +198,14 @@ with st.container(key="company_filters"):
             if st.session_state.gps_company_filter == "TODAS"
             else "secondary"
         ):
+
             st.session_state.gps_company_filter = "TODAS"
             st.rerun()
+
+
+# =========================================
+# TABS
+# =========================================
 
 tab_dashboard, tab_seguimiento, tab_mapa, tab_historial = st.tabs([
     "📊 Dashboard",
@@ -175,9 +214,18 @@ tab_dashboard, tab_seguimiento, tab_mapa, tab_historial = st.tabs([
     "📈 Historial",
 ])
 
-#==============================================================================================================
+
+# ==============================================================================================================
 # GPS INSIGHT AUTH
-#==============================================================================================================
+# ==============================================================================================================
+
+# IMPORTANT:
+# GPS Insight authentication remains because the HISTORIAL tab
+# still uses GPS Insight's /vehicle/trips endpoint.
+#
+# It is NOT used to load the current vehicle data for the
+# Dashboard, Seguimiento or Mapa tabs.
+
 
 @st.cache_data(ttl=3600)
 def get_gps_token(
@@ -235,142 +283,142 @@ except Exception as e:
 
     st.stop()
 
-def get_vehicle_locations(
-    session_token
-):
 
-    url = (
-        "https://api.gpsinsight.com/v2/vehicle/location"
-        f"?session_token={session_token}"
-    )
+# ==============================================================================================================
+# CURRENT VEHICLE DATA — SUPABASE
+# ==============================================================================================================
 
-    response = requests.get(
-        url,
-        timeout=30
-    )
+# Dashboard / Seguimiento / Mapa now use gps_vehicle.
+#
+# GPS Insight /vehicle/location is intentionally NOT called here.
+#
+# Historial continues using GPS Insight below.
 
-    response.raise_for_status()
 
-    return (
-        response
-        .json()
-        .get("data", [])
-    )
-
-#==============================================================================================================
-# Location endpoint
 try:
 
-    picus_vehicles = get_vehicle_locations(
-        PICUS_TOKEN
+    vehicle_response = (
+        supabase
+        .table("gps_vehicle")
+        .select("*")
+        .execute()
     )
 
-    pgl_vehicles = get_vehicle_locations(
-        PGL_TOKEN
+    vehicle_data = (
+        vehicle_response.data
+        or []
     )
 
-    for v in picus_vehicles:
-        v["gps_account"] = "PICUS"
-        v["session_token"] = PICUS_TOKEN
-
-    for v in pgl_vehicles:
-        v["gps_account"] = "PGL"
-        v["session_token"] = PGL_TOKEN
-
-    vehicles = (
-        picus_vehicles +
-        pgl_vehicles
-    )
-
-    if vehicles:
+    if vehicle_data:
 
         df = pd.DataFrame(
-            vehicles
+            vehicle_data
         )
-
-        with open(
-            "vehicles.json",
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            json.dump(
-                vehicles,
-                f,
-                indent=4,
-                ensure_ascii=False
-            )
 
     else:
-        st.warning(
-            "No vehicle location data returned."
-        )
 
-except requests.exceptions.RequestException as e:
-
-    st.error(f"Request failed: {e}")
+        df = pd.DataFrame()
 
 except Exception as e:
 
-    st.error(f"Unexpected error: {e}")
+    df = pd.DataFrame()
+
+    st.error(
+        f"Error cargando gps_vehicle desde Supabase: {e}"
+    )
+
 
 # =========================================================
 # GLOBAL DATA PREP
 # =========================================================
-if "df" in locals() and not df.empty:
+
+if not df.empty:
 
     df = df.copy()
 
-    df["label"] = df["label"].astype(str)
+    if "label" in df.columns:
 
-    df["inst_speed"] = pd.to_numeric(
-        df["inst_speed"],
-        errors="coerce"
-    ).fillna(0)
+        df["label"] = (
+            df["label"]
+            .astype(str)
+        )
 
-    df["odometer"] = pd.to_numeric(
-        df["odometer"],
-        errors="coerce"
-    ).fillna(0)
+    if "inst_speed" in df.columns:
 
-    df["voltage"] = pd.to_numeric(
-        df["voltage"],
-        errors="coerce"
-    ).fillna(0)
+        df["inst_speed"] = pd.to_numeric(
+            df["inst_speed"],
+            errors="coerce"
+        ).fillna(0)
+
+    if "odometer" in df.columns:
+
+        df["odometer"] = pd.to_numeric(
+            df["odometer"],
+            errors="coerce"
+        ).fillna(0)
+
+    if "voltage" in df.columns:
+
+        df["voltage"] = pd.to_numeric(
+            df["voltage"],
+            errors="coerce"
+        ).fillna(0)
+
 
 # =========================================================
 # KPI DASHBOARD
 # =========================================================
+
 with tab_dashboard:
 
-    if "df" in locals() and not df.empty:
+    if not df.empty:
 
         st.header("📊 Dashboard Operativo GPS")
+
+        # =========================================
+        # WORKING COPY
+        # =========================================
+
+        dashboard_df = df.copy()
 
         # =========================================
         # COMPANY MASKS
         # =========================================
 
         picus_mask = (
-            df["label"].str.upper().str.contains("PI", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.contains("PI", na=False)
         ) | (
-            df["label"].str.upper().str.match(r"^P\d+", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.match(r"^P\d+", na=False)
         )
 
         lincoln_mask = (
-            df["label"].str.upper().str.contains("LF", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.contains("LF", na=False)
         ) | (
-            df["label"].str.upper().str.match(r"^L\d+", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.match(r"^L\d+", na=False)
         )
 
         set_freight_mask = (
-            df["label"].str.upper().str.contains("SET", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.contains("SET", na=False)
         )
 
         set_logis_mask = (
-            df["label"].str.upper().str.contains("SPL", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.contains("SPL", na=False)
         ) | (
-            df["label"].str.upper().str.contains("STL", na=False)
+            dashboard_df["label"]
+            .str.upper()
+            .str.contains("STL", na=False)
         )
 
         otros_mask = ~(
@@ -390,19 +438,34 @@ with tab_dashboard:
         # =========================================
 
         if company_filter == "PICUS":
-            df = df[picus_mask]
+
+            dashboard_df = dashboard_df[
+                picus_mask
+            ].copy()
 
         elif company_filter == "LINCOLN":
-            df = df[lincoln_mask]
+
+            dashboard_df = dashboard_df[
+                lincoln_mask
+            ].copy()
 
         elif company_filter == "SET FREIGHT":
-            df = df[set_freight_mask]
+
+            dashboard_df = dashboard_df[
+                set_freight_mask
+            ].copy()
 
         elif company_filter == "SET LOGIS":
-            df = df[set_logis_mask]
+
+            dashboard_df = dashboard_df[
+                set_logis_mask
+            ].copy()
 
         elif company_filter == "OTROS":
-            df = df[otros_mask]
+
+            dashboard_df = dashboard_df[
+                otros_mask
+            ].copy()
 
         # =========================================
         # SPEED NORMALIZATION
@@ -411,40 +474,53 @@ with tab_dashboard:
         KM_TO_MILES = 0.621371
         MILES_TO_KM = 1.60934
 
-        # Force clean numeric speeds
-        df["speed_calc"] = pd.to_numeric(
-            df["inst_speed"],
+        dashboard_df["speed_calc"] = pd.to_numeric(
+            dashboard_df["inst_speed"],
             errors="coerce"
         ).fillna(0.0).astype(float)
 
         if company_filter == "TODAS":
 
             picus_rows = (
-                df["label"].str.upper().str.contains("PI", na=False)
+                dashboard_df["label"]
+                .str.upper()
+                .str.contains("PI", na=False)
             ) | (
-                df["label"].str.upper().str.match(r"^P\d+", na=False)
+                dashboard_df["label"]
+                .str.upper()
+                .str.match(r"^P\d+", na=False)
             )
 
             lincoln_rows = (
-                df["label"].str.upper().str.contains("LF", na=False)
+                dashboard_df["label"]
+                .str.upper()
+                .str.contains("LF", na=False)
             ) | (
-                df["label"].str.upper().str.match(r"^L\d+", na=False)
+                dashboard_df["label"]
+                .str.upper()
+                .str.match(r"^L\d+", na=False)
             )
 
             set_freight_rows = (
-                df["label"].str.upper().str.contains(
+                dashboard_df["label"]
+                .str.upper()
+                .str.contains(
                     "SET",
                     na=False
                 )
             )
 
             set_logis_rows = (
-                df["label"].str.upper().str.contains(
+                dashboard_df["label"]
+                .str.upper()
+                .str.contains(
                     "SPL",
                     na=False
                 )
             ) | (
-                df["label"].str.upper().str.contains(
+                dashboard_df["label"]
+                .str.upper()
+                .str.contains(
                     "STL",
                     na=False
                 )
@@ -457,23 +533,17 @@ with tab_dashboard:
                 | set_logis_rows
             )
 
-            # PICUS + OTROS are KM/H
             kmh_rows = (
                 picus_rows
                 | otros_rows
             )
 
-            # PICUS + OTROS are KM/H
-            kmh_rows = (
-                picus_rows
-                | otros_rows
-            )
-
-            # Convert KM/H fleets to MPH
-            df["speed_calc"] = (
-                df["speed_calc"]
+            dashboard_df["speed_calc"] = (
+                dashboard_df["speed_calc"]
                 * (
-                    1 + kmh_rows.astype(float) * (KM_TO_MILES - 1)
+                    1
+                    + kmh_rows.astype(float)
+                    * (KM_TO_MILES - 1)
                 )
             )
 
@@ -482,18 +552,15 @@ with tab_dashboard:
             "OTROS"
         ]:
 
-            # Display native KM/H
-            df["speed_calc"] = pd.to_numeric(
-                df["inst_speed"],
+            dashboard_df["speed_calc"] = pd.to_numeric(
+                dashboard_df["inst_speed"],
                 errors="coerce"
             ).fillna(0.0).astype(float)
 
         else:
 
-            # Lincoln / Set Freight / Set Logis
-            # already operate in MPH
-            df["speed_calc"] = pd.to_numeric(
-                df["inst_speed"],
+            dashboard_df["speed_calc"] = pd.to_numeric(
+                dashboard_df["inst_speed"],
                 errors="coerce"
             ).fillna(0.0).astype(float)
 
@@ -501,16 +568,22 @@ with tab_dashboard:
         # UNIT CLASSIFICATION
         # =========================================
 
-        cajas_df = df[
-            df["label"]
+        cajas_df = dashboard_df[
+            dashboard_df["label"]
             .str.lower()
-            .str.contains("caja", na=False)
+            .str.contains(
+                "caja",
+                na=False
+            )
         ].copy()
 
-        trucks_df = df[
-            ~df["label"]
+        trucks_df = dashboard_df[
+            ~dashboard_df["label"]
             .str.lower()
-            .str.contains("caja", na=False)
+            .str.contains(
+                "caja",
+                na=False
+            )
         ].copy()
 
         # =========================================
@@ -519,7 +592,10 @@ with tab_dashboard:
 
         def format_speed(speed):
 
-            speed = round(float(speed), 1)
+            speed = round(
+                float(speed),
+                1
+            )
 
             if company_filter == "TODAS":
 
@@ -528,7 +604,10 @@ with tab_dashboard:
                     1
                 )
 
-                return f"{speed} mph ({kmh} km/h)"
+                return (
+                    f"{speed} mph "
+                    f"({kmh} km/h)"
+                )
 
             elif company_filter in [
                 "PICUS",
@@ -545,9 +624,14 @@ with tab_dashboard:
         # KPI FUNCTION
         # =========================================
 
-        def render_kpis(dataframe, title):
+        def render_kpis(
+            dataframe,
+            title
+        ):
 
-            total_units = len(dataframe)
+            total_units = len(
+                dataframe
+            )
 
             moving_units = (
                 dataframe["speed_calc"] > 0
@@ -563,6 +647,8 @@ with tab_dashboard:
                 .str.lower()
                 .eq("on")
                 .sum()
+                if "ignition" in dataframe.columns
+                else 0
             )
 
             ignition_off = (
@@ -571,6 +657,8 @@ with tab_dashboard:
                 .str.lower()
                 .eq("off")
                 .sum()
+                if "ignition" in dataframe.columns
+                else 0
             )
 
             avg_speed = (
@@ -591,7 +679,7 @@ with tab_dashboard:
 
             low_voltage = (
                 dataframe["voltage"] < 11
-            ).sum()
+            ).sum() if "voltage" in dataframe.columns else 0
 
             panic_active = 0
 
@@ -599,7 +687,10 @@ with tab_dashboard:
 
                 for val in dataframe["inputs"]:
 
-                    if isinstance(val, dict):
+                    if isinstance(
+                        val,
+                        dict
+                    ):
 
                         if (
                             str(
@@ -610,17 +701,69 @@ with tab_dashboard:
                             ).lower()
                             == "on"
                         ):
+
                             panic_active += 1
+
+                    elif isinstance(
+                        val,
+                        str
+                    ):
+
+                        try:
+
+                            parsed_inputs = json.loads(
+                                val
+                            )
+
+                            if isinstance(
+                                parsed_inputs,
+                                dict
+                            ):
+
+                                if (
+                                    str(
+                                        parsed_inputs.get(
+                                            "Panic Button",
+                                            "off"
+                                        )
+                                    ).lower()
+                                    == "on"
+                                ):
+
+                                    panic_active += 1
+
+                        except Exception:
+
+                            pass
 
             st.subheader(title)
 
             c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-            c1.metric("🚛 Total", total_units)
-            c2.metric("🟢 Movimiento", moving_units)
-            c3.metric("🔴 Detenidas", stopped_units)
-            c4.metric("⚡ Ignición ON", ignition_on)
-            c5.metric("⛔ Ignición OFF", ignition_off)
+            c1.metric(
+                "🚛 Total",
+                total_units
+            )
+
+            c2.metric(
+                "🟢 Movimiento",
+                moving_units
+            )
+
+            c3.metric(
+                "🔴 Detenidas",
+                stopped_units
+            )
+
+            c4.metric(
+                "⚡ Ignición ON",
+                ignition_on
+            )
+
+            c5.metric(
+                "⛔ Ignición OFF",
+                ignition_off
+            )
 
             c6.metric(
                 "🏎️ Vel. Promedio",
@@ -661,10 +804,17 @@ with tab_dashboard:
         )
 
         render_kpis(
-            df,
+            dashboard_df,
             "🌐 KPIs Generales"
         )
-    
+
+    else:
+
+        st.warning(
+            "No hay información de unidades disponible."
+        )
+
+
 # =========================================================
 # INDIVIDUAL UNIT TRACKING
 # =========================================================
@@ -675,50 +825,64 @@ with tab_seguimiento:
 
         speed = float(
             pd.to_numeric(
-                row.get("inst_speed", 0),
+                row.get(
+                    "inst_speed",
+                    0
+                ),
                 errors="coerce"
             ) or 0
         )
 
         label = str(
-            row.get("label", "")
+            row.get(
+                "label",
+                ""
+            )
         ).upper()
 
         if (
             "PI" in label
             or label.startswith("P")
         ):
-            return f"{round(speed,1)} km/h"
+
+            return f"{round(speed, 1)} km/h"
 
         if (
             "LF" in label
             or label.startswith("L")
         ):
-            return f"{round(speed,1)} mph"
+
+            return f"{round(speed, 1)} mph"
 
         if (
             "SPL" in label
             or "STL" in label
         ):
-            return f"{round(speed,1)} mph"
+
+            return f"{round(speed, 1)} mph"
 
         if "SET" in label:
-            return f"{round(speed,1)} mph"
 
-        return f"{round(speed,1)} km/h"
+            return f"{round(speed, 1)} mph"
 
-    if "df" in locals() and not df.empty:
+        return f"{round(speed, 1)} km/h"
 
-        st.header("🚛 Seguimiento Individual de Unidades")
+    if not df.empty:
+
+        st.header(
+            "🚛 Seguimiento Individual de Unidades"
+        )
 
         # =====================================================
         # FILTERS
         # =====================================================
+
         f1, f2, f3 = st.columns(3)
 
         # =============================================
         # UNIT FILTER
         # =============================================
+
         with f1:
 
             unidades = sorted(
@@ -737,6 +901,7 @@ with tab_seguimiento:
         # =============================================
         # IGNITION FILTER
         # =============================================
+
         with f2:
 
             estado_select = st.selectbox(
@@ -747,6 +912,7 @@ with tab_seguimiento:
         # =============================================
         # TYPE FILTER
         # =============================================
+
         with f3:
 
             tipo_select = st.selectbox(
@@ -761,32 +927,26 @@ with tab_seguimiento:
         # =====================================================
         # APPLY FILTERS
         # =====================================================
+
         df_units = df.copy()
 
-        # =============================================
-        # UNIT FILTER
-        # =============================================
         if unidad_select != "Todas":
 
             df_units = df_units[
                 df_units["label"]
-                .astype(str) == unidad_select
+                .astype(str)
+                == unidad_select
             ]
 
-        # =============================================
-        # IGNITION FILTER
-        # =============================================
         if estado_select != "Todos":
 
             df_units = df_units[
                 df_units["ignition"]
                 .astype(str)
-                .str.lower() == estado_select
+                .str.lower()
+                == estado_select
             ]
 
-        # =============================================
-        # TYPE FILTER
-        # =============================================
         if tipo_select == "Caja":
 
             df_units = df_units[
@@ -814,9 +974,11 @@ with tab_seguimiento:
         # =====================================================
         # RESET MODAL ON FILTER CHANGE
         # =====================================================
+
         current_filter_state = (
             unidad_select,
-            estado_select
+            estado_select,
+            tipo_select
         )
 
         previous_filter_state = st.session_state.get(
@@ -828,52 +990,81 @@ with tab_seguimiento:
             st.session_state.modal_gps_unit = None
             st.session_state.gps_page = 1
 
-        st.session_state["_gps_filter_state"] = current_filter_state
-
-        # =====================================================
-        # MODAL STATE
-        # =====================================================
-        st.session_state.setdefault("modal_gps_unit", None)
+        st.session_state[
+            "_gps_filter_state"
+        ] = current_filter_state
 
         # =====================================================
         # PAGINATION
         # =====================================================
+
         ITEMS_PER_PAGE = 10
 
-        total_items = len(df_units)
+        total_items = len(
+            df_units
+        )
 
         total_pages = max(
-            (total_items - 1) // ITEMS_PER_PAGE + 1,
+            (total_items - 1)
+            // ITEMS_PER_PAGE
+            + 1,
             1
         )
 
-        st.session_state.setdefault("gps_page", 1)
+        st.session_state.setdefault(
+            "gps_page",
+            1
+        )
 
-        # Prevent overflow
-        if st.session_state.gps_page > total_pages:
+        if (
+            st.session_state.gps_page
+            > total_pages
+        ):
+
             st.session_state.gps_page = total_pages
 
-        if st.session_state.gps_page < 1:
+        if (
+            st.session_state.gps_page
+            < 1
+        ):
+
             st.session_state.gps_page = 1
 
-        start_idx = (st.session_state.gps_page - 1) * ITEMS_PER_PAGE
-        end_idx = start_idx + ITEMS_PER_PAGE
+        start_idx = (
+            st.session_state.gps_page - 1
+        ) * ITEMS_PER_PAGE
 
-        df_units_page = df_units.iloc[start_idx:end_idx]
+        end_idx = (
+            start_idx
+            + ITEMS_PER_PAGE
+        )
+
+        df_units_page = df_units.iloc[
+            start_idx:end_idx
+        ]
 
         # =====================================================
         # POSTITS
         # =====================================================
-        total = len(df_units_page)
+
+        total = len(
+            df_units_page
+        )
 
         if total == 0:
 
-            st.warning("No se encontraron unidades.")
+            st.warning(
+                "No se encontraron unidades."
+            )
 
         else:
 
             idx = 0
-            rows_needed = (total - 1) // 5 + 1
+
+            rows_needed = (
+                (total - 1) // 5
+                + 1
+            )
 
             for _ in range(rows_needed):
 
@@ -886,14 +1077,56 @@ with tab_seguimiento:
 
                     r = df_units_page.iloc[idx]
 
-                    unidad = str(r.get("label", "-"))
-                    direccion = str(r.get("address", "-"))
-                    velocidad = get_speed_display(r)
-                    ignicion = str(r.get("ignition", "-")).upper()
-                    odometro = r.get("odometer", "-")
-                    speed_label = str(r.get("speed_label", "-"))
-                    ultima_conexion = str(r.get("fix_time", "-"))
-                    voltaje = str(r.get("voltage", "-"))
+                    unidad = str(
+                        r.get(
+                            "label",
+                            "-"
+                        )
+                    )
+
+                    direccion = str(
+                        r.get(
+                            "address",
+                            "-"
+                        )
+                    )
+
+                    velocidad = get_speed_display(
+                        r
+                    )
+
+                    ignicion = str(
+                        r.get(
+                            "ignition",
+                            "-"
+                        )
+                    ).upper()
+
+                    odometro = r.get(
+                        "odometer",
+                        "-"
+                    )
+
+                    speed_label = str(
+                        r.get(
+                            "speed_label",
+                            "-"
+                        )
+                    )
+
+                    ultima_conexion = str(
+                        r.get(
+                            "fix_time",
+                            "-"
+                        )
+                    )
+
+                    voltaje = str(
+                        r.get(
+                            "voltage",
+                            "-"
+                        )
+                    )
 
                     color_estado = (
                         "#D4EDDA"
@@ -935,19 +1168,22 @@ with tab_seguimiento:
                                     margin-top:8px;
                                     font-size:0.8rem;
                                 ">
-                                    <strong>Velocidad:</strong> {velocidad}
+                                    <strong>Velocidad:</strong>
+                                    {velocidad}
                                 </div>
 
                                 <div style="
                                     font-size:0.8rem;
                                 ">
-                                    <strong>Odómetro:</strong> {odometro}
+                                    <strong>Odómetro:</strong>
+                                    {odometro}
                                 </div>
 
                                 <div style="
                                     font-size:0.8rem;
                                 ">
-                                    <strong>Voltaje:</strong> {voltaje}V
+                                    <strong>Voltaje:</strong>
+                                    {voltaje}V
                                 </div>
 
                                 <div style="
@@ -983,27 +1219,40 @@ with tab_seguimiento:
                         </div>
                         """
 
-                        components.html(html, height=310)
+                        components.html(
+                            html,
+                            height=310
+                        )
 
                         # =====================================
                         # BUTTONS
                         # =====================================
+
                         b1, b2 = st.columns(2)
 
                         with b1:
 
                             if st.button(
                                 "👁 Ver",
-                                key=f"gps_unit_{unidad}_{idx}",
+                                key=(
+                                    f"gps_unit_"
+                                    f"{unidad}_"
+                                    f"{idx}"
+                                ),
                                 use_container_width=True
                             ):
-                                st.session_state.modal_gps_unit = None
-                                st.session_state.modal_gps_unit = r.to_dict()
+
+                                st.session_state.modal_gps_unit = (
+                                    r.to_dict()
+                                )
+
                                 st.rerun()
 
                         with b2:
 
-                            excel_df = pd.DataFrame([r])
+                            excel_df = pd.DataFrame(
+                                [r]
+                            )
 
                             excel_filename = (
                                 f"Unidad_{unidad}.xlsx"
@@ -1033,7 +1282,11 @@ with tab_seguimiento:
                                     "vnd.openxmlformats-officedocument."
                                     "spreadsheetml.sheet"
                                 ),
-                                key=f"save_excel_{unidad}_{idx}",
+                                key=(
+                                    f"save_excel_"
+                                    f"{unidad}_"
+                                    f"{idx}"
+                                ),
                                 use_container_width=True
                             )
 
@@ -1042,17 +1295,23 @@ with tab_seguimiento:
         # =====================================================
         # PAGINATION CONTROLS
         # =====================================================
+
         st.divider()
 
-        p1, p2, p3 = st.columns([1,2,1])
+        p1, p2, p3 = st.columns(
+            [1, 2, 1]
+        )
 
         with p1:
 
             if st.button(
                 "⬅ Anterior",
-                disabled=st.session_state.gps_page <= 1,
+                disabled=(
+                    st.session_state.gps_page <= 1
+                ),
                 use_container_width=True
             ):
+
                 st.session_state.gps_page -= 1
                 st.session_state.modal_gps_unit = None
                 st.rerun()
@@ -1067,7 +1326,8 @@ with tab_seguimiento:
                     font-weight:700;
                     color:white;
                 ">
-                    Página {st.session_state.gps_page} de {total_pages}
+                    Página {st.session_state.gps_page}
+                    de {total_pages}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1077,9 +1337,13 @@ with tab_seguimiento:
 
             if st.button(
                 "Siguiente ➡",
-                disabled=st.session_state.gps_page >= total_pages,
+                disabled=(
+                    st.session_state.gps_page
+                    >= total_pages
+                ),
                 use_container_width=True
             ):
+
                 st.session_state.gps_page += 1
                 st.session_state.modal_gps_unit = None
                 st.rerun()
@@ -1088,8 +1352,9 @@ with tab_seguimiento:
         # MODAL
         # =====================================================
 
-        # Force-close stale modal records
-        if st.session_state.get("modal_gps_unit"):
+        if st.session_state.get(
+            "modal_gps_unit"
+        ):
 
             modal_label = str(
                 st.session_state.modal_gps_unit.get(
@@ -1108,16 +1373,27 @@ with tab_seguimiento:
 
                 st.session_state.modal_gps_unit = None
 
-        if st.session_state.get("modal_gps_unit"):
+        if st.session_state.get(
+            "modal_gps_unit"
+        ):
 
-            gps_row = st.session_state.modal_gps_unit
+            gps_row = (
+                st.session_state.modal_gps_unit
+            )
 
-            unidad_modal = gps_row.get("label", "-")
+            unidad_modal = gps_row.get(
+                "label",
+                "-"
+            )
 
-            @st.dialog(f"Unidad {unidad_modal}")
+            @st.dialog(
+                f"Unidad {unidad_modal}"
+            )
             def modal_gps():
 
-                st.subheader("📍 Ubicación")
+                st.subheader(
+                    "📍 Ubicación"
+                )
 
                 st.markdown(
                     f"""
@@ -1129,18 +1405,28 @@ with tab_seguimiento:
                 c1, c2, c3 = st.columns(3)
 
                 with c1:
+
                     st.metric(
                         "Velocidad",
-                        get_speed_display(gps_row)
+                        get_speed_display(
+                            gps_row
+                        )
                     )
 
                 with c2:
+
                     st.metric(
                         "Ignición",
-                        str(gps_row.get("ignition", "-")).upper()
+                        str(
+                            gps_row.get(
+                                "ignition",
+                                "-"
+                            )
+                        ).upper()
                     )
 
                 with c3:
+
                     st.metric(
                         "Voltaje",
                         f"{gps_row.get('voltage', '-')}"
@@ -1148,7 +1434,9 @@ with tab_seguimiento:
 
                 st.divider()
 
-                st.subheader("📡 Información GPS")
+                st.subheader(
+                    "📡 Información GPS"
+                )
 
                 st.markdown(
                     f"""
@@ -1164,7 +1452,9 @@ with tab_seguimiento:
 
                 st.divider()
 
-                st.subheader("👤 Operador")
+                st.subheader(
+                    "👤 Operador"
+                )
 
                 st.markdown(
                     f"""
@@ -1176,14 +1466,39 @@ with tab_seguimiento:
 
                 st.divider()
 
-                st.subheader("🔌 Inputs")
+                st.subheader(
+                    "🔌 Inputs"
+                )
 
-                st.json(gps_row.get("inputs", {}))
+                inputs_value = gps_row.get(
+                    "inputs",
+                    {}
+                )
+
+                if isinstance(
+                    inputs_value,
+                    str
+                ):
+
+                    try:
+
+                        inputs_value = json.loads(
+                            inputs_value
+                        )
+
+                    except Exception:
+
+                        pass
+
+                st.json(
+                    inputs_value
+                )
 
                 if st.button(
                     "Cerrar",
                     key="close_gps_modal"
                 ):
+
                     st.session_state.modal_gps_unit = None
                     st.rerun()
 
@@ -1191,16 +1506,21 @@ with tab_seguimiento:
 
         st.divider()
 
-        st.subheader("📊 Estado de Ignición de Unidades")
+        st.subheader(
+            "📊 Estado de Ignición de Unidades"
+        )
 
         # =====================================================
         # CHARTS
         # =====================================================
+
         col1, col2 = st.columns(2)
 
         with col1:
 
-            st.subheader("Estado de Ignición")
+            st.subheader(
+                "Estado de Ignición"
+            )
 
             ignition_counts = (
                 df["ignition"]
@@ -1208,13 +1528,19 @@ with tab_seguimiento:
                 .value_counts()
             )
 
-            st.bar_chart(ignition_counts)
+            st.bar_chart(
+                ignition_counts
+            )
 
         with col2:
 
-            st.subheader("Distribución de Velocidades")
+            st.subheader(
+                "Distribución de Velocidades"
+            )
 
-            speed_df = df[df["inst_speed"] > 0]
+            speed_df = df[
+                df["inst_speed"] > 0
+            ]
 
             if not speed_df.empty:
 
@@ -1223,13 +1549,17 @@ with tab_seguimiento:
                 )
 
             else:
-                st.info("No se detectaron unidades en movimiento.")
+
+                st.info(
+                    "No se detectaron unidades en movimiento."
+                )
 
         st.divider()
 
         # =====================================================
         # LONGEST STOPPED UNITS
         # =====================================================
+
         with st.expander(
             "🛑 Unidades Detenidas por Más Tiempo",
             expanded=False
@@ -1290,12 +1620,15 @@ with tab_seguimiento:
         # =====================================================
         # LOW VOLTAGE ALERTS
         # =====================================================
+
         with st.expander(
             "🔋 Alertas de Voltaje Bajo",
             expanded=False
         ):
 
-            voltage_df = df[df["voltage"] < 11][[
+            voltage_df = df[
+                df["voltage"] < 11
+            ][[
                 "label",
                 "voltage",
                 "address",
@@ -1338,6 +1671,7 @@ with tab_seguimiento:
                 )
 
             else:
+
                 st.success(
                     "No se detectaron unidades con voltaje bajo."
                 )
@@ -1347,14 +1681,12 @@ with tab_seguimiento:
         # =====================================================
         # FULL UNIT TABLE
         # =====================================================
+
         with st.expander(
             "🚛 Tabla General de Flotilla",
             expanded=False
         ):
 
-            # =====================================
-            # SAFE DATAFRAME COPY
-            # =====================================
             display_df = df.copy()
 
             display_df.drop(
@@ -1374,22 +1706,19 @@ with tab_seguimiento:
                         x,
                         ensure_ascii=False
                     )
-                    if isinstance(x, (dict, list))
+                    if isinstance(
+                        x,
+                        (dict, list)
+                    )
                     else x
                 )
 
-            # =====================================
-            # DISPLAY TABLE
-            # =====================================
             st.dataframe(
                 display_df,
                 use_container_width=True,
                 height=700
             )
 
-            # =====================================
-            # EXPORT
-            # =====================================
             fleet_buffer = io.BytesIO()
 
             with pd.ExcelWriter(
@@ -1419,21 +1748,28 @@ with tab_seguimiento:
 
         st.divider()
 
+    else:
+
+        st.warning(
+            "No hay información de unidades disponible."
+        )
+
+
 # =====================================================
 # LIVE GPS MAP
 # =====================================================
+
 with tab_mapa:
 
     # =====================================================
     # LANDMARKS
     # =====================================================
-    st.header("📍 Landmarks GPS Insight")
+
+    st.header(
+        "📍 Landmarks GPS Insight"
+    )
 
     try:
-
-        # =====================================
-        # LOAD ALL LANDMARKS FROM SUPABASE
-        # =====================================
 
         all_landmarks = []
 
@@ -1470,19 +1806,11 @@ with tab_mapa:
 
             offset += PAGE_SIZE
 
-        # =====================================
-        # BUILD DATAFRAME
-        # =====================================
-
         if all_landmarks:
 
             landmark_df = pd.DataFrame(
                 all_landmarks
             )
-
-            # =====================================
-            # KPIs
-            # =====================================
 
             k1, k2, k3, k4 = st.columns(4)
 
@@ -1520,8 +1848,7 @@ with tab_mapa:
                     (
                         landmark_df["polygon"] == 0
                     ).sum()
-                    if "polygon"
-                    in landmark_df.columns
+                    if "polygon" in landmark_df.columns
                     else 0
                 )
 
@@ -1549,20 +1876,28 @@ with tab_mapa:
 
     landmark_map_df = pd.DataFrame()
 
-    if "landmark_df" in locals() and not landmark_df.empty:
+    if not landmark_df.empty:
 
         landmark_map_df = landmark_df.copy()
 
-        def parse_landmark_coordinates(value):
+        def parse_landmark_coordinates(
+            value
+        ):
 
-            if not isinstance(value, str):
+            if not isinstance(
+                value,
+                str
+            ):
+
                 return []
 
             points = []
 
-            # Each coordinate is separated by whitespace.
-            # DO NOT split on "-" because longitude can be negative.
-            coordinate_pairs = value.strip().split()
+            coordinate_pairs = (
+                value
+                .strip()
+                .split()
+            )
 
             for coordinate in coordinate_pairs:
 
@@ -1570,576 +1905,727 @@ with tab_mapa:
 
                     parts = coordinate.split(",")
 
-                    longitude = float(parts[0])
-                    latitude = float(parts[1])
-
-                    points.append(
-                        [longitude, latitude]
+                    longitude = float(
+                        parts[0]
                     )
 
-                except (ValueError, IndexError):
+                    latitude = float(
+                        parts[1]
+                    )
+
+                    points.append(
+                        [
+                            longitude,
+                            latitude
+                        ]
+                    )
+
+                except (
+                    ValueError,
+                    IndexError
+                ):
+
                     continue
 
             return points
 
-        landmark_map_df["polygon_coordinates"] = (
-            landmark_map_df["coordinates"]
-            .apply(parse_landmark_coordinates)
-        )
+        if "coordinates" in landmark_map_df.columns:
 
-        # Keep only valid polygons
-        landmark_map_df = landmark_map_df[
-            landmark_map_df["polygon_coordinates"].apply(
-                lambda x: len(x) >= 3
+            landmark_map_df[
+                "polygon_coordinates"
+            ] = (
+                landmark_map_df[
+                    "coordinates"
+                ]
+                .apply(
+                    parse_landmark_coordinates
+                )
             )
-        ].copy()
 
-        def get_landmark_center(points):
+            landmark_map_df = (
+                landmark_map_df[
+                    landmark_map_df[
+                        "polygon_coordinates"
+                    ].apply(
+                        lambda x:
+                        len(x) >= 3
+                    )
+                ]
+                .copy()
+            )
 
-            if not points:
-                return [0, 0]
+            def get_landmark_center(
+                points
+            ):
 
-            longitude = sum(
-                point[0] for point in points
-            ) / len(points)
+                if not points:
 
-            latitude = sum(
-                point[1] for point in points
-            ) / len(points)
+                    return [
+                        0,
+                        0
+                    ]
 
-            return [longitude, latitude]
+                longitude = sum(
+                    point[0]
+                    for point in points
+                ) / len(points)
 
-        landmark_map_df["label_position"] = (
-            landmark_map_df["polygon_coordinates"]
-            .apply(get_landmark_center)
-        )
+                latitude = sum(
+                    point[1]
+                    for point in points
+                ) / len(points)
 
-    st.subheader("🗺️ Mapa GPS de Unidades")
+                return [
+                    longitude,
+                    latitude
+                ]
 
-    map_df = df.copy()
+            landmark_map_df[
+                "label_position"
+            ] = (
+                landmark_map_df[
+                    "polygon_coordinates"
+                ]
+                .apply(
+                    get_landmark_center
+                )
+            )
 
-    # =============================================
-    # CLEAN GPS DATA
-    # =============================================
-    map_df["latitude"] = pd.to_numeric(
-        map_df["latitude"],
-        errors="coerce"
+    st.subheader(
+        "🗺️ Mapa GPS de Unidades"
     )
 
-    map_df["longitude"] = pd.to_numeric(
-        map_df["longitude"],
-        errors="coerce"
-    )
+    if df.empty:
 
-    map_df["inst_speed"] = pd.to_numeric(
-        map_df["inst_speed"],
-        errors="coerce"
-    ).fillna(0)
-
-    # =============================================
-    # SPEED DISPLAY
-    # =============================================
-    def get_map_speed(row):
-
-        speed = float(row.get("inst_speed", 0))
-
-        label = str(
-            row.get("label", "")
-        ).upper()
-
-        picus = (
-            "PI" in label
-            or label.startswith("P")
+        st.warning(
+            "No hay unidades disponibles para mostrar en el mapa."
         )
 
-        lincoln = (
-            "LF" in label
-            or label.startswith("L")
+    else:
+
+        map_df = df.copy()
+
+        # =============================================
+        # CLEAN GPS DATA
+        # =============================================
+
+        map_df["latitude"] = pd.to_numeric(
+            map_df["latitude"],
+            errors="coerce"
         )
 
-        set_freight = (
-            "SET" in label
+        map_df["longitude"] = pd.to_numeric(
+            map_df["longitude"],
+            errors="coerce"
         )
 
-        set_logis = (
-            "SPL" in label
-            or "STL" in label
+        map_df["inst_speed"] = pd.to_numeric(
+            map_df["inst_speed"],
+            errors="coerce"
+        ).fillna(0)
+
+        # =============================================
+        # SPEED DISPLAY
+        # =============================================
+
+        def get_map_speed(
+            row
+        ):
+
+            speed = float(
+                row.get(
+                    "inst_speed",
+                    0
+                )
+            )
+
+            label = str(
+                row.get(
+                    "label",
+                    ""
+                )
+            ).upper()
+
+            picus = (
+                "PI" in label
+                or label.startswith("P")
+            )
+
+            lincoln = (
+                "LF" in label
+                or label.startswith("L")
+            )
+
+            set_freight = (
+                "SET" in label
+            )
+
+            set_logis = (
+                "SPL" in label
+                or "STL" in label
+            )
+
+            otros = not (
+                picus
+                or lincoln
+                or set_freight
+                or set_logis
+            )
+
+            if picus or otros:
+
+                return (
+                    f"{round(speed, 1)} km/h"
+                )
+
+            return (
+                f"{round(speed, 1)} mph"
+            )
+
+        map_df["speed_display"] = (
+            map_df.apply(
+                get_map_speed,
+                axis=1
+            )
         )
 
-        otros = not (
-            picus
-            or lincoln
-            or set_freight
-            or set_logis
+        map_df = map_df.dropna(
+            subset=[
+                "latitude",
+                "longitude"
+            ]
         )
 
-        if picus or otros:
-            return f"{round(speed,1)} km/h"
+        # =============================================
+        # STOPPED TIME PARSER
+        # =============================================
 
-        return f"{round(speed,1)} mph"
-
-    map_df["speed_display"] = map_df.apply(
-        get_map_speed,
-        axis=1
-    )
-
-    map_df = map_df.dropna(
-        subset=["latitude", "longitude"]
-    )
-
-    # =============================================
-    # STOPPED TIME PARSER
-    # =============================================
-    import re
-
-    def extract_stopped_minutes(speed_label):
-
-        if not isinstance(speed_label, str):
-            return 0
-
-        speed_label = speed_label.lower()
-
-        total_minutes = 0
-
-        # days
-        d = re.search(r"(\d+)\s*day", speed_label)
-        if d:
-            total_minutes += int(d.group(1)) * 1440
-
-        # hours
-        h = re.search(r"(\d+)\s*hr", speed_label)
-        if h:
-            total_minutes += int(h.group(1)) * 60
-
-        # minutes
-        m = re.search(r"(\d+)\s*min", speed_label)
-        if m:
-            total_minutes += int(m.group(1))
-
-        return total_minutes
-
-    # =============================================
-    # COLOR STATES
-    # =============================================
-    def get_color(row):
-
-        speed = float(
-            row.get("inst_speed", 0)
-        )
-
-        speed_label = str(
-            row.get("speed_label", "")
-        )
-
-        # =====================================
-        # MOVING = GREEN
-        # =====================================
-        if speed > 0:
-            return [0, 255, 0]
-
-        stopped_minutes = extract_stopped_minutes(
+        def extract_stopped_minutes(
             speed_label
-        )
+        ):
 
-        # =====================================
-        # < 1 HOUR = ORANGE
-        # =====================================
-        if stopped_minutes < 60:
-            return [255, 165, 0]
+            if not isinstance(
+                speed_label,
+                str
+            ):
 
-        # =====================================
-        # 1-6 HOURS = RED-ORANGE
-        # =====================================
-        if stopped_minutes < 360:
-            return [255, 80, 0]
+                return 0
 
-        # =====================================
-        # 6-24 HOURS = RED
-        # =====================================
-        if stopped_minutes < 1440:
-            return [255, 0, 0]
-
-        # =====================================
-        # 1-7 DAYS = DARK RED
-        # =====================================
-        if stopped_minutes < 10080:
-            return [139, 0, 0]
-
-        # =====================================
-        # CRITICAL STOPPED = BLACK
-        # =====================================
-        return [0, 0, 0]
-
-    map_df["color"] = map_df.apply(
-        get_color,
-        axis=1
-    )
-
-    # =============================================
-    # MAP FILTERS
-    # =============================================
-
-    # Keep a clean copy of all valid GPS units.
-    map_source_df = map_df.copy()
-
-    filter_col1, filter_col2 = st.columns(2)
-
-    # =============================================
-    # STATUS FILTER
-    # =============================================
-
-    with filter_col1:
-
-        map_status_filter = st.selectbox(
-            "Estado en mapa",
-            [
-                "Todas",
-                "🟢 En Movimiento",
-                "🟠 Detenido < 1 Hora",
-                "🔴 Detenido 1-6 Horas",
-                "🟥 Detenido 6-24 Horas",
-                "⚫ Detenido +1 Día"
-            ],
-            key="map_status_filter"
-        )
-
-    # =============================================
-    # RESET FILTERED DATA
-    # =============================================
-
-    map_df = map_source_df.copy()
-
-    # =============================================
-    # APPLY STATUS FILTER
-    # =============================================
-
-    if map_status_filter == "🟢 En Movimiento":
-
-        map_df = map_df[
-            map_df["inst_speed"] > 0
-        ]
-
-    elif map_status_filter == "🟠 Detenido < 1 Hora":
-
-        map_df = map_df[
-            (map_df["inst_speed"] <= 0)
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) < 60
+            speed_label = (
+                speed_label.lower()
             )
-        ]
 
-    elif map_status_filter == "🔴 Detenido 1-6 Horas":
+            total_minutes = 0
 
-        map_df = map_df[
-            (map_df["inst_speed"] <= 0)
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) >= 60
+            d = re.search(
+                r"(\d+)\s*day",
+                speed_label
             )
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) < 360
+
+            if d:
+
+                total_minutes += (
+                    int(d.group(1))
+                    * 1440
+                )
+
+            h = re.search(
+                r"(\d+)\s*hr",
+                speed_label
             )
-        ]
 
-    elif map_status_filter == "🟥 Detenido 6-24 Horas":
+            if h:
 
-        map_df = map_df[
-            (map_df["inst_speed"] <= 0)
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) >= 360
+                total_minutes += (
+                    int(h.group(1))
+                    * 60
+                )
+
+            m = re.search(
+                r"(\d+)\s*min",
+                speed_label
             )
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) < 1440
-            )
-        ]
 
-    elif map_status_filter == "⚫ Detenido +1 Día":
+            if m:
 
-        map_df = map_df[
-            (map_df["inst_speed"] <= 0)
-            &
-            (
-                map_df["speed_label"]
-                .apply(extract_stopped_minutes) >= 1440
-            )
-        ]
+                total_minutes += (
+                    int(m.group(1))
+                )
 
-    # =============================================
-    # UNIT FILTER
-    # =============================================
-
-    with filter_col2:
-
-        # The Unidad dropdown is populated from the
-        # dataset already filtered by Estado en mapa.
-        map_unit_options = sorted(
-            map_df["label"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        map_unit_filter = st.selectbox(
-            "Unidad en mapa",
-            ["Todas"] + map_unit_options,
-            key="map_unit_filter"
-        )
-
-    # =============================================
-    # APPLY UNIT FILTER
-    # =============================================
-
-    if map_unit_filter != "Todas":
-
-        map_df = map_df[
-            map_df["label"]
-            .astype(str)
-            .eq(map_unit_filter)
-        ]
-        
-    # =============================================
-    # DISPLAY MAP ONLY IF DATA EXISTS
-    # =============================================
-
-    if not map_df.empty:
+            return total_minutes
 
         # =============================================
-        # LANDMARK POLYGON LAYER
+        # COLOR STATES
         # =============================================
 
-        landmark_layers = []
+        def get_color(
+            row
+        ):
 
-        if not landmark_map_df.empty:
-
-            landmark_map_df["tooltip_title"] = (
-                "📍 " + landmark_map_df["label"].astype(str)
+            speed = float(
+                row.get(
+                    "inst_speed",
+                    0
+                )
             )
 
-            landmark_map_df["tooltip_info"] = (
-                "Cuenta: "
-                + landmark_map_df["gps_account"].astype(str)
+            speed_label = str(
+                row.get(
+                    "speed_label",
+                    ""
+                )
             )
 
-            landmark_polygon_layer = pdk.Layer(
-                "PolygonLayer",
-                data=landmark_map_df,
+            if speed > 0:
 
-                get_polygon="polygon_coordinates",
+                return [
+                    0,
+                    255,
+                    0
+                ]
 
-                get_fill_color=[21, 31, 109, 55],
-
-                get_line_color=[21, 31, 109, 230],
-
-                line_width_min_pixels=5,
-                line_width_max_pixels=8,
-
-                filled=True,
-                stroked=True,
-
-                pickable=True,
-                auto_highlight=True,
+            stopped_minutes = (
+                extract_stopped_minutes(
+                    speed_label
+                )
             )
 
-            landmark_layers = [
-                landmark_polygon_layer,
+            if stopped_minutes < 60:
+
+                return [
+                    255,
+                    165,
+                    0
+                ]
+
+            if stopped_minutes < 360:
+
+                return [
+                    255,
+                    80,
+                    0
+                ]
+
+            if stopped_minutes < 1440:
+
+                return [
+                    255,
+                    0,
+                    0
+                ]
+
+            if stopped_minutes < 10080:
+
+                return [
+                    139,
+                    0,
+                    0
+                ]
+
+            return [
+                0,
+                0,
+                0
+            ]
+
+        map_df["color"] = (
+            map_df.apply(
+                get_color,
+                axis=1
+            )
+        )
+
+        # =============================================
+        # MAP FILTERS
+        # =============================================
+
+        map_source_df = map_df.copy()
+
+        filter_col1, filter_col2 = st.columns(2)
+
+        with filter_col1:
+
+            map_status_filter = st.selectbox(
+                "Estado en mapa",
+                [
+                    "Todas",
+                    "🟢 En Movimiento",
+                    "🟠 Detenido < 1 Hora",
+                    "🔴 Detenido 1-6 Horas",
+                    "🟥 Detenido 6-24 Horas",
+                    "⚫ Detenido +1 Día"
+                ],
+                key="map_status_filter"
+            )
+
+        map_df = map_source_df.copy()
+
+        # =============================================
+        # APPLY STATUS FILTER
+        # =============================================
+
+        if map_status_filter == "🟢 En Movimiento":
+
+            map_df = map_df[
+                map_df["inst_speed"] > 0
+            ]
+
+        elif map_status_filter == "🟠 Detenido < 1 Hora":
+
+            map_df = map_df[
+                (
+                    map_df["inst_speed"] <= 0
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    < 60
+                )
+            ]
+
+        elif map_status_filter == "🔴 Detenido 1-6 Horas":
+
+            map_df = map_df[
+                (
+                    map_df["inst_speed"] <= 0
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    >= 60
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    < 360
+                )
+            ]
+
+        elif map_status_filter == "🟥 Detenido 6-24 Horas":
+
+            map_df = map_df[
+                (
+                    map_df["inst_speed"] <= 0
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    >= 360
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    < 1440
+                )
+            ]
+
+        elif map_status_filter == "⚫ Detenido +1 Día":
+
+            map_df = map_df[
+                (
+                    map_df["inst_speed"] <= 0
+                )
+                &
+                (
+                    map_df["speed_label"]
+                    .apply(
+                        extract_stopped_minutes
+                    )
+                    >= 1440
+                )
             ]
 
         # =============================================
-        # VEHICLE TOOLTIP FIELDS
+        # UNIT FILTER
         # =============================================
 
-        map_df["tooltip_title"] = (
-            "🚛 " + map_df["label"].astype(str)
-        )
+        with filter_col2:
 
-        map_df["tooltip_info"] = (
-            "Latitud: " + map_df["latitude"].astype(str)
-            + " | Longitud: " + map_df["longitude"].astype(str)
-            + " | Velocidad: " + map_df["speed_display"].astype(str)
-            + " | Ignición: " + map_df["ignition"].astype(str)
-            + " | Tiempo detenido: " + map_df["speed_label"].astype(str)
-            + " | Dirección: " + map_df["address"].astype(str)
-        )
+            map_unit_options = sorted(
+                map_df["label"]
+                .dropna()
+                .astype(str)
+                .unique()
+                .tolist()
+            )
 
-        # =============================================
-        # PYDECK VEHICLE LAYER
-        # =============================================
+            map_unit_filter = st.selectbox(
+                "Unidad en mapa",
+                ["Todas"] + map_unit_options,
+                key="map_unit_filter"
+            )
 
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=map_df,
+        if map_unit_filter != "Todas":
 
-            get_position="[longitude, latitude]",
-
-            get_fill_color="color",
-
-            radius_units="pixels",
-
-            get_radius=12,
-
-            radius_min_pixels=6,
-            radius_max_pixels=30,
-
-            pickable=True,
-            auto_highlight=True,
-
-            stroked=True,
-            filled=True,
-
-            line_width_min_pixels=2,
-
-            get_line_color=[255, 255, 255]
-        )
-
-        # =============================================
-        # TOOLTIP
-        # =============================================
-
-        tooltip = {
-            "html": """
-                <b>{tooltip_title}</b><br/>
-                {tooltip_info}
-            """,
-            "style": {
-                "backgroundColor": "#1B267A",
-                "color": "white"
-            }
-        }
-
-        # =============================================
-        # VIEW STATE
-        # =============================================
-
-        view_state = pdk.ViewState(
-            latitude=map_df["latitude"].mean(),
-            longitude=map_df["longitude"].mean(),
-            zoom=6.5,
-            pitch=0
-        )
+            map_df = map_df[
+                map_df["label"]
+                .astype(str)
+                .eq(
+                    map_unit_filter
+                )
+            ]
 
         # =============================================
         # DISPLAY MAP
         # =============================================
 
-        st.pydeck_chart(
-            pdk.Deck(
-                height=700,
+        if not map_df.empty:
 
-                layers=landmark_layers + [layer],
+            landmark_layers = []
 
-                initial_view_state=view_state,
+            if not landmark_map_df.empty:
 
-                tooltip=tooltip,
-
-                map_style="light"
-            ),
-            use_container_width=True
-        )
-
-        # =============================================
-        # GPS COORDINATE REPORT
-        # =============================================
-
-        with st.expander(
-            "📍 Coordenadas de Unidades",
-            expanded=False
-        ):
-
-            coords_df = map_df[[
-                "label",
-                "latitude",
-                "longitude",
-                "address",
-                "ignition",
-                "speed_display",
-                "speed_label"
-            ]].copy()
-
-            coords_df.rename(
-                columns={
-                    "label": "Unidad",
-                    "latitude": "Latitud",
-                    "longitude": "Longitud",
-                    "address": "Dirección",
-                    "ignition": "Ignición",
-                    "speed_display": "Velocidad",
-                    "speed_label": "Tiempo detenido"
-                },
-                inplace=True
-            )
-
-            st.dataframe(
-                coords_df,
-                use_container_width=True,
-                height=300
-            )
-
-            # =========================================
-            # DOWNLOAD COORDINATES REPORT
-            # =========================================
-
-            coordinates_buffer = io.BytesIO()
-
-            with pd.ExcelWriter(
-                coordinates_buffer,
-                engine="openpyxl"
-            ) as writer:
-
-                coords_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Coordenadas"
+                landmark_map_df[
+                    "tooltip_title"
+                ] = (
+                    "📍 "
+                    + landmark_map_df[
+                        "label"
+                    ].astype(str)
                 )
 
-            coordinates_buffer.seek(0)
+                landmark_map_df[
+                    "tooltip_info"
+                ] = (
+                    "Cuenta: "
+                    + landmark_map_df[
+                        "gps_account"
+                    ].astype(str)
+                )
 
-            st.download_button(
-                label="💾 Descargar Coordenadas de Unidades",
-                data=coordinates_buffer,
-                file_name="Coordenadas_Unidades_GPS.xlsx",
-                mime=(
-                    "application/"
-                    "vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
+                landmark_polygon_layer = pdk.Layer(
+                    "PolygonLayer",
+                    data=landmark_map_df,
+                    get_polygon="polygon_coordinates",
+                    get_fill_color=[
+                        21,
+                        31,
+                        109,
+                        55
+                    ],
+                    get_line_color=[
+                        21,
+                        31,
+                        109,
+                        230
+                    ],
+                    line_width_min_pixels=5,
+                    line_width_max_pixels=8,
+                    filled=True,
+                    stroked=True,
+                    pickable=True,
+                    auto_highlight=True,
+                )
+
+                landmark_layers = [
+                    landmark_polygon_layer
+                ]
+
+            # =============================================
+            # VEHICLE TOOLTIP FIELDS
+            # =============================================
+
+            map_df["tooltip_title"] = (
+                "🚛 "
+                + map_df["label"].astype(str)
+            )
+
+            map_df["tooltip_info"] = (
+                "Latitud: "
+                + map_df["latitude"].astype(str)
+                + " | Longitud: "
+                + map_df["longitude"].astype(str)
+                + " | Velocidad: "
+                + map_df["speed_display"].astype(str)
+                + " | Ignición: "
+                + map_df["ignition"].astype(str)
+                + " | Tiempo detenido: "
+                + map_df["speed_label"].astype(str)
+                + " | Dirección: "
+                + map_df["address"].astype(str)
+            )
+
+            # =============================================
+            # PYDECK VEHICLE LAYER
+            # =============================================
+
+            layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=map_df,
+                get_position="[longitude, latitude]",
+                get_fill_color="color",
+                radius_units="pixels",
+                get_radius=12,
+                radius_min_pixels=6,
+                radius_max_pixels=30,
+                pickable=True,
+                auto_highlight=True,
+                stroked=True,
+                filled=True,
+                line_width_min_pixels=2,
+                get_line_color=[
+                    255,
+                    255,
+                    255
+                ]
+            )
+
+            # =============================================
+            # TOOLTIP
+            # =============================================
+
+            tooltip = {
+                "html": """
+                    <b>{tooltip_title}</b><br/>
+                    {tooltip_info}
+                """,
+                "style": {
+                    "backgroundColor": "#1B267A",
+                    "color": "white"
+                }
+            }
+
+            # =============================================
+            # VIEW STATE
+            # =============================================
+
+            view_state = pdk.ViewState(
+                latitude=map_df["latitude"].mean(),
+                longitude=map_df["longitude"].mean(),
+                zoom=6.5,
+                pitch=0
+            )
+
+            # =============================================
+            # DISPLAY MAP
+            # =============================================
+
+            st.pydeck_chart(
+                pdk.Deck(
+                    height=700,
+                    layers=(
+                        landmark_layers
+                        + [layer]
+                    ),
+                    initial_view_state=view_state,
+                    tooltip=tooltip,
+                    map_style="light"
                 ),
                 use_container_width=True
             )
 
-    else:
+            # =============================================
+            # GPS COORDINATE REPORT
+            # =============================================
 
-        st.warning(
-            "No se encontraron unidades que coincidan con los filtros seleccionados."
-        )
+            with st.expander(
+                "📍 Coordenadas de Unidades",
+                expanded=False
+            ):
+
+                coords_df = map_df[[
+                    "label",
+                    "latitude",
+                    "longitude",
+                    "address",
+                    "ignition",
+                    "speed_display",
+                    "speed_label"
+                ]].copy()
+
+                coords_df.rename(
+                    columns={
+                        "label": "Unidad",
+                        "latitude": "Latitud",
+                        "longitude": "Longitud",
+                        "address": "Dirección",
+                        "ignition": "Ignición",
+                        "speed_display": "Velocidad",
+                        "speed_label": "Tiempo detenido"
+                    },
+                    inplace=True
+                )
+
+                st.dataframe(
+                    coords_df,
+                    use_container_width=True,
+                    height=300
+                )
+
+                coordinates_buffer = io.BytesIO()
+
+                with pd.ExcelWriter(
+                    coordinates_buffer,
+                    engine="openpyxl"
+                ) as writer:
+
+                    coords_df.to_excel(
+                        writer,
+                        index=False,
+                        sheet_name="Coordenadas"
+                    )
+
+                coordinates_buffer.seek(0)
+
+                st.download_button(
+                    label="💾 Descargar Coordenadas de Unidades",
+                    data=coordinates_buffer,
+                    file_name="Coordenadas_Unidades_GPS.xlsx",
+                    mime=(
+                        "application/"
+                        "vnd.openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+                    use_container_width=True
+                )
+
+        else:
+
+            st.warning(
+                "No se encontraron unidades que coincidan "
+                "con los filtros seleccionados."
+            )
 
 
 # =====================================================
 # UNIT TRIP HISTORY
 # =====================================================
+
 with tab_historial:
 
-    st.header("📈 Historial de Viajes de Unidad")
+    st.header(
+        "📈 Historial de Viajes de Unidad"
+    )
 
     try:
 
         if df.empty:
 
-            st.warning("No hay unidades cargadas.")
+            st.warning(
+                "No hay unidades cargadas."
+            )
 
         else:
 
             # =========================================
             # UNIT SELECTOR
             # =========================================
+
             unit_options = sorted(
                 df["label"]
                 .dropna()
@@ -2158,7 +2644,10 @@ with tab_historial:
             # SPEED / DISTANCE UNITS
             # =====================================
 
-            selected_label = str(selected_unit).upper()
+            selected_label = (
+                str(selected_unit)
+                .upper()
+            )
 
             is_kmh_unit = (
                 "PI" in selected_label
@@ -2186,19 +2675,37 @@ with tab_historial:
                 or is_set_logis
             )
 
-            distance_unit = "km" if (is_kmh_unit or is_otros) else "mi"
-            speed_unit = "km/h" if (is_kmh_unit or is_otros) else "mph"
+            distance_unit = (
+                "km"
+                if (
+                    is_kmh_unit
+                    or is_otros
+                )
+                else "mi"
+            )
+
+            speed_unit = (
+                "km/h"
+                if (
+                    is_kmh_unit
+                    or is_otros
+                )
+                else "mph"
+            )
 
             # =========================================
             # DATE FILTERS
             # =========================================
+
             c1, c2 = st.columns(2)
 
             with c1:
 
                 start_date = st.date_input(
                     "Fecha Inicial",
-                    value=pd.to_datetime("2026-05-01"),
+                    value=pd.to_datetime(
+                        "2026-05-01"
+                    ),
                     key="trip_start"
                 )
 
@@ -2221,12 +2728,20 @@ with tab_historial:
             # =========================================
             # REQUEST
             # =========================================
-            vehicle_row = (
-                df.loc[df["label"] == selected_unit]
-                .iloc[0]
-            )
 
-            token = vehicle_row["session_token"]
+            # IMPORTANT:
+            # The vehicle list comes from Supabase,
+            # but the trip history continues to come
+            # directly from GPS Insight.
+
+            token = (
+                PICUS_TOKEN
+                if (
+                    "PI" in selected_label
+                    or selected_label.startswith("P")
+                )
+                else PGL_TOKEN
+            )
 
             url = (
                 "https://api.gpsinsight.com/v2/"
@@ -2259,11 +2774,14 @@ with tab_historial:
 
             else:
 
-                activity_df = pd.DataFrame(data)
+                activity_df = pd.DataFrame(
+                    data
+                )
 
                 # =====================================
                 # ONLY REAL TRIPS
                 # =====================================
+
                 trip_df = activity_df[
                     activity_df["trip_type"] == "T"
                 ].copy()
@@ -2279,6 +2797,7 @@ with tab_historial:
                     # =====================================
                     # NUMERIC CLEANUP
                     # =====================================
+
                     numeric_cols = [
                         "trip_distance",
                         "max_speed",
@@ -2288,14 +2807,17 @@ with tab_historial:
 
                     for col in numeric_cols:
 
-                        trip_df[col] = pd.to_numeric(
-                            trip_df[col],
-                            errors="coerce"
-                        ).fillna(0)
+                        if col in trip_df.columns:
+
+                            trip_df[col] = pd.to_numeric(
+                                trip_df[col],
+                                errors="coerce"
+                            ).fillna(0)
 
                     # =====================================
                     # VIN
                     # =====================================
+
                     vin = trip_df.iloc[0].get(
                         "vin",
                         "-"
@@ -2308,8 +2830,11 @@ with tab_historial:
                     # =====================================
                     # KPIs
                     # =====================================
+
                     total_km = round(
-                        trip_df["trip_distance"].sum(),
+                        trip_df[
+                            "trip_distance"
+                        ].sum(),
                         1
                     )
 
@@ -2318,12 +2843,16 @@ with tab_historial:
                     )
 
                     max_speed = round(
-                        trip_df["max_speed"].max(),
+                        trip_df[
+                            "max_speed"
+                        ].max(),
                         1
                     )
 
                     avg_speed = round(
-                        trip_df["avg_speed"].mean(),
+                        trip_df[
+                            "avg_speed"
+                        ].mean(),
                         1
                     )
 
@@ -2354,6 +2883,7 @@ with tab_historial:
                     # =====================================
                     # DISPLAY TABLE
                     # =====================================
+
                     trip_display = trip_df[[
                         "trip_start",
                         "trip_end",
@@ -2376,11 +2906,13 @@ with tab_historial:
                     )
 
                     trip_display["Duración"] = (
-                        trip_display["Duración (Seg)"]
+                        trip_display[
+                            "Duración (Seg)"
+                        ]
                         .apply(
                             lambda x:
-                            f"{int(x//3600)}h "
-                            f"{int((x%3600)//60)}m"
+                            f"{int(x // 3600)}h "
+                            f"{int((x % 3600) // 60)}m"
                         )
                     )
 
@@ -2393,15 +2925,23 @@ with tab_historial:
                         "Vel Promedio"
                     ]]
 
-                    trip_display["Vel Máxima"] = (
-                        trip_display["Vel Máxima"]
+                    trip_display[
+                        "Vel Máxima"
+                    ] = (
+                        trip_display[
+                            "Vel Máxima"
+                        ]
                         .round(1)
                         .astype(str)
                         + f" {speed_unit}"
                     )
 
-                    trip_display["Vel Promedio"] = (
-                        trip_display["Vel Promedio"]
+                    trip_display[
+                        "Vel Promedio"
+                    ] = (
+                        trip_display[
+                            "Vel Promedio"
+                        ]
                         .round(1)
                         .astype(str)
                         + f" {speed_unit}"
@@ -2420,6 +2960,7 @@ with tab_historial:
                     # =====================================
                     # FULL DEBUG
                     # =====================================
+
                     with st.expander(
                         "🔍 Datos Completos GPS Insight",
                         expanded=False
@@ -2434,27 +2975,65 @@ with tab_historial:
                     # =====================================
                     # EXPORT
                     # =====================================
+
                     export_df = trip_df.copy()
 
-                    # =====================================
-                    # CLEAN UNIT NAME FOR EXPORT
-                    # =====================================
+                    export_unit = str(
+                        selected_unit
+                    ).strip()
 
-                    export_unit = str(selected_unit).strip()
-
-                    # Remove everything before the first space.
                     if " " in export_unit:
-                        export_unit = export_unit.split(" ", 1)[1].strip()
 
-                    # Add ONLY new summary columns.
-                    # Do NOT duplicate existing fields like VIN, max_speed, avg_speed, etc.
-                    export_df.insert(0, "Unidad", export_unit)
-                    export_df.insert(1, "Reporte Fecha Inicial", start_str)
-                    export_df.insert(2, "Reporte Fecha Final", end_str)
-                    export_df.insert(3, "Reporte Total Viajes", total_trips)
-                    export_df.insert(4, f"Reporte Total {distance_unit.upper()}", total_km)
-                    export_df.insert(5, f"Reporte Velocidad Máxima ({speed_unit})", max_speed)
-                    export_df.insert(6, f"Reporte Velocidad Promedio ({speed_unit})", avg_speed)
+                        export_unit = (
+                            export_unit
+                            .split(
+                                " ",
+                                1
+                            )[1]
+                            .strip()
+                        )
+
+                    export_df.insert(
+                        0,
+                        "Unidad",
+                        export_unit
+                    )
+
+                    export_df.insert(
+                        1,
+                        "Reporte Fecha Inicial",
+                        start_str
+                    )
+
+                    export_df.insert(
+                        2,
+                        "Reporte Fecha Final",
+                        end_str
+                    )
+
+                    export_df.insert(
+                        3,
+                        "Reporte Total Viajes",
+                        total_trips
+                    )
+
+                    export_df.insert(
+                        4,
+                        f"Reporte Total {distance_unit.upper()}",
+                        total_km
+                    )
+
+                    export_df.insert(
+                        5,
+                        f"Reporte Velocidad Máxima ({speed_unit})",
+                        max_speed
+                    )
+
+                    export_df.insert(
+                        6,
+                        f"Reporte Velocidad Promedio ({speed_unit})",
+                        avg_speed
+                    )
 
                     export_buffer = io.BytesIO()
 
@@ -2474,33 +3053,44 @@ with tab_historial:
                     st.download_button(
                         label="💾 Descargar Reporte Completo",
                         data=export_buffer,
-                        file_name=f"Historial_{selected_unit}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        file_name=(
+                            f"Historial_{selected_unit}.xlsx"
+                        ),
+                        mime=(
+                            "application/vnd.openxmlformats-officedocument."
+                            "spreadsheetml.sheet"
+                        ),
                         use_container_width=True
                     )
 
-        # =====================================================
+        # =================================================
         # GENERAL FLEET TRIP HISTORY
-        # =====================================================
+        # =================================================
 
         st.divider()
 
-        st.subheader("📊 Historial General de Flotilla")
+        st.subheader(
+            "📊 Historial General de Flotilla"
+        )
 
         st.write(
             "Reporte consolidado de viajes de todas las unidades "
             "para el rango de fechas seleccionado."
         )
 
-        # =====================================================
+        # =================================================
         # GENERATE REPORT BUTTON
-        # =====================================================
+        # =================================================
+
+        st.session_state.setdefault(
+            "gps_history_report_generated",
+            False
+        )
 
         if not st.session_state.gps_history_report_generated:
 
             st.info(
                 "Presiona el botón para consultar todas las unidades."
-                "Se deshabilitará temporalmente la actualización automática de la página mientras se genera el reporte."
             )
 
             if st.button(
@@ -2508,9 +3098,10 @@ with tab_historial:
                 type="primary",
                 use_container_width=True
             ):
+
                 st.session_state.gps_history_report_generated = True
 
-                st.stop()
+                st.rerun()
 
         else:
 
@@ -2533,22 +3124,35 @@ with tab_historial:
                 text="Preparando historial de flotilla..."
             )
 
-            total_units = len(fleet_units)
+            total_units = len(
+                fleet_units
+            )
 
-            for index, fleet_unit in enumerate(fleet_units):
+            for index, fleet_unit in enumerate(
+                fleet_units
+            ):
 
                 try:
 
                     # =============================================
-                    # GET UNIT TOKEN
+                    # GET CORRECT TOKEN
                     # =============================================
 
-                    fleet_vehicle_row = (
-                        df.loc[df["label"] == fleet_unit]
-                        .iloc[0]
+                    fleet_label = (
+                        str(fleet_unit)
+                        .upper()
                     )
 
-                    fleet_token = fleet_vehicle_row["session_token"]
+                    if (
+                        "PI" in fleet_label
+                        or fleet_label.startswith("P")
+                    ):
+
+                        fleet_token = PICUS_TOKEN
+
+                    else:
+
+                        fleet_token = PGL_TOKEN
 
                     # =============================================
                     # BUILD REQUEST
@@ -2574,11 +3178,15 @@ with tab_historial:
 
                     fleet_response.raise_for_status()
 
-                    fleet_result = fleet_response.json()
+                    fleet_result = (
+                        fleet_response.json()
+                    )
 
-                    fleet_data = fleet_result.get(
-                        "data",
-                        []
+                    fleet_data = (
+                        fleet_result.get(
+                            "data",
+                            []
+                        )
                     )
 
                     # =============================================
@@ -2591,15 +3199,24 @@ with tab_historial:
                             fleet_data
                         )
 
-                        if "trip_type" in fleet_activity_df.columns:
+                        if (
+                            "trip_type"
+                            in fleet_activity_df.columns
+                        ):
 
-                            fleet_trip_df = fleet_activity_df[
-                                fleet_activity_df["trip_type"] == "T"
-                            ].copy()
+                            fleet_trip_df = (
+                                fleet_activity_df[
+                                    fleet_activity_df[
+                                        "trip_type"
+                                    ] == "T"
+                                ].copy()
+                            )
 
                         else:
 
-                            fleet_trip_df = pd.DataFrame()
+                            fleet_trip_df = (
+                                pd.DataFrame()
+                            )
 
                         # =========================================
                         # ADD UNIT
@@ -2679,15 +3296,22 @@ with tab_historial:
                 # DISPLAY TABLE
                 # =============================================
 
-                fleet_display = fleet_trip_df.copy()
+                fleet_display = (
+                    fleet_trip_df.copy()
+                )
 
                 # =============================================
                 # DISTANCE UNIT
                 # =============================================
 
-                def fleet_distance_unit(unit):
+                def fleet_distance_unit(
+                    unit
+                ):
 
-                    unit_label = str(unit).upper()
+                    unit_label = (
+                        str(unit)
+                        .upper()
+                    )
 
                     picus = (
                         "PI" in unit_label
@@ -2713,11 +3337,14 @@ with tab_historial:
                 # SPEED UNIT
                 # =============================================
 
-                def fleet_speed_unit(unit):
+                def fleet_speed_unit(
+                    unit
+                ):
 
                     return (
                         "km/h"
-                        if fleet_distance_unit(unit) == "km"
+                        if fleet_distance_unit(unit)
+                        == "km"
                         else "mph"
                     )
 
@@ -2727,13 +3354,13 @@ with tab_historial:
 
                 if "trip_distance" in fleet_display.columns:
 
-                    fleet_display["Distancia"] = (
-                        fleet_display.apply(
-                            lambda row:
-                            f"{round(float(row['trip_distance']), 1)} "
-                            f"{fleet_distance_unit(row['Unidad'])}",
-                            axis=1
-                        )
+                    fleet_display[
+                        "Distancia"
+                    ] = fleet_display.apply(
+                        lambda row:
+                        f"{round(float(row['trip_distance']), 1)} "
+                        f"{fleet_distance_unit(row['Unidad'])}",
+                        axis=1
                     )
 
                 # =============================================
@@ -2742,8 +3369,12 @@ with tab_historial:
 
                 if "trip_duration" in fleet_display.columns:
 
-                    fleet_display["Duración"] = (
-                        fleet_display["trip_duration"]
+                    fleet_display[
+                        "Duración"
+                    ] = (
+                        fleet_display[
+                            "trip_duration"
+                        ]
                         .apply(
                             lambda x:
                             f"{int(x // 3600)}h "
@@ -2757,13 +3388,13 @@ with tab_historial:
 
                 if "max_speed" in fleet_display.columns:
 
-                    fleet_display["Vel Máxima"] = (
-                        fleet_display.apply(
-                            lambda row:
-                            f"{round(float(row['max_speed']), 1)} "
-                            f"{fleet_speed_unit(row['Unidad'])}",
-                            axis=1
-                        )
+                    fleet_display[
+                        "Vel Máxima"
+                    ] = fleet_display.apply(
+                        lambda row:
+                        f"{round(float(row['max_speed']), 1)} "
+                        f"{fleet_speed_unit(row['Unidad'])}",
+                        axis=1
                     )
 
                 # =============================================
@@ -2772,13 +3403,13 @@ with tab_historial:
 
                 if "avg_speed" in fleet_display.columns:
 
-                    fleet_display["Vel Promedio"] = (
-                        fleet_display.apply(
-                            lambda row:
-                            f"{round(float(row['avg_speed']), 1)} "
-                            f"{fleet_speed_unit(row['Unidad'])}",
-                            axis=1
-                        )
+                    fleet_display[
+                        "Vel Promedio"
+                    ] = fleet_display.apply(
+                        lambda row:
+                        f"{round(float(row['avg_speed']), 1)} "
+                        f"{fleet_speed_unit(row['Unidad'])}",
+                        axis=1
                     )
 
                 # =============================================
@@ -2813,14 +3444,19 @@ with tab_historial:
                     if col in fleet_display.columns
                 ]
 
-                fleet_display = fleet_display[
-                    available_columns
-                ]
+                fleet_display = (
+                    fleet_display[
+                        available_columns
+                    ]
+                )
 
                 fleet_display.sort_values(
                     by=[
                         col
-                        for col in ["Unidad", "Inicio"]
+                        for col in [
+                            "Unidad",
+                            "Inicio"
+                        ]
                         if col in fleet_display.columns
                     ],
                     inplace=True
@@ -2837,13 +3473,11 @@ with tab_historial:
 
                 st.success(
                     f"Reporte generado correctamente. "
-                    f"Unidades: {fleet_display['Unidad'].nunique()} | "
-                    f"Viajes: {len(fleet_display)}"
+                    f"Unidades: "
+                    f"{fleet_display['Unidad'].nunique()} | "
+                    f"Viajes: "
+                    f"{len(fleet_display)}"
                 )
-
-                # =============================================
-                # TABLE
-                # =============================================
 
                 st.dataframe(
                     fleet_display,
