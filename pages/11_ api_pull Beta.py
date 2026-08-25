@@ -3522,6 +3522,10 @@ with tab_historial:
                                 ignore_index=True
                             )
 
+                            st.session_state["gps_history_report_data"] = (
+                                fleet_trip_df.copy()
+                            )
+
                             # =============================================
                             # NUMERIC CLEANUP
                             # =============================================
@@ -3770,7 +3774,8 @@ with tab_historial:
                                     "vnd.openxmlformats-officedocument."
                                     "spreadsheetml.sheet"
                                 ),
-                                use_container_width=True
+                                use_container_width=True,
+                                on_click="ignore"
                             )
 
                         else:
