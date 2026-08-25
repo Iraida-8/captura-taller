@@ -3410,6 +3410,9 @@ with tab_historial:
 
                         completed_units = 0
 
+                        # Units that successfully returned no trips
+                        units_without_records = []
+
                         # Keep this conservative.
                         # 8 requests will run simultaneously.
                         MAX_WORKERS = 8
@@ -3465,14 +3468,19 @@ with tab_historial:
                                         )
 
                                     # =========================================
-                                    # REPORT UNIT ERROR
+                                    # HANDLE UNITS WITHOUT TRIPS
                                     # =========================================
 
-                                    if unit_error:
+                                    if (
+                                        not unit_error
+                                        and (
+                                            fleet_trip_df is None
+                                            or fleet_trip_df.empty
+                                        )
+                                    ):
 
-                                        st.warning(
-                                            f"No fue posible obtener viajes de "
-                                            f"{result_unit}: {unit_error}"
+                                        units_without_records.append(
+                                            result_unit
                                         )
 
                                 except Exception as future_error:
@@ -3725,14 +3733,30 @@ with tab_historial:
                             # SUMMARY
                             # =============================================
 
-                            st.success(
+                            units_with_records = (
+                                fleet_display["Unidad"].nunique()
+                            )
+
+                            units_without_records_count = (
+                                len(units_without_records)
+                            )
+
+                            message = (
                                 f"Reporte generado correctamente. "
                                 f"Empresa: **{company_filter}** | "
-                                f"Unidades: "
-                                f"{fleet_display['Unidad'].nunique()} | "
-                                f"Viajes: "
-                                f"{len(fleet_display)}"
+                                f"Unidades: **{units_with_records}** | "
+                                f"Viajes: **{len(fleet_display):,}**"
                             )
+
+                            if units_without_records_count > 0:
+
+                                message += (
+                                    f" | **{units_without_records_count} unidades "
+                                    f"no contienen registro en el rango de "
+                                    f"fechas seleccionado.**"
+                                )
+
+                            st.success(message)
 
                             st.dataframe(
                                 fleet_display,
