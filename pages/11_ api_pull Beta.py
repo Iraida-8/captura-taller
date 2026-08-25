@@ -299,7 +299,7 @@ try:
 
     vehicle_response = (
         supabase
-        .table("gps_vehicle")
+        .table("gps_vehicle_history")
         .select("*")
         .execute()
     )
