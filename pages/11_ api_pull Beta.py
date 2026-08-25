@@ -10,6 +10,7 @@ from auth import require_login, require_access
 import streamlit.components.v1 as components
 from datetime import datetime
 from pages.css import load_css
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # =================================
@@ -3119,18 +3120,22 @@ with tab_historial:
                 .tolist()
             )
 
+            total_units = len(fleet_units)
+
             fleet_progress = st.progress(
                 0,
-                text="Preparando historial de flotilla..."
+                text=(
+                    f"Preparando historial de flotilla... "
+                    f"0 de {total_units} unidades"
+                )
             )
 
-            total_units = len(
-                fleet_units
-            )
 
-            for index, fleet_unit in enumerate(
-                fleet_units
-            ):
+            # =================================================
+            # GET TRIPS FOR ONE UNIT
+            # =================================================
+
+            def get_fleet_unit_trips(fleet_unit):
 
                 try:
 
@@ -3138,10 +3143,9 @@ with tab_historial:
                     # GET CORRECT TOKEN
                     # =============================================
 
-                    fleet_label = (
-                        str(fleet_unit)
-                        .upper()
-                    )
+                    fleet_label = str(
+                        fleet_unit
+                    ).upper()
 
                     if (
                         "PI" in fleet_label
@@ -3178,86 +3182,176 @@ with tab_historial:
 
                     fleet_response.raise_for_status()
 
-                    fleet_result = (
-                        fleet_response.json()
-                    )
+                    fleet_result = fleet_response.json()
 
-                    fleet_data = (
-                        fleet_result.get(
-                            "data",
-                            []
-                        )
+                    fleet_data = fleet_result.get(
+                        "data",
+                        []
                     )
 
                     # =============================================
                     # PROCESS TRIPS
                     # =============================================
 
-                    if fleet_data:
+                    if not fleet_data:
 
-                        fleet_activity_df = pd.DataFrame(
-                            fleet_data
+                        return {
+                            "unit": fleet_unit,
+                            "trip_df": pd.DataFrame(),
+                            "error": None
+                        }
+
+                    fleet_activity_df = pd.DataFrame(
+                        fleet_data
+                    )
+
+                    # =============================================
+                    # ONLY REAL TRIPS
+                    # =============================================
+
+                    if "trip_type" not in fleet_activity_df.columns:
+
+                        return {
+                            "unit": fleet_unit,
+                            "trip_df": pd.DataFrame(),
+                            "error": None
+                        }
+
+                    fleet_trip_df = fleet_activity_df[
+                        fleet_activity_df["trip_type"] == "T"
+                    ].copy()
+
+                    # =============================================
+                    # ADD UNIT
+                    # =============================================
+
+                    if not fleet_trip_df.empty:
+
+                        fleet_trip_df.insert(
+                            0,
+                            "Unidad",
+                            fleet_unit
                         )
 
+                    return {
+                        "unit": fleet_unit,
+                        "trip_df": fleet_trip_df,
+                        "error": None
+                    }
+
+                except Exception as unit_error:
+
+                    return {
+                        "unit": fleet_unit,
+                        "trip_df": pd.DataFrame(),
+                        "error": str(unit_error)
+                    }
+
+
+            # =================================================
+            # PARALLEL REQUESTS
+            # =================================================
+
+            completed_units = 0
+
+            # Keep this conservative.
+            # 8 requests will run simultaneously.
+            MAX_WORKERS = 8
+
+            with ThreadPoolExecutor(
+                max_workers=MAX_WORKERS
+            ) as executor:
+
+                future_to_unit = {
+                    executor.submit(
+                        get_fleet_unit_trips,
+                        fleet_unit
+                    ): fleet_unit
+
+                    for fleet_unit in fleet_units
+                }
+
+                for future in as_completed(
+                    future_to_unit
+                ):
+
+                    fleet_unit = future_to_unit[
+                        future
+                    ]
+
+                    try:
+
+                        result = future.result()
+
+                        result_unit = result[
+                            "unit"
+                        ]
+
+                        fleet_trip_df = result[
+                            "trip_df"
+                        ]
+
+                        unit_error = result[
+                            "error"
+                        ]
+
+                        # =========================================
+                        # ADD SUCCESSFUL TRIPS
+                        # =========================================
+
                         if (
-                            "trip_type"
-                            in fleet_activity_df.columns
+                            fleet_trip_df is not None
+                            and not fleet_trip_df.empty
                         ):
-
-                            fleet_trip_df = (
-                                fleet_activity_df[
-                                    fleet_activity_df[
-                                        "trip_type"
-                                    ] == "T"
-                                ].copy()
-                            )
-
-                        else:
-
-                            fleet_trip_df = (
-                                pd.DataFrame()
-                            )
-
-                        # =========================================
-                        # ADD UNIT
-                        # =========================================
-
-                        if not fleet_trip_df.empty:
-
-                            fleet_trip_df.insert(
-                                0,
-                                "Unidad",
-                                fleet_unit
-                            )
 
                             all_trip_data.append(
                                 fleet_trip_df
                             )
 
-                except Exception as unit_error:
+                        # =========================================
+                        # REPORT UNIT ERROR
+                        # =========================================
 
-                    st.warning(
-                        f"No fue posible obtener viajes de "
-                        f"{fleet_unit}: {unit_error}"
+                        if unit_error:
+
+                            st.warning(
+                                f"No fue posible obtener viajes de "
+                                f"{result_unit}: {unit_error}"
+                            )
+
+                    except Exception as future_error:
+
+                        st.warning(
+                            f"Error procesando "
+                            f"{fleet_unit}: "
+                            f"{future_error}"
+                        )
+
+                    # =============================================
+                    # UPDATE PROGRESS
+                    # =============================================
+
+                    completed_units += 1
+
+                    progress_value = (
+                        completed_units / total_units
+                        if total_units
+                        else 1
                     )
 
-                # =============================================
-                # UPDATE PROGRESS
-                # =============================================
-
-                progress_value = (
-                    (index + 1) / total_units
-                    if total_units
-                    else 1
-                )
-
-                fleet_progress.progress(
-                    progress_value,
-                    text=(
-                        f"Consultando {index + 1} de "
-                        f"{total_units} unidades..."
+                    fleet_progress.progress(
+                        progress_value,
+                        text=(
+                            f"Consultando historial: "
+                            f"{completed_units} de "
+                            f"{total_units} unidades..."
+                        )
                     )
-                )
+
+
+            # =================================================
+            # FINISH PROGRESS
+            # =================================================
 
             fleet_progress.empty()
 
