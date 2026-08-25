@@ -1537,20 +1537,52 @@ with tab_mapa:
     try:
 
         # =====================================
-        # LOAD LANDMARKS FROM SUPABASE
+        # LOAD ALL LANDMARKS FROM SUPABASE
         # =====================================
 
-        landmark_response = (
-            supabase
-            .table("gps_landmarks")
-            .select("*")
-            .execute()
-        )
+        all_landmarks = []
 
-        if landmark_response.data:
+        PAGE_SIZE = 1000
+        offset = 0
+
+        while True:
+
+            landmark_response = (
+                supabase
+                .table("gps_landmarks")
+                .select("*")
+                .range(
+                    offset,
+                    offset + PAGE_SIZE - 1
+                )
+                .execute()
+            )
+
+            page_data = (
+                landmark_response.data
+                or []
+            )
+
+            if not page_data:
+                break
+
+            all_landmarks.extend(
+                page_data
+            )
+
+            if len(page_data) < PAGE_SIZE:
+                break
+
+            offset += PAGE_SIZE
+
+        # =====================================
+        # BUILD DATAFRAME
+        # =====================================
+
+        if all_landmarks:
 
             landmark_df = pd.DataFrame(
-                landmark_response.data
+                all_landmarks
             )
 
             # =====================================
@@ -1571,7 +1603,8 @@ with tab_mapa:
                 st.metric(
                     "PICUS",
                     (
-                        landmark_df["gps_account"] == "PICUS"
+                        landmark_df["gps_account"]
+                        == "PICUS"
                     ).sum()
                 )
 
@@ -1580,7 +1613,8 @@ with tab_mapa:
                 st.metric(
                     "PGL",
                     (
-                        landmark_df["gps_account"] == "PGL"
+                        landmark_df["gps_account"]
+                        == "PGL"
                     ).sum()
                 )
 
@@ -1591,7 +1625,8 @@ with tab_mapa:
                     (
                         landmark_df["polygon"] == 0
                     ).sum()
-                    if "polygon" in landmark_df.columns
+                    if "polygon"
+                    in landmark_df.columns
                     else 0
                 )
 
