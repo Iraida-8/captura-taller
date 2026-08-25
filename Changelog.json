@@ -1,5 +1,40 @@
 [
     {
+    "version": "2.08.25.26",
+    "date": "25/08/2026",
+    "changes":
+        [
+            "Reestructuración de la arquitectura del módulo Rastreador y Seguimiento GPS de Unidades para separar la actualización de datos GPS de la ejecución de la página Streamlit",
+            "Implementación de proceso automatizado en Supabase para consultar periódicamente la información de unidades desde la API de GPS Insight",
+            "Configuración de la automatización de actualización de unidades para ejecutarse cada 5 minutos en lugar de cada hora",
+            "Implementación del flujo GPS Insight → Supabase para almacenar y mantener disponible la información de ubicación y estado de las unidades independientemente de la sesión del usuario en Streamlit",
+            "Incorporación y utilización de la tabla gps_vehicle_history en Supabase para almacenar la información obtenida mediante las consultas automatizadas a GPS Insight",
+            "Adaptación de la estructura almacenada en Supabase para conservar la información requerida por el módulo GPS, incluyendo unidad, ubicación, coordenadas, velocidad, ignición, odómetro, voltaje, última conexión, estado de movimiento y demás información disponible de las unidades",
+            "Eliminación de la dependencia del endpoint de ubicación de GPS Insight durante la carga normal de la página Rastreador y Seguimiento GPS de Unidades",
+            "Modificación del Dashboard GPS para consumir la información actual de las unidades almacenada en Supabase en lugar de realizar directamente una consulta de ubicación a GPS Insight",
+            "Modificación del módulo Seguimiento Individual de Unidades para utilizar como fuente de información los registros almacenados en Supabase",
+            "Adaptación del Mapa GPS para utilizar las coordenadas y estados de las unidades obtenidos desde Supabase, manteniendo la integración existente con gps_landmarks para la visualización de Landmarks",
+            "Eliminación de la actualización automática de la página Streamlit cada 5 minutos, evitando recargas completas de la interfaz mientras el usuario utiliza el módulo",
+            "Eliminación del contador visual de actualización automática asociado al antiguo ciclo de refresco de 5 minutos",
+            "Desacoplamiento de la frecuencia de actualización de información GPS respecto a la página Streamlit: Supabase actualiza los datos cada 5 minutos mientras la página permanece sin refrescos automáticos",
+            "Mantenimiento de la autenticación con GPS Insight dentro del módulo para las funciones que todavía requieren consultas directas a la API",
+            "Mantenimiento del consumo directo de la API de GPS Insight para el módulo Historial, incluyendo la consulta del endpoint vehicle/trips para obtener los viajes históricos de las unidades",
+            "Separación explícita de las fuentes de información del módulo: Dashboard, Seguimiento y Mapa utilizan información almacenada en Supabase, mientras Historial continúa consultando directamente la API de GPS Insight",
+            "Ajuste del Historial General de Flotilla para respetar los filtros superiores de empresa utilizados por el resto del módulo",
+            "Implementación de restricción para impedir la generación del Historial General de Flotilla cuando el filtro superior se encuentra en TODAS",
+            "Incorporación de mensaje solicitando seleccionar PICUS, LINCOLN, SET FREIGHT, SET LOGIS u OTROS antes de generar el Historial General de Flotilla",
+            "Limitación de la generación de reportes históricos a las unidades correspondientes a la empresa seleccionada, reduciendo la cantidad de consultas realizadas a GPS Insight y evitando reportes masivos de toda la flotilla",
+            "Optimización del Historial General de Flotilla mediante consultas concurrentes a GPS Insight para reducir el tiempo requerido para procesar las unidades seleccionadas",
+            "Implementación de control de progreso durante la generación del Historial General de Flotilla, mostrando el número de unidades procesadas respecto al total de la empresa seleccionada",
+            "Implementación de control de estado del reporte generado para evitar que una recarga o interacción posterior vuelva a iniciar automáticamente la generación del mismo reporte",
+            "Corrección del comportamiento posterior a la descarga del Historial General de Flotilla para evitar que el reporte sea nuevamente puesto en ejecución después del rerun de Streamlit",
+            "Eliminación de las advertencias individuales mostradas durante la generación cuando una unidad no devuelve viajes o presenta una consulta sin resultados",
+            "Implementación de conteo consolidado de unidades sin registros de viajes dentro del rango de fechas seleccionado",
+            "Actualización del mensaje final del Historial General de Flotilla para mostrar la empresa consultada, unidades con registros, total de viajes generados y cantidad de unidades sin registros dentro del rango seleccionado",
+            "Mejora general de estabilidad del Historial General de Flotilla al reducir el tamaño máximo de cada ejecución mediante los filtros por empresa y evitar procesos prolongados sobre la totalidad de la flotilla"
+        ]
+    },
+    {
     "version": "2.08.19.26",
     "date": "19/08/2026",
     "changes":
