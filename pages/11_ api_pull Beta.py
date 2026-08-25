@@ -1536,60 +1536,27 @@ with tab_mapa:
 
     try:
 
-        all_landmarks = []
+        # =====================================
+        # LOAD LANDMARKS FROM SUPABASE
+        # =====================================
 
-        accounts = [
-            ("PICUS", PICUS_TOKEN),
-            ("PGL", PGL_TOKEN)
-        ]
+        landmark_response = (
+            supabase
+            .table("gps_landmarks")
+            .select("*")
+            .execute()
+        )
 
-        for account_name, token in accounts:
+        if landmark_response.data:
 
-            try:
-
-                landmark_url = (
-                    "https://api.gpsinsight.com/v2/"
-                    f"landmark/list?session_token={token}"
-                )
-
-                response = requests.get(
-                    landmark_url,
-                    timeout=30
-                )
-
-                response.raise_for_status()
-
-                landmark_json = response.json()
-
-                landmarks = landmark_json.get(
-                    "data",
-                    []
-                )
-
-                if landmarks:
-
-                    df_tmp = pd.DataFrame(landmarks)
-
-                    df_tmp["gps_account"] = account_name
-
-                    all_landmarks.append(df_tmp)
-
-            except Exception as e:
-
-                st.warning(
-                    f"{account_name}: no fue posible cargar landmarks ({e})"
-                )
-
-        if all_landmarks:
-
-            landmark_df = pd.concat(
-                all_landmarks,
-                ignore_index=True
+            landmark_df = pd.DataFrame(
+                landmark_response.data
             )
 
             # =====================================
             # KPIs
             # =====================================
+
             k1, k2, k3, k4 = st.columns(4)
 
             with k1:
@@ -1630,60 +1597,20 @@ with tab_mapa:
 
             st.divider()
 
-            # =====================================
-            # TABLE
-            # =====================================
-            #with st.expander(
-            #    "📋 Tabla de Landmarks",
-            #    expanded=False
-            #):
+        else:
 
-            #    st.dataframe(
-            #        landmark_df,
-            #        use_container_width=True,
-            #        height=500
-            #    )
+            landmark_df = pd.DataFrame()
 
-            # =====================================
-            # EXPORT
-            # =====================================
-            #landmark_buffer = io.BytesIO()
-
-            #with pd.ExcelWriter(
-            #    landmark_buffer,
-            #    engine="openpyxl"
-            #) as writer:
-
-            #    landmark_df.to_excel(
-            #        writer,
-            #        index=False,
-            #        sheet_name="Landmarks"
-            #    )
-
-            #landmark_buffer.seek(0)
-
-            #st.download_button(
-            #    label="💾 Descargar Landmarks",
-            #    data=landmark_buffer,
-            #    file_name="Landmarks_GPS.xlsx",
-            #    mime=(
-            #        "application/"
-            #        "vnd.openxmlformats-officedocument."
-            #        "spreadsheetml.sheet"
-            #    ),
-            #    use_container_width=True
-            #)
-
-        #else:
-
-        #    st.warning(
-        #        "No se encontraron landmarks."
-        #    )
+            st.warning(
+                "No se encontraron landmarks en Supabase."
+            )
 
     except Exception as e:
 
+        landmark_df = pd.DataFrame()
+
         st.error(
-            f"Error cargando landmarks: {e}"
+            f"Error cargando landmarks desde Supabase: {e}"
         )
 
     # =============================================
