@@ -3363,6 +3363,32 @@ if is_admin:
             index=0
         )
 
+        st.write("DEBUG selected_user:", repr(selected_user))
+        st.write("DEBUG activity rows:", len(audit_activity_all))
+        st.write("DEBUG audit_log rows:", len(audit_log_all))
+        st.write("DEBUG AUDIT rows:", len(audit_authorization_all))
+
+        st.write(
+            "DEBUG activity users:",
+            audit_activity_all["user_name"].dropna().unique().tolist()
+            if "user_name" in audit_activity_all.columns
+            else "NO user_name COLUMN"
+        )
+
+        st.write(
+            "DEBUG audit_log users:",
+            audit_log_all["user_name"].dropna().unique().tolist()
+            if "user_name" in audit_log_all.columns
+            else "NO user_name COLUMN"
+        )
+
+        st.write(
+            "DEBUG AUDIT users:",
+            audit_authorization_all["usuario"].dropna().unique().tolist()
+            if "usuario" in audit_authorization_all.columns
+            else "NO usuario COLUMN"
+        )
+
         # ==========================================
         # FILTER
         # ==========================================
