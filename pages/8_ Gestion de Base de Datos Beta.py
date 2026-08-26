@@ -3259,26 +3259,36 @@ if is_admin:
 
         selected_user = st.selectbox(
             "Usuario",
-            ["Todos"] + users
+            ["Todos"] + users,
+            index=0,
+            key="audit_selected_user"
         )
 
-        activity_filtered = df_activity.copy()
-        auditlog_filtered = df_audit_log.copy()
-        audit_filtered = df_audit.copy()
+        # ==========================================
+        # FILTER DATA
+        # ==========================================
 
-        if selected_user != "Todos":
+        if selected_user == "Todos":
 
-            activity_filtered = activity_filtered[
-                activity_filtered["user_name"] == selected_user
-            ]
+            # TODOS = ALL RECORDS FROM ALL THREE TABLES
+            activity_filtered = df_activity.copy()
+            auditlog_filtered = df_audit_log.copy()
+            audit_filtered = df_audit.copy()
 
-            auditlog_filtered = auditlog_filtered[
-                auditlog_filtered["user_name"] == selected_user
-            ]
+        else:
 
-            audit_filtered = audit_filtered[
-                audit_filtered["usuario"] == selected_user
-            ]
+            # SPECIFIC USER = ONLY THAT USER'S RECORDS
+            activity_filtered = df_activity[
+                df_activity["user_name"].astype(str) == selected_user
+            ].copy()
+
+            auditlog_filtered = df_audit_log[
+                df_audit_log["user_name"].astype(str) == selected_user
+            ].copy()
+
+            audit_filtered = df_audit[
+                df_audit["usuario"].astype(str) == selected_user
+            ].copy()
 
         (
             tab_navigation,
