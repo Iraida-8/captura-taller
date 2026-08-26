@@ -3293,7 +3293,7 @@ if is_admin:
 
             return result
 
-        # Load the complete tables.
+        # Load the complete audit tables directly.
         audit_activity_all = load_audit_table(
             "user_activity_log"
         )
@@ -3363,39 +3363,12 @@ if is_admin:
             index=0
         )
 
-        st.write("DEBUG selected_user:", repr(selected_user))
-        st.write("DEBUG activity rows:", len(audit_activity_all))
-        st.write("DEBUG audit_log rows:", len(audit_log_all))
-        st.write("DEBUG AUDIT rows:", len(audit_authorization_all))
-
-        st.write(
-            "DEBUG activity users:",
-            audit_activity_all["user_name"].dropna().unique().tolist()
-            if "user_name" in audit_activity_all.columns
-            else "NO user_name COLUMN"
-        )
-
-        st.write(
-            "DEBUG audit_log users:",
-            audit_log_all["user_name"].dropna().unique().tolist()
-            if "user_name" in audit_log_all.columns
-            else "NO user_name COLUMN"
-        )
-
-        st.write(
-            "DEBUG AUDIT users:",
-            audit_authorization_all["usuario"].dropna().unique().tolist()
-            if "usuario" in audit_authorization_all.columns
-            else "NO usuario COLUMN"
-        )
-
         # ==========================================
-        # FILTER
+        # FILTER DATA
         # ==========================================
 
         if selected_user == "Todos":
 
-            # NO FILTER AT ALL
             activity_filtered = audit_activity_all.copy()
             auditlog_filtered = audit_log_all.copy()
             audit_filtered = audit_authorization_all.copy()
@@ -3441,7 +3414,22 @@ if is_admin:
                 "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
             )
 
-            if activity_filtered.empty:
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if selected_user == "Todos":
+
+                st.metric(
+                    "Total de Registros",
+                    f"{len(activity_filtered):,}"
+                )
+
+                st.caption(
+                    "Mostrando la actividad de navegación de todos los usuarios."
+                )
+
+            elif activity_filtered.empty:
 
                 st.info(
                     "No existen registros para el usuario seleccionado."
@@ -3549,7 +3537,22 @@ if is_admin:
                 "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
             )
 
-            if auditlog_filtered.empty:
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if selected_user == "Todos":
+
+                st.metric(
+                    "Total de Cambios",
+                    f"{len(auditlog_filtered):,}"
+                )
+
+                st.caption(
+                    "Mostrando los cambios de todos los usuarios."
+                )
+
+            elif auditlog_filtered.empty:
 
                 st.info(
                     "No existen registros para el usuario seleccionado."
@@ -3657,7 +3660,22 @@ if is_admin:
                 "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
             )
 
-            if audit_filtered.empty:
+            # ==========================================
+            # KPIs
+            # ==========================================
+
+            if selected_user == "Todos":
+
+                st.metric(
+                    "Total de Acciones",
+                    f"{len(audit_filtered):,}"
+                )
+
+                st.caption(
+                    "Mostrando las acciones de todos los usuarios."
+                )
+
+            elif audit_filtered.empty:
 
                 st.info(
                     "No existen registros para el usuario seleccionado."
