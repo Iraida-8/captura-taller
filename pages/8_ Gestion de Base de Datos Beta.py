@@ -3251,11 +3251,91 @@ if is_admin:
 
         st.subheader("Actividad por Usuario")
 
-        users = sorted(
-            set(df_activity["user_name"].dropna().astype(str))
-            | set(df_audit_log["user_name"].dropna().astype(str))
-            | set(df_audit["usuario"].dropna().astype(str))
-        )
+        # ==========================================
+        # LOAD AUDIT TABLES DIRECTLY FROM SUPABASE
+        # ==========================================
+
+        def load_audit_table(table_name):
+
+            page_size = 1000
+            start = 0
+            all_rows = []
+
+            while True:
+
+                response = (
+                    supabase
+                    .table(table_name)
+                    .select("*")
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+
+                rows = response.data or []
+
+                if not rows:
+                    break
+
+                all_rows.extend(rows)
+
+                if len(rows) < page_size:
+                    break
+
+                start += page_size
+
+            df = pd.DataFrame(all_rows)
+
+            if not df.empty:
+                df.columns = [col.lower() for col in df.columns]
+
+            return df
+
+        # IMPORTANT:
+        # These are intentionally NOT using load_table()
+        # because load_table() is cached.
+
+        audit_activity_all = load_audit_table("user_activity_log")
+        audit_log_all = load_audit_table("audit_log")
+        audit_authorization_all = load_audit_table("AUDIT")
+
+        # ==========================================
+        # BUILD USER LIST FROM ALL THREE TABLES
+        # ==========================================
+
+        users = set()
+
+        if not audit_activity_all.empty and "user_name" in audit_activity_all.columns:
+
+            users.update(
+                audit_activity_all["user_name"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+
+        if not audit_log_all.empty and "user_name" in audit_log_all.columns:
+
+            users.update(
+                audit_log_all["user_name"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+
+        if not audit_authorization_all.empty and "usuario" in audit_authorization_all.columns:
+
+            users.update(
+                audit_authorization_all["usuario"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+
+        users = sorted(users)
+
+        # ==========================================
+        # USER FILTER
+        # ==========================================
 
         selected_user = st.selectbox(
             "Usuario",
@@ -3270,25 +3350,29 @@ if is_admin:
 
         if selected_user == "Todos":
 
-            # TODOS = ALL RECORDS FROM ALL THREE TABLES
-            activity_filtered = df_activity.copy()
-            auditlog_filtered = df_audit_log.copy()
-            audit_filtered = df_audit.copy()
+            # SHOW EVERYTHING
+            activity_filtered = audit_activity_all.copy()
+            auditlog_filtered = audit_log_all.copy()
+            audit_filtered = audit_authorization_all.copy()
 
         else:
 
-            # SPECIFIC USER = ONLY THAT USER'S RECORDS
-            activity_filtered = df_activity[
-                df_activity["user_name"].astype(str) == selected_user
+            # SHOW ONLY SELECTED USER
+            activity_filtered = audit_activity_all[
+                audit_activity_all["user_name"].astype(str) == selected_user
             ].copy()
 
-            auditlog_filtered = df_audit_log[
-                df_audit_log["user_name"].astype(str) == selected_user
+            auditlog_filtered = audit_log_all[
+                audit_log_all["user_name"].astype(str) == selected_user
             ].copy()
 
-            audit_filtered = df_audit[
-                df_audit["usuario"].astype(str) == selected_user
+            audit_filtered = audit_authorization_all[
+                audit_authorization_all["usuario"].astype(str) == selected_user
             ].copy()
+
+        # ==========================================
+        # AUDIT SUBTABS
+        # ==========================================
 
         (
             tab_navigation,
@@ -3364,6 +3448,7 @@ if is_admin:
             col1, col2 = st.columns([4, 1])
 
             with col1:
+
                 st.subheader("Historial de Actividad de Navegación")
 
             with col2:
