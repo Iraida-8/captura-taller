@@ -3252,7 +3252,7 @@ if is_admin:
         st.subheader("Actividad por Usuario")
 
         # ==========================================
-        # LOAD AUDIT TABLES DIRECTLY FROM SUPABASE
+        # LOAD COMPLETE AUDIT TABLES
         # ==========================================
 
         def load_audit_table(table_name):
@@ -3283,91 +3283,112 @@ if is_admin:
 
                 start += page_size
 
-            df = pd.DataFrame(all_rows)
+            result = pd.DataFrame(all_rows)
 
-            if not df.empty:
-                df.columns = [col.lower() for col in df.columns]
+            if not result.empty:
+                result.columns = [
+                    str(col).lower()
+                    for col in result.columns
+                ]
 
-            return df
+            return result
 
-        # IMPORTANT:
-        # These are intentionally NOT using load_table()
-        # because load_table() is cached.
+        # Load the complete tables.
+        audit_activity_all = load_audit_table(
+            "user_activity_log"
+        )
 
-        audit_activity_all = load_audit_table("user_activity_log")
-        audit_log_all = load_audit_table("audit_log")
-        audit_authorization_all = load_audit_table("AUDIT")
+        audit_log_all = load_audit_table(
+            "audit_log"
+        )
+
+        audit_authorization_all = load_audit_table(
+            "AUDIT"
+        )
 
         # ==========================================
-        # BUILD USER LIST FROM ALL THREE TABLES
+        # BUILD USER LIST
         # ==========================================
 
         users = set()
 
-        if not audit_activity_all.empty and "user_name" in audit_activity_all.columns:
+        if (
+            not audit_activity_all.empty
+            and "user_name" in audit_activity_all.columns
+        ):
 
             users.update(
                 audit_activity_all["user_name"]
                 .dropna()
                 .astype(str)
+                .unique()
                 .tolist()
             )
 
-        if not audit_log_all.empty and "user_name" in audit_log_all.columns:
+        if (
+            not audit_log_all.empty
+            and "user_name" in audit_log_all.columns
+        ):
 
             users.update(
                 audit_log_all["user_name"]
                 .dropna()
                 .astype(str)
+                .unique()
                 .tolist()
             )
 
-        if not audit_authorization_all.empty and "usuario" in audit_authorization_all.columns:
+        if (
+            not audit_authorization_all.empty
+            and "usuario" in audit_authorization_all.columns
+        ):
 
             users.update(
                 audit_authorization_all["usuario"]
                 .dropna()
                 .astype(str)
+                .unique()
                 .tolist()
             )
 
         users = sorted(users)
 
         # ==========================================
-        # USER FILTER
+        # USER SELECTOR
         # ==========================================
 
         selected_user = st.selectbox(
             "Usuario",
             ["Todos"] + users,
-            index=0,
-            key="audit_selected_user"
+            index=0
         )
 
         # ==========================================
-        # FILTER DATA
+        # FILTER
         # ==========================================
 
         if selected_user == "Todos":
 
-            # SHOW EVERYTHING
+            # NO FILTER AT ALL
             activity_filtered = audit_activity_all.copy()
             auditlog_filtered = audit_log_all.copy()
             audit_filtered = audit_authorization_all.copy()
 
         else:
 
-            # SHOW ONLY SELECTED USER
             activity_filtered = audit_activity_all[
-                audit_activity_all["user_name"].astype(str) == selected_user
+                audit_activity_all["user_name"].astype(str)
+                == selected_user
             ].copy()
 
             auditlog_filtered = audit_log_all[
-                audit_log_all["user_name"].astype(str) == selected_user
+                audit_log_all["user_name"].astype(str)
+                == selected_user
             ].copy()
 
             audit_filtered = audit_authorization_all[
-                audit_authorization_all["usuario"].astype(str) == selected_user
+                audit_authorization_all["usuario"].astype(str)
+                == selected_user
             ].copy()
 
         # ==========================================
@@ -3394,25 +3415,29 @@ if is_admin:
                 "Registra la navegación de los usuarios dentro de la aplicación, incluyendo inicios de sesión, acceso a módulos y visitas a las diferentes páginas."
             )
 
-            # ==========================================
-            # KPIs
-            # ==========================================
-
             if activity_filtered.empty:
 
-                st.info("No existen registros para el usuario seleccionado.")
+                st.info(
+                    "No existen registros para el usuario seleccionado."
+                )
 
             else:
 
                 latest_login = (
                     activity_filtered
-                    .sort_values("action_date", ascending=False)
+                    .sort_values(
+                        "action_date",
+                        ascending=False
+                    )
                     .iloc[0]
                 )
 
                 latest_actions = (
                     activity_filtered
-                    .sort_values("action_date", ascending=False)
+                    .sort_values(
+                        "action_date",
+                        ascending=False
+                    )
                     .head(5)
                 )
 
@@ -3427,14 +3452,19 @@ if is_admin:
 
                 with col2:
 
-                    st.markdown("##### Últimas 5 acciones")
+                    st.markdown(
+                        "##### Últimas 5 acciones"
+                    )
 
-                    latest_actions_display = latest_actions[
-                        ["action", "page"]
-                    ].rename(columns={
-                        "action": "Acción",
-                        "page": "Página"
-                    })
+                    latest_actions_display = (
+                        latest_actions[
+                            ["action", "page"]
+                        ]
+                        .rename(columns={
+                            "action": "Acción",
+                            "page": "Página"
+                        })
+                    )
 
                     st.dataframe(
                         latest_actions_display,
@@ -3449,7 +3479,9 @@ if is_admin:
 
             with col1:
 
-                st.subheader("Historial de Actividad de Navegación")
+                st.subheader(
+                    "Historial de Actividad de Navegación"
+                )
 
             with col2:
 
@@ -3467,7 +3499,10 @@ if is_admin:
                     "📥 Descargar",
                     data=excel_buffer,
                     file_name="Actividad_Navegacion.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    mime=(
+                        "application/vnd.openxmlformats-"
+                        "officedocument.spreadsheetml.sheet"
+                    ),
                     use_container_width=True,
                 )
 
@@ -3488,25 +3523,29 @@ if is_admin:
                 "Registra todas las modificaciones realizadas por Administradores y Gerentes sobre las bases de datos de la aplicación, incluyendo inserciones, actualizaciones, eliminaciones y reemplazos completos de tablas."
             )
 
-            # ==========================================
-            # KPIs
-            # ==========================================
-
             if auditlog_filtered.empty:
 
-                st.info("No existen registros para el usuario seleccionado.")
+                st.info(
+                    "No existen registros para el usuario seleccionado."
+                )
 
             else:
 
                 latest_change = (
                     auditlog_filtered
-                    .sort_values("created_at", ascending=False)
+                    .sort_values(
+                        "created_at",
+                        ascending=False
+                    )
                     .iloc[0]
                 )
 
                 latest_changes = (
                     auditlog_filtered
-                    .sort_values("created_at", ascending=False)
+                    .sort_values(
+                        "created_at",
+                        ascending=False
+                    )
                     .head(5)
                 )
 
@@ -3521,14 +3560,19 @@ if is_admin:
 
                 with col2:
 
-                    st.markdown("##### Últimos 5 cambios")
+                    st.markdown(
+                        "##### Últimos 5 cambios"
+                    )
 
-                    latest_changes_display = latest_changes[
-                        ["table_name", "details"]
-                    ].rename(columns={
-                        "table_name": "Tabla",
-                        "details": "Detalle"
-                    })
+                    latest_changes_display = (
+                        latest_changes[
+                            ["table_name", "details"]
+                        ]
+                        .rename(columns={
+                            "table_name": "Tabla",
+                            "details": "Detalle"
+                        })
+                    )
 
                     st.dataframe(
                         latest_changes_display,
@@ -3543,7 +3587,9 @@ if is_admin:
 
             with col1:
 
-                st.subheader("Historial de Cambios en Base de Datos")
+                st.subheader(
+                    "Historial de Cambios en Base de Datos"
+                )
 
             with col2:
 
@@ -3561,7 +3607,10 @@ if is_admin:
                     "📥 Descargar",
                     data=excel_buffer,
                     file_name="Auditoria_Base_Datos.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    mime=(
+                        "application/vnd.openxmlformats-"
+                        "officedocument.spreadsheetml.sheet"
+                    ),
                     use_container_width=True,
                 )
 
@@ -3582,31 +3631,41 @@ if is_admin:
                 "Registra todas las acciones realizadas por los usuarios dentro del módulo de Autorización, incluyendo aprobaciones, rechazos y cambios de estatus durante el flujo de autorización."
             )
 
-            # ==========================================
-            # KPIs
-            # ==========================================
-
             if audit_filtered.empty:
 
-                st.info("No existen registros para el usuario seleccionado.")
+                st.info(
+                    "No existen registros para el usuario seleccionado."
+                )
 
             else:
 
                 latest_entries = (
                     audit_filtered
-                    .sort_values("timestamp", ascending=False)
+                    .sort_values(
+                        "timestamp",
+                        ascending=False
+                    )
                     .head(5)
                 )
 
-                st.markdown("##### Últimas 5 acciones")
+                st.markdown(
+                    "##### Últimas 5 acciones"
+                )
 
-                latest_entries_display = latest_entries[
-                    ["empresa", "no. de folio", "tipo cambio"]
-                ].rename(columns={
-                    "empresa": "Empresa",
-                    "no. de folio": "No. de Folio",
-                    "tipo cambio": "Tipo de Cambio"
-                })
+                latest_entries_display = (
+                    latest_entries[
+                        [
+                            "empresa",
+                            "no. de folio",
+                            "tipo cambio"
+                        ]
+                    ]
+                    .rename(columns={
+                        "empresa": "Empresa",
+                        "no. de folio": "No. de Folio",
+                        "tipo cambio": "Tipo de Cambio"
+                    })
+                )
 
                 st.dataframe(
                     latest_entries_display,
@@ -3621,7 +3680,9 @@ if is_admin:
 
             with col1:
 
-                st.subheader("Historial del Módulo de Autorización")
+                st.subheader(
+                    "Historial del Módulo de Autorización"
+                )
 
             with col2:
 
@@ -3639,7 +3700,10 @@ if is_admin:
                     "📥 Descargar",
                     data=excel_buffer,
                     file_name="Auditoria_Autorizacion.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    mime=(
+                        "application/vnd.openxmlformats-"
+                        "officedocument.spreadsheetml.sheet"
+                    ),
                     use_container_width=True,
                 )
 
