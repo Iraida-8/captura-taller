@@ -2824,6 +2824,33 @@ with tab_historial:
                             ).fillna(0)
 
                     # =====================================
+                    # PICUS UNIT CONVERSION
+                    # =====================================
+
+                    if is_kmh_unit:
+
+                        MILES_TO_KM = 1.609344
+
+                        if "trip_distance" in trip_df.columns:
+                            trip_df["trip_distance"] = (
+                                trip_df["trip_distance"]
+                                * MILES_TO_KM
+                            )
+
+                        if "max_speed" in trip_df.columns:
+                            trip_df["max_speed"] = (
+                                trip_df["max_speed"]
+                                * MILES_TO_KM
+                            )
+
+                        if "avg_speed" in trip_df.columns:
+                            trip_df["avg_speed"] = (
+                                trip_df["avg_speed"]
+                                * MILES_TO_KM
+                            )
+
+
+                    # =====================================
                     # VIN
                     # =====================================
 
@@ -3377,6 +3404,35 @@ with tab_historial:
                                         ] == "T"
                                     ].copy()
                                 )
+
+                                # =============================================
+                                # PICUS UNIT CONVERSION
+                                # =============================================
+
+                                if (
+                                    "PI" in fleet_label
+                                    or fleet_label.startswith("P")
+                                ):
+
+                                    MILES_TO_KM = 1.609344
+
+                                    for col in [
+                                        "trip_distance",
+                                        "max_speed",
+                                        "avg_speed"
+                                    ]:
+
+                                        if col in fleet_trip_df.columns:
+
+                                            fleet_trip_df[col] = pd.to_numeric(
+                                                fleet_trip_df[col],
+                                                errors="coerce"
+                                            ).fillna(0)
+
+                                            fleet_trip_df[col] = (
+                                                fleet_trip_df[col]
+                                                * MILES_TO_KM
+                                            )
 
                                 # =============================================
                                 # ADD UNIT
