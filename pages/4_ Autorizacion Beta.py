@@ -6953,7 +6953,6 @@ if has_viaticos:
                                             "No hay conceptos."
                                         )
 
-
                                 # =================================
                                 # CONCEPTOS COMPROBACION
                                 # =================================
@@ -6964,14 +6963,12 @@ if has_viaticos:
                                     "## 🧾 Conceptos Comprobación"
                                 )
 
-
                                 conceptos_comprobacion = (
                                     row.get(
                                         "conceptos",
                                         []
                                     )
                                 )
-
 
                                 if not isinstance(
                                     conceptos_comprobacion,
@@ -6982,186 +6979,151 @@ if has_viaticos:
 
                                 # =================================
                                 # TOTALES COMPROBACION
+                                # IDENTICAL TO POR VERIFICAR
                                 # =================================
 
-                                total_comprobacion_mxp = row.get(
-                                    "total_comprobado",
-                                    0
+                                total_comprobacion_mxp = float(
+                                    row.get(
+                                        "total_comprobado",
+                                        0
+                                    ) or 0
                                 )
 
-                                anticipo_mxp = row.get(
-                                    "anticipo_viaje",
-                                    0
-                                )
-
-                                diferencia_mxp = row.get(
-                                    "diferencia_cargo_favor",
-                                    0
-                                )
-
-
-                                total_comprobacion_usd = row.get(
-                                    "total_comprobado_usd",
-                                    0
-                                )
-
-                                anticipo_usd = row.get(
-                                    "anticipo_viaje_usd",
-                                    0
-                                )
-
-                                diferencia_usd = row.get(
-                                    "diferencia_cargo_favor_usd",
-                                    0
+                                total_comprobacion_usd = float(
+                                    row.get(
+                                        "total_comprobado_usd",
+                                        0
+                                    ) or 0
                                 )
 
 
-                                try:
-                                    total_comprobacion_mxp = float(
-                                        total_comprobacion_mxp or 0
-                                    )
-                                except:
-                                    total_comprobacion_mxp = 0
+                                comprobacion_html = ""
 
 
-                                try:
-                                    anticipo_mxp = float(
-                                        anticipo_mxp or 0
-                                    )
-                                except:
-                                    anticipo_mxp = 0
+                                if total_comprobacion_mxp != 0:
+
+                                    comprobacion_html += f"""
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
+                                        margin-bottom:8px;
+                                    '>
+                                        Comprobación MXP:
+                                        ${total_comprobacion_mxp:,.2f}
+                                    </div>
+                                    """
 
 
-                                try:
-                                    diferencia_mxp = float(
-                                        diferencia_mxp or 0
-                                    )
-                                except:
-                                    diferencia_mxp = 0
+                                if total_comprobacion_usd != 0:
+
+                                    comprobacion_html += f"""
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
+                                        margin-bottom:15px;
+                                    '>
+                                        Comprobación USD:
+                                        ${total_comprobacion_usd:,.2f}
+                                    </div>
+                                    """
 
 
-                                try:
-                                    total_comprobacion_usd = float(
-                                        total_comprobacion_usd or 0
-                                    )
-                                except:
-                                    total_comprobacion_usd = 0
-
-
-                                try:
-                                    anticipo_usd = float(
-                                        anticipo_usd or 0
-                                    )
-                                except:
-                                    anticipo_usd = 0
-
-
-                                try:
-                                    diferencia_usd = float(
-                                        diferencia_usd or 0
-                                    )
-                                except:
-                                    diferencia_usd = 0
-
-
-                                # =================================
-                                # TOTALES MXP
-                                # =================================
-
-                                if (
-                                    total_comprobacion_mxp != 0
-                                    or anticipo_mxp != 0
-                                    or diferencia_mxp != 0
-                                ):
-
-                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
-
-
-                                    with col_tot1:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Total Comprobado MXP
-
-                                            ## ${total_comprobacion_mxp:,.2f}
-                                            """
-                                        )
-
-
-                                    with col_tot2:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Anticipo Viaje MXP
-
-                                            ## ${anticipo_mxp:,.2f}
-                                            """
-                                        )
-
-
-                                    with col_tot3:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Diferencia Cargo/Favor MXP
-
-                                            ## ${diferencia_mxp:,.2f}
-                                            """
-                                        )
-
-
-                                # =================================
-                                # TOTALES USD
-                                # =================================
-
-                                if (
-                                    total_comprobacion_usd != 0
-                                    or anticipo_usd != 0
-                                    or diferencia_usd != 0
-                                ):
+                                if comprobacion_html:
 
                                     st.markdown(
-                                        "<br>",
+                                        comprobacion_html,
                                         unsafe_allow_html=True
                                     )
 
 
-                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
+                                # =================================
+                                # TABLA COMPROBACION
+                                # =================================
+
+                                if conceptos_comprobacion:
+
+                                    df_comp = pd.DataFrame(
+                                        conceptos_comprobacion
+                                    )
 
 
-                                    with col_tot1:
+                                    if "Eliminar" in df_comp.columns:
 
-                                        st.markdown(
-                                            f"""
-                                            ### Total Comprobado USD
-
-                                            ## ${total_comprobacion_usd:,.2f}
-                                            """
+                                        df_comp = df_comp.drop(
+                                            columns=["Eliminar"]
                                         )
 
 
-                                    with col_tot2:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Anticipo Viaje USD
-
-                                            ## ${anticipo_usd:,.2f}
-                                            """
-                                        )
-
-
-                                    with col_tot3:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Diferencia Cargo/Favor USD
-
-                                            ## ${diferencia_usd:,.2f}
-                                            """
-                                        )
+                                    columnas_comprobacion = [
+                                        "Tipo",
+                                        "Descripcion",
+                                        "Fecha Factura",
+                                        "Folio",
+                                        "Proveedor",
+                                        "Moneda",
+                                        "Monto",
+                                        "Comprobante",
+                                        "Aplica IVA",
+                                        "IVA %",
+                                        "Aplica Retencion",
+                                        "Impuesto Acreditable",
+                                        "Total Comprobado"
+                                    ]
 
 
+                                    for col_name in columnas_comprobacion:
+
+                                        if col_name not in df_comp.columns:
+
+                                            df_comp[col_name] = ""
+
+
+                                    df_comp = df_comp[
+                                        columnas_comprobacion
+                                    ]
+
+
+                                    currency_columns = [
+                                        "Monto",
+                                        "Impuesto Acreditable",
+                                        "Total Comprobado"
+                                    ]
+
+
+                                    for col_name in currency_columns:
+
+                                        if col_name in df_comp.columns:
+
+                                            df_comp[col_name] = (
+                                                pd.to_numeric(
+                                                    df_comp[col_name],
+                                                    errors="coerce"
+                                                )
+                                                .fillna(0)
+                                                .apply(
+                                                    lambda x:
+                                                    f"${x:,.2f}"
+                                                )
+                                            )
+
+
+                                    st.data_editor(
+                                        df_comp,
+                                        use_container_width=True,
+                                        hide_index=True,
+                                        disabled=True,
+                                        height=350,
+                                        key=f"comprobacion_detalles_finalizada_{folio_actual}"
+                                    )
+
+
+                                else:
+
+                                    st.info(
+                                        "No hay conceptos comprobados."
+                                    )
                                 # =================================
                                 # TABLA COMPROBACION
                                 # =================================
