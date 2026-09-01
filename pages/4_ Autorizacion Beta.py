@@ -5015,10 +5015,20 @@ if has_viaticos:
                                         font-size:22px;
                                         font-weight:700;
                                         color:#38BDF8;
+                                        margin-bottom:8px;
+                                    '>
+                                        Comprobación MXP:
+                                        ${float(comprobacion_row.get("total_comprobado", 0) or 0):,.2f}
+                                    </div>
+
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
                                         margin-bottom:15px;
                                     '>
-                                        Comprobación:
-                                        ${total_comprobado:,.2f}
+                                        Comprobación USD:
+                                        ${float(comprobacion_row.get("total_comprobado_usd", 0) or 0):,.2f}
                                     </div>
                                     """,
                                     unsafe_allow_html=True
