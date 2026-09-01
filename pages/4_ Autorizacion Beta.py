@@ -7201,7 +7201,7 @@ if has_viaticos:
                                         hide_index=True,
                                         disabled=True,
                                         height=350,
-                                        key=f"comprobacion_detalles_finalizada_{folio_actual}"
+                                        key=f"comprobacion_detalles_finalizada_{folio_actual}_{id(row)}"
                                     )
 
 
