@@ -3654,6 +3654,9 @@ if has_viaticos:
                 df_solicitudes["estatus"] == "Pendiente"
             ].copy()
 
+            if df_pendientes.empty:
+                st.info("No hay solicitudes pendientes.")
+
             # Sort newest first
             if "created_at" in df_pendientes.columns:
 
