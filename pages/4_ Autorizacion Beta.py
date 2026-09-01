@@ -5205,9 +5205,16 @@ if has_viaticos:
 
                                     st.markdown(
                                         f"""
-                                        ### Total Comprobado
+                                        ### Total Comprobado MXP
 
-                                        ## ${total_comp:,.2f}
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "total_comprobado",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
                                         """
                                     )
 
@@ -5215,9 +5222,16 @@ if has_viaticos:
 
                                     st.markdown(
                                         f"""
-                                        ### Anticipo Viaje
+                                        ### Anticipo para gastos de viaje MXP
 
-                                        ## ${anticipo:,.2f}
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "anticipo_viaje",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
                                         """
                                     )
 
@@ -5225,9 +5239,72 @@ if has_viaticos:
 
                                     st.markdown(
                                         f"""
-                                        ### Diferencia Cargo/Favor
+                                        ### Diferencia / Cargo a Favor MXP
 
-                                        ## ${diferencia:,.2f}
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "diferencia_cargo_favor",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
+                                        """
+                                    )
+
+                                st.markdown("<br>", unsafe_allow_html=True)
+
+
+                                col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                                with col_tot1:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Total Comprobado USD
+
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "total_comprobado_usd",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
+                                        """
+                                    )
+
+                                with col_tot2:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Anticipo para gastos de viaje USD
+
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "anticipo_viaje_usd",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
+                                        """
+                                    )
+
+                                with col_tot3:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Diferencia / Cargo a Favor USD
+
+                                        ## ${
+                                            float(
+                                                comprobacion_row.get(
+                                                    "diferencia_cargo_favor_usd",
+                                                    0
+                                                ) or 0
+                                            ):,.2f
+                                        }
                                         """
                                     )
 
