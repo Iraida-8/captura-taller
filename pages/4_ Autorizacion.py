@@ -3654,6 +3654,9 @@ if has_viaticos:
                 df_solicitudes["estatus"] == "Pendiente"
             ].copy()
 
+            if df_pendientes.empty:
+                st.info("No hay solicitudes pendientes.")
+
             # Sort newest first
             if "created_at" in df_pendientes.columns:
 
@@ -4552,15 +4555,25 @@ if has_viaticos:
                             )
                         )[:10]
 
-                        total = row.get(
+                        total_mxp = row.get(
                             "total_comprobado",
                             0
                         )
 
+                        total_usd = row.get(
+                            "total_comprobado_usd",
+                            0
+                        )
+
                         try:
-                            total = float(total)
+                            total_mxp = float(total_mxp)
                         except:
-                            total = 0
+                            total_mxp = 0
+
+                        try:
+                            total_usd = float(total_usd)
+                        except:
+                            total_usd = 0
 
                         html = f"""
                         <div style="padding:6px;">
@@ -4602,7 +4615,8 @@ if has_viaticos:
                                     font-weight:700;
                                     color:#151F6D;
                                 ">
-                                    ${total:,.2f}
+                                    {f'MXP: ${total_mxp:,.2f}' if total_mxp != 0 else ''}
+                                    {f'<br>USD: ${total_usd:,.2f}' if total_usd != 0 else ''}
                                 </div>
 
                             </div>
@@ -4995,20 +5009,56 @@ if has_viaticos:
                                 except:
                                     total_comprobado = 0
 
-                                st.markdown(
-                                    f"""
+                                total_comprobacion_mxp = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado",
+                                        0
+                                    ) or 0
+                                )
+
+                                total_comprobacion_usd = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado_usd",
+                                        0
+                                    ) or 0
+                                )
+
+                                comprobacion_html = ""
+
+                                if total_comprobacion_mxp != 0:
+
+                                    comprobacion_html += f"""
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
+                                        margin-bottom:8px;
+                                    '>
+                                        Comprobación MXP:
+                                        ${total_comprobacion_mxp:,.2f}
+                                    </div>
+                                    """
+
+                                if total_comprobacion_usd != 0:
+
+                                    comprobacion_html += f"""
                                     <div style='
                                         font-size:22px;
                                         font-weight:700;
                                         color:#38BDF8;
                                         margin-bottom:15px;
                                     '>
-                                        Comprobación:
-                                        ${total_comprobado:,.2f}
+                                        Comprobación USD:
+                                        ${total_comprobacion_usd:,.2f}
                                     </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
+                                    """
+
+                                if comprobacion_html:
+
+                                    st.markdown(
+                                        comprobacion_html,
+                                        unsafe_allow_html=True
+                                    )
 
                                 if conceptos_comprobacion:
 
@@ -5177,35 +5227,134 @@ if has_viaticos:
 
                                 col_tot1, col_tot2, col_tot3 = st.columns(3)
 
-                                with col_tot1:
+                                # =================================
+                                # TOTALES MXP
+                                # =================================
 
-                                    st.markdown(
-                                        f"""
-                                        ### Total Comprobado
+                                total_comp_mxp = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado",
+                                        0
+                                    ) or 0
+                                )
 
-                                        ## ${total_comp:,.2f}
-                                        """
-                                    )
+                                anticipo_mxp = float(
+                                    comprobacion_row.get(
+                                        "anticipo_viaje",
+                                        0
+                                    ) or 0
+                                )
 
-                                with col_tot2:
+                                diferencia_mxp = float(
+                                    comprobacion_row.get(
+                                        "diferencia_cargo_favor",
+                                        0
+                                    ) or 0
+                                )
 
-                                    st.markdown(
-                                        f"""
-                                        ### Anticipo Viaje
+                                if (
+                                    total_comp_mxp != 0
+                                    or anticipo_mxp != 0
+                                    or diferencia_mxp != 0
+                                ):
 
-                                        ## ${anticipo:,.2f}
-                                        """
-                                    )
+                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
 
-                                with col_tot3:
+                                    with col_tot1:
 
-                                    st.markdown(
-                                        f"""
-                                        ### Diferencia Cargo/Favor
+                                        st.markdown(
+                                            f"""
+                                            ### Total Comprobado MXP
 
-                                        ## ${diferencia:,.2f}
-                                        """
-                                    )
+                                            ## ${total_comp_mxp:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot2:
+
+                                        st.markdown(
+                                            f"""
+                                            ### Anticipo Viaje MXP
+
+                                            ## ${anticipo_mxp:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot3:
+
+                                        st.markdown(
+                                            f"""
+                                            ### Diferencia Cargo/Favor MXP
+
+                                            ## ${diferencia_mxp:,.2f}
+                                            """
+                                        )
+
+
+                                # =================================
+                                # TOTALES USD
+                                # =================================
+
+                                total_comp_usd = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado_usd",
+                                        0
+                                    ) or 0
+                                )
+
+                                anticipo_usd = float(
+                                    comprobacion_row.get(
+                                        "anticipo_viaje_usd",
+                                        0
+                                    ) or 0
+                                )
+
+                                diferencia_usd = float(
+                                    comprobacion_row.get(
+                                        "diferencia_cargo_favor_usd",
+                                        0
+                                    ) or 0
+                                )
+
+                                if (
+                                    total_comp_usd != 0
+                                    or anticipo_usd != 0
+                                    or diferencia_usd != 0
+                                ):
+
+                                    st.markdown("<br>", unsafe_allow_html=True)
+
+                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                                    with col_tot1:
+
+                                        st.markdown(
+                                            f"""
+                                            ### Total Comprobado USD
+
+                                            ## ${total_comp_usd:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot2:
+
+                                        st.markdown(
+                                            f"""
+                                            ### Anticipo Viaje USD
+
+                                            ## ${anticipo_usd:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot3:
+
+                                        st.markdown(
+                                            f"""
+                                            ### Diferencia Cargo/Favor USD
+
+                                            ## ${diferencia_usd:,.2f}
+                                            """
+                                        )
 
                                 st.markdown("---")
 
@@ -5553,9 +5702,25 @@ if has_viaticos:
 
             st.header("🏁 Solicitudes Finalizadas")
 
+
             # =================================
             # BASE DATA
             # =================================
+
+            # Make sure the newer currency fields exist
+            # even if older records do not have them.
+            for col_name in [
+                "total_comprobado_usd",
+                "anticipo_viaje_usd",
+                "diferencia_cargo_favor_usd",
+            ]:
+                if col_name not in df_comprobaciones.columns:
+                    df_comprobaciones[col_name] = 0
+
+
+            if "nombre_empleado_solicita" not in df_comprobaciones.columns:
+                df_comprobaciones["nombre_empleado_solicita"] = ""
+
 
             df_comp_final = (
                 df_comprobaciones
@@ -5567,6 +5732,11 @@ if has_viaticos:
                     subset=["folio_solicitud"]
                 )
             )
+
+
+            # =================================
+            # MERGE SOLICITUD + COMPROBACION
+            # =================================
 
             df_finalizadas = pd.merge(
 
@@ -5584,10 +5754,20 @@ if has_viaticos:
                         "folio_solicitud",
                         "folio_comprobacion",
                         "conceptos",
+
+                        # TOTALES MXP
                         "total_comprobado",
                         "anticipo_viaje",
                         "diferencia_cargo_favor",
+
+                        # TOTALES USD
+                        "total_comprobado_usd",
+                        "anticipo_viaje_usd",
+                        "diferencia_cargo_favor_usd",
+
                         "observaciones",
+                        "nombre_empleado_solicita",
+                        "archivos",
                         "created_at"
                     ]
                 ],
@@ -5602,11 +5782,13 @@ if has_viaticos:
                 )
             )
 
+
             # =================================
             # FILTERS
             # =================================
 
             f1, f2, f3 = st.columns(3)
+
 
             with f1:
 
@@ -5628,6 +5810,7 @@ if has_viaticos:
                     key="filtro_folio_finalizado"
                 )
 
+
             with f2:
 
                 estatus_finalizados = ["Todos"]
@@ -5647,6 +5830,7 @@ if has_viaticos:
                     estatus_finalizados,
                     key="filtro_estatus_finalizado"
                 )
+
 
             with f3:
 
@@ -5668,6 +5852,7 @@ if has_viaticos:
                     key="filtro_empleado_finalizado"
                 )
 
+
             # =================================
             # APPLY FILTERS
             # =================================
@@ -5681,6 +5866,7 @@ if has_viaticos:
                     str(filtro_folio_finalizado)
                 ]
 
+
             if filtro_estatus_finalizado != "Todos":
 
                 df_finalizadas = df_finalizadas[
@@ -5690,6 +5876,7 @@ if has_viaticos:
                     str(filtro_estatus_finalizado)
                 ]
 
+
             if filtro_empleado_finalizado != "Todos":
 
                 df_finalizadas = df_finalizadas[
@@ -5698,6 +5885,7 @@ if has_viaticos:
                     ==
                     str(filtro_empleado_finalizado)
                 ]
+
 
             # =================================
             # SORT
@@ -5710,11 +5898,13 @@ if has_viaticos:
                     ascending=False
                 )
 
+
             # =================================
             # DESCARGAR REPORTE
             # =================================
 
             reporte_rows = []
+
 
             for _, row in df_finalizadas.iterrows():
 
@@ -5724,6 +5914,7 @@ if has_viaticos:
                     ==
                     str(row.get("folio_solicitud", ""))
                 ]
+
 
                 if not solicitud_match.empty:
 
@@ -5737,6 +5928,7 @@ if has_viaticos:
 
                     solicitud_row = {}
 
+
                 # =================================
                 # CONCEPTOS SOLICITUD
                 # =================================
@@ -5748,6 +5940,7 @@ if has_viaticos:
 
                 if len(conceptos_solicitud) == 0:
                     conceptos_solicitud = [{}]
+
 
                 # =================================
                 # CONCEPTOS COMPROBACION
@@ -5761,10 +5954,12 @@ if has_viaticos:
                 if len(conceptos_comprobacion) == 0:
                     conceptos_comprobacion = [{}]
 
+
                 max_len = max(
                     len(conceptos_solicitud),
                     len(conceptos_comprobacion)
                 )
+
 
                 for i in range(max_len):
 
@@ -5779,6 +5974,7 @@ if has_viaticos:
                         if i < len(conceptos_comprobacion)
                         else {}
                     )
+
 
                     reporte_rows.append({
 
@@ -5806,6 +6002,12 @@ if has_viaticos:
 
                         "Empleado Solicita":
                             solicitud_row.get(
+                                "nombre_empleado_solicita",
+                                ""
+                            ),
+
+                        "Empleado Comprobacion":
+                            row.get(
                                 "nombre_empleado_solicita",
                                 ""
                             ),
@@ -5894,6 +6096,7 @@ if has_viaticos:
                                 ""
                             ),
 
+
                         # =================================
                         # TOTALES
                         # =================================
@@ -5904,23 +6107,44 @@ if has_viaticos:
                                 0
                             ),
 
-                        "Total Comprobado":
+                        # MXP
+                        "Total Comprobado MXP":
                             row.get(
                                 "total_comprobado",
                                 0
                             ),
 
-                        "Anticipo Viaje":
+                        "Anticipo Viaje MXP":
                             row.get(
                                 "anticipo_viaje",
                                 0
                             ),
 
-                        "Diferencia Cargo Favor":
+                        "Diferencia Cargo Favor MXP":
                             row.get(
                                 "diferencia_cargo_favor",
                                 0
                             ),
+
+                        # USD
+                        "Total Comprobado USD":
+                            row.get(
+                                "total_comprobado_usd",
+                                0
+                            ),
+
+                        "Anticipo Viaje USD":
+                            row.get(
+                                "anticipo_viaje_usd",
+                                0
+                            ),
+
+                        "Diferencia Cargo Favor USD":
+                            row.get(
+                                "diferencia_cargo_favor_usd",
+                                0
+                            ),
+
 
                         # =================================
                         # CONCEPTOS SOLICITUD
@@ -5961,6 +6185,7 @@ if has_viaticos:
                                 "Razon",
                                 ""
                             ),
+
 
                         # =================================
                         # CONCEPTOS COMPROBACION
@@ -6045,11 +6270,14 @@ if has_viaticos:
                             )
                     })
 
+
             df_reporte = pd.DataFrame(
                 reporte_rows
             )
 
+
             output = BytesIO()
+
 
             with pd.ExcelWriter(
                 output,
@@ -6062,7 +6290,9 @@ if has_viaticos:
                     sheet_name="Solicitudes"
                 )
 
+
             output.seek(0)
+
 
             st.download_button(
                 label="📥 Descargar reporte de Solicitudes",
@@ -6073,13 +6303,16 @@ if has_viaticos:
                 key="descargar_reporte_final"
             )
 
+
             # =================================
             # PAGINATION
             # =================================
 
             FINALIZADAS_POR_PAGINA = 5
 
-            total_finalizadas = len(df_finalizadas)
+            total_finalizadas = len(
+                df_finalizadas
+            )
 
             total_paginas_finalizadas = max(
                 1,
@@ -6088,32 +6321,39 @@ if has_viaticos:
                     + FINALIZADAS_POR_PAGINA
                     - 1
                 )
-                // FINALIZADAS_POR_PAGINA
+                //
+                FINALIZADAS_POR_PAGINA
             )
+
 
             if "pagina_finalizadas" not in st.session_state:
 
                 st.session_state.pagina_finalizadas = 1
 
+
             pagina_actual_finalizadas = (
                 st.session_state.pagina_finalizadas
             )
+
 
             inicio_finalizadas = (
                 (pagina_actual_finalizadas - 1)
                 * FINALIZADAS_POR_PAGINA
             )
 
+
             fin_finalizadas = (
                 inicio_finalizadas
                 + FINALIZADAS_POR_PAGINA
             )
+
 
             df_finalizadas_pagina = (
                 df_finalizadas.iloc[
                     inicio_finalizadas:fin_finalizadas
                 ]
             )
+
 
             # =================================
             # POSTITS
@@ -6129,11 +6369,13 @@ if has_viaticos:
 
                 cols = st.columns(5)
 
+
                 for i, (_, row) in enumerate(
                     df_finalizadas_pagina.iterrows()
                 ):
 
                     col = cols[i % 5]
+
 
                     with col:
 
@@ -6144,12 +6386,14 @@ if has_viaticos:
                             )
                         )
 
+
                         empleado = str(
                             row.get(
                                 "nombre_empleado_solicita",
                                 ""
                             )
                         )
+
 
                         fecha = str(
                             row.get(
@@ -6158,15 +6402,36 @@ if has_viaticos:
                             )
                         )[:10]
 
-                        total = row.get(
+
+                        # =================================
+                        # TOTALES MXP
+                        # =================================
+
+                        total_mxp = row.get(
                             "total_comprobado",
                             0
                         )
 
                         try:
-                            total = float(total)
+                            total_mxp = float(total_mxp)
                         except:
-                            total = 0
+                            total_mxp = 0
+
+
+                        # =================================
+                        # TOTALES USD
+                        # =================================
+
+                        total_usd = row.get(
+                            "total_comprobado_usd",
+                            0
+                        )
+
+                        try:
+                            total_usd = float(total_usd)
+                        except:
+                            total_usd = 0
+
 
                         estatus = str(
                             row.get(
@@ -6175,8 +6440,62 @@ if has_viaticos:
                             )
                         )
 
+
+                        # =================================
+                        # TOTAL DISPLAY
+                        # =================================
+
+                        total_html = ""
+
+                        if total_mxp != 0:
+
+                            total_html += f"""
+                            <div style="
+                                font-size:0.9rem;
+                                font-weight:700;
+                                color:#151F6D;
+                                margin-top:10px;
+                            ">
+                                MXP: ${total_mxp:,.2f}
+                            </div>
+                            """
+
+
+                        if total_usd != 0:
+
+                            total_html += f"""
+                            <div style="
+                                font-size:0.9rem;
+                                font-weight:700;
+                                color:#151F6D;
+                                margin-top:4px;
+                            ">
+                                USD: ${total_usd:,.2f}
+                            </div>
+                            """
+
+
+                        if total_html == "":
+
+                            total_html = """
+                            <div style="
+                                font-size:0.9rem;
+                                font-weight:700;
+                                color:#151F6D;
+                                margin-top:10px;
+                            ">
+                                Sin monto
+                            </div>
+                            """
+
+
+                        # =================================
+                        # POST-IT
+                        # =================================
+
                         html = f"""
                         <div style="padding:6px;">
+
                             <div style="
                                 background:#ffffff;
                                 padding:14px;
@@ -6194,6 +6513,7 @@ if has_viaticos:
                                     {folio}
                                 </div>
 
+
                                 <div style="
                                     font-size:0.8rem;
                                     margin-top:4px;
@@ -6201,13 +6521,16 @@ if has_viaticos:
                                     {empleado}
                                 </div>
 
+
                                 <hr style="margin:8px 0">
+
 
                                 <div style="
                                     font-size:0.8rem;
                                 ">
                                     <b>Fecha:</b> {fecha}
                                 </div>
+
 
                                 <div style="
                                     font-size:0.8rem;
@@ -6216,23 +6539,24 @@ if has_viaticos:
                                     <b>Estatus:</b> {estatus}
                                 </div>
 
-                                <div style="
-                                    font-size:0.9rem;
-                                    margin-top:10px;
-                                    font-weight:700;
-                                    color:#151F6D;
-                                ">
-                                    ${total:,.2f}
-                                </div>
+
+                                {total_html}
 
                             </div>
+
                         </div>
                         """
+
 
                         components.html(
                             html,
                             height=230
                         )
+
+
+                        # =================================
+                        # VER
+                        # =================================
 
                         if st.button(
                             "👁 Ver",
@@ -6245,12 +6569,18 @@ if has_viaticos:
                                 ""
                             )
 
+
+                            # =================================
+                            # LOAD SOLICITUD
+                            # =================================
+
                             solicitud_match = df_solicitudes[
                                 df_solicitudes["folio_solicitud"]
                                 .astype(str)
                                 ==
                                 str(folio_actual)
                             ]
+
 
                             if not solicitud_match.empty:
 
@@ -6264,9 +6594,11 @@ if has_viaticos:
 
                                 solicitud_row = {}
 
+
                             # =================================
                             # MODAL
                             # =================================
+
                             @st.dialog(
                                 "Detalle de Comprobación",
                                 width="large",
@@ -6401,7 +6733,7 @@ if has_viaticos:
                                 )
 
                                 # =================================
-                                # OBSERVACIONES
+                                # OBSERVACIONES SOLICITUD
                                 # =================================
 
                                 st.markdown(
@@ -6424,6 +6756,10 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
+                                # =================================
+                                # EMPLEADO COMPROBACION
+                                # =================================
+
                                 st.markdown(
                                     "## 👤 Empleado que metió comprobación"
                                 )
@@ -6445,6 +6781,10 @@ if has_viaticos:
                                     """,
                                     unsafe_allow_html=True
                                 )
+
+                                # =================================
+                                # OBSERVACIONES COMPROBACION
+                                # =================================
 
                                 st.markdown(
                                     "## 📝 Observaciones Comprobación"
@@ -6479,21 +6819,24 @@ if has_viaticos:
                                     )
                                 )
 
+                                if not isinstance(
+                                    conceptos_solicitud,
+                                    list
+                                ):
+                                    conceptos_solicitud = []
+
                                 monto_solicitado = 0.0
 
                                 for item in conceptos_solicitud:
 
                                     try:
-
                                         monto_solicitado += float(
                                             item.get(
                                                 "Monto",
                                                 0
                                             ) or 0
                                         )
-
                                     except:
-
                                         pass
 
                                 st.markdown(
@@ -6511,6 +6854,10 @@ if has_viaticos:
                                     """,
                                     unsafe_allow_html=True
                                 )
+
+                                # =================================
+                                # DETALLES SOLICITUD
+                                # =================================
 
                                 st.markdown(
                                     "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
@@ -6540,7 +6887,6 @@ if has_viaticos:
                                         for col_name in columnas_solicitud:
 
                                             if col_name not in df_sol.columns:
-
                                                 df_sol[col_name] = ""
 
                                         df_sol = df_sol[
@@ -6567,7 +6913,7 @@ if has_viaticos:
                                             hide_index=True,
                                             disabled=True,
                                             height=350,
-                                            key="solicitud_detalles_verificacion"
+                                            key=f"solicitud_detalles_finalizada_{folio_actual}"
                                         )
 
                                     else:
@@ -6575,6 +6921,82 @@ if has_viaticos:
                                         st.info(
                                             "No hay conceptos."
                                         )
+
+                                # =================================
+                                # VALORES TOTALES COMPROBACION
+                                # =================================
+
+                                total_comprobacion_mxp = row.get(
+                                    "total_comprobado",
+                                    0
+                                )
+
+                                anticipo_mxp = row.get(
+                                    "anticipo_viaje",
+                                    0
+                                )
+
+                                diferencia_mxp = row.get(
+                                    "diferencia_cargo_favor",
+                                    0
+                                )
+
+                                total_comprobacion_usd = row.get(
+                                    "total_comprobado_usd",
+                                    0
+                                )
+
+                                anticipo_usd = row.get(
+                                    "anticipo_viaje_usd",
+                                    0
+                                )
+
+                                diferencia_usd = row.get(
+                                    "diferencia_cargo_favor_usd",
+                                    0
+                                )
+
+                                try:
+                                    total_comprobacion_mxp = float(
+                                        total_comprobacion_mxp or 0
+                                    )
+                                except:
+                                    total_comprobacion_mxp = 0
+
+                                try:
+                                    anticipo_mxp = float(
+                                        anticipo_mxp or 0
+                                    )
+                                except:
+                                    anticipo_mxp = 0
+
+                                try:
+                                    diferencia_mxp = float(
+                                        diferencia_mxp or 0
+                                    )
+                                except:
+                                    diferencia_mxp = 0
+
+                                try:
+                                    total_comprobacion_usd = float(
+                                        total_comprobacion_usd or 0
+                                    )
+                                except:
+                                    total_comprobacion_usd = 0
+
+                                try:
+                                    anticipo_usd = float(
+                                        anticipo_usd or 0
+                                    )
+                                except:
+                                    anticipo_usd = 0
+
+                                try:
+                                    diferencia_usd = float(
+                                        diferencia_usd or 0
+                                    )
+                                except:
+                                    diferencia_usd = 0
 
                                 # =================================
                                 # CONCEPTOS COMPROBACION
@@ -6593,34 +7015,57 @@ if has_viaticos:
                                     )
                                 )
 
-                                total_comprobado = (
-                                    row.get(
-                                        "total_comprobado",
-                                        0
-                                    )
-                                )
+                                if not isinstance(
+                                    conceptos_comprobacion,
+                                    list
+                                ):
+                                    conceptos_comprobacion = []
 
-                                try:
-                                    total_comprobado = float(
-                                        total_comprobado
-                                    )
-                                except:
-                                    total_comprobado = 0
+                                # =================================
+                                # COMPROBACION MXP / USD
+                                # SOLO ESTOS TOTALES AQUÍ
+                                # =================================
 
-                                st.markdown(
-                                    f"""
+                                comprobacion_html = ""
+
+                                if total_comprobacion_mxp != 0:
+
+                                    comprobacion_html += f"""
+                                    <div style='
+                                        font-size:22px;
+                                        font-weight:700;
+                                        color:#38BDF8;
+                                        margin-bottom:8px;
+                                    '>
+                                        Comprobación MXP:
+                                        ${total_comprobacion_mxp:,.2f}
+                                    </div>
+                                    """
+
+                                if total_comprobacion_usd != 0:
+
+                                    comprobacion_html += f"""
                                     <div style='
                                         font-size:22px;
                                         font-weight:700;
                                         color:#38BDF8;
                                         margin-bottom:15px;
                                     '>
-                                        Comprobación:
-                                        ${total_comprobado:,.2f}
+                                        Comprobación USD:
+                                        ${total_comprobacion_usd:,.2f}
                                     </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
+                                    """
+
+                                if comprobacion_html:
+
+                                    st.markdown(
+                                        comprobacion_html,
+                                        unsafe_allow_html=True
+                                    )
+
+                                # =================================
+                                # TABLA COMPROBACION
+                                # =================================
 
                                 if conceptos_comprobacion:
 
@@ -6635,38 +7080,24 @@ if has_viaticos:
                                         )
 
                                     columnas_comprobacion = [
-
                                         "Tipo",
-
                                         "Descripcion",
-
                                         "Fecha Factura",
-
                                         "Folio",
-
                                         "Proveedor",
-
                                         "Moneda",
-
                                         "Monto",
-
                                         "Comprobante",
-
                                         "Aplica IVA",
-
                                         "IVA %",
-
                                         "Aplica Retencion",
-
                                         "Impuesto Acreditable",
-
                                         "Total Comprobado"
                                     ]
 
                                     for col_name in columnas_comprobacion:
 
                                         if col_name not in df_comp.columns:
-
                                             df_comp[col_name] = ""
 
                                     df_comp = df_comp[
@@ -6700,7 +7131,8 @@ if has_viaticos:
                                         use_container_width=True,
                                         hide_index=True,
                                         disabled=True,
-                                        height=350
+                                        height=350,
+                                        key=f"comprobacion_detalles_finalizada_{folio_actual}"
                                     )
 
                                 else:
@@ -6714,25 +7146,49 @@ if has_viaticos:
                                 # =================================
 
                                 st.markdown("---")
-                                st.markdown("## 📎 Comprobantes Adjuntos")
 
-                                archivos = row.get("archivos") or []
+                                st.markdown(
+                                    "## 📎 Comprobantes Adjuntos"
+                                )
+
+                                archivos = (
+                                    row.get("archivos")
+                                    or []
+                                )
 
                                 if len(archivos) == 0:
 
-                                    st.info("No hay comprobantes adjuntos.")
+                                    st.info(
+                                        "No hay comprobantes adjuntos."
+                                    )
 
                                 else:
 
                                     for archivo in archivos:
 
-                                        path = archivo.get("path", "")
-                                        nombre = archivo.get("filename", "Archivo")
+                                        path = archivo.get(
+                                            "path",
+                                            ""
+                                        )
+
+                                        nombre = archivo.get(
+                                            "filename",
+                                            "Archivo"
+                                        )
 
                                         if not path:
                                             continue
 
-                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+                                        url = (
+                                            supabase
+                                            .storage
+                                            .from_(
+                                                "comprobantes-viaje"
+                                            )
+                                            .get_public_url(
+                                                path
+                                            )
+                                        )
 
                                         st.link_button(
                                             f"📎 {nombre}",
@@ -6741,82 +7197,115 @@ if has_viaticos:
                                         )
 
                                 # =================================
-                                # TOTALES COMPROBACION
+                                # TOTALES FINALES
                                 # =================================
 
                                 st.markdown("---")
 
-                                total_comp = row.get(
-                                    "total_comprobado",
-                                    0
+                                st.markdown(
+                                    "## 💰 Totales de Comprobación"
                                 )
 
-                                anticipo = row.get(
-                                    "anticipo_viaje",
-                                    0
-                                )
-
-                                diferencia = row.get(
-                                    "diferencia_cargo_favor",
-                                    0
-                                )
-
-                                try:
-                                    total_comp = float(total_comp)
-                                except:
-                                    total_comp = 0
-
-                                try:
-                                    anticipo = float(anticipo)
-                                except:
-                                    anticipo = 0
-
-                                try:
-                                    diferencia = float(diferencia)
-                                except:
-                                    diferencia = 0
-
-                                col_tot1, col_tot2, col_tot3 = st.columns(3)
-
-                                with col_tot1:
+                                # MXP
+                                if (
+                                    total_comprobacion_mxp != 0
+                                    or anticipo_mxp != 0
+                                    or diferencia_mxp != 0
+                                ):
 
                                     st.markdown(
-                                        f"""
-                                        ### Total Comprobado
-
-                                        ## ${total_comp:,.2f}
-                                        """
+                                        "### MXP"
                                     )
 
-                                with col_tot2:
+                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                                    with col_tot1:
+
+                                        st.markdown(
+                                            f"""
+                                            **Total Comprobado**
+
+                                            ## ${total_comprobacion_mxp:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot2:
+
+                                        st.markdown(
+                                            f"""
+                                            **Anticipo Viaje**
+
+                                            ## ${anticipo_mxp:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot3:
+
+                                        st.markdown(
+                                            f"""
+                                            **Diferencia Cargo/Favor**
+
+                                            ## ${diferencia_mxp:,.2f}
+                                            """
+                                        )
+
+                                # USD
+                                if (
+                                    total_comprobacion_usd != 0
+                                    or anticipo_usd != 0
+                                    or diferencia_usd != 0
+                                ):
 
                                     st.markdown(
-                                        f"""
-                                        ### Anticipo Viaje
-
-                                        ## ${anticipo:,.2f}
-                                        """
+                                        "### USD"
                                     )
 
-                                with col_tot3:
+                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
 
-                                    st.markdown(
-                                        f"""
-                                        ### Diferencia Cargo/Favor
+                                    with col_tot1:
 
-                                        ## ${diferencia:,.2f}
-                                        """
-                                    )
+                                        st.markdown(
+                                            f"""
+                                            **Total Comprobado**
+
+                                            ## ${total_comprobacion_usd:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot2:
+
+                                        st.markdown(
+                                            f"""
+                                            **Anticipo Viaje**
+
+                                            ## ${anticipo_usd:,.2f}
+                                            """
+                                        )
+
+                                    with col_tot3:
+
+                                        st.markdown(
+                                            f"""
+                                            **Diferencia Cargo/Favor**
+
+                                            ## ${diferencia_usd:,.2f}
+                                            """
+                                        )
 
                             modal_verificacion_finalizada()
-                            
+
+
             # =================================
             # PAGINATION CONTROLS
             # =================================
 
             st.divider()
 
-            p1, p2, p3 = st.columns([1,2,1])
+
+            p1, p2, p3 = st.columns(
+                [1, 2, 1]
+            )
+
 
             with p1:
 
@@ -6830,7 +7319,9 @@ if has_viaticos:
                 ):
 
                     st.session_state.pagina_finalizadas -= 1
+
                     st.rerun()
+
 
             with p2:
 
@@ -6842,11 +7333,13 @@ if has_viaticos:
                         font-weight:700;
                         color:#151F6D;
                     ">
-                        Página {st.session_state.pagina_finalizadas} de {total_paginas_finalizadas}
+                        Página {st.session_state.pagina_finalizadas}
+                        de {total_paginas_finalizadas}
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
+
 
             with p3:
 
@@ -6861,4 +7354,5 @@ if has_viaticos:
                 ):
 
                     st.session_state.pagina_finalizadas += 1
+
                     st.rerun()
