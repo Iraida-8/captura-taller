@@ -6614,9 +6614,7 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 col1, col2 = st.columns(2)
-
 
                                 with col1:
 
@@ -6660,7 +6658,6 @@ if has_viaticos:
                                         unsafe_allow_html=True
                                     )
 
-
                                 with col2:
 
                                     st.markdown(
@@ -6688,7 +6685,6 @@ if has_viaticos:
                                         unsafe_allow_html=True
                                     )
 
-
                                     label_cliente = (
                                         "Motivo del Viaje"
                                         if str(
@@ -6700,18 +6696,15 @@ if has_viaticos:
                                         else "Nombre del Cliente"
                                     )
 
-
                                     st.markdown(
                                         f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
                                         unsafe_allow_html=True
                                     )
 
-
                                     st.markdown(
                                         f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
                                         unsafe_allow_html=True
                                     )
-
 
                                 # =================================
                                 # MOTIVO
@@ -6722,7 +6715,6 @@ if has_viaticos:
                                 st.markdown(
                                     "## ✈️ Motivo del Viaje"
                                 )
-
 
                                 st.markdown(
                                     f"""
@@ -6740,7 +6732,6 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 # =================================
                                 # OBSERVACIONES SOLICITUD
                                 # =================================
@@ -6748,7 +6739,6 @@ if has_viaticos:
                                 st.markdown(
                                     "## 📝 Observaciones Solicitud"
                                 )
-
 
                                 st.markdown(
                                     f"""
@@ -6766,7 +6756,6 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 # =================================
                                 # EMPLEADO COMPROBACION
                                 # =================================
@@ -6774,7 +6763,6 @@ if has_viaticos:
                                 st.markdown(
                                     "## 👤 Empleado que metió comprobación"
                                 )
-
 
                                 st.markdown(
                                     f"""
@@ -6794,7 +6782,6 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 # =================================
                                 # OBSERVACIONES COMPROBACION
                                 # =================================
@@ -6802,7 +6789,6 @@ if has_viaticos:
                                 st.markdown(
                                     "## 📝 Observaciones Comprobación"
                                 )
-
 
                                 st.markdown(
                                     f"""
@@ -6820,13 +6806,11 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 # =================================
                                 # MONTO SOLICITADO
                                 # =================================
 
                                 st.markdown("---")
-
 
                                 conceptos_solicitud = (
                                     solicitud_row.get(
@@ -6835,32 +6819,25 @@ if has_viaticos:
                                     )
                                 )
 
-
                                 if not isinstance(
                                     conceptos_solicitud,
                                     list
                                 ):
                                     conceptos_solicitud = []
 
-
                                 monto_solicitado = 0.0
-
 
                                 for item in conceptos_solicitud:
 
                                     try:
-
                                         monto_solicitado += float(
                                             item.get(
                                                 "Monto",
                                                 0
                                             ) or 0
                                         )
-
                                     except:
-
                                         pass
-
 
                                 st.markdown(
                                     f"""
@@ -6878,7 +6855,6 @@ if has_viaticos:
                                     unsafe_allow_html=True
                                 )
 
-
                                 # =================================
                                 # DETALLES SOLICITUD
                                 # =================================
@@ -6887,7 +6863,6 @@ if has_viaticos:
                                     "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
                                     unsafe_allow_html=True
                                 )
-
 
                                 with st.expander(
                                     "",
@@ -6900,7 +6875,6 @@ if has_viaticos:
                                             conceptos_solicitud
                                         )
 
-
                                         columnas_solicitud = [
                                             "Tipo",
                                             "Descripcion",
@@ -6910,18 +6884,14 @@ if has_viaticos:
                                             "Razon"
                                         ]
 
-
                                         for col_name in columnas_solicitud:
 
                                             if col_name not in df_sol.columns:
-
                                                 df_sol[col_name] = ""
-
 
                                         df_sol = df_sol[
                                             columnas_solicitud
                                         ]
-
 
                                         if "Monto" in df_sol.columns:
 
@@ -6937,7 +6907,6 @@ if has_viaticos:
                                                 )
                                             )
 
-
                                         st.data_editor(
                                             df_sol,
                                             use_container_width=True,
@@ -6952,6 +6921,82 @@ if has_viaticos:
                                         st.info(
                                             "No hay conceptos."
                                         )
+
+                                # =================================
+                                # VALORES TOTALES COMPROBACION
+                                # =================================
+
+                                total_comprobacion_mxp = row.get(
+                                    "total_comprobado",
+                                    0
+                                )
+
+                                anticipo_mxp = row.get(
+                                    "anticipo_viaje",
+                                    0
+                                )
+
+                                diferencia_mxp = row.get(
+                                    "diferencia_cargo_favor",
+                                    0
+                                )
+
+                                total_comprobacion_usd = row.get(
+                                    "total_comprobado_usd",
+                                    0
+                                )
+
+                                anticipo_usd = row.get(
+                                    "anticipo_viaje_usd",
+                                    0
+                                )
+
+                                diferencia_usd = row.get(
+                                    "diferencia_cargo_favor_usd",
+                                    0
+                                )
+
+                                try:
+                                    total_comprobacion_mxp = float(
+                                        total_comprobacion_mxp or 0
+                                    )
+                                except:
+                                    total_comprobacion_mxp = 0
+
+                                try:
+                                    anticipo_mxp = float(
+                                        anticipo_mxp or 0
+                                    )
+                                except:
+                                    anticipo_mxp = 0
+
+                                try:
+                                    diferencia_mxp = float(
+                                        diferencia_mxp or 0
+                                    )
+                                except:
+                                    diferencia_mxp = 0
+
+                                try:
+                                    total_comprobacion_usd = float(
+                                        total_comprobacion_usd or 0
+                                    )
+                                except:
+                                    total_comprobacion_usd = 0
+
+                                try:
+                                    anticipo_usd = float(
+                                        anticipo_usd or 0
+                                    )
+                                except:
+                                    anticipo_usd = 0
+
+                                try:
+                                    diferencia_usd = float(
+                                        diferencia_usd or 0
+                                    )
+                                except:
+                                    diferencia_usd = 0
 
                                 # =================================
                                 # CONCEPTOS COMPROBACION
@@ -6976,29 +7021,12 @@ if has_viaticos:
                                 ):
                                     conceptos_comprobacion = []
 
-
                                 # =================================
-                                # TOTALES COMPROBACION
-                                # IDENTICAL TO POR VERIFICAR
+                                # COMPROBACION MXP / USD
+                                # SOLO ESTOS TOTALES AQUÍ
                                 # =================================
-
-                                total_comprobacion_mxp = float(
-                                    row.get(
-                                        "total_comprobado",
-                                        0
-                                    ) or 0
-                                )
-
-                                total_comprobacion_usd = float(
-                                    row.get(
-                                        "total_comprobado_usd",
-                                        0
-                                    ) or 0
-                                )
-
 
                                 comprobacion_html = ""
-
 
                                 if total_comprobacion_mxp != 0:
 
@@ -7014,7 +7042,6 @@ if has_viaticos:
                                     </div>
                                     """
 
-
                                 if total_comprobacion_usd != 0:
 
                                     comprobacion_html += f"""
@@ -7029,14 +7056,12 @@ if has_viaticos:
                                     </div>
                                     """
 
-
                                 if comprobacion_html:
 
                                     st.markdown(
                                         comprobacion_html,
                                         unsafe_allow_html=True
                                     )
-
 
                                 # =================================
                                 # TABLA COMPROBACION
@@ -7048,13 +7073,11 @@ if has_viaticos:
                                         conceptos_comprobacion
                                     )
 
-
                                     if "Eliminar" in df_comp.columns:
 
                                         df_comp = df_comp.drop(
                                             columns=["Eliminar"]
                                         )
-
 
                                     columnas_comprobacion = [
                                         "Tipo",
@@ -7072,25 +7095,20 @@ if has_viaticos:
                                         "Total Comprobado"
                                     ]
 
-
                                     for col_name in columnas_comprobacion:
 
                                         if col_name not in df_comp.columns:
-
                                             df_comp[col_name] = ""
-
 
                                     df_comp = df_comp[
                                         columnas_comprobacion
                                     ]
-
 
                                     currency_columns = [
                                         "Monto",
                                         "Impuesto Acreditable",
                                         "Total Comprobado"
                                     ]
-
 
                                     for col_name in currency_columns:
 
@@ -7107,7 +7125,6 @@ if has_viaticos:
                                                     f"${x:,.2f}"
                                                 )
                                             )
-
 
                                     st.data_editor(
                                         df_comp,
@@ -7118,99 +7135,11 @@ if has_viaticos:
                                         key=f"comprobacion_detalles_finalizada_{folio_actual}"
                                     )
 
-
                                 else:
 
                                     st.info(
                                         "No hay conceptos comprobados."
                                     )
-                                # =================================
-                                # TABLA COMPROBACION
-                                # =================================
-
-                                if conceptos_comprobacion:
-
-                                    df_comp = pd.DataFrame(
-                                        conceptos_comprobacion
-                                    )
-
-
-                                    if "Eliminar" in df_comp.columns:
-
-                                        df_comp = df_comp.drop(
-                                            columns=["Eliminar"]
-                                        )
-
-
-                                    columnas_comprobacion = [
-                                        "Tipo",
-                                        "Descripcion",
-                                        "Fecha Factura",
-                                        "Folio",
-                                        "Proveedor",
-                                        "Moneda",
-                                        "Monto",
-                                        "Comprobante",
-                                        "Aplica IVA",
-                                        "IVA %",
-                                        "Aplica Retencion",
-                                        "Impuesto Acreditable",
-                                        "Total Comprobado"
-                                    ]
-
-
-                                    for col_name in columnas_comprobacion:
-
-                                        if col_name not in df_comp.columns:
-
-                                            df_comp[col_name] = ""
-
-
-                                    df_comp = df_comp[
-                                        columnas_comprobacion
-                                    ]
-
-
-                                    currency_columns = [
-                                        "Monto",
-                                        "Impuesto Acreditable",
-                                        "Total Comprobado"
-                                    ]
-
-
-                                    for col_name in currency_columns:
-
-                                        if col_name in df_comp.columns:
-
-                                            df_comp[col_name] = (
-                                                pd.to_numeric(
-                                                    df_comp[col_name],
-                                                    errors="coerce"
-                                                )
-                                                .fillna(0)
-                                                .apply(
-                                                    lambda x:
-                                                    f"${x:,.2f}"
-                                                )
-                                            )
-
-
-                                    st.data_editor(
-                                        df_comp,
-                                        use_container_width=True,
-                                        hide_index=True,
-                                        disabled=True,
-                                        height=350,
-                                        key=f"comprobacion_detalles_finalizada_{folio_actual}_{id(row)}"
-                                    )
-
-
-                                else:
-
-                                    st.info(
-                                        "No hay conceptos comprobados."
-                                    )
-
 
                                 # =================================
                                 # ARCHIVOS ADJUNTOS
@@ -7222,12 +7151,10 @@ if has_viaticos:
                                     "## 📎 Comprobantes Adjuntos"
                                 )
 
-
                                 archivos = (
                                     row.get("archivos")
                                     or []
                                 )
-
 
                                 if len(archivos) == 0:
 
@@ -7249,10 +7176,8 @@ if has_viaticos:
                                             "Archivo"
                                         )
 
-
                                         if not path:
                                             continue
-
 
                                         url = (
                                             supabase
@@ -7265,13 +7190,11 @@ if has_viaticos:
                                             )
                                         )
 
-
                                         st.link_button(
                                             f"📎 {nombre}",
                                             url,
                                             use_container_width=True
                                         )
-
 
                                 # =================================
                                 # TOTALES FINALES
@@ -7282,7 +7205,6 @@ if has_viaticos:
                                 st.markdown(
                                     "## 💰 Totales de Comprobación"
                                 )
-
 
                                 # MXP
                                 if (
@@ -7295,9 +7217,7 @@ if has_viaticos:
                                         "### MXP"
                                     )
 
-
                                     col_tot1, col_tot2, col_tot3 = st.columns(3)
-
 
                                     with col_tot1:
 
@@ -7309,7 +7229,6 @@ if has_viaticos:
                                             """
                                         )
 
-
                                     with col_tot2:
 
                                         st.markdown(
@@ -7320,7 +7239,6 @@ if has_viaticos:
                                             """
                                         )
 
-
                                     with col_tot3:
 
                                         st.markdown(
@@ -7330,7 +7248,6 @@ if has_viaticos:
                                             ## ${diferencia_mxp:,.2f}
                                             """
                                         )
-
 
                                 # USD
                                 if (
@@ -7343,9 +7260,7 @@ if has_viaticos:
                                         "### USD"
                                     )
 
-
                                     col_tot1, col_tot2, col_tot3 = st.columns(3)
-
 
                                     with col_tot1:
 
@@ -7357,7 +7272,6 @@ if has_viaticos:
                                             """
                                         )
 
-
                                     with col_tot2:
 
                                         st.markdown(
@@ -7368,7 +7282,6 @@ if has_viaticos:
                                             """
                                         )
 
-
                                     with col_tot3:
 
                                         st.markdown(
@@ -7378,7 +7291,6 @@ if has_viaticos:
                                             ## ${diferencia_usd:,.2f}
                                             """
                                         )
-
 
                             modal_verificacion_finalizada()
 
