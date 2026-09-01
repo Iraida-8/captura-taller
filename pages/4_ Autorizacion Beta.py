@@ -4552,15 +4552,25 @@ if has_viaticos:
                             )
                         )[:10]
 
-                        total = row.get(
+                        total_mxp = row.get(
                             "total_comprobado",
                             0
                         )
 
+                        total_usd = row.get(
+                            "total_comprobado_usd",
+                            0
+                        )
+
                         try:
-                            total = float(total)
+                            total_mxp = float(total_mxp)
                         except:
-                            total = 0
+                            total_mxp = 0
+
+                        try:
+                            total_usd = float(total_usd)
+                        except:
+                            total_usd = 0
 
                         html = f"""
                         <div style="padding:6px;">
