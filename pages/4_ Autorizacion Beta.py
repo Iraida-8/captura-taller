@@ -5203,54 +5203,55 @@ if has_viaticos:
 
                                 with col_tot1:
 
+                                    total_comp_mxp = float(
+                                        comprobacion_row.get(
+                                            "total_comprobado",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
                                         ### Total Comprobado MXP
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "total_comprobado",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${total_comp_mxp:,.2f}
                                         """
                                     )
 
                                 with col_tot2:
 
+                                    anticipo_mxp = float(
+                                        comprobacion_row.get(
+                                            "anticipo_viaje",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
-                                        ### Anticipo para gastos de viaje MXP
+                                        ### Anticipo Viaje MXP
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "anticipo_viaje",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${anticipo_mxp:,.2f}
                                         """
                                     )
 
                                 with col_tot3:
 
+                                    diferencia_mxp = float(
+                                        comprobacion_row.get(
+                                            "diferencia_cargo_favor",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
-                                        ### Diferencia / Cargo a Favor MXP
+                                        ### Diferencia Cargo/Favor MXP
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "diferencia_cargo_favor",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${diferencia_mxp:,.2f}
                                         """
                                     )
+
 
                                 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -5259,52 +5260,52 @@ if has_viaticos:
 
                                 with col_tot1:
 
+                                    total_comp_usd = float(
+                                        comprobacion_row.get(
+                                            "total_comprobado_usd",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
                                         ### Total Comprobado USD
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "total_comprobado_usd",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${total_comp_usd:,.2f}
                                         """
                                     )
 
                                 with col_tot2:
 
+                                    anticipo_usd = float(
+                                        comprobacion_row.get(
+                                            "anticipo_viaje_usd",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
-                                        ### Anticipo para gastos de viaje USD
+                                        ### Anticipo Viaje USD
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "anticipo_viaje_usd",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${anticipo_usd:,.2f}
                                         """
                                     )
 
                                 with col_tot3:
 
+                                    diferencia_usd = float(
+                                        comprobacion_row.get(
+                                            "diferencia_cargo_favor_usd",
+                                            0
+                                        ) or 0
+                                    )
+
                                     st.markdown(
                                         f"""
-                                        ### Diferencia / Cargo a Favor USD
+                                        ### Diferencia Cargo/Favor USD
 
-                                        ## ${
-                                            float(
-                                                comprobacion_row.get(
-                                                    "diferencia_cargo_favor_usd",
-                                                    0
-                                                ) or 0
-                                            ):,.2f
-                                        }
+                                        ## ${diferencia_usd:,.2f}
                                         """
                                     )
 
