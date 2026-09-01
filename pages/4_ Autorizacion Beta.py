@@ -4612,7 +4612,8 @@ if has_viaticos:
                                     font-weight:700;
                                     color:#151F6D;
                                 ">
-                                    ${total:,.2f}
+                                    {f'MXP: ${total_mxp:,.2f}' if total_mxp != 0 else ''}
+                                    {f'<br>USD: ${total_usd:,.2f}' if total_usd != 0 else ''}
                                 </div>
 
                             </div>
