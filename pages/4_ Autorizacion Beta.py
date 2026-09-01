@@ -5009,8 +5009,25 @@ if has_viaticos:
                                 except:
                                     total_comprobado = 0
 
-                                st.markdown(
-                                    f"""
+                                total_comprobacion_mxp = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado",
+                                        0
+                                    ) or 0
+                                )
+
+                                total_comprobacion_usd = float(
+                                    comprobacion_row.get(
+                                        "total_comprobado_usd",
+                                        0
+                                    ) or 0
+                                )
+
+                                comprobacion_html = ""
+
+                                if total_comprobacion_mxp != 0:
+
+                                    comprobacion_html += f"""
                                     <div style='
                                         font-size:22px;
                                         font-weight:700;
@@ -5018,9 +5035,13 @@ if has_viaticos:
                                         margin-bottom:8px;
                                     '>
                                         Comprobación MXP:
-                                        ${float(comprobacion_row.get("total_comprobado", 0) or 0):,.2f}
+                                        ${total_comprobacion_mxp:,.2f}
                                     </div>
+                                    """
 
+                                if total_comprobacion_usd != 0:
+
+                                    comprobacion_html += f"""
                                     <div style='
                                         font-size:22px;
                                         font-weight:700;
@@ -5028,11 +5049,16 @@ if has_viaticos:
                                         margin-bottom:15px;
                                     '>
                                         Comprobación USD:
-                                        ${float(comprobacion_row.get("total_comprobado_usd", 0) or 0):,.2f}
+                                        ${total_comprobacion_usd:,.2f}
                                     </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
+                                    """
+
+                                if comprobacion_html:
+
+                                    st.markdown(
+                                        comprobacion_html,
+                                        unsafe_allow_html=True
+                                    )
 
                                 if conceptos_comprobacion:
 
