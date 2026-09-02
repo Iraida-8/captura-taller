@@ -1,29 +1,4 @@
 [
-    [
-        {
-        "version": "2.09.02.26",
-        "date": "02/09/2026",
-        "changes":
-            [
-            "Modificación del módulo Gestión de Viáticos para separar los montos solicitados por moneda, eliminando la conversión entre MXP y USD",
-            "Incorporación de la columna total_estimado_usd en la tabla solicitud_viaje para almacenar de forma independiente el monto solicitado en USD",
-            "Ajuste del cálculo de total_estimado para considerar exclusivamente los conceptos registrados en MXP",
-            "Implementación del cálculo independiente de total_estimado_usd para sumar exclusivamente los conceptos registrados en USD",
-            "Adaptación del registro de solicitudes de viáticos para guardar simultáneamente los totales solicitados en MXP y USD en sus respectivas columnas de Supabase",
-            "Ajuste de la visualización de los totales en Solicitudes Pendientes para mostrar únicamente las monedas que tengan un monto distinto de cero",
-            "Modificación de las tarjetas de Solicitudes Pendientes para mostrar ambos montos cuando existan valores tanto en MXP como en USD, sin mostrar etiquetas de moneda en el post-it",
-            "Adaptación del apartado Monto Solicitado en el modal de verificación para utilizar directamente total_estimado y total_estimado_usd almacenados en solicitud_viaje",
-            "Modificación del modal de verificación para mostrar de forma independiente los montos solicitados en MXP y USD, ocultando cualquier moneda cuyo valor sea cero, nulo o vacío",
-            "Adaptación del apartado Monto Solicitado del modal de Solicitudes Finalizadas para utilizar los valores independientes de MXP y USD almacenados en solicitud_viaje",
-            "Mantenimiento de la información de conceptos_solicitud en el modal de verificación para conservar el funcionamiento de la sección Ver Detalles Solicitud",
-            "Corrección de error NameError en modal_verificacion ocasionado por la ausencia de la variable conceptos_solicitud después de la modificación del bloque Monto Solicitado",
-            "Restauración de la inicialización de conceptos_solicitud desde solicitud_row dentro de modal_verificacion, manteniendo disponible la información utilizada por la sección Ver Detalles Solicitud",
-            "Mantenimiento del cálculo independiente de comprobaciones de viáticos para separar los totales comprobados en MXP y USD",
-            "Mantenimiento del cálculo independiente de anticipos y diferencias a favor en MXP y USD dentro del flujo de comprobación de gastos",
-            "Ajuste general de la presentación de importes del módulo Gestión de Viáticos para evitar mezclar o convertir valores entre MXP y USD y conservar cada moneda de forma independiente"
-            ]
-        }
-    ],
     {
     "version": "2.08.25.26",
     "date": "25/08/2026",
