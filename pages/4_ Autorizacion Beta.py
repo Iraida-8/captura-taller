@@ -6889,6 +6889,21 @@ if has_viaticos:
                                     montos_solicitados
                                 ) if montos_solicitados else "$0.00"
 
+                                # Mantener conceptos_solicitud disponible
+                                # para la sección "Ver Detalles Solicitud"
+                                conceptos_solicitud = (
+                                    solicitud_row.get(
+                                        "conceptos",
+                                        []
+                                    )
+                                )
+
+                                if not isinstance(
+                                    conceptos_solicitud,
+                                    list
+                                ):
+                                    conceptos_solicitud = []
+
                                 st.markdown(
                                     f"""
                                     <div style='
