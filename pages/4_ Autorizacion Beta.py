@@ -4142,15 +4142,34 @@ if has_viaticos:
                     # TOTAL
                     with col5:
 
-                        total_value = row.get("total_estimado", 0)
+                        total_mxp = row.get("total_estimado", 0)
+                        total_usd = row.get("total_estimado_usd", 0)
 
                         try:
-                            total_value = float(total_value)
+                            total_mxp = float(total_mxp or 0)
                         except Exception:
-                            total_value = 0
+                            total_mxp = 0.0
+
+                        try:
+                            total_usd = float(total_usd or 0)
+                        except Exception:
+                            total_usd = 0.0
+
+                        total_values = []
+
+                        if total_mxp != 0:
+                            total_values.append(f"${total_mxp:,.2f}")
+
+                        if total_usd != 0:
+                            total_values.append(f"${total_usd:,.2f}")
 
                         st.caption("Total")
-                        st.write(f"**${total_value:,.2f}**")
+
+                        if total_values:
+                            for value in total_values:
+                                st.write(f"**{value}**")
+                        else:
+                            st.write("**$0.00**")
 
                     # APROBAR
                     with col6:
@@ -4876,27 +4895,45 @@ if has_viaticos:
 
                                 st.markdown("---")
 
-                                conceptos_solicitud = (
-                                    solicitud_row.get(
-                                        "conceptos",
-                                        []
-                                    )
+                                monto_solicitado_mxp = solicitud_row.get(
+                                    "total_estimado",
+                                    0
                                 )
 
-                                monto_solicitado = 0.0
+                                monto_solicitado_usd = solicitud_row.get(
+                                    "total_estimado_usd",
+                                    0
+                                )
 
-                                for item in conceptos_solicitud:
+                                try:
+                                    monto_solicitado_mxp = float(
+                                        monto_solicitado_mxp or 0
+                                    )
+                                except:
+                                    monto_solicitado_mxp = 0.0
 
-                                    try:
-                                        monto_solicitado += float(
-                                            item.get(
-                                                "Monto",
-                                                0
-                                            ) or 0
-                                        )
+                                try:
+                                    monto_solicitado_usd = float(
+                                        monto_solicitado_usd or 0
+                                    )
+                                except:
+                                    monto_solicitado_usd = 0.0
 
-                                    except:
-                                        pass
+                                montos_solicitados = []
+
+                                if monto_solicitado_mxp != 0:
+                                    montos_solicitados.append(
+                                        f"${monto_solicitado_mxp:,.2f}"
+                                    )
+
+                                if monto_solicitado_usd != 0:
+                                    montos_solicitados.append(
+                                        f"${monto_solicitado_usd:,.2f}"
+                                    )
+
+                                monto_solicitado_display = "<br>".join(
+                                    montos_solicitados
+                                ) if montos_solicitados else "$0.00"
 
                                 st.markdown(
                                     f"""
@@ -4907,8 +4944,8 @@ if has_viaticos:
                                         margin-top:10px;
                                         margin-bottom:10px;
                                     '>
-                                        Monto Solicitado:
-                                        ${monto_solicitado:,.2f}
+                                        Monto Solicitado:<br>
+                                        {monto_solicitado_display}
                                     </div>
                                     """,
                                     unsafe_allow_html=True
@@ -6812,32 +6849,45 @@ if has_viaticos:
 
                                 st.markdown("---")
 
-                                conceptos_solicitud = (
-                                    solicitud_row.get(
-                                        "conceptos",
-                                        []
-                                    )
+                                monto_solicitado_mxp = solicitud_row.get(
+                                    "total_estimado",
+                                    0
                                 )
 
-                                if not isinstance(
-                                    conceptos_solicitud,
-                                    list
-                                ):
-                                    conceptos_solicitud = []
+                                monto_solicitado_usd = solicitud_row.get(
+                                    "total_estimado_usd",
+                                    0
+                                )
 
-                                monto_solicitado = 0.0
+                                try:
+                                    monto_solicitado_mxp = float(
+                                        monto_solicitado_mxp or 0
+                                    )
+                                except:
+                                    monto_solicitado_mxp = 0.0
 
-                                for item in conceptos_solicitud:
+                                try:
+                                    monto_solicitado_usd = float(
+                                        monto_solicitado_usd or 0
+                                    )
+                                except:
+                                    monto_solicitado_usd = 0.0
 
-                                    try:
-                                        monto_solicitado += float(
-                                            item.get(
-                                                "Monto",
-                                                0
-                                            ) or 0
-                                        )
-                                    except:
-                                        pass
+                                montos_solicitados = []
+
+                                if monto_solicitado_mxp != 0:
+                                    montos_solicitados.append(
+                                        f"${monto_solicitado_mxp:,.2f}"
+                                    )
+
+                                if monto_solicitado_usd != 0:
+                                    montos_solicitados.append(
+                                        f"${monto_solicitado_usd:,.2f}"
+                                    )
+
+                                monto_solicitado_display = "<br>".join(
+                                    montos_solicitados
+                                ) if montos_solicitados else "$0.00"
 
                                 st.markdown(
                                     f"""
@@ -6848,8 +6898,8 @@ if has_viaticos:
                                         margin-top:10px;
                                         margin-bottom:10px;
                                     '>
-                                        Monto Solicitado:
-                                        ${monto_solicitado:,.2f}
+                                        Monto Solicitado:<br>
+                                        {monto_solicitado_display}
                                     </div>
                                     """,
                                     unsafe_allow_html=True
