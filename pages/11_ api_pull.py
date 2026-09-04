@@ -2791,9 +2791,11 @@ with tab_historial:
                 # ONLY REAL TRIPS
                 # =====================================
 
-                trip_df = activity_df[
-                    activity_df["trip_type"] == "T"
-                ].copy()
+                trip_df = activity_df.copy()
+
+                #trip_df = activity_df[
+                #    activity_df["trip_type"] == "T"
+                #].copy()
 
                 if trip_df.empty:
 
@@ -3389,21 +3391,23 @@ with tab_historial:
                                 # ONLY REAL TRIPS
                                 # =============================================
 
-                                if "trip_type" not in fleet_activity_df.columns:
+                                fleet_trip_df = fleet_activity_df.copy()
 
-                                    return {
-                                        "unit": fleet_unit,
-                                        "trip_df": pd.DataFrame(),
-                                        "error": None
-                                    }
+                                #if "trip_type" not in fleet_activity_df.columns:
 
-                                fleet_trip_df = (
-                                    fleet_activity_df[
-                                        fleet_activity_df[
-                                            "trip_type"
-                                        ] == "T"
-                                    ].copy()
-                                )
+                                 #   return {
+                                  #      "unit": fleet_unit,
+                                   #     "trip_df": pd.DataFrame(),
+                                    #    "error": None
+                                    #}
+
+                                #fleet_trip_df = (
+                                #    fleet_activity_df[
+                                #        fleet_activity_df[
+                                #            "trip_type"
+                                #        ] == "T"
+                                #    ].copy()
+                                #)
 
                                 # =============================================
                                 # PICUS UNIT CONVERSION
