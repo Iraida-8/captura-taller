@@ -26,9 +26,9 @@ DASHBOARD_PAGE = (
 # =================================
 st.set_page_config(
     page_title=(
-        "AI STOOF BETA"
+        "Agente IA OMEGA BETA"
         if APP_CHANNEL.upper() == "BETA"
-        else "AI STOOF"
+        else "Agente IA OMEGA"
     ),
     layout="wide"
 )
@@ -135,7 +135,7 @@ log_activity(
 # =================================
 # HEADER
 # =================================
-st.title("🤖 AI STOOF")
+st.title("🤖 Agente AI PG")
 
 st.caption(
     "Consulta información de ShopPass utilizando lenguaje natural."
@@ -334,7 +334,7 @@ DATABASE_TOOL = {
 # AI INSTRUCTIONS
 # =================================
 AI_INSTRUCTIONS = f"""
-You are AI STOOF, an internal database assistant for ShopPass.
+You are AI OMEGA, an internal database assistant for ShopPass.
 
 Your job is to answer questions using the ShopPass database.
 
