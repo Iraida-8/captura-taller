@@ -7,7 +7,6 @@ from supabase import create_client
 # =================================
 # RELEASE CHANNEL
 # =================================
-
 APP_CHANNEL = "BETA"
 # APP_CHANNEL = "RELEASE"
 
@@ -17,11 +16,9 @@ DASHBOARD_PAGE = (
     else "pages/dashboard.py"
 )
 
-
 # =================================
 # Page configuration
 # =================================
-
 st.set_page_config(
     page_title=(
         "AI STOOF BETA"
@@ -31,18 +28,14 @@ st.set_page_config(
     layout="wide"
 )
 
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
-
 load_css()
-
 
 # =================================
 # Navigation
 # =================================
-
 st.write("")
 
 if st.button("⬅ Volver al Dashboard"):
@@ -50,22 +43,18 @@ if st.button("⬅ Volver al Dashboard"):
 
 st.divider()
 
-
 # =================================
 # Security gates
 # =================================
-
 require_login()
 
 user = st.session_state.user
 
 require_access("ai_testing")
 
-
 # =================================
 # ROLE
 # =================================
-
 user_role = str(
     user.get("role", "")
 ).strip().lower()
@@ -78,7 +67,6 @@ if user_role != "field_user":
 # =================================
 # SUPABASE
 # =================================
-
 @st.cache_resource
 def get_supabase():
 
@@ -87,14 +75,11 @@ def get_supabase():
         st.secrets["SUPABASE_SERVICE_KEY"]
     )
 
-
 supabase = get_supabase()
-
 
 # =================================
 # ACTIVITY LOG
 # =================================
-
 def log_activity(action, page):
 
     try:
@@ -112,19 +97,15 @@ def log_activity(action, page):
     except Exception as e:
         print(e)
 
-
 # =================================
 # PAGE ACTIVITY
 # =================================
-
 log_activity(
     "Abrió módulo AI Tester",
     "AI Tester"
 )
 
-
 # =================================
 # HEADER
 # =================================
-
 st.title("💳 AI Tester")
