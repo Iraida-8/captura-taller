@@ -5,7 +5,8 @@ import streamlit as st
 from auth import require_login, require_access
 from pages.css import load_css
 from supabase import create_client
-from openai import OpenAI # type: ignore
+import urllib.error
+import urllib.request
 
 
 # =================================
@@ -89,17 +90,41 @@ supabase = get_supabase()
 
 
 # =================================
-# OPENAI
+# OLLAMA
 # =================================
-@st.cache_resource
-def get_openai():
+OLLAMA_HOST = "http://localhost:11434"
+OLLAMA_MODEL = "qwen3:14b"
 
-    return OpenAI(
-        api_key=st.secrets["OPENAI_API_KEY"]
+
+def ollama_chat(messages, tools=None):
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": messages,
+        "stream": False,
+    }
+
+    if tools:
+        payload["tools"] = tools
+
+    request = urllib.request.Request(
+        f"{OLLAMA_HOST}/api/chat",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
 
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            return json.loads(response.read().decode("utf-8"))
 
-openai_client = get_openai()
+    except urllib.error.URLError as e:
+        raise RuntimeError(
+            "No se pudo conectar con Ollama. "
+            "Asegúrate de que Ollama esté ejecutándose en "
+            f"{OLLAMA_HOST} y que el modelo '{OLLAMA_MODEL}' esté instalado. "
+            f"Detalle: {e}"
+        ) from e
 
 
 # =================================
@@ -301,7 +326,7 @@ def query_shop_pass(sql):
 
 
 # =================================
-# OPENAI TOOL DEFINITION
+# OLLAMA TOOL DEFINITION
 # =================================
 DATABASE_TOOL = {
     "type": "function",
@@ -404,143 +429,110 @@ for message in st.session_state.ai_messages:
 # =================================
 def ask_ai(user_question):
 
-    # Add user message to conversation.
+    # Add user message to the visible conversation.
     st.session_state.ai_messages.append({
         "role": "user",
         "content": user_question,
     })
 
-    # Convert conversation into Responses API input.
-    input_messages = []
+    # Build the Ollama conversation.
+    # The system instructions are kept separate from the visible chat.
+    model_messages = [
+        {
+            "role": "system",
+            "content": AI_INSTRUCTIONS,
+        }
+    ]
 
     for message in st.session_state.ai_messages:
 
-        input_messages.append({
+        model_messages.append({
             "role": message["role"],
             "content": message["content"],
         })
 
-
     # ---------------------------------
-    # First AI request
-    # ---------------------------------
-    response = openai_client.responses.create(
-
-        model="gpt-5.6-luna",
-
-        instructions=AI_INSTRUCTIONS,
-
-        input=input_messages,
-
-        tools=[
-            DATABASE_TOOL
-        ],
-
-        tool_choice="auto",
-
-    )
-
-
-    # ---------------------------------
-    # Process tool calls
+    # AI request / tool execution loop
     # ---------------------------------
     while True:
 
-        tool_calls = [
-            item
-            for item in response.output
-            if getattr(item, "type", None) == "function_call"
-        ]
+        response = ollama_chat(
+            messages=model_messages,
+            tools=[DATABASE_TOOL],
+        )
+
+        assistant_message = response.get("message", {})
+
+        # If the model requested database tools, execute them and
+        # send the results back to the local model.
+        tool_calls = assistant_message.get("tool_calls", [])
 
         if not tool_calls:
             break
 
-
-        tool_outputs = []
-
+        # Preserve the assistant tool-call message exactly as returned
+        # by Ollama so the next request has the required tool-call context.
+        model_messages.append(assistant_message)
 
         for tool_call in tool_calls:
 
-            if tool_call.name != "query_shop_pass":
+            function = tool_call.get("function", {})
+            tool_name = function.get("name")
 
-                tool_outputs.append({
+            if tool_name != "query_shop_pass":
 
-                    "type": "function_call_output",
-                    "call_id": tool_call.call_id,
-                    "output": json.dumps({
+                model_messages.append({
+                    "role": "tool",
+                    "content": json.dumps({
                         "error": "Unknown tool."
                     }),
                 })
 
                 continue
 
-
             try:
 
-                arguments = json.loads(
-                    tool_call.arguments
-                )
+                arguments = function.get("arguments", {})
+                sql = arguments.get("sql")
 
-                sql = arguments["sql"]
+                if not sql:
+                    raise ValueError(
+                        "La herramienta no proporcionó una consulta SQL."
+                    )
 
                 data = query_shop_pass(sql)
 
-                tool_outputs.append({
-
-                    "type": "function_call_output",
-                    "call_id": tool_call.call_id,
-                    "output": json.dumps(
+                model_messages.append({
+                    "role": "tool",
+                    "content": json.dumps(
                         data,
                         default=str
                     ),
                 })
 
-
             except Exception as e:
 
-                tool_outputs.append({
-
-                    "type": "function_call_output",
-                    "call_id": tool_call.call_id,
-                    "output": json.dumps({
+                model_messages.append({
+                    "role": "tool",
+                    "content": json.dumps({
                         "error": str(e)
                     }),
                 })
 
-
-        # ---------------------------------
-        # Continue the response with tool
-        # results
-        # ---------------------------------
-        response = openai_client.responses.create(
-
-            model="gpt-5.6-luna",
-
-            instructions=AI_INSTRUCTIONS,
-
-            previous_response_id=response.id,
-
-            input=tool_outputs,
-
-            tools=[
-                DATABASE_TOOL
-            ],
-
-            tool_choice="auto",
-
-        )
-
-
     # ---------------------------------
     # Final answer
     # ---------------------------------
-    answer = response.output_text
+    answer = assistant_message.get("content", "").strip()
+
+    if not answer:
+        answer = (
+            "No pude generar una respuesta a partir de la información "
+            "disponible en ShopPass."
+        )
 
     st.session_state.ai_messages.append({
-
         "role": "assistant",
         "content": answer,
-
     })
 
     return answer

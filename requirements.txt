@@ -10,4 +10,3 @@ openpyxl
 resend
 pydeck
 streamlit-autorefresh
-openai
