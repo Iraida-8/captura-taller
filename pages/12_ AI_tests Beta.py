@@ -3,6 +3,7 @@ from auth import require_login, require_access
 from pages.css import load_css
 from supabase import create_client
 
+
 # =================================
 # RELEASE CHANNEL
 # =================================
@@ -16,30 +17,63 @@ DASHBOARD_PAGE = (
     else "pages/dashboard.py"
 )
 
+
 # =================================
 # Page configuration
 # =================================
+
 st.set_page_config(
     page_title=(
-        "AI STOOF BEETA"
+        "AI STOOF BETA"
         if APP_CHANNEL.upper() == "BETA"
         else "AI STOOF"
     ),
     layout="wide"
 )
 
+
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
+
 load_css()
+
+
+# =================================
+# Navigation
+# =================================
+
+st.write("")
+
+if st.button("⬅ Volver al Dashboard"):
+    st.switch_page(DASHBOARD_PAGE)
+
+st.divider()
+
 
 # =================================
 # Security gates
 # =================================
+
 require_login()
-require_access("ai_testing")
 
 user = st.session_state.user
+
+require_access("ai_testing")
+
+
+# =================================
+# ROLE
+# =================================
+
+user_role = str(
+    user.get("role", "")
+).strip().lower()
+
+if user_role != "field_user":
+    st.info("Comming soon")
+    st.stop()
+
 
 # =================================
 # SUPABASE
@@ -53,7 +87,13 @@ def get_supabase():
         st.secrets["SUPABASE_SERVICE_KEY"]
     )
 
+
 supabase = get_supabase()
+
+
+# =================================
+# ACTIVITY LOG
+# =================================
 
 def log_activity(action, page):
 
@@ -71,18 +111,20 @@ def log_activity(action, page):
 
     except Exception as e:
         print(e)
-        
-# =================================
-# Navigation
-# =================================
-st.write("")
-if st.button("⬅ Volver al Dashboard"):
-    st.switch_page(DASHBOARD_PAGE)
 
-st.divider()
+
+# =================================
+# PAGE ACTIVITY
+# =================================
+
+log_activity(
+    "Abrió módulo AI Tester",
+    "AI Tester"
+)
+
 
 # =================================
 # HEADER
 # =================================
 
-st.title("💳  AI Tester")
+st.title("💳 AI Tester")
