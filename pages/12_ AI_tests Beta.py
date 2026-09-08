@@ -68,7 +68,7 @@ user_role = str(
     user.get("role", "")
 ).strip().lower()
 
-if user_role != "field_user":
+if user_role not in ("admin", "manager"):
     st.info("Comming soon")
     st.stop()
 
