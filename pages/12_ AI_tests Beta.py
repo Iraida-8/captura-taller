@@ -286,15 +286,9 @@ def validate_sql(sql):
                 f"La tabla '{table}' no está autorizada para consultas de AI."
             )
 
-    # Protect against accidentally returning enormous datasets.
-    if not re.search(
-        r"\blimit\s+\d+",
-        lowered
-    ):
-
-        sql = sql.rstrip(";")
-
-        sql += "\nLIMIT 1000"
+    # Do not impose an automatic LIMIT.
+    # The AI decides whether a LIMIT is appropriate based on the user's request.
+    sql = sql.rstrip(";")
 
     return sql
 
@@ -355,7 +349,6 @@ DATABASE_TOOL = {
     },
 }
 
-
 # =================================
 # AI INSTRUCTIONS
 # =================================
@@ -369,7 +362,8 @@ Your job is to answer questions using the ShopPass database.
 RULES:
 
 1. If the user's question requires database information,
-   use the query_shop_pass tool.
+   ALWAYS call the query_shop_pass tool. Do not answer from memory
+   or assume database values.
 
 2. Do not guess database values.
 
@@ -390,21 +384,28 @@ RULES:
 9. Do not retrieve thousands of individual rows when an
    aggregate query can answer the question.
 
-10. If the user asks about monthly exchange rates:
-    YEAR + MONTH identify the applicable period.
-    DATE is only the record-registration date.
+10. When the user asks for a complete list, all units, all records,
+    or similar wording:
+    - Query ALL matching records.
+    - Do NOT add an arbitrary LIMIT.
+    - Do NOT return only a sample and describe it as the complete result.
 
-11. Answer in the same language used by the user.
+11. Only use LIMIT when the user explicitly requests a limited
+    number of records.
 
-12. When presenting database results, be clear about what
-    the numbers represent.
+12. If the user asks "how many", "total", "count", etc., use
+    COUNT(*) or another appropriate aggregate instead of retrieving
+    individual records.
 
-13. If the database does not contain enough information
-    to answer the question, say so rather than guessing.
+13. If the user asks for a list of units, return the complete
+    matching list unless the user specifies a limit.
 
-14. You are a database assistant, not a general-purpose
-    internet search assistant. Do not use external web
-    information to answer ShopPass database questions.
+14. Never assume that a subset of returned rows represents the
+    complete database.
+
+15. If the complete result is too large to display conveniently,
+    state the actual number of matching records and summarize them
+    rather than silently presenting a partial list.
 """
 
 
