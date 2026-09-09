@@ -92,7 +92,7 @@ supabase = get_supabase()
 # =================================
 # OLLAMA
 # =================================
-OLLAMA_HOST = "http://localhost:11434"
+OLLAMA_HOST = "https://highways-dimension-revelation-bend.trycloudflare.com"
 OLLAMA_MODEL = "qwen3:14b"
 
 
