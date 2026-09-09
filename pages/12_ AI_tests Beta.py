@@ -190,9 +190,37 @@ Approved tables:
 1. public.vehicle_units
    Fleet vehicle/unit information.
 
+   Columns:
+   - id: unique UUID for the record.
+   - empresa: company code. This is the field used to identify
+     which company owns/operates the unit.
+   - unidad: unit number/identifier.
+   - marca: vehicle/equipment brand or manufacturer.
+   - modelo: model or model year.
+   - vin: VIN/chassis identification number.
+   - tipo_unidad: unit type, such as TRACTOR, CAJA SECA,
+     CAJA REFRIGERADA, etc.
+   - sucursal: branch/location assigned to the unit.
+   - estado: current unit status, such as ACTIVA or other statuses.
+   - created_at: record creation timestamp.
+
+   IMPORTANT COMPANY MAPPING:
+   - LIN = Lincoln
+   - LF = Lincoln
+   - IGT = Igloo
+   - PIC = Picus
+   - SLP = SLPlus
+   - SET = SET
+
+   IMPORTANT:
+   - When the user asks for units belonging to a company,
+     filter by empresa, NOT marca.
+   - "Lincoln", "LIN", and "LF" refer to the empresa field.
+   - "marca" refers to the manufacturer/brand of the unit,
+     not the company.
+
 2. public.tc_mensual
    Monthly exchange rates.
-   Important:
    - YEAR + MONTH identify the month the TC applies to.
    - TC is the exchange rate.
    - DATE is the date the record was entered/registered.
@@ -403,9 +431,30 @@ RULES:
 14. Never assume that a subset of returned rows represents the
     complete database.
 
-15. If the complete result is too large to display conveniently,
-    state the actual number of matching records and summarize them
-    rather than silently presenting a partial list.
+15. When the user refers to a company by its name or abbreviation,
+    use the empresa column in vehicle_units.
+
+16. Company mappings:
+    - LIN = Lincoln
+    - LF = Lincoln
+    - IGT = Igloo
+    - PIC = Picus
+    - SLP = SLPlus
+    - SET = SET
+
+17. Never use the marca column to determine the company.
+
+18. If the user asks "cuántas unidades", use COUNT(*).
+
+19. If the user asks for units belonging to a company,
+    filter empresa using the appropriate company code.
+
+20. If multiple company codes represent the same company,
+    include all applicable codes. For Lincoln, use:
+    empresa IN ('LIN', 'LF').
+
+21. Do not claim that no records exist until you have actually
+    queried the appropriate column and applicable company codes.
 """
 
 
