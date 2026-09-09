@@ -330,28 +330,29 @@ def query_shop_pass(sql):
 # =================================
 DATABASE_TOOL = {
     "type": "function",
-    "name": "query_shop_pass",
-    "description": (
-        "Execute a READ-ONLY SQL SELECT query against the approved "
-        "ShopPass database tables. Use this whenever the user asks "
-        "for factual information contained in the database. "
-        "Never use this tool to modify data."
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "sql": {
-                "type": "string",
-                "description": (
-                    "A single PostgreSQL SELECT statement using only "
-                    "the approved ShopPass tables."
-                ),
-            }
+    "function": {
+        "name": "query_shop_pass",
+        "description": (
+            "Execute a READ-ONLY SQL SELECT query against the approved "
+            "ShopPass database tables. Use this whenever the user asks "
+            "for factual information contained in the database. "
+            "Never use this tool to modify data."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "sql": {
+                    "type": "string",
+                    "description": (
+                        "A single PostgreSQL SELECT statement using only "
+                        "the approved ShopPass tables."
+                    ),
+                }
+            },
+            "required": ["sql"],
+            "additionalProperties": False,
         },
-        "required": ["sql"],
-        "additionalProperties": False,
     },
-    "strict": True,
 }
 
 
