@@ -2727,11 +2727,11 @@ with tab_historial:
                 )
 
             start_str = start_date.strftime(
-                "%m/%d/%Y"
+                "%Y-%m-%d 00:00:00"
             )
 
             end_str = end_date.strftime(
-                "%m/%d/%Y"
+                "%Y-%m-%d 23:59:59"
             )
 
             # =========================================
