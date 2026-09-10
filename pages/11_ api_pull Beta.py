@@ -2727,11 +2727,11 @@ with tab_historial:
                 )
 
             start_str = start_date.strftime(
-                "%Y-%m-%d 00:00:00"
+                "%m/%d/%Y"
             )
 
             end_str = end_date.strftime(
-                "%Y-%m-%d 23:59:59"
+                "%m/%d/%Y"
             )
 
             # =========================================
@@ -2993,6 +2993,39 @@ with tab_historial:
                         trip_display,
                         use_container_width=True,
                         height=700
+                    )
+
+                    # =====================================
+                    # DOWNLOAD DISPLAYED REPORT
+                    # =====================================
+
+                    viajes_display_buffer = io.BytesIO()
+
+                    with pd.ExcelWriter(
+                        viajes_display_buffer,
+                        engine="openpyxl"
+                    ) as writer:
+
+                        trip_display.to_excel(
+                            writer,
+                            index=False,
+                            sheet_name="Viajes Detectados"
+                        )
+
+                    viajes_display_buffer.seek(0)
+
+                    st.download_button(
+                        label="💾 Descargar Viajes Detectados",
+                        data=viajes_display_buffer,
+                        file_name=(
+                            f"Viajes_Detectados_{selected_unit}.xlsx"
+                        ),
+                        mime=(
+                            "application/vnd.openxmlformats-officedocument."
+                            "spreadsheetml.sheet"
+                        ),
+                        use_container_width=True,
+                        key=f"download_viajes_detectados_{selected_unit}"
                     )
 
                     # =====================================
