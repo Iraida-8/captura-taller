@@ -112,9 +112,9 @@ if st.button("⬅ Volver al Dashboard"):
 # TOP-LEVEL DATA TABS
 # =========================================
 
-tab_monarch, tab_wailon = st.tabs([
+tab_monarch, tab_wialon = st.tabs([
     "Monarch Data",
-    "Wailon Data",
+    "Wialon Data",
 ])
 
 
@@ -3921,6 +3921,6 @@ with tab_monarch:
                 f"Error consultando historial: {e}"
             )
 
-with tab_wailon:
-    # Wailon Data — reserved for IGLOO-only Wailon integration.
+with tab_wialon:
+    # Wialon Data — reserved for IGLOO-only Wialon integration.
     pass
