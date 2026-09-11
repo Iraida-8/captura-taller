@@ -252,7 +252,7 @@ with tab_monarch:
             f"&app_token={app_token}"
         )
 
-        response = requests.get(
+        response = requests.post(
             auth_url,
             timeout=30
         )
@@ -3922,5 +3922,244 @@ with tab_monarch:
             )
 
 with tab_wialon:
-    # Wialon Data — reserved for IGLOO-only Wialon integration.
-    pass
+    # =========================================================
+    # WAILON DATA
+    # =========================================================
+
+
+    st.header("🛰️ Wailon Data")
+
+    WIALON_API_URL = "https://hst-api.wialon.com/wialon/ajax.html"
+
+    # -----------------------------------------------------
+    # WAILON TOKEN
+    # -----------------------------------------------------
+
+    WIALON_TOKEN = (
+        "80116688b2812ec4b012e91c4783618122D6783187118B551FDD06B30949543E37B40683"
+    )
+
+    # -----------------------------------------------------
+    # WAILON API REQUEST
+    # -----------------------------------------------------
+
+    def wialon_request(
+        service,
+        params,
+        sid=None
+    ):
+
+        request_params = {
+            "svc": service,
+            "params": json.dumps(params)
+        }
+
+        if sid:
+            request_params["sid"] = sid
+
+        response = requests.post(
+            WIALON_API_URL,
+            data=request_params,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            timeout=30
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    # -----------------------------------------------------
+    # TEST API
+    # -----------------------------------------------------
+
+    if st.button(
+        "🔌 Test Wailon API",
+        use_container_width=True
+    ):
+
+        try:
+
+            # =================================================
+            # 1. LOGIN USING TOKEN
+            # =================================================
+
+            st.write("### 1️⃣ Autenticación")
+
+            login_response = wialon_request(
+                "token/login",
+                {
+                    "token": WIALON_TOKEN,
+                    "fl": 15
+                }
+            )
+
+            st.json(login_response)
+
+            # -------------------------------------------------
+            # GET SESSION ID
+            # -------------------------------------------------
+
+            sid = login_response.get("eid")
+
+            if not sid:
+
+                st.error(
+                    "❌ Wailon no devolvió un session ID."
+                )
+
+                st.stop()
+
+            st.success(
+                "✅ Autenticación exitosa."
+            )
+
+            st.write(
+                "Session ID:",
+                sid
+            )
+
+            # =================================================
+            # 2. GET USER INFORMATION
+            # =================================================
+
+            st.write("### 2️⃣ Información del usuario")
+
+            user_response = wialon_request(
+                "core/get_user_data",
+                {},
+                sid=sid
+            )
+
+            st.json(user_response)
+
+            # =================================================
+            # 3. GET ALL ACCESSIBLE UNITS
+            # =================================================
+
+            st.write("### 3️⃣ Unidades disponibles")
+
+            units_response = wialon_request(
+                "core/search_items",
+                {
+                    "spec": {
+                        "itemsType": "avl_unit",
+                        "propName": "sys_name",
+                        "propValueMask": "*",
+                        "sortType": "sys_name"
+                    },
+                    "force": 1,
+                    "flags": 1025,
+                    "from": 0,
+                    "to": 0
+                },
+                sid=sid
+            )
+
+            # -------------------------------------------------
+            # DISPLAY RAW RESPONSE
+            # -------------------------------------------------
+
+            st.json(units_response)
+
+            # =================================================
+            # 4. DISPLAY UNITS AS TABLE
+            # =================================================
+
+            units = units_response.get(
+                "items",
+                []
+            )
+
+            if units:
+
+                st.success(
+                    f"✅ Wailon devolvió {len(units)} unidades."
+                )
+
+                rows = []
+
+                for unit in units:
+
+                    position = unit.get(
+                        "pos",
+                        {}
+                    ) or {}
+
+                    rows.append(
+                        {
+                            "ID": unit.get(
+                                "id",
+                                ""
+                            ),
+
+                            "Nombre": unit.get(
+                                "nm",
+                                ""
+                            ),
+
+                            "Nombre Sistema": unit.get(
+                                "sys_name",
+                                ""
+                            ),
+
+                            "Posición": position,
+
+                            "Última Conexión": unit.get(
+                                "lmsg",
+                                {}
+                            ),
+
+                            "Todo": unit
+                        }
+                    )
+
+                units_df = pd.DataFrame(
+                    rows
+                )
+
+                st.dataframe(
+                    units_df,
+                    use_container_width=True,
+                    height=500
+                )
+
+            else:
+
+                st.warning(
+                    "Wailon respondió correctamente, "
+                    "pero no devolvió unidades."
+                )
+
+            # =================================================
+            # 5. LOGOUT
+            # =================================================
+
+            try:
+
+                logout_response = wialon_request(
+                    "core/logout",
+                    {},
+                    sid=sid
+                )
+
+                st.write("### 4️⃣ Logout")
+
+                st.json(
+                    logout_response
+                )
+
+            except Exception as logout_error:
+
+                st.warning(
+                    f"No se pudo cerrar la sesión: {logout_error}"
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"❌ Error consultando Wailon: {e}"
+            )
+
+            st.exception(e)
