@@ -33,7 +33,7 @@ DASHBOARD_PAGE = (
 
 st.set_page_config(
     page_title=(
-        "Rastreador y Seguimiento GPS de Unidades BETA"
+        "Rastreador y Seguimiento GPS de Unidades - BETA"
         if APP_CHANNEL.upper() == "BETA"
         else "Rastreador y Seguimiento GPS de Unidades"
     ),
@@ -120,7 +120,7 @@ tab_monarch, tab_wialon = st.tabs([
 
 with tab_monarch:
 
-    st.title("🛰️ Rastreador y Seguimiento GPS de Unidades")
+    st.title("🛰️ Rastreador y Seguimiento GPS de Unidades - MONARCH")
 
 
     # =========================================
@@ -3922,7 +3922,7 @@ with tab_wialon:
     # =========================================================
 
 
-    st.header("🛰️ Wailon Data")
+    st.header("🛰️ Rastreador y Seguimiento GPS de Unidades - WIALON")
 
     WIALON_API_URL = "https://hst-api.wialon.com/wialon/ajax.html"
 
