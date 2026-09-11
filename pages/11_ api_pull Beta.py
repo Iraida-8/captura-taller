@@ -2738,13 +2738,8 @@ with tab_monarch:
                         key="trip_end"
                     )
 
-                start_str = start_date.strftime(
-                    "%m/%d/%Y"
-                )
-
-                end_str = end_date.strftime(
-                    "%m/%d/%Y"
-                )
+                start_str = start_date.strftime("%m/%d/%Y")
+                end_str = end_date.strftime("%m/%d/%Y") + " 23:59:59"
 
                 # =========================================
                 # REQUEST
