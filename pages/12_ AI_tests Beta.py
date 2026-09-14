@@ -92,7 +92,7 @@ supabase = get_supabase()
 # =================================
 # OLLAMA
 # =================================
-OLLAMA_HOST = "https://elements-sink-together-chester.trycloudflare.com"
+OLLAMA_HOST = "https://furthermore-triumph-arrangements-biology.trycloudflare.com"
 OLLAMA_MODEL = "qwen3:14b"
 
 
