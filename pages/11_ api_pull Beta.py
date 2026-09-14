@@ -12,7 +12,6 @@ from datetime import datetime
 from pages.css import load_css
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
 # =================================
 # RELEASE CHANNEL
 # =================================
@@ -379,6 +378,68 @@ with tab_monarch:
 
 
     # =========================================================
+    # GLOBAL COMPANY FILTER
+    # =========================================================
+
+    company_filter = st.session_state.get(
+        "gps_company_filter",
+        "TODAS"
+    )
+
+    filtered_df = df.copy()
+
+    if not filtered_df.empty:
+        company_labels = (
+            filtered_df["label"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+        )
+
+        picus_mask = (
+            company_labels.str.contains("PI", na=False)
+            | company_labels.str.startswith("P")
+        )
+
+        lincoln_mask = (
+            company_labels.str.contains("LF", na=False)
+            | company_labels.str.startswith("L")
+        )
+
+        set_freight_mask = company_labels.str.contains("SET", na=False)
+
+        set_logis_mask = (
+            company_labels.str.contains("SPL", na=False)
+            | company_labels.str.contains("STL", na=False)
+        )
+
+        known_company_mask = (
+            picus_mask | lincoln_mask | set_freight_mask | set_logis_mask
+        )
+
+        if company_filter == "PICUS":
+            filtered_df = filtered_df[picus_mask].copy()
+        elif company_filter == "LINCOLN":
+            filtered_df = filtered_df[lincoln_mask].copy()
+        elif company_filter == "SET FREIGHT":
+            filtered_df = filtered_df[set_freight_mask].copy()
+        elif company_filter == "SET LOGIS":
+            filtered_df = filtered_df[set_logis_mask].copy()
+        elif company_filter == "OTROS":
+            filtered_df = filtered_df[~known_company_mask].copy()
+
+    # Reset selectors when the top company changes.
+    previous_company = st.session_state.get("_gps_previous_company_filter")
+
+    if previous_company != company_filter:
+        st.session_state.pop("trip_history_unit", None)
+        st.session_state.pop("map_unit_filter", None)
+        st.session_state.pop("gps_page", None)
+        st.session_state.modal_gps_unit = None
+        st.session_state["_gps_previous_company_filter"] = company_filter
+
+
+    # =========================================================
     # KPI DASHBOARD
     # =========================================================
 
@@ -392,7 +453,7 @@ with tab_monarch:
             # WORKING COPY
             # =========================================
 
-            dashboard_df = df.copy()
+            dashboard_df = filtered_df.copy()
 
             # =========================================
             # COMPANY MASKS
@@ -899,7 +960,7 @@ with tab_monarch:
             with f1:
 
                 unidades = sorted(
-                    df["label"]
+                    filtered_df["label"]
                     .dropna()
                     .astype(str)
                     .unique()
@@ -941,7 +1002,7 @@ with tab_monarch:
             # APPLY FILTERS
             # =====================================================
 
-            df_units = df.copy()
+            df_units = filtered_df.copy()
 
             if unidad_select != "Todas":
 
@@ -2016,7 +2077,7 @@ with tab_monarch:
 
         else:
 
-            map_df = df.copy()
+            map_df = filtered_df.copy()
 
             # =============================================
             # CLEAN GPS DATA
@@ -2369,8 +2430,10 @@ with tab_monarch:
 
             with filter_col2:
 
+                map_company_df = filtered_df.copy()
+
                 map_unit_options = sorted(
-                    map_df["label"]
+                    map_company_df["label"]
                     .dropna()
                     .astype(str)
                     .unique()
@@ -2648,7 +2711,7 @@ with tab_monarch:
                 # =========================================
 
                 unit_options = sorted(
-                    df["label"]
+                    filtered_df["label"]
                     .dropna()
                     .astype(str)
                     .unique()
