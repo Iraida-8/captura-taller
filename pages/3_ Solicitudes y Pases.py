@@ -316,22 +316,34 @@ if has_pases:
 
             with tp2:
 
-                opciones_proveedor = [
-                    "Selecciona proveedor",
-                    "TALLER",
-                    "WNC",
-                    "K9",
-                    "NAVARRO",
-                    "KEVIN DANIEL RAUDALES MEDINA (RM)",
-                    "KINOS",
-                    "OTRO"
-                ]
-
-                proveedor = st.selectbox(
-                    "Proveedor / Taller",
-                    opciones_proveedor,
-                    index=2 if tipo_proveedor == "Interno" else 0
-                )
+                # Proveedor / Taller behavior:
+                # Interno: only WNC and OTRO, with WNC as the default.
+                # Externo: all existing options except WNC.
+                if tipo_proveedor == "Interno":
+                    opciones_proveedor = [
+                        "WNC",
+                        "OTRO"
+                    ]
+                    proveedor = st.selectbox(
+                        "Proveedor / Taller",
+                        opciones_proveedor,
+                        index=0
+                    )
+                else:
+                    opciones_proveedor = [
+                        "Selecciona proveedor",
+                        "TALLER",
+                        "K9",
+                        "NAVARRO",
+                        "KEVIN DANIEL RAUDALES MEDINA (RM)",
+                        "KINOS",
+                        "OTRO"
+                    ]
+                    proveedor = st.selectbox(
+                        "Proveedor / Taller",
+                        opciones_proveedor,
+                        index=0
+                    )
 
             with tp25:
 
