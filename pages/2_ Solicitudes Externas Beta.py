@@ -7,17 +7,17 @@ from pages.css import load_css
 # =================================
 # PAGE CHANNEL
 # =================================
-
 APP_CHANNEL = "BETA"
+#APP_CHANNEL = "RELEASE"
 
 # =================================
 # Page configuration
 # =================================
 st.set_page_config(
     page_title=(
-        "Solicitudes y Pases BETA"
+        "Captura Pase de Taller BETA"
         if APP_CHANNEL.upper() == "BETA"
-        else "Solicitudes y Pases"
+        else "Captura Pase de Taller"
     ),
     layout="wide"
 )
