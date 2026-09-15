@@ -3100,17 +3100,38 @@ if has_viaticos:
             def enviar_correo_estatus_solicitud(
 
                 destinatarios,
-                folio,
+                folio_solicitud,
                 estatus,
-                fecha_inicio,
-                fecha_fin,
-                motivo_viaje,
-                observaciones,
-                conceptos
+                empleado="",
+                empresa_servicio="",
+                fecha_solicitud="",
+                fecha_comprobacion="",
+                fecha_inicio="",
+                fecha_fin="",
+                empresa_cargo="",
+                unidad_negocio="",
+                sucursal="",
+                sucursal_especificar="",
+                nombre_cliente="",
+                folio_sac="",
+                motivo_viaje="",
+                observaciones="",
+                conceptos=None,
+                total_estimado=0,
+                total_estimado_usd=0,
+                folio_comprobacion="",
+                empleado_comprobacion="",
+                observaciones_comprobacion="",
+                total_comprobado=0,
+                total_comprobado_usd=0
 
             ):
 
-                total_aprobado = 0.0
+                if conceptos is None:
+                    conceptos = []
+
+                total_aprobado_mxn = 0.0
+                total_aprobado_usd = 0.0
 
                 conceptos_html = ""
 
@@ -3123,16 +3144,26 @@ if has_viaticos:
                         ""
                     )
 
-                    monto = float(
+                    try:
+                        monto = float(
+                            item.get(
+                                "Monto",
+                                0
+                            ) or 0
+                        )
+                    except Exception:
+                        monto = 0.0
+
+                    moneda = str(
                         item.get(
-                            "Monto",
-                            0
-                        ) or 0
+                            "Moneda",
+                            item.get("Tipo Cambio", "MXP")
+                        ) or "MXP"
                     )
 
-                    moneda = item.get(
-                        "Moneda",
-                        "MXN"
+                    tipo_cambio = item.get(
+                        "Tipo Cambio",
+                        ""
                     )
 
                     aprobado = str(
@@ -3160,53 +3191,40 @@ if has_viaticos:
                         "Si",
                         "🟢 Si"
                     ]:
-
-                        total_aprobado += monto
+                        if moneda.upper() in ["USD", "US$", "DÓLARES", "DOLARES"]:
+                            total_aprobado_usd += monto
+                        else:
+                            total_aprobado_mxn += monto
 
                     conceptos_html += f"""
 
                     <tr>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                        ">
+                        <td style="border:1px solid #ccc;padding:8px;">
                             {tipo}
                         </td>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                        ">
+                        <td style="border:1px solid #ccc;padding:8px;">
                             {descripcion}
                         </td>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                        ">
+                        <td style="border:1px solid #ccc;padding:8px;">
+                            {monto:,.2f}
+                        </td>
+
+                        <td style="border:1px solid #ccc;padding:8px;">
                             {moneda}
                         </td>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                        ">
-                            ${monto:,.2f}
+                        <td style="border:1px solid #ccc;padding:8px;">
+                            {tipo_cambio}
                         </td>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                            font-weight:700;
-                        ">
+                        <td style="border:1px solid #ccc;padding:8px;font-weight:700;">
                             {aprobado_texto}
                         </td>
 
-                        <td style="
-                            border:1px solid #ccc;
-                            padding:8px;
-                        ">
+                        <td style="border:1px solid #ccc;padding:8px;">
                             {razon}
                         </td>
 
@@ -3214,16 +3232,23 @@ if has_viaticos:
                     """
 
                 if estatus in ["Aprobado", "Concluido"]:
-
                     color_estatus = "#10B981"
-
                 elif estatus == "Rechazado":
-
                     color_estatus = "#EF4444"
-
                 else:
-
                     color_estatus = "#38BDF8"
+
+                folio_comprobacion_display = (
+                    folio_comprobacion
+                    if str(folio_comprobacion).strip()
+                    else "Pendiente de comprobación"
+                )
+
+                fecha_comprobacion_display = (
+                    fecha_comprobacion
+                    if str(fecha_comprobacion).strip()
+                    else "Pendiente de comprobación"
+                )
 
                 html = f"""
 
@@ -3231,95 +3256,124 @@ if has_viaticos:
                     font-family:Arial;
                     max-width:900px;
                     margin:auto;
+                    color:#111;
                 ">
 
-                    <h2 style="
-                        color:#151F6D;
-                    ">
-                        Actualización de Solicitud
+                    <h2 style="color:#151F6D;">
+                        Actualización de Solicitud de Viáticos
                     </h2>
 
-                    <h2 style="
-                        color:{color_estatus};
-                    ">
+                    <h2 style="color:{color_estatus};">
                         {estatus}
                     </h2>
 
                     <hr>
 
-                    <p>
-                        <b>Folio:</b>
-                        {folio}
-                    </p>
+                    <h3 style="color:#151F6D;">📋 Información General</h3>
 
-                    <p>
-                        <b>Fecha Inicio:</b>
-                        {fecha_inicio}
-                    </p>
+                    <table style="width:100%;border-collapse:collapse;">
 
-                    <p>
-                        <b>Fecha Fin:</b>
-                        {fecha_fin}
-                    </p>
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Folio Solicitud:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{folio_solicitud}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Folio Comprobación:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{folio_comprobacion_display}</td>
+                        </tr>
 
-                    <p>
-                        <b>Motivo del Viaje:</b>
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Estatus:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{estatus}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que Solicita:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{empleado}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Solicitud:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{fecha_solicitud}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Comprobación:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{fecha_comprobacion_display}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Inicio:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{fecha_inicio}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Fin:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{fecha_fin}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Empresa que Brinda el Servicio:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{empresa_servicio}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Empresa a Cargo de Gastos:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{empresa_cargo}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Unidad de Negocio:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{unidad_negocio}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{sucursal}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal Especificar:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{sucursal_especificar}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Nombre del Cliente:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{nombre_cliente}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Registro SAC Ventas:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{folio_sac}</td>
+                            <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que metió comprobación:</b></td>
+                            <td style="padding:8px;border:1px solid #ddd;">{empleado_comprobacion}</td>
+                        </tr>
+
+                    </table>
+
+                    <h3 style="color:#151F6D;margin-top:24px;">✈️ Motivo del Viaje</h3>
+                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
                         {motivo_viaje}
-                    </p>
+                    </div>
 
-                    <hr>
+                    <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Solicitud</h3>
+                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
+                        {observaciones}
+                    </div>
 
-                    <h3>
-                        Conceptos
-                    </h3>
+                    <h3 style="color:#151F6D;margin-top:24px;">💰 Conceptos</h3>
 
-                    <table style="
-                        width:100%;
-                        border-collapse:collapse;
-                    ">
+                    <table style="width:100%;border-collapse:collapse;">
 
-                        <tr style="
-                            background:#151F6D;
-                            color:white;
-                        ">
-
-                            <th style="padding:10px;">
-                                Tipo
-                            </th>
-
-                            <th style="padding:10px;">
-                                Descripción
-                            </th>
-
-                            <th style="padding:10px;">
-                                Moneda
-                            </th>
-
-                            <th style="padding:10px;">
-                                Monto
-                            </th>
-
-                            <th style="padding:10px;">
-                                Estatus
-                            </th>
-
-                            <th style="padding:10px;">
-                                Razón
-                            </th>
-
+                        <tr style="background:#151F6D;color:white;">
+                            <th style="padding:10px;">Tipo</th>
+                            <th style="padding:10px;">Descripción</th>
+                            <th style="padding:10px;">Monto</th>
+                            <th style="padding:10px;">Moneda</th>
+                            <th style="padding:10px;">Tipo Cambio</th>
+                            <th style="padding:10px;">Estatus</th>
+                            <th style="padding:10px;">Razón</th>
                         </tr>
 
                         {conceptos_html}
 
                     </table>
 
-                    <h2 style="
-                        margin-top:30px;
-                        color:#BFA75F;
-                    ">
-                        TOTAL APROBADO:
-                        ${total_aprobado:,.2f}
-                    </h2>
+                    <h3 style="color:#151F6D;margin-top:24px;">💵 Totales</h3>
+
+                    <p><b>Total Estimado MXP:</b> ${float(total_estimado or 0):,.2f}</p>
+                    <p><b>Total Estimado USD:</b> ${float(total_estimado_usd or 0):,.2f}</p>
+                    <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado MXP:</b> ${total_aprobado_mxn:,.2f}</p>
+                    <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado USD:</b> ${total_aprobado_usd:,.2f}</p>
+
+                    <h3 style="color:#151F6D;margin-top:24px;">🧾 Información de Comprobación</h3>
+                    <p><b>Total Comprobado MXP:</b> ${float(total_comprobado or 0):,.2f}</p>
+                    <p><b>Total Comprobado USD:</b> ${float(total_comprobado_usd or 0):,.2f}</p>
+
+                    <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Comprobación</h3>
+                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
+                        {observaciones_comprobacion}
+                    </div>
 
                 </div>
                 """
@@ -3335,7 +3389,7 @@ if has_viaticos:
                     "cc": ["cristobal.ochoa@set-freight.com"],
 
                     "subject":
-                        folio,
+                        folio_solicitud,
 
                     "html":
                         html
@@ -4227,40 +4281,32 @@ if has_viaticos:
 
                                 enviar_correo_estatus_solicitud(
 
-                                    destinatarios=destinatarios,
-
-                                    folio=row.get(
-                                        "folio_solicitud",
-                                        ""
-                                    ),
-
-                                    estatus="Aprobado",
-
-                                    fecha_inicio=row.get(
-                                        "fecha_inicio",
-                                        ""
-                                    ),
-
-                                    fecha_fin=row.get(
-                                        "fecha_fin",
-                                        ""
-                                    ),
-
-                                    motivo_viaje=row.get(
-                                        "motivo_viaje",
-                                        ""
-                                    ),
-
-                                    observaciones=row.get(
-                                        "observaciones",
-                                        ""
-                                    ),
-
-                                    conceptos=row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
+                                                destinatarios=destinatarios,
+                                                folio_solicitud=row.get("folio_solicitud", ""),
+                                                folio_comprobacion="",
+                                                estatus="Aprobado",
+                                                empleado=row.get("nombre_empleado_solicita", ""),
+                                                empresa_servicio=row.get("empresa_brinda_servicio", ""),
+                                                fecha_solicitud=row.get("fecha_solicitud", ""),
+                                                fecha_comprobacion="",
+                                                fecha_inicio=row.get("fecha_inicio", ""),
+                                                fecha_fin=row.get("fecha_fin", ""),
+                                                empresa_cargo=row.get("empresa_cargo_gastos", ""),
+                                                unidad_negocio=row.get("unidad_negocio", ""),
+                                                sucursal=row.get("sucursal", ""),
+                                                sucursal_especificar=row.get("sucursal_especificar", ""),
+                                                nombre_cliente=row.get("nombre_cliente", ""),
+                                                folio_sac=row.get("folio_sac", ""),
+                                                motivo_viaje=row.get("motivo_viaje", ""),
+                                                observaciones=row.get("observaciones", ""),
+                                                conceptos=row.get("conceptos", []),
+                                                total_estimado=row.get("total_estimado", 0),
+                                                total_estimado_usd=row.get("total_estimado_usd", 0),
+                                                empleado_comprobacion="",
+                                                observaciones_comprobacion="",
+                                                total_comprobado="",
+                                                total_comprobado_usd=""
+                                            )
 
                             except Exception as e:
 
@@ -4333,40 +4379,32 @@ if has_viaticos:
 
                                 enviar_correo_estatus_solicitud(
 
-                                    destinatarios=destinatarios,
-
-                                    folio=row.get(
-                                        "folio_solicitud",
-                                        ""
-                                    ),
-
-                                    estatus="Rechazado",
-
-                                    fecha_inicio=row.get(
-                                        "fecha_inicio",
-                                        ""
-                                    ),
-
-                                    fecha_fin=row.get(
-                                        "fecha_fin",
-                                        ""
-                                    ),
-
-                                    motivo_viaje=row.get(
-                                        "motivo_viaje",
-                                        ""
-                                    ),
-
-                                    observaciones=row.get(
-                                        "observaciones",
-                                        ""
-                                    ),
-
-                                    conceptos=row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
+                                                destinatarios=destinatarios,
+                                                folio_solicitud=row.get("folio_solicitud", ""),
+                                                folio_comprobacion="",
+                                                estatus="Rechazado",
+                                                empleado=row.get("nombre_empleado_solicita", ""),
+                                                empresa_servicio=row.get("empresa_brinda_servicio", ""),
+                                                fecha_solicitud=row.get("fecha_solicitud", ""),
+                                                fecha_comprobacion="",
+                                                fecha_inicio=row.get("fecha_inicio", ""),
+                                                fecha_fin=row.get("fecha_fin", ""),
+                                                empresa_cargo=row.get("empresa_cargo_gastos", ""),
+                                                unidad_negocio=row.get("unidad_negocio", ""),
+                                                sucursal=row.get("sucursal", ""),
+                                                sucursal_especificar=row.get("sucursal_especificar", ""),
+                                                nombre_cliente=row.get("nombre_cliente", ""),
+                                                folio_sac=row.get("folio_sac", ""),
+                                                motivo_viaje=row.get("motivo_viaje", ""),
+                                                observaciones=row.get("observaciones", ""),
+                                                conceptos=row.get("conceptos", []),
+                                                total_estimado=row.get("total_estimado", 0),
+                                                total_estimado_usd=row.get("total_estimado_usd", 0),
+                                                empleado_comprobacion="",
+                                                observaciones_comprobacion="",
+                                                total_comprobado="",
+                                                total_comprobado_usd=""
+                                            )
 
                             except Exception as e:
 
@@ -5523,38 +5561,30 @@ if has_viaticos:
                                             enviar_correo_estatus_solicitud(
 
                                                 destinatarios=destinatarios,
-
-                                                folio=solicitud_row.get(
-                                                    "folio_solicitud",
-                                                    ""
-                                                ),
-
+                                                folio_solicitud=solicitud_row.get("folio_solicitud", ""),
+                                                folio_comprobacion=row.get("folio_comprobacion", ""),
                                                 estatus="Concluido",
-
-                                                fecha_inicio=solicitud_row.get(
-                                                    "fecha_inicio",
-                                                    ""
-                                                ),
-
-                                                fecha_fin=solicitud_row.get(
-                                                    "fecha_fin",
-                                                    ""
-                                                ),
-
-                                                motivo_viaje=solicitud_row.get(
-                                                    "motivo_viaje",
-                                                    ""
-                                                ),
-
-                                                observaciones=row.get(
-                                                    "observaciones",
-                                                    ""
-                                                ),
-
-                                                conceptos=solicitud_row.get(
-                                                    "conceptos",
-                                                    []
-                                                )
+                                                empleado=solicitud_row.get("nombre_empleado_solicita", ""),
+                                                empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
+                                                fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
+                                                fecha_comprobacion=row.get("created_at", ""),
+                                                fecha_inicio=solicitud_row.get("fecha_inicio", ""),
+                                                fecha_fin=solicitud_row.get("fecha_fin", ""),
+                                                empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
+                                                unidad_negocio=solicitud_row.get("unidad_negocio", ""),
+                                                sucursal=solicitud_row.get("sucursal", ""),
+                                                sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
+                                                nombre_cliente=solicitud_row.get("nombre_cliente", ""),
+                                                folio_sac=solicitud_row.get("folio_sac", ""),
+                                                motivo_viaje=solicitud_row.get("motivo_viaje", ""),
+                                                observaciones=solicitud_row.get("observaciones", ""),
+                                                conceptos=solicitud_row.get("conceptos", []),
+                                                total_estimado=solicitud_row.get("total_estimado", 0),
+                                                total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
+                                                empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
+                                                observaciones_comprobacion=row.get("observaciones", ""),
+                                                total_comprobado=row.get("total_comprobado", 0),
+                                                total_comprobado_usd=row.get("total_comprobado_usd", 0)
                                             )
 
                                         except Exception as e:
@@ -5638,38 +5668,30 @@ if has_viaticos:
                                             enviar_correo_estatus_solicitud(
 
                                                 destinatarios=destinatarios,
-
-                                                folio=solicitud_row.get(
-                                                    "folio_solicitud",
-                                                    ""
-                                                ),
-
+                                                folio_solicitud=solicitud_row.get("folio_solicitud", ""),
+                                                folio_comprobacion=row.get("folio_comprobacion", ""),
                                                 estatus="Rechazado",
-
-                                                fecha_inicio=solicitud_row.get(
-                                                    "fecha_inicio",
-                                                    ""
-                                                ),
-
-                                                fecha_fin=solicitud_row.get(
-                                                    "fecha_fin",
-                                                    ""
-                                                ),
-
-                                                motivo_viaje=solicitud_row.get(
-                                                    "motivo_viaje",
-                                                    ""
-                                                ),
-
-                                                observaciones=row.get(
-                                                    "observaciones",
-                                                    ""
-                                                ),
-
-                                                conceptos=solicitud_row.get(
-                                                    "conceptos",
-                                                    []
-                                                )
+                                                empleado=solicitud_row.get("nombre_empleado_solicita", ""),
+                                                empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
+                                                fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
+                                                fecha_comprobacion=row.get("created_at", ""),
+                                                fecha_inicio=solicitud_row.get("fecha_inicio", ""),
+                                                fecha_fin=solicitud_row.get("fecha_fin", ""),
+                                                empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
+                                                unidad_negocio=solicitud_row.get("unidad_negocio", ""),
+                                                sucursal=solicitud_row.get("sucursal", ""),
+                                                sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
+                                                nombre_cliente=solicitud_row.get("nombre_cliente", ""),
+                                                folio_sac=solicitud_row.get("folio_sac", ""),
+                                                motivo_viaje=solicitud_row.get("motivo_viaje", ""),
+                                                observaciones=solicitud_row.get("observaciones", ""),
+                                                conceptos=solicitud_row.get("conceptos", []),
+                                                total_estimado=solicitud_row.get("total_estimado", 0),
+                                                total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
+                                                empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
+                                                observaciones_comprobacion=row.get("observaciones", ""),
+                                                total_comprobado=row.get("total_comprobado", 0),
+                                                total_comprobado_usd=row.get("total_comprobado_usd", 0)
                                             )
 
                                         except Exception as e:
