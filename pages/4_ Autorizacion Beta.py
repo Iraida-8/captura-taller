@@ -6861,7 +6861,9 @@ if has_viaticos:
                     if editando:
                         df_sol_edit = pd.DataFrame(sol_records, columns=solicitud_columns)
                         if df_sol_edit.empty:
-                            df_sol_edit = pd.DataFrame([{"Tipo":"", "Descripcion":"", "Monto":0, "Tipo Cambio":"MXP", "Aprobado":"🟢 Si", "Razon":""}])
+                            df_sol_edit = pd.DataFrame([{"Tipo":"", "Descripcion":"", "Monto":0, "Tipo Cambio":"MXP", "Aprobado":"🟢 Si", "Razon":"", "🗑 Eliminar":False}])
+                        else:
+                            df_sol_edit["🗑 Eliminar"] = False
                         edited_sol = st.data_editor(
                             df_sol_edit,
                             use_container_width=True,
@@ -6879,6 +6881,7 @@ if has_viaticos:
                                 "Tipo Cambio": st.column_config.TextColumn("Tipo Cambio / Moneda"),
                                 "Aprobado": st.column_config.SelectboxColumn("Aprobado", options=["🟢 Si", "🔴 No"]),
                                 "Razon": st.column_config.TextColumn("Razon"),
+                                "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
                             },
                         )
                     else:
@@ -6910,6 +6913,8 @@ if has_viaticos:
                             return 0.0
 
                     sol_source = edited_sol.to_dict("records") if editando and edited_sol is not None else sol_records
+                    if editando:
+                        sol_source = [x for x in sol_source if not bool(x.get("🗑 Eliminar", False))]
                     total_sol_mxp = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and not _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
                     total_sol_usd = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
 
@@ -6942,6 +6947,7 @@ if has_viaticos:
                             df_comp_edit["Monto"] = 0.0
                             df_comp_edit["Impuesto Acreditable"] = 0.0
                             df_comp_edit["Total Comprobado"] = 0.0
+                        df_comp_edit["🗑 Eliminar"] = False
 
                         if "Fecha Factura" in df_comp_edit.columns:
                             df_comp_edit["Fecha Factura"] = pd.to_datetime(df_comp_edit["Fecha Factura"], errors="coerce")
@@ -6973,6 +6979,7 @@ if has_viaticos:
                                 "Aplica Retencion": st.column_config.SelectboxColumn("Aplica Retencion", options=["Si", "No"]),
                                 "Impuesto Acreditable": st.column_config.NumberColumn("Impuesto Acreditable", format="$ %.2f"),
                                 "Total Comprobado": st.column_config.NumberColumn("Total Comprobado", format="$ %.2f"),
+                                "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
                             },
                         )
                     else:
@@ -6993,6 +7000,8 @@ if has_viaticos:
                         edited_comp = None
 
                     comp_source = edited_comp.to_dict("records") if editando and edited_comp is not None else comp_records
+                    if editando:
+                        comp_source = [x for x in comp_source if not bool(x.get("🗑 Eliminar", False))]
                     total_comp_mxp = sum(_num(x.get("Total Comprobado")) for x in comp_source if not _is_usd(x.get("Moneda", "MXP")))
                     total_comp_usd = sum(_num(x.get("Total Comprobado")) for x in comp_source if _is_usd(x.get("Moneda", "MXP")))
 
@@ -7082,13 +7091,19 @@ if has_viaticos:
                                 estado_solicitud = solicitud_row.get("estatus") or comprobacion_row.get("estatus") or "Concluido"
                                 estado_comprobacion = comprobacion_row.get("estatus") or estado_solicitud
 
-                                # Normalize request concepts.
-                                conceptos_sol_actualizados = edited_sol.to_dict("records") if edited_sol is not None else []
-                                for item in conceptos_sol_actualizados:
+                                # Normalize request concepts and remove rows explicitly marked for deletion.
+                                conceptos_sol_brutos = edited_sol.to_dict("records") if edited_sol is not None else []
+                                conceptos_sol_actualizados = []
+                                conceptos_eliminados_solicitud = 0
+                                for item in conceptos_sol_brutos:
+                                    if bool(item.pop("🗑 Eliminar", False)):
+                                        conceptos_eliminados_solicitud += 1
+                                        continue
                                     item["Monto"] = _num(item.get("Monto"))
                                     if not item.get("Tipo Cambio"):
                                         item["Tipo Cambio"] = item.get("Moneda", "MXP") or "MXP"
                                     item["Aprobado"] = "Si" if item.get("Aprobado") in ["Si", "🟢 Si"] else "No"
+                                    conceptos_sol_actualizados.append(item)
 
                                 nuevo_total_estimado_mxp = sum(
                                     _num(item.get("Monto"))
@@ -7101,9 +7116,14 @@ if has_viaticos:
                                     if item.get("Aprobado") == "Si" and _is_usd(item.get("Tipo Cambio", "MXP"))
                                 )
 
-                                # Normalize comprobation concepts.
-                                conceptos_comp_actualizados = edited_comp.to_dict("records") if edited_comp is not None else []
-                                for item in conceptos_comp_actualizados:
+                                # Normalize comprobation concepts and remove rows explicitly marked for deletion.
+                                conceptos_comp_brutos = edited_comp.to_dict("records") if edited_comp is not None else []
+                                conceptos_comp_actualizados = []
+                                conceptos_eliminados_comprobacion = 0
+                                for item in conceptos_comp_brutos:
+                                    if bool(item.pop("🗑 Eliminar", False)):
+                                        conceptos_eliminados_comprobacion += 1
+                                        continue
                                     if pd.notna(item.get("Fecha Factura")):
                                         try:
                                             item["Fecha Factura"] = pd.to_datetime(item["Fecha Factura"]).strftime("%Y-%m-%d")
@@ -7113,6 +7133,7 @@ if has_viaticos:
                                         item["Fecha Factura"] = ""
                                     for col in ["Monto", "IVA %", "Impuesto Acreditable", "Total Comprobado"]:
                                         item[col] = _num(item.get(col))
+                                    conceptos_comp_actualizados.append(item)
 
                                 nuevo_total_comp_mxp = sum(
                                     _num(item.get("Total Comprobado"))
@@ -7141,6 +7162,12 @@ if has_viaticos:
                                         "path": storage_path,
                                         "filename": archivo.name,
                                     })
+
+                                # Keep the pre-edit totals for the audit record.
+                                total_anterior_mxp = _num(solicitud_row.get("total_estimado", 0))
+                                total_anterior_usd = _num(solicitud_row.get("total_estimado_usd", 0))
+                                total_comprobado_anterior_mxp = _num(comprobacion_row.get("total_comprobado", 0))
+                                total_comprobado_anterior_usd = _num(comprobacion_row.get("total_comprobado_usd", 0))
 
                                 # Update request. Status intentionally remains closed.
                                 solicitud_update = {
@@ -7179,6 +7206,31 @@ if has_viaticos:
                                     f"Editó Solicitud Finalizada: {folio_actual} | Solicitud y comprobación actualizadas | Totales recalculados",
                                     "Gestión de Viáticos"
                                 )
+
+                                # Detailed audit entry for privileged edits of finalized requests.
+                                # This uses the existing audit_log table; no new column is required on solicitud_viaje.
+                                supabase.table("audit_log").insert({
+                                    "created_at": datetime.now(timezone.utc).isoformat(),
+                                    "user_id": user.get("id"),
+                                    "user_name": user.get("name"),
+                                    "action": "Edición de solicitud finalizada",
+                                    "table_name": "solicitud_viaje",
+                                    "record_key": folio_actual,
+                                    "details": {
+                                        "folio": folio_actual,
+                                        "total_solicitud_anterior_mxp": total_anterior_mxp,
+                                        "total_solicitud_nuevo_mxp": float(nuevo_total_estimado_mxp),
+                                        "total_solicitud_anterior_usd": total_anterior_usd,
+                                        "total_solicitud_nuevo_usd": float(nuevo_total_estimado_usd),
+                                        "total_comprobado_anterior_mxp": total_comprobado_anterior_mxp,
+                                        "total_comprobado_nuevo_mxp": float(nuevo_total_comp_mxp),
+                                        "total_comprobado_anterior_usd": total_comprobado_anterior_usd,
+                                        "total_comprobado_nuevo_usd": float(nuevo_total_comp_usd),
+                                        "conceptos_eliminados_solicitud": conceptos_eliminados_solicitud,
+                                        "conceptos_eliminados_comprobacion": conceptos_eliminados_comprobacion,
+                                        "archivos_agregados": len(nuevos_archivos),
+                                    },
+                                }).execute()
 
                                 st.cache_data.clear()
                                 st.session_state.finalizada_modal = None
