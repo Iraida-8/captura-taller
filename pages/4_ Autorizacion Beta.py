@@ -5501,6 +5501,68 @@ if has_viaticos:
 
                                     st.rerun()
 
+                                def enviar_notificacion_rechazo(estatus_solicitud):
+
+                                    # =================================
+                                    # GET CREATOR EMAIL
+                                    # =================================
+
+                                    correo_creador = obtener_email_usuario(
+                                        solicitud_row.get(
+                                            "nombre_empleado_solicita",
+                                            ""
+                                        )
+                                    )
+
+                                    destinatarios = construir_destinatarios(
+                                        empresa=row.get(
+                                            "empresa_brinda_servicio",
+                                            ""
+                                        ),
+                                        email_usuario_actual=email_usuario,
+                                        correo_creador=correo_creador
+                                    )
+
+                                    # =================================
+                                    # SEND EMAIL
+                                    # =================================
+
+                                    try:
+
+                                        enviar_correo_estatus_solicitud(
+                                            destinatarios=destinatarios,
+                                            folio_solicitud=solicitud_row.get("folio_solicitud", ""),
+                                            folio_comprobacion=row.get("folio_comprobacion", ""),
+                                            estatus=estatus_solicitud,
+                                            empleado=solicitud_row.get("nombre_empleado_solicita", ""),
+                                            empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
+                                            fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
+                                            fecha_comprobacion=row.get("created_at", ""),
+                                            fecha_inicio=solicitud_row.get("fecha_inicio", ""),
+                                            fecha_fin=solicitud_row.get("fecha_fin", ""),
+                                            empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
+                                            unidad_negocio=solicitud_row.get("unidad_negocio", ""),
+                                            sucursal=solicitud_row.get("sucursal", ""),
+                                            sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
+                                            nombre_cliente=solicitud_row.get("nombre_cliente", ""),
+                                            folio_sac=solicitud_row.get("folio_sac", ""),
+                                            motivo_viaje=solicitud_row.get("motivo_viaje", ""),
+                                            observaciones=solicitud_row.get("observaciones", ""),
+                                            conceptos=solicitud_row.get("conceptos", []),
+                                            total_estimado=solicitud_row.get("total_estimado", 0),
+                                            total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
+                                            empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
+                                            observaciones_comprobacion=row.get("observaciones", ""),
+                                            total_comprobado=row.get("total_comprobado", 0),
+                                            total_comprobado_usd=row.get("total_comprobado_usd", 0)
+                                        )
+
+                                    except Exception as e:
+
+                                        st.warning(
+                                            f"No se pudo enviar correo: {e}"
+                                        )
+
                                 btn1, btn2 = st.columns(2)
 
                                 with btn1:
@@ -5617,105 +5679,148 @@ if has_viaticos:
                                         use_container_width=True
                                     ):
 
-                                        supabase.table(
-                                            "solicitud_viaje"
-                                        ).update(
-                                            {
-                                                "estatus": "Rechazado",
-                                            }
-                                        ).eq(
-                                            "folio_solicitud",
-                                            folio_actual
-                                        ).execute()
+                                        # Si existe una solicitud relacionada, primero
+                                        # preguntamos si debe reabrirse o cerrarse.
+                                        if solicitud_row:
+                                            st.session_state[f"rechazo_comprobacion_pendiente_{folio_actual}"] = True
+                                        else:
+                                            # Comprobación independiente: no existe
+                                            # solicitud que deba cambiar de estatus.
+                                            supabase.table(
+                                                "comprobacion_viaje"
+                                            ).update(
+                                                {
+                                                    "estatus": "Rechazado",
+                                                }
+                                            ).eq(
+                                                "folio_comprobacion",
+                                                row.get("folio_comprobacion", "")
+                                            ).execute()
 
-                                        supabase.table(
-                                            "comprobacion_viaje"
-                                        ).update(
-                                            {
-                                                "estatus": "Rechazado",
-                                            }
-                                        ).eq(
-                                            "folio_solicitud",
-                                            folio_actual
-                                        ).execute()
-
-                                        # =================================
-                                        # GET CREATOR EMAIL
-                                        # =================================
-
-                                        correo_creador = (
-                                            obtener_email_usuario(
-                                                solicitud_row.get(
-                                                    "nombre_empleado_solicita",
-                                                    ""
-                                                )
-                                            )
-                                        )
-
-                                        destinatarios = construir_destinatarios(
-
-                                            empresa=row.get(
-                                                "empresa_brinda_servicio",
-                                                ""
-                                            ),
-
-                                            email_usuario_actual=email_usuario,
-
-                                            correo_creador=correo_creador
-                                        )
-
-                                        # =================================
-                                        # SEND EMAIL
-                                        # =================================
-
-                                        try:
-
-                                            enviar_correo_estatus_solicitud(
-
-                                                destinatarios=destinatarios,
-                                                folio_solicitud=solicitud_row.get("folio_solicitud", ""),
-                                                folio_comprobacion=row.get("folio_comprobacion", ""),
-                                                estatus="Rechazado",
-                                                empleado=solicitud_row.get("nombre_empleado_solicita", ""),
-                                                empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
-                                                fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
-                                                fecha_comprobacion=row.get("created_at", ""),
-                                                fecha_inicio=solicitud_row.get("fecha_inicio", ""),
-                                                fecha_fin=solicitud_row.get("fecha_fin", ""),
-                                                empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
-                                                unidad_negocio=solicitud_row.get("unidad_negocio", ""),
-                                                sucursal=solicitud_row.get("sucursal", ""),
-                                                sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
-                                                nombre_cliente=solicitud_row.get("nombre_cliente", ""),
-                                                folio_sac=solicitud_row.get("folio_sac", ""),
-                                                motivo_viaje=solicitud_row.get("motivo_viaje", ""),
-                                                observaciones=solicitud_row.get("observaciones", ""),
-                                                conceptos=solicitud_row.get("conceptos", []),
-                                                total_estimado=solicitud_row.get("total_estimado", 0),
-                                                total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
-                                                empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
-                                                observaciones_comprobacion=row.get("observaciones", ""),
-                                                total_comprobado=row.get("total_comprobado", 0),
-                                                total_comprobado_usd=row.get("total_comprobado_usd", 0)
+                                            log_activity(
+                                                f"Rechazó Comprobación sin Solicitud: {folio_actual or row.get('folio_comprobacion', '')}",
+                                                "Gestión de Viáticos"
                                             )
 
-                                        except Exception as e:
-
-                                            st.warning(
-                                                f"No se pudo enviar correo: {e}"
+                                            st.error(
+                                                "Comprobación rechazada. No existe una solicitud asociada."
                                             )
 
-                                        log_activity(
-                                            f"Rechazó Comprobación: {folio_actual}",
-                                            "Gestión de Viáticos"
-                                        )
+                                            st.cache_data.clear()
+                                            st.rerun()
 
-                                        st.error(
-                                            "Solicitud rechazada"
-                                        )
+                                # =================================
+                                # CONFIRMACIÓN DE RECHAZO
+                                # =================================
+                                rechazo_key = f"rechazo_comprobacion_pendiente_{folio_actual}"
 
-                                        st.cache_data.clear()
-                                        st.rerun()    
+                                if can_manage_viaticos and st.session_state.get(rechazo_key, False):
+
+                                    st.warning(
+                                        "⚠️ Esta comprobación está vinculada a una solicitud. "
+                                        "¿Qué deseas hacer con la solicitud asociada?"
+                                    )
+
+                                    st.markdown(
+                                        "**Reabrir Solicitud:** la comprobación quedará **Rechazada**, "
+                                        "pero la solicitud regresará a **Aprobado** para que pueda continuar.  "
+                                        "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
+                                    )
+
+                                    opcion_reabrir, opcion_cerrar = st.columns(2)
+
+                                    with opcion_reabrir:
+
+                                        if st.button(
+                                            "🔄 Reabrir Solicitud",
+                                            key=f"reabrir_solicitud_{folio_actual}",
+                                            use_container_width=True
+                                        ):
+
+                                            supabase.table(
+                                                "solicitud_viaje"
+                                            ).update(
+                                                {
+                                                    "estatus": "Aprobado",
+                                                }
+                                            ).eq(
+                                                "folio_solicitud",
+                                                folio_actual
+                                            ).execute()
+
+                                            supabase.table(
+                                                "comprobacion_viaje"
+                                            ).update(
+                                                {
+                                                    "estatus": "Rechazado",
+                                                }
+                                            ).eq(
+                                                "folio_comprobacion",
+                                                row.get("folio_comprobacion", "")
+                                            ).execute()
+
+                                            enviar_notificacion_rechazo("Aprobado")
+
+                                            st.session_state.pop(rechazo_key, None)
+
+                                            log_activity(
+                                                f"Rechazó Comprobación y reabrió Solicitud: {folio_actual}",
+                                                "Gestión de Viáticos"
+                                            )
+
+                                            st.success(
+                                                "Comprobación rechazada y solicitud reabierta. La solicitud regresó a Aprobado."
+                                            )
+
+                                            st.cache_data.clear()
+                                            st.rerun()
+
+                                    with opcion_cerrar:
+
+                                        if st.button(
+                                            "❌ Cerrar Solicitud",
+                                            key=f"cerrar_solicitud_{folio_actual}",
+                                            use_container_width=True
+                                        ):
+
+                                            supabase.table(
+                                                "solicitud_viaje"
+                                            ).update(
+                                                {
+                                                    "estatus": "Rechazado",
+                                                }
+                                            ).eq(
+                                                "folio_solicitud",
+                                                folio_actual
+                                            ).execute()
+
+                                            supabase.table(
+                                                "comprobacion_viaje"
+                                            ).update(
+                                                {
+                                                    "estatus": "Rechazado",
+                                                }
+                                            ).eq(
+                                                "folio_comprobacion",
+                                                row.get("folio_comprobacion", "")
+                                            ).execute()
+
+                                            enviar_notificacion_rechazo("Rechazado")
+
+                                            st.session_state.pop(rechazo_key, None)
+
+                                            log_activity(
+                                                f"Rechazó Comprobación y cerró Solicitud: {folio_actual}",
+                                                "Gestión de Viáticos"
+                                            )
+
+                                            st.error(
+                                                "Comprobación y solicitud rechazadas."
+                                            )
+
+                                            st.cache_data.clear()
+                                            st.rerun()
+
 
 
                             modal_verificacion()
