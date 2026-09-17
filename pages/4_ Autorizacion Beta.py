@@ -6870,6 +6870,7 @@ if has_viaticos:
                             hide_index=True,
                             num_rows="dynamic",
                             key=f"final_sol_editor_{folio_actual}",
+                            on_change=st.rerun,
                             column_config={
                                 "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
                                     "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
@@ -6961,6 +6962,7 @@ if has_viaticos:
                             num_rows="dynamic",
                             height=400,
                             key=f"final_comp_editor_{folio_actual}",
+                            on_change=st.rerun,
                             column_config={
                                 "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
                                     "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
