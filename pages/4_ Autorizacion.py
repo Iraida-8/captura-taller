@@ -2945,14 +2945,14 @@ if has_viaticos:
 
             EMAILS_EMPRESA = {
 
-                "SET FREIGHT": [
+                "SET FREIGHT INTERNATIONAL": [
 
                     "karina.colina@palosgarza.com",
 
                     "cindy.gonzalez@palosgarza.com"
                 ],
 
-                "LINCOLN": [
+                "LINCOLN FREIGHT": [
 
                     "karina.colina@palosgarza.com",
 
@@ -2966,7 +2966,7 @@ if has_viaticos:
                     "argelia.salinas@palosgarza.com"
                 ],
 
-                "IGLOO": [
+                "IGLOO TRANSPORT": [
 
                     "agustin.rodriguez@palosgarza.com"
                 ],
@@ -3036,22 +3036,10 @@ if has_viaticos:
 
                 destinatarios = []
 
-
-                # =================================
-                # LOGGED USER
-                # =================================
-
-                if (
-                    email_usuario_actual
-                    and email_usuario_actual not in destinatarios
-                ):
-
-                    destinatarios.append(
-                        email_usuario_actual
-                    )
-
                 # =================================
                 # CREATOR EMAIL
+                # The creator is included, but the currently
+                # logged-in user is NOT automatically included.
                 # =================================
 
                 if (
