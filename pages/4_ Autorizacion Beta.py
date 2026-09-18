@@ -12,7 +12,7 @@ import uuid
 import resend  #type: ignore
 
 # =================================
-# RELEASE CHANNEL test
+# RELEASE CHANNEL
 # =================================
 
 APP_CHANNEL = "BETA"
