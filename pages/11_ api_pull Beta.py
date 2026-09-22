@@ -4033,7 +4033,7 @@ with tab_wialon:
     # -----------------------------------------------------
 
     if st.button(
-        "🔌 Test Wailon API",
+        "🔌 Test Wialon API",
         use_container_width=True
     ):
 
@@ -4064,7 +4064,7 @@ with tab_wialon:
             if not sid:
 
                 st.error(
-                    "❌ Wailon no devolvió un session ID."
+                    "❌ Wialon no devolvió un session ID."
                 )
 
                 st.stop()
@@ -4133,7 +4133,7 @@ with tab_wialon:
             if units:
 
                 st.success(
-                    f"✅ Wailon devolvió {len(units)} unidades."
+                    f"✅ Wialon devolvió {len(units)} unidades."
                 )
 
                 rows = []
@@ -4186,7 +4186,7 @@ with tab_wialon:
             else:
 
                 st.warning(
-                    "Wailon respondió correctamente, "
+                    "Wialon respondió correctamente, "
                     "pero no devolvió unidades."
                 )
 
@@ -4217,7 +4217,7 @@ with tab_wialon:
         except Exception as e:
 
             st.error(
-                f"❌ Error consultando Wailon: {e}"
+                f"❌ Error consultando Wialon: {e}"
             )
 
             st.exception(e)
