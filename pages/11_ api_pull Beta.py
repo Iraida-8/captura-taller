@@ -5218,11 +5218,11 @@ with tab_wialon:
             "📦 Información de cajas / remolques"
         )
 
-        # ---------------------------------------------------------
-        # GET ALL RESOURCES AND THEIR TRAILERS
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
+        # GET ALL TRAILERS FROM ALL ACCESSIBLE RESOURCES
+        # -----------------------------------------------------
 
-        trailer_resources_response = wialon_request(
+        trailers_response = wialon_request(
             "core/search_items",
             {
                 "spec": {
@@ -5240,27 +5240,20 @@ with tab_wialon:
         )
 
         trailer_resources = safe_dict(
-            trailer_resources_response
+            trailers_response
         ).get(
             "items",
             []
         )
 
-        if not isinstance(
-            trailer_resources,
-            list
-        ):
+        if not isinstance(trailer_resources, list):
             trailer_resources = []
 
-        # ---------------------------------------------------------
-        # BUILD TRAILER CATALOG
-        #
-        # Wialon returns trailers inside the resource object.
-        # Keep both the trailer ID and resource information so
-        # get_unit_trailers can be resolved to readable names.
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
+        # BUILD INDEPENDENT TRAILER CATALOG
+        # -----------------------------------------------------
 
-        trailer_catalog = {}
+        trailer_catalog = []
 
         for resource in trailer_resources:
 
@@ -5282,148 +5275,122 @@ with tab_wialon:
                 )
             )
 
-            for trailer_key, trailer_data in trailers.items():
+            for trailer_key, trailer in trailers.items():
 
-                trailer_data = safe_dict(
-                    trailer_data
-                )
+                trailer = safe_dict(trailer)
 
                 trailer_id = safe_value(
-                    trailer_data,
+                    trailer,
                     "id",
                     trailer_key
                 )
 
-                if trailer_id == "":
-                    trailer_id = trailer_key
+                trailer_name = safe_value(
+                    trailer,
+                    "nm",
+                    trailer.get("name", trailer_id)
+                )
 
-                trailer_catalog[
-                    str(trailer_id)
-                ] = {
-                    "trailer_id": trailer_id,
-                    "trailer_name": safe_value(
-                        trailer_data,
-                        "nm"
-                    ),
-                    "resource_id": resource_id,
-                    "resource_name": resource_name
-                }
+                trailer_catalog.append(
+                    {
+                        "resource_id": resource_id,
+                        "resource_name": resource_name,
+                        "trailer_id": trailer_id,
+                        "trailer_name": trailer_name,
+                        "raw": trailer
+                    }
+                )
 
-        # ---------------------------------------------------------
-        # GET TRAILERS CURRENTLY ASSIGNED TO SELECTED UNIT
-        # ---------------------------------------------------------
+        trailer_catalog = sorted(
+            trailer_catalog,
+            key=lambda x: str(x.get("trailer_name", "")).lower()
+        )
 
-        trailer_rows = []
+        if trailer_catalog:
 
-        if selected_unit:
+            # -------------------------------------------------
+            # TRAILER SELECTOR
+            # -------------------------------------------------
 
-            selected_unit_id = selected_unit.get(
-                "id"
+            trailer_options = [
+                item["trailer_name"]
+                for item in trailer_catalog
+            ]
+
+            selected_trailer_name = st.selectbox(
+                "Selecciona una caja / remolque",
+                trailer_options,
+                index=0,
+                key="wialon_selected_trailer"
             )
 
-            assigned_trailers_response = wialon_request(
-                "resource/get_unit_trailers",
-                {
-                    "unitId": selected_unit_id
-                },
-                sid=sid
+            selected_trailer = next(
+                (
+                    item
+                    for item in trailer_catalog
+                    if item["trailer_name"] == selected_trailer_name
+                ),
+                None
             )
 
-            assigned_trailers_response = safe_dict(
-                assigned_trailers_response
-            )
+            if selected_trailer:
 
-            for resource_id, trailers in (
-                assigned_trailers_response.items()
-            ):
+                # -------------------------------------------------
+                # TRAILER DETAILS
+                # -------------------------------------------------
 
-                if not isinstance(
-                    trailers,
-                    list
-                ):
-                    continue
+                st.markdown(
+                    "### 📋 Información de la caja / remolque"
+                )
 
-                for trailer in trailers:
+                trailer = safe_dict(
+                    selected_trailer.get("raw")
+                )
 
-                    trailer = safe_dict(
-                        trailer
-                    )
+                trailer_rows = [
+                    {
+                        "Campo": "Nombre",
+                        "Valor": selected_trailer.get("trailer_name", "")
+                    },
+                    {
+                        "Campo": "ID Caja / Remolque",
+                        "Valor": selected_trailer.get("trailer_id", "")
+                    },
+                    {
+                        "Campo": "ID Recurso",
+                        "Valor": selected_trailer.get("resource_id", "")
+                    },
+                    {
+                        "Campo": "Recurso",
+                        "Valor": selected_trailer.get("resource_name", "")
+                    }
+                ]
 
-                    trailer_id = safe_value(
-                        trailer,
-                        "id"
-                    )
+                # Include every additional trailer property returned by Wialon.
+                for key, value in trailer.items():
 
-                    trailer_name = safe_value(
-                        trailer,
-                        "nm"
-                    )
-
-                    catalog_data = trailer_catalog.get(
-                        str(trailer_id),
-                        {}
-                    )
-
-                    if not trailer_name:
-                        trailer_name = safe_value(
-                            catalog_data,
-                            "trailer_name"
-                        )
-
-                    resource_name = safe_value(
-                        catalog_data,
-                        "resource_name"
-                    )
-
-                    if not resource_name:
-                        resource_name = next(
-                            (
-                                safe_value(
-                                    resource,
-                                    "nm"
-                                )
-                                for resource in trailer_resources
-                                if str(
-                                    safe_value(
-                                        resource,
-                                        "id"
-                                    )
-                                ) == str(resource_id)
-                            ),
-                            ""
-                        )
+                    if key in ("id", "nm", "name"):
+                        continue
 
                     trailer_rows.append(
                         {
-                            "ID Caja": trailer_id,
-                            "Caja / Remolque": trailer_name,
-                            "ID Recurso": resource_id,
-                            "Recurso": resource_name,
-                            "Unidad asignada": safe_value(
-                                selected_unit,
-                                "nm"
-                            )
+                            "Campo": str(key),
+                            "Valor": "" if value is None else value
                         }
                     )
 
-        # ---------------------------------------------------------
-        # DISPLAY TRAILERS
-        # ---------------------------------------------------------
-
-        if trailer_rows:
-
-            st.dataframe(
-                pd.DataFrame(
-                    trailer_rows
-                ),
-                use_container_width=True,
-                hide_index=True
-            )
+                st.dataframe(
+                    pd.DataFrame(
+                        trailer_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
 
         else:
 
             st.info(
-                "No hay cajas/remolques asignados a la unidad seleccionada."
+                "Wialon no devolvió cajas/remolques para los recursos disponibles."
             )
 
         # =========================================================
