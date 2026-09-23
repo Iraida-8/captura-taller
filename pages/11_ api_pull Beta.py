@@ -4345,8 +4345,39 @@ with tab_wialon:
             )
 
             # =====================================================
-            # DETAILED UNIT INFORMATION
+            # DOWNLOAD WIALON TABLE
             # =====================================================
+
+            wialon_download = io.BytesIO()
+
+            with pd.ExcelWriter(
+                wialon_download,
+                engine="openpyxl"
+            ) as writer:
+
+                units_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Wialon Unidades"
+                )
+
+            wialon_download.seek(0)
+
+            st.download_button(
+                label="📥 Descargar tabla Wialon",
+                data=wialon_download,
+                file_name="wialon_unidades.xlsx",
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True,
+                key="download_wialon_table"
+            )
+
+            # =====================================================
+            # DETAILED UNIT INFORMATION
+            # =========================================================
 
             st.divider()
 
