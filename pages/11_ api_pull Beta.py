@@ -4453,14 +4453,16 @@ with tab_wialon:
 
                 if detailed_unit_response:
 
-                    detailed_unit = (
-                        detailed_unit_response
-                        if isinstance(
-                            detailed_unit_response,
-                            dict
+                    if isinstance(detailed_unit_response, dict):
+
+                        detailed_unit = detailed_unit_response.get(
+                            "item",
+                            detailed_unit_response
                         )
-                        else {}
-                    )
+
+                    else:
+
+                        detailed_unit = {}
 
                     # =================================================
                     # 1. IDENTIFICACIÓN GENERAL
