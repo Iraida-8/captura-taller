@@ -4033,415 +4033,334 @@ with tab_wialon:
 
         return response.json()
 
-    # -----------------------------------------------------
-    # TEST API
-    # -----------------------------------------------------
+    # =========================================================
+    # WIALON CONNECTION
+    # =========================================================
 
-    if st.button(
-        "🔌 Test Wialon API",
-        use_container_width=True
-    ):
+    try:
+
+        # -----------------------------------------------------
+        # LOGIN
+        # -----------------------------------------------------
+
+        login_response = wialon_request(
+            "token/login",
+            {
+                "token": WIALON_TOKEN,
+                "fl": 15
+            }
+        )
+
+        sid = login_response.get(
+            "eid"
+        )
+
+        if not sid:
+            st.error(
+                "❌ Wialon no devolvió un session ID."
+            )
+            st.stop()
+
+        # -----------------------------------------------------
+        # USER INFORMATION
+        # -----------------------------------------------------
+
+        user_response = wialon_request(
+            "core/get_user_data",
+            {},
+            sid=sid
+        )
+
+        # -----------------------------------------------------
+        # GET ALL ACCESSIBLE UNITS
+        # -----------------------------------------------------
+
+        units_response = wialon_request(
+            "core/search_items",
+            {
+                "spec": {
+                    "itemsType": "avl_unit",
+                    "propName": "sys_name",
+                    "propValueMask": "*",
+                    "sortType": "sys_name"
+                },
+                "force": 1,
+                "flags": 1025,
+                "from": 0,
+                "to": 0
+            },
+            sid=sid
+        )
+
+        # =====================================================
+        # BUILD UNITS TABLE
+        # =====================================================
+
+        units = units_response.get(
+            "items",
+            []
+        )
+
+        if units:
+
+            rows = []
+
+            for unit in units:
+
+                # -------------------------------------------------
+                # LAST POSITION
+                # -------------------------------------------------
+
+                position = (
+                    unit.get(
+                        "pos",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # LAST MESSAGE
+                # -------------------------------------------------
+
+                last_message = (
+                    unit.get(
+                        "lmsg",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # DEVICE PARAMETERS
+                # -------------------------------------------------
+
+                params = (
+                    last_message.get(
+                        "p",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # TABLE ROW
+                # -------------------------------------------------
+
+                rows.append(
+                    {
+
+                        # -----------------------------------------
+                        # UNIT
+                        # -----------------------------------------
+
+                        "ID Wialon": unit.get(
+                            "id",
+                            ""
+                        ),
+
+                        "Unidad": unit.get(
+                            "nm",
+                            ""
+                        ),
+
+                        "Clase": unit.get(
+                            "cls",
+                            ""
+                        ),
+
+                        "Sistema de Medición": unit.get(
+                            "mu",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # POSITION
+                        # -----------------------------------------
+
+                        "Hora Posición": position.get(
+                            "t",
+                            ""
+                        ),
+
+                        "Latitud": position.get(
+                            "y",
+                            ""
+                        ),
+
+                        "Longitud": position.get(
+                            "x",
+                            ""
+                        ),
+
+                        "Rumbo": position.get(
+                            "c",
+                            ""
+                        ),
+
+                        "Altitud": position.get(
+                            "z",
+                            ""
+                        ),
+
+                        "Velocidad": position.get(
+                            "s",
+                            ""
+                        ),
+
+                        "Satélites": position.get(
+                            "sc",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # LAST MESSAGE
+                        # -----------------------------------------
+
+                        "Hora Último Mensaje": last_message.get(
+                            "t",
+                            ""
+                        ),
+
+                        "Tipo Mensaje": last_message.get(
+                            "tp",
+                            ""
+                        ),
+
+                        "Hora Registro Wialon": last_message.get(
+                            "rt",
+                            ""
+                        ),
+
+                        "Entradas Digitales": last_message.get(
+                            "i",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # TELEMETRY
+                        # -----------------------------------------
+
+                        "HDOP": params.get(
+                            "hdop",
+                            ""
+                        ),
+
+                        "Señal GSM": params.get(
+                            "gsm_signal",
+                            ""
+                        ),
+
+                        "Power": params.get(
+                            "power",
+                            ""
+                        ),
+
+                        "Batería": params.get(
+                            "battery",
+                            ""
+                        ),
+
+                        "Engine On": params.get(
+                            "engine_on",
+                            ""
+                        ),
+
+                        "Tiempo Idle": params.get(
+                            "idling_time",
+                            ""
+                        ),
+
+                        "Velocidad Máxima": params.get(
+                            "max_speed",
+                            ""
+                        ),
+
+                        "Eventos Frenado": params.get(
+                            "braking_events",
+                            ""
+                        ),
+
+                        "Frenado Severo": params.get(
+                            "ext_hrsh_braking",
+                            ""
+                        ),
+
+                        "Frenado Brusco": params.get(
+                            "harsh_braking",
+                            ""
+                        ),
+
+                        "Aceleración Brusca": params.get(
+                            "harsh_acceleration",
+                            ""
+                        ),
+
+                        "Overspeed": params.get(
+                            "overspeed",
+                            ""
+                        ),
+
+                        "Temp Sensor 0": params.get(
+                            "temp_sens_0",
+                            ""
+                        ),
+
+                        "Temp Sensor 1": params.get(
+                            "temp_sens_1",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # ACCESS
+                        # -----------------------------------------
+
+                        "UACL": unit.get(
+                            "uacl",
+                            ""
+                        ),
+                    }
+                )
+
+            # =====================================================
+            # DATAFRAME
+            # =====================================================
+
+            units_df = pd.DataFrame(
+                rows
+            )
+
+            st.dataframe(
+                units_df,
+                use_container_width=True,
+                height=600,
+                hide_index=True
+            )
+
+        else:
+
+            st.warning(
+                "Wialon respondió correctamente, "
+                "pero no devolvió unidades."
+            )
+
+        # =====================================================
+        # LOGOUT
+        # =====================================================
 
         try:
 
-            # =================================================
-            # 1. LOGIN USING TOKEN
-            # =================================================
-
-            st.write(
-                "### 1️⃣ Autenticación"
-            )
-
-            login_response = wialon_request(
-                "token/login",
-                {
-                    "token": WIALON_TOKEN,
-                    "fl": 15
-                }
-            )
-
-            st.json(
-                login_response
-            )
-
-            # -------------------------------------------------
-            # GET SESSION ID
-            # -------------------------------------------------
-
-            sid = login_response.get(
-                "eid"
-            )
-
-            if not sid:
-
-                st.error(
-                    "❌ Wialon no devolvió un session ID."
-                )
-
-                st.stop()
-
-            st.success(
-                "✅ Autenticación exitosa."
-            )
-
-            st.write(
-                "Session ID:",
-                sid
-            )
-
-            # =================================================
-            # 2. GET USER INFORMATION
-            # =================================================
-
-            st.write(
-                "### 2️⃣ Información del usuario"
-            )
-
-            user_response = wialon_request(
-                "core/get_user_data",
+            wialon_request(
+                "core/logout",
                 {},
                 sid=sid
             )
 
-            st.json(
-                user_response
-            )
+        except Exception:
+            pass
 
-            # =================================================
-            # 3. GET ALL ACCESSIBLE UNITS
-            # =================================================
+    except Exception as e:
 
-            st.write(
-                "### 3️⃣ Unidades disponibles"
-            )
-
-            units_response = wialon_request(
-                "core/search_items",
-                {
-                    "spec": {
-                        "itemsType": "avl_unit",
-                        "propName": "sys_name",
-                        "propValueMask": "*",
-                        "sortType": "sys_name"
-                    },
-                    "force": 1,
-                    "flags": 1025,
-                    "from": 0,
-                    "to": 0
-                },
-                sid=sid
-            )
-
-            # -------------------------------------------------
-            # DISPLAY RAW RESPONSE
-            # -------------------------------------------------
-
-            st.json(
-                units_response
-            )
-
-            # =================================================
-            # 4. DISPLAY UNITS AS TABLE
-            # =================================================
-
-            units = units_response.get(
-                "items",
-                []
-            )
-
-            if units:
-
-                st.success(
-                    f"✅ Wialon devolvió {len(units)} unidades."
-                )
-
-                rows = []
-
-                for unit in units:
-
-                    # =============================================
-                    # LAST POSITION
-                    # =============================================
-
-                    position = (
-                        unit.get(
-                            "pos",
-                            {}
-                        )
-                        or {}
-                    )
-
-                    # =============================================
-                    # LAST MESSAGE
-                    # =============================================
-
-                    last_message = (
-                        unit.get(
-                            "lmsg",
-                            {}
-                        )
-                        or {}
-                    )
-
-                    # =============================================
-                    # LAST MESSAGE POSITION
-                    # =============================================
-
-                    last_message_position = (
-                        last_message.get(
-                            "pos",
-                            {}
-                        )
-                        or {}
-                    )
-
-                    # =============================================
-                    # DEVICE PARAMETERS
-                    # =============================================
-
-                    params = (
-                        last_message.get(
-                            "p",
-                            {}
-                        )
-                        or {}
-                    )
-
-                    # =============================================
-                    # BUILD FLAT TABLE ROW
-                    # =============================================
-
-                    rows.append(
-                        {
-
-                            # ---------------------------------
-                            # GENERAL UNIT INFORMATION
-                            # ---------------------------------
-
-                            "ID Wialon": unit.get(
-                                "id",
-                                ""
-                            ),
-
-                            "Unidad": unit.get(
-                                "nm",
-                                ""
-                            ),
-
-                            "Clase": unit.get(
-                                "cls",
-                                ""
-                            ),
-
-                            "Sistema de Medición": unit.get(
-                                "mu",
-                                ""
-                            ),
-
-                            # ---------------------------------
-                            # LAST POSITION
-                            # ---------------------------------
-
-                            "Hora Posición": position.get(
-                                "t",
-                                ""
-                            ),
-
-                            "Latitud": position.get(
-                                "y",
-                                ""
-                            ),
-
-                            "Longitud": position.get(
-                                "x",
-                                ""
-                            ),
-
-                            "Rumbo": position.get(
-                                "c",
-                                ""
-                            ),
-
-                            "Altitud": position.get(
-                                "z",
-                                ""
-                            ),
-
-                            "Velocidad": position.get(
-                                "s",
-                                ""
-                            ),
-
-                            "Satélites": position.get(
-                                "sc",
-                                ""
-                            ),
-
-                            # ---------------------------------
-                            # LAST MESSAGE
-                            # ---------------------------------
-
-                            "Hora Último Mensaje": last_message.get(
-                                "t",
-                                ""
-                            ),
-
-                            "Tipo Mensaje": last_message.get(
-                                "tp",
-                                ""
-                            ),
-
-                            "Hora Registro Wialon": last_message.get(
-                                "rt",
-                                ""
-                            ),
-
-                            "Entradas Digitales": last_message.get(
-                                "i",
-                                ""
-                            ),
-
-                            # ---------------------------------
-                            # TELEMETRY PARAMETERS
-                            # ---------------------------------
-
-                            "HDOP": params.get(
-                                "hdop",
-                                ""
-                            ),
-
-                            "Señal GSM": params.get(
-                                "gsm_signal",
-                                ""
-                            ),
-
-                            "Power": params.get(
-                                "power",
-                                ""
-                            ),
-
-                            "Batería": params.get(
-                                "battery",
-                                ""
-                            ),
-
-                            "Engine On": params.get(
-                                "engine_on",
-                                ""
-                            ),
-
-                            "Tiempo Idle": params.get(
-                                "idling_time",
-                                ""
-                            ),
-
-                            "Velocidad Máxima": params.get(
-                                "max_speed",
-                                ""
-                            ),
-
-                            "Eventos Frenado": params.get(
-                                "braking_events",
-                                ""
-                            ),
-
-                            "Frenado Severo": params.get(
-                                "ext_hrsh_braking",
-                                ""
-                            ),
-
-                            "Frenado Brusco": params.get(
-                                "harsh_braking",
-                                ""
-                            ),
-
-                            "Aceleración Brusca": params.get(
-                                "harsh_acceleration",
-                                ""
-                            ),
-
-                            "Overspeed": params.get(
-                                "overspeed",
-                                ""
-                            ),
-
-                            "Temp Sensor 0": params.get(
-                                "temp_sens_0",
-                                ""
-                            ),
-
-                            "Temp Sensor 1": params.get(
-                                "temp_sens_1",
-                                ""
-                            ),
-
-                            # ---------------------------------
-                            # ACCESS
-                            # ---------------------------------
-
-                            "UACL": unit.get(
-                                "uacl",
-                                ""
-                            ),
-                        }
-                    )
-
-                # =================================================
-                # CREATE DATAFRAME
-                # =================================================
-
-                units_df = pd.DataFrame(
-                    rows
-                )
-
-                # =================================================
-                # DISPLAY TABLE
-                # =================================================
-
-                st.dataframe(
-                    units_df,
-                    use_container_width=True,
-                    height=500
-                )
-
-            else:
-
-                st.warning(
-                    "Wialon respondió correctamente, "
-                    "pero no devolvió unidades."
-                )
-
-            # =================================================
-            # 5. LOGOUT
-            # =================================================
-
-            try:
-
-                logout_response = wialon_request(
-                    "core/logout",
-                    {},
-                    sid=sid
-                )
-
-                st.write(
-                    "### 4️⃣ Logout"
-                )
-
-                st.json(
-                    logout_response
-                )
-
-            except Exception as logout_error:
-
-                st.warning(
-                    f"No se pudo cerrar la sesión: "
-                    f"{logout_error}"
-                )
-
-        except Exception as e:
-
-            st.error(
-                f"❌ Error consultando Wialon: {e}"
-            )
-
-            st.exception(e)
+        st.error(
+            f"❌ Error consultando Wialon: {e}"
+        )
