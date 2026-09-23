@@ -116,7 +116,9 @@ tab_monarch, tab_wialon = st.tabs([
     "Wialon Data",
 ])
 
-
+# =========================================
+# MONARCH API
+# =========================================
 with tab_monarch:
 
     st.title("🛰️ Rastreador y Seguimiento GPS de Unidades - MONARCH")
@@ -3979,18 +3981,24 @@ with tab_monarch:
                 f"Error consultando historial: {e}"
             )
 
+# =========================================
+# WIALON API
+# =========================================
 with tab_wialon:
     # =========================================================
-    # WAILON DATA
+    # WIALON DATA
     # =========================================================
 
+    st.header(
+        "🛰️ Rastreador y Seguimiento GPS de Unidades - WIALON"
+    )
 
-    st.header("🛰️ Rastreador y Seguimiento GPS de Unidades - WIALON")
-
-    WIALON_API_URL = "https://hst-api.wialon.com/wialon/ajax.html"
+    WIALON_API_URL = (
+        "https://hst-api.wialon.com/wialon/ajax.html"
+    )
 
     # -----------------------------------------------------
-    # WAILON TOKEN
+    # WIALON TOKEN
     # -----------------------------------------------------
 
     WIALON_TOKEN = (
@@ -3998,7 +4006,7 @@ with tab_wialon:
     )
 
     # -----------------------------------------------------
-    # WAILON API REQUEST
+    # WIALON API REQUEST
     # -----------------------------------------------------
 
     def wialon_request(
@@ -4019,7 +4027,9 @@ with tab_wialon:
             WIALON_API_URL,
             data=request_params,
             headers={
-                "Content-Type": "application/x-www-form-urlencoded"
+                "Content-Type": (
+                    "application/x-www-form-urlencoded"
+                )
             },
             timeout=30
         )
@@ -4028,196 +4038,1193 @@ with tab_wialon:
 
         return response.json()
 
-    # -----------------------------------------------------
-    # TEST API
-    # -----------------------------------------------------
+    # =========================================================
+    # WIALON CONNECTION
+    # =========================================================
 
-    if st.button(
-        "🔌 Test Wailon API",
-        use_container_width=True
-    ):
+    try:
+
+        # -----------------------------------------------------
+        # LOGIN
+        # -----------------------------------------------------
+
+        login_response = wialon_request(
+            "token/login",
+            {
+                "token": WIALON_TOKEN,
+                "fl": 15
+            }
+        )
+
+        sid = login_response.get(
+            "eid"
+        )
+
+        if not sid:
+
+            st.error(
+                "❌ Wialon no devolvió un session ID."
+            )
+
+            st.stop()
+
+        # -----------------------------------------------------
+        # USER INFORMATION
+        # -----------------------------------------------------
+
+        user_response = wialon_request(
+            "core/get_user_data",
+            {},
+            sid=sid
+        )
+
+        # -----------------------------------------------------
+        # GET ALL ACCESSIBLE UNITS
+        # -----------------------------------------------------
+
+        units_response = wialon_request(
+            "core/search_items",
+            {
+                "spec": {
+                    "itemsType": "avl_unit",
+                    "propName": "sys_name",
+                    "propValueMask": "*",
+                    "sortType": "sys_name"
+                },
+                "force": 1,
+                "flags": 1025,
+                "from": 0,
+                "to": 0
+            },
+            sid=sid
+        )
+
+        # =====================================================
+        # BUILD UNITS TABLE
+        # =====================================================
+
+        units = units_response.get(
+            "items",
+            []
+        )
+
+        if units:
+
+            rows = []
+
+            for unit in units:
+
+                # -------------------------------------------------
+                # LAST POSITION
+                # -------------------------------------------------
+
+                position = (
+                    unit.get(
+                        "pos",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # LAST MESSAGE
+                # -------------------------------------------------
+
+                last_message = (
+                    unit.get(
+                        "lmsg",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # DEVICE PARAMETERS
+                # -------------------------------------------------
+
+                params = (
+                    last_message.get(
+                        "p",
+                        {}
+                    )
+                    or {}
+                )
+
+                # -------------------------------------------------
+                # TABLE ROW
+                # -------------------------------------------------
+
+                rows.append(
+                    {
+
+                        # -----------------------------------------
+                        # UNIT
+                        # -----------------------------------------
+
+                        "ID Wialon": unit.get(
+                            "id",
+                            ""
+                        ),
+
+                        "Unidad": unit.get(
+                            "nm",
+                            ""
+                        ),
+
+                        "Clase": unit.get(
+                            "cls",
+                            ""
+                        ),
+
+                        "Sistema de Medición": unit.get(
+                            "mu",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # POSITION
+                        # -----------------------------------------
+
+                        "Hora Posición": position.get(
+                            "t",
+                            ""
+                        ),
+
+                        "Latitud": position.get(
+                            "y",
+                            ""
+                        ),
+
+                        "Longitud": position.get(
+                            "x",
+                            ""
+                        ),
+
+                        "Rumbo": position.get(
+                            "c",
+                            ""
+                        ),
+
+                        "Altitud": position.get(
+                            "z",
+                            ""
+                        ),
+
+                        "Velocidad": position.get(
+                            "s",
+                            ""
+                        ),
+
+                        "Satélites": position.get(
+                            "sc",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # LAST MESSAGE
+                        # -----------------------------------------
+
+                        "Hora Último Mensaje": last_message.get(
+                            "t",
+                            ""
+                        ),
+
+                        "Tipo Mensaje": last_message.get(
+                            "tp",
+                            ""
+                        ),
+
+                        "Hora Registro Wialon": last_message.get(
+                            "rt",
+                            ""
+                        ),
+
+                        "Entradas Digitales": last_message.get(
+                            "i",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # TELEMETRY
+                        # -----------------------------------------
+
+                        "HDOP": params.get(
+                            "hdop",
+                            ""
+                        ),
+
+                        "Señal GSM": params.get(
+                            "gsm_signal",
+                            ""
+                        ),
+
+                        "Power": params.get(
+                            "power",
+                            ""
+                        ),
+
+                        "Batería": params.get(
+                            "battery",
+                            ""
+                        ),
+
+                        "Engine On": params.get(
+                            "engine_on",
+                            ""
+                        ),
+
+                        "Tiempo Idle": params.get(
+                            "idling_time",
+                            ""
+                        ),
+
+                        "Velocidad Máxima": params.get(
+                            "max_speed",
+                            ""
+                        ),
+
+                        "Eventos Frenado": params.get(
+                            "braking_events",
+                            ""
+                        ),
+
+                        "Frenado Severo": params.get(
+                            "ext_hrsh_braking",
+                            ""
+                        ),
+
+                        "Frenado Brusco": params.get(
+                            "harsh_braking",
+                            ""
+                        ),
+
+                        "Aceleración Brusca": params.get(
+                            "harsh_acceleration",
+                            ""
+                        ),
+
+                        "Overspeed": params.get(
+                            "overspeed",
+                            ""
+                        ),
+
+                        "Temp Sensor 0": params.get(
+                            "temp_sens_0",
+                            ""
+                        ),
+
+                        "Temp Sensor 1": params.get(
+                            "temp_sens_1",
+                            ""
+                        ),
+
+                        # -----------------------------------------
+                        # ACCESS
+                        # -----------------------------------------
+
+                        "UACL": unit.get(
+                            "uacl",
+                            ""
+                        ),
+                    }
+                )
+
+            # =====================================================
+            # DATAFRAME
+            # =====================================================
+
+            units_df = pd.DataFrame(
+                rows
+            )
+
+            st.dataframe(
+                units_df,
+                use_container_width=True,
+                height=600,
+                hide_index=True
+            )
+
+            # =====================================================
+            # DOWNLOAD WIALON TABLE
+            # =====================================================
+
+            wialon_download = io.BytesIO()
+
+            with pd.ExcelWriter(
+                wialon_download,
+                engine="openpyxl"
+            ) as writer:
+
+                units_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Wialon Unidades"
+                )
+
+            wialon_download.seek(0)
+
+            st.download_button(
+                label="📥 Descargar tabla Wialon",
+                data=wialon_download,
+                file_name="wialon_unidades.xlsx",
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                use_container_width=True,
+                key="download_wialon_table"
+            )
+
+            # =====================================================
+            # DETAILED UNIT INFORMATION
+            # =====================================================
+
+            st.divider()
+
+            st.subheader(
+                "🔎 Información detallada de unidad"
+            )
+
+            # -----------------------------------------------------
+            # SAFE HELPERS
+            # -----------------------------------------------------
+
+            def safe_dict(value):
+                """Return a dictionary or an empty dictionary."""
+                return value if isinstance(value, dict) else {}
+
+            def safe_value(value, key, default=""):
+                """Safely read a value from a dictionary."""
+                if isinstance(value, dict):
+                    result = value.get(key, default)
+                    return default if result is None else result
+                return default
+
+            # -----------------------------------------------------
+            # UNIT SELECTOR
+            # -----------------------------------------------------
+
+            unit_options = [
+                unit.get(
+                    "nm",
+                    ""
+                )
+                for unit in units
+                if unit.get("nm")
+            ]
+
+            selected_unit_name = st.selectbox(
+                "Selecciona una unidad",
+                unit_options,
+                index=0,
+                key="wialon_selected_unit"
+            )
+
+            # -----------------------------------------------------
+            # FIND SELECTED UNIT
+            # -----------------------------------------------------
+
+            selected_unit = next(
+                (
+                    unit
+                    for unit in units
+                    if unit.get("nm") == selected_unit_name
+                ),
+                None
+            )
+
+            if selected_unit:
+
+                selected_unit_id = selected_unit.get(
+                    "id"
+                )
+
+                # =================================================
+                # REQUEST ALL AVAILABLE UNIT INFORMATION
+                # =================================================
+
+                detailed_unit_response = wialon_request(
+                    "core/search_item",
+                    {
+                        "id": selected_unit_id,
+                        "flags": 4611686018427387903
+                    },
+                    sid=sid
+                )
+
+                # Wialon can omit optional sections or return null for
+                # individual properties. Keep the unit information already
+                # obtained and let every section continue independently.
+                detailed_item = safe_dict(
+                    detailed_unit_response.get(
+                        "item",
+                        {}
+                    )
+                )
+
+                if not detailed_item:
+                    detailed_item = safe_dict(
+                        selected_unit
+                    )
+
+                # =================================================
+                # 1. IDENTIFICACIÓN GENERAL
+                # =================================================
+
+                st.markdown(
+                    "### 📋 Identificación general"
+                )
+
+                general_rows = [
+                    {
+                        "Campo": "Nombre",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "nm"
+                        )
+                    },
+                    {
+                        "Campo": "ID Wialon",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "id"
+                        )
+                    },
+                    {
+                        "Campo": "Clase",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "cls"
+                        )
+                    },
+                    {
+                        "Campo": "Sistema de medición",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "mu"
+                        )
+                    },
+                    {
+                        "Campo": "Fecha de creación",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "ct"
+                        )
+                    },
+                    {
+                        "Campo": "ID creador",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "crt"
+                        )
+                    },
+                    {
+                        "Campo": "ID cuenta",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "bact"
+                        )
+                    },
+                    {
+                        "Campo": "GUID",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "gd"
+                        )
+                    },
+                    {
+                        "Campo": "Derechos de acceso",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "uacl"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        general_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 2. INFORMACIÓN DEL VEHÍCULO
+                # =================================================
+
+                flds = safe_dict(
+                    detailed_item.get(
+                        "flds"
+                    )
+                )
+
+                pflds = safe_dict(
+                    detailed_item.get(
+                        "pflds"
+                    )
+                )
+
+                vehicle_rows = []
+
+                # -------------------------------------------------
+                # CUSTOM FIELDS
+                # -------------------------------------------------
+
+                for field in flds.values():
+
+                    field = safe_dict(field)
+
+                    vehicle_rows.append(
+                        {
+                            "Origen": "Campo personalizado",
+                            "Campo": safe_value(
+                                field,
+                                "n"
+                            ),
+                            "Valor": safe_value(
+                                field,
+                                "v"
+                            )
+                        }
+                    )
+
+                # -------------------------------------------------
+                # PROFILE FIELDS
+                # -------------------------------------------------
+
+                for field in pflds.values():
+
+                    field = safe_dict(field)
+
+                    vehicle_rows.append(
+                        {
+                            "Origen": "Perfil",
+                            "Campo": safe_value(
+                                field,
+                                "n"
+                            ),
+                            "Valor": safe_value(
+                                field,
+                                "v"
+                            )
+                        }
+                    )
+
+                st.markdown(
+                    "### 🚛 Información del vehículo"
+                )
+
+                if vehicle_rows:
+                    st.dataframe(
+                        pd.DataFrame(
+                            vehicle_rows
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info(
+                        "No hay campos de vehículo configurados para esta unidad."
+                    )
+
+                # =================================================
+                # 3. POSICIÓN ACTUAL
+                # =================================================
+
+                position = safe_dict(
+                    detailed_item.get(
+                        "pos"
+                    )
+                )
+
+                st.markdown(
+                    "### 📍 Posición actual"
+                )
+
+                position_rows = [
+                    {
+                        "Campo": "Latitud",
+                        "Valor": safe_value(
+                            position,
+                            "y"
+                        )
+                    },
+                    {
+                        "Campo": "Longitud",
+                        "Valor": safe_value(
+                            position,
+                            "x"
+                        )
+                    },
+                    {
+                        "Campo": "Altitud",
+                        "Valor": safe_value(
+                            position,
+                            "z"
+                        )
+                    },
+                    {
+                        "Campo": "Rumbo",
+                        "Valor": safe_value(
+                            position,
+                            "c"
+                        )
+                    },
+                    {
+                        "Campo": "Velocidad",
+                        "Valor": safe_value(
+                            position,
+                            "s"
+                        )
+                    },
+                    {
+                        "Campo": "Satélites",
+                        "Valor": safe_value(
+                            position,
+                            "sc"
+                        )
+                    },
+                    {
+                        "Campo": "Timestamp",
+                        "Valor": safe_value(
+                            position,
+                            "t"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        position_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 4. ESTADO DE CONEXIÓN
+                # =================================================
+
+                st.markdown(
+                    "### 📡 Estado de conexión"
+                )
+
+                last_message = safe_dict(
+                    detailed_item.get(
+                        "lmsg"
+                    )
+                )
+
+                connection_rows = [
+                    {
+                        "Campo": "Conexión TCP/UDP",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "netconn"
+                        )
+                    },
+                    {
+                        "Campo": "Activación",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "act"
+                        )
+                    },
+                    {
+                        "Campo": "Razón de activación",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "act_reason"
+                        )
+                    },
+                    {
+                        "Campo": "Último mensaje",
+                        "Valor": safe_value(
+                            last_message,
+                            "t"
+                        )
+                    },
+                    {
+                        "Campo": "Registro en servidor",
+                        "Valor": safe_value(
+                            last_message,
+                            "rt"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        connection_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 5. SENSORES
+                # =================================================
+
+                sensors = safe_dict(
+                    detailed_item.get(
+                        "sens"
+                    )
+                )
+
+                st.markdown(
+                    "### 📊 Sensores configurados"
+                )
+
+                sensor_rows = []
+
+                for sensor in sensors.values():
+
+                    sensor = safe_dict(sensor)
+
+                    sensor_rows.append(
+                        {
+                            "ID": safe_value(
+                                sensor,
+                                "id"
+                            ),
+                            "Nombre": safe_value(
+                                sensor,
+                                "n"
+                            ),
+                            "Tipo": safe_value(
+                                sensor,
+                                "t"
+                            ),
+                            "Unidad": safe_value(
+                                sensor,
+                                "m"
+                            ),
+                            "Parámetro": safe_value(
+                                sensor,
+                                "p"
+                            )
+                        }
+                    )
+
+                if sensor_rows:
+                    st.dataframe(
+                        pd.DataFrame(
+                            sensor_rows
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info(
+                        "No hay sensores configurados para esta unidad."
+                    )
+
+                # =================================================
+                # 6. CONTADORES
+                # =================================================
+
+                st.markdown(
+                    "### 📈 Contadores"
+                )
+
+                counter_rows = [
+                    {
+                        "Contador": "Kilometraje",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "cnm"
+                        )
+                    },
+                    {
+                        "Contador": "Kilometraje (km)",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "cnm_km"
+                        )
+                    },
+                    {
+                        "Contador": "Horas de motor",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "cneh"
+                        )
+                    },
+                    {
+                        "Contador": "Tráfico GPRS acumulado",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "cnkb"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        counter_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 7. COMANDOS DISPONIBLES
+                # =================================================
+
+                cmds = safe_dict(
+                    detailed_item.get(
+                        "cmds"
+                    )
+                )
+
+                st.markdown(
+                    "### 🎛️ Comandos disponibles"
+                )
+
+                command_rows = []
+
+                for command in cmds.values():
+
+                    command = safe_dict(command)
+
+                    command_rows.append(
+                        {
+                            "ID": safe_value(
+                                command,
+                                "id"
+                            ),
+                            "Nombre": safe_value(
+                                command,
+                                "n"
+                            ),
+                            "Tipo": safe_value(
+                                command,
+                                "c"
+                            ),
+                            "Canal": safe_value(
+                                command,
+                                "t"
+                            ),
+                            "Parámetro": safe_value(
+                                command,
+                                "p"
+                            )
+                        }
+                    )
+
+                if command_rows:
+                    st.dataframe(
+                        pd.DataFrame(
+                            command_rows
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info(
+                        "No hay comandos disponibles para esta unidad."
+                    )
+
+                # =================================================
+                # 8. DETECTOR DE VIAJES
+                # =================================================
+
+                rtd = safe_dict(
+                    detailed_item.get(
+                        "rtd"
+                    )
+                )
+
+                st.markdown(
+                    "### 🚦 Configuración del detector de viajes"
+                )
+
+                trip_rows = [
+                    {
+                        "Parámetro": "Tipo",
+                        "Valor": safe_value(
+                            rtd,
+                            "type"
+                        )
+                    },
+                    {
+                        "Parámetro": "Corrección GPS",
+                        "Valor": safe_value(
+                            rtd,
+                            "gpsCorrection"
+                        )
+                    },
+                    {
+                        "Parámetro": "Satélites mínimos",
+                        "Valor": safe_value(
+                            rtd,
+                            "minSat"
+                        )
+                    },
+                    {
+                        "Parámetro": "Velocidad mínima",
+                        "Valor": safe_value(
+                            rtd,
+                            "minMovingSpeed"
+                        )
+                    },
+                    {
+                        "Parámetro": "Tiempo mínimo de parada",
+                        "Valor": safe_value(
+                            rtd,
+                            "minStayTime"
+                        )
+                    },
+                    {
+                        "Parámetro": "Distancia máxima entre mensajes",
+                        "Valor": safe_value(
+                            rtd,
+                            "maxMessagesDistance"
+                        )
+                    },
+                    {
+                        "Parámetro": "Tiempo mínimo de viaje",
+                        "Valor": safe_value(
+                            rtd,
+                            "minTripTime"
+                        )
+                    },
+                    {
+                        "Parámetro": "Distancia mínima de viaje",
+                        "Valor": safe_value(
+                            rtd,
+                            "minTripDistance"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        trip_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 9. CONFIGURACIÓN DE COMBUSTIBLE
+                # =================================================
+
+                rfc = safe_dict(
+                    detailed_item.get(
+                        "rfc"
+                    )
+                )
+
+                st.markdown(
+                    "### ⛽ Configuración de combustible"
+                )
+
+                fuel_rows = [
+                    {
+                        "Sección": "General",
+                        "Parámetro": "Tipo de cálculo",
+                        "Valor": safe_value(
+                            rfc,
+                            "calcTypes"
+                        )
+                    }
+                ]
+
+                fuel_level_params = safe_dict(
+                    rfc.get(
+                        "fuelLevelParams"
+                    )
+                )
+
+                for key, value in fuel_level_params.items():
+
+                    fuel_rows.append(
+                        {
+                            "Sección": "Nivel de combustible",
+                            "Parámetro": key,
+                            "Valor": "" if value is None else value
+                        }
+                    )
+
+                fuel_math = safe_dict(
+                    rfc.get(
+                        "fuelConsMath"
+                    )
+                )
+
+                for key, value in fuel_math.items():
+
+                    fuel_rows.append(
+                        {
+                            "Sección": "Consumo matemático",
+                            "Parámetro": key,
+                            "Valor": "" if value is None else value
+                        }
+                    )
+
+                fuel_rates = safe_dict(
+                    rfc.get(
+                        "fuelConsRates"
+                    )
+                )
+
+                for key, value in fuel_rates.items():
+
+                    fuel_rows.append(
+                        {
+                            "Sección": "Tasas de consumo",
+                            "Parámetro": key,
+                            "Valor": "" if value is None else value
+                        }
+                    )
+
+                st.dataframe(
+                    pd.DataFrame(
+                        fuel_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                # =================================================
+                # 10. HEALTH CHECK
+                # =================================================
+
+                hch = safe_dict(
+                    detailed_item.get(
+                        "hch"
+                    )
+                )
+
+                st.markdown(
+                    "### 🏥 Health Check"
+                )
+
+                health_rows = []
+
+                for check_name, check_data in hch.items():
+
+                    check_data = safe_dict(
+                        check_data
+                    )
+
+                    conditions = check_data.get(
+                        "unhealthy_conditions",
+                        []
+                    )
+
+                    if not isinstance(
+                        conditions,
+                        list
+                    ):
+                        conditions = []
+
+                    condition_parts = []
+
+                    for condition in conditions:
+
+                        condition = safe_dict(
+                            condition
+                        )
+
+                        condition_parts.append(
+                            (
+                                f"{safe_value(condition, 'type')} "
+                                f"{safe_value(condition, 'value')}"
+                            ).strip()
+                        )
+
+                    health_rows.append(
+                        {
+                            "Criterio": check_name,
+                            "Periodo": safe_value(
+                                check_data,
+                                "period"
+                            ),
+                            "Condición": "; ".join(
+                                condition_parts
+                            )
+                        }
+                    )
+
+                if health_rows:
+                    st.dataframe(
+                        pd.DataFrame(
+                            health_rows
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info(
+                        "No hay criterios de Health Check configurados para esta unidad."
+                    )
+
+                # =================================================
+                # 11. VIDEO / RETRANSMISIÓN / IMAGEN
+                # =================================================
+
+                st.markdown(
+                    "### 🎥 Video, retransmisión e imagen"
+                )
+
+                media_rows = [
+                    {
+                        "Elemento": "Video",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "vp"
+                        )
+                    },
+                    {
+                        "Elemento": "Retransmisión",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "retr"
+                        )
+                    },
+                    {
+                        "Elemento": "URI de imagen",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "uri"
+                        )
+                    },
+                    {
+                        "Elemento": "UGI",
+                        "Valor": safe_value(
+                            detailed_item,
+                            "ugi"
+                        )
+                    }
+                ]
+
+                st.dataframe(
+                    pd.DataFrame(
+                        media_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+        # =========================================================
+        # LOGOUT
+        # =========================================================
 
         try:
 
-            # =================================================
-            # 1. LOGIN USING TOKEN
-            # =================================================
-
-            st.write("### 1️⃣ Autenticación")
-
-            login_response = wialon_request(
-                "token/login",
-                {
-                    "token": WIALON_TOKEN,
-                    "fl": 15
-                }
-            )
-
-            st.json(login_response)
-
-            # -------------------------------------------------
-            # GET SESSION ID
-            # -------------------------------------------------
-
-            sid = login_response.get("eid")
-
-            if not sid:
-
-                st.error(
-                    "❌ Wailon no devolvió un session ID."
-                )
-
-                st.stop()
-
-            st.success(
-                "✅ Autenticación exitosa."
-            )
-
-            st.write(
-                "Session ID:",
-                sid
-            )
-
-            # =================================================
-            # 2. GET USER INFORMATION
-            # =================================================
-
-            st.write("### 2️⃣ Información del usuario")
-
-            user_response = wialon_request(
-                "core/get_user_data",
+            wialon_request(
+                "core/logout",
                 {},
                 sid=sid
             )
 
-            st.json(user_response)
+        except Exception:
+            pass
 
-            # =================================================
-            # 3. GET ALL ACCESSIBLE UNITS
-            # =================================================
+    except Exception as e:
 
-            st.write("### 3️⃣ Unidades disponibles")
-
-            units_response = wialon_request(
-                "core/search_items",
-                {
-                    "spec": {
-                        "itemsType": "avl_unit",
-                        "propName": "sys_name",
-                        "propValueMask": "*",
-                        "sortType": "sys_name"
-                    },
-                    "force": 1,
-                    "flags": 1025,
-                    "from": 0,
-                    "to": 0
-                },
-                sid=sid
-            )
-
-            # -------------------------------------------------
-            # DISPLAY RAW RESPONSE
-            # -------------------------------------------------
-
-            st.json(units_response)
-
-            # =================================================
-            # 4. DISPLAY UNITS AS TABLE
-            # =================================================
-
-            units = units_response.get(
-                "items",
-                []
-            )
-
-            if units:
-
-                st.success(
-                    f"✅ Wailon devolvió {len(units)} unidades."
-                )
-
-                rows = []
-
-                for unit in units:
-
-                    position = unit.get(
-                        "pos",
-                        {}
-                    ) or {}
-
-                    rows.append(
-                        {
-                            "ID": unit.get(
-                                "id",
-                                ""
-                            ),
-
-                            "Nombre": unit.get(
-                                "nm",
-                                ""
-                            ),
-
-                            "Nombre Sistema": unit.get(
-                                "sys_name",
-                                ""
-                            ),
-
-                            "Posición": position,
-
-                            "Última Conexión": unit.get(
-                                "lmsg",
-                                {}
-                            ),
-
-                            "Todo": unit
-                        }
-                    )
-
-                units_df = pd.DataFrame(
-                    rows
-                )
-
-                st.dataframe(
-                    units_df,
-                    use_container_width=True,
-                    height=500
-                )
-
-            else:
-
-                st.warning(
-                    "Wailon respondió correctamente, "
-                    "pero no devolvió unidades."
-                )
-
-            # =================================================
-            # 5. LOGOUT
-            # =================================================
-
-            try:
-
-                logout_response = wialon_request(
-                    "core/logout",
-                    {},
-                    sid=sid
-                )
-
-                st.write("### 4️⃣ Logout")
-
-                st.json(
-                    logout_response
-                )
-
-            except Exception as logout_error:
-
-                st.warning(
-                    f"No se pudo cerrar la sesión: {logout_error}"
-                )
-
-        except Exception as e:
-
-            st.error(
-                f"❌ Error consultando Wailon: {e}"
-            )
-
-            st.exception(e)
+        st.error(
+            f"❌ Error consultando Wialon: {e}"
+        )
