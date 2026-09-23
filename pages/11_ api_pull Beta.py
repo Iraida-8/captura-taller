@@ -6669,4 +6669,3 @@ with tab_wialon:
         st.error(
             f"❌ Error consultando Wialon: {e}"
         )
-
