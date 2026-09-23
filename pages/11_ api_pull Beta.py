@@ -5285,10 +5285,15 @@ with tab_wialon:
                     trailer_key
                 )
 
+                # Wialon stores the registered trailer name in "n".
                 trailer_name = safe_value(
                     trailer,
-                    "nm",
-                    trailer.get("name", trailer_id)
+                    "n",
+                    safe_value(
+                        trailer,
+                        "nm",
+                        trailer.get("name", trailer_id)
+                    )
                 )
 
                 trailer_catalog.append(
@@ -5312,25 +5317,17 @@ with tab_wialon:
             # TRAILER SELECTOR
             # -------------------------------------------------
 
-            trailer_options = [
-                item["trailer_name"]
-                for item in trailer_catalog
-            ]
-
-            selected_trailer_name = st.selectbox(
+            # Use the trailer object itself as the selectbox option so
+            # duplicate names cannot cause the wrong trailer to be selected.
+            # The visible label is the registered Wialon trailer name in "n".
+            selected_trailer = st.selectbox(
                 "Selecciona una caja / remolque",
-                trailer_options,
+                trailer_catalog,
                 index=0,
-                key="wialon_selected_trailer"
-            )
-
-            selected_trailer = next(
-                (
-                    item
-                    for item in trailer_catalog
-                    if item["trailer_name"] == selected_trailer_name
+                format_func=lambda item: str(
+                    item.get("trailer_name", "")
                 ),
-                None
+                key="wialon_selected_trailer"
             )
 
             if selected_trailer:
