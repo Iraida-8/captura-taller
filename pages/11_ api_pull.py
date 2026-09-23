@@ -5209,6 +5209,188 @@ with tab_wialon:
                 )
 
         # =========================================================
+        # 3. INFORMACIÓN DE CAJAS / REMOLQUES
+        # =========================================================
+
+        st.divider()
+
+        st.subheader(
+            "📦 Información de cajas / remolques"
+        )
+
+        # -----------------------------------------------------
+        # GET ALL TRAILERS FROM ALL ACCESSIBLE RESOURCES
+        # -----------------------------------------------------
+
+        trailers_response = wialon_request(
+            "core/search_items",
+            {
+                "spec": {
+                    "itemsType": "avl_resource",
+                    "propName": "sys_name",
+                    "propValueMask": "*",
+                    "sortType": "sys_name"
+                },
+                "force": 1,
+                "flags": 65537,
+                "from": 0,
+                "to": 0
+            },
+            sid=sid
+        )
+
+        trailer_resources = safe_dict(
+            trailers_response
+        ).get(
+            "items",
+            []
+        )
+
+        if not isinstance(trailer_resources, list):
+            trailer_resources = []
+
+        # -----------------------------------------------------
+        # BUILD INDEPENDENT TRAILER CATALOG
+        # -----------------------------------------------------
+
+        trailer_catalog = []
+
+        for resource in trailer_resources:
+
+            resource = safe_dict(resource)
+
+            resource_id = safe_value(
+                resource,
+                "id"
+            )
+
+            resource_name = safe_value(
+                resource,
+                "nm"
+            )
+
+            trailers = safe_dict(
+                resource.get(
+                    "trlrs"
+                )
+            )
+
+            for trailer_key, trailer in trailers.items():
+
+                trailer = safe_dict(trailer)
+
+                trailer_id = safe_value(
+                    trailer,
+                    "id",
+                    trailer_key
+                )
+
+                # Wialon stores the registered trailer name in "n".
+                trailer_name = safe_value(
+                    trailer,
+                    "n",
+                    safe_value(
+                        trailer,
+                        "nm",
+                        trailer.get("name", trailer_id)
+                    )
+                )
+
+                trailer_catalog.append(
+                    {
+                        "resource_id": resource_id,
+                        "resource_name": resource_name,
+                        "trailer_id": trailer_id,
+                        "trailer_name": trailer_name,
+                        "raw": trailer
+                    }
+                )
+
+        trailer_catalog = sorted(
+            trailer_catalog,
+            key=lambda x: str(x.get("trailer_name", "")).lower()
+        )
+
+        if trailer_catalog:
+
+            # -------------------------------------------------
+            # TRAILER SELECTOR
+            # -------------------------------------------------
+
+            # Use the trailer object itself as the selectbox option so
+            # duplicate names cannot cause the wrong trailer to be selected.
+            # The visible label is the registered Wialon trailer name in "n".
+            selected_trailer = st.selectbox(
+                "Selecciona una caja / remolque",
+                trailer_catalog,
+                index=0,
+                format_func=lambda item: str(
+                    item.get("trailer_name", "")
+                ),
+                key="wialon_selected_trailer"
+            )
+
+            if selected_trailer:
+
+                # -------------------------------------------------
+                # TRAILER DETAILS
+                # -------------------------------------------------
+
+                st.markdown(
+                    "### 📋 Información de la caja / remolque"
+                )
+
+                trailer = safe_dict(
+                    selected_trailer.get("raw")
+                )
+
+                trailer_rows = [
+                    {
+                        "Campo": "Nombre",
+                        "Valor": selected_trailer.get("trailer_name", "")
+                    },
+                    {
+                        "Campo": "ID Caja / Remolque",
+                        "Valor": selected_trailer.get("trailer_id", "")
+                    },
+                    {
+                        "Campo": "ID Recurso",
+                        "Valor": selected_trailer.get("resource_id", "")
+                    },
+                    {
+                        "Campo": "Recurso",
+                        "Valor": selected_trailer.get("resource_name", "")
+                    }
+                ]
+
+                # Include every additional trailer property returned by Wialon.
+                for key, value in trailer.items():
+
+                    if key in ("id", "nm", "name"):
+                        continue
+
+                    trailer_rows.append(
+                        {
+                            "Campo": str(key),
+                            "Valor": "" if value is None else value
+                        }
+                    )
+
+                st.dataframe(
+                    pd.DataFrame(
+                        trailer_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+        else:
+
+            st.info(
+                "Wialon no devolvió cajas/remolques en los recursos disponibles."
+            )
+
+        # =========================================================
         # LOGOUT
         # =========================================================
 
