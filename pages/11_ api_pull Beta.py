@@ -3997,17 +3997,17 @@ with tab_wialon:
         "https://hst-api.wialon.com/wialon/ajax.html"
     )
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # WIALON TOKEN
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     WIALON_TOKEN = (
         "80116688b2812ec4b012e91c4783618122D6783187118B551FDD06B30949543E37B40683"
     )
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # WIALON API REQUEST
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     def wialon_request(
         service,
@@ -4330,7 +4330,7 @@ with tab_wialon:
                 )
 
             # =====================================================
-            # MAIN DATAFRAME
+            # DATAFRAME
             # =====================================================
 
             units_df = pd.DataFrame(
@@ -4342,37 +4342,6 @@ with tab_wialon:
                 use_container_width=True,
                 height=600,
                 hide_index=True
-            )
-
-            # =====================================================
-            # DOWNLOAD MAIN WIALON TABLE
-            # =====================================================
-
-            wialon_main_excel = io.BytesIO()
-
-            with pd.ExcelWriter(
-                wialon_main_excel,
-                engine="openpyxl"
-            ) as writer:
-
-                units_df.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Wialon Unidades"
-                )
-
-            wialon_main_excel.seek(0)
-
-            st.download_button(
-                label="📥 Descargar tabla Wialon",
-                data=wialon_main_excel,
-                file_name="wialon_unidades.xlsx",
-                mime=(
-                    "application/vnd.openxmlformats-"
-                    "officedocument.spreadsheetml.sheet"
-                ),
-                use_container_width=True,
-                key="download_wialon_main"
             )
 
             # =====================================================
@@ -4424,10 +4393,6 @@ with tab_wialon:
                     "id"
                 )
 
-                st.caption(
-                    f"ID Wialon: {selected_unit_id}"
-                )
-
                 # =================================================
                 # REQUEST ALL AVAILABLE UNIT INFORMATION
                 # =================================================
@@ -4441,314 +4406,249 @@ with tab_wialon:
                     sid=sid
                 )
 
-                # -------------------------------------------------
-                # DETAIL DOWNLOAD STORAGE
-                # -------------------------------------------------
+                detailed_item = (
+                    detailed_unit_response.get(
+                        "item",
+                        {}
+                    )
+                    or {}
+                )
 
-                detail_download_tables = {}
-
-                # -------------------------------------------------
-                # RESPONSE DATA
-                # -------------------------------------------------
-
-                if detailed_unit_response:
-
-                    if isinstance(detailed_unit_response, dict):
-
-                        detailed_unit = detailed_unit_response.get(
-                            "item",
-                            detailed_unit_response
-                        )
-
-                    else:
-
-                        detailed_unit = {}
+                if detailed_item:
 
                     # =================================================
                     # 1. IDENTIFICACIÓN GENERAL
                     # =================================================
 
                     st.markdown(
-                        "### 🆔 Identificación general"
+                        "### 📋 Identificación general"
                     )
 
                     general_rows = [
                         {
                             "Campo": "Nombre",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
                                 "nm",
                                 ""
                             )
                         },
                         {
                             "Campo": "ID Wialon",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
                                 "id",
                                 ""
                             )
                         },
                         {
                             "Campo": "Clase",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
                                 "cls",
                                 ""
                             )
                         },
                         {
                             "Campo": "Sistema de medición",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
                                 "mu",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Creación",
-                            "Valor": detailed_unit.get(
+                            "Campo": "Fecha de creación",
+                            "Valor": detailed_item.get(
+                                "ct",
+                                ""
+                            )
+                        },
+                        {
+                            "Campo": "ID creador",
+                            "Valor": detailed_item.get(
                                 "crt",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Activación",
-                            "Valor": detailed_unit.get(
+                            "Campo": "ID cuenta",
+                            "Valor": detailed_item.get(
                                 "bact",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Grupo / Cuenta",
-                            "Valor": detailed_unit.get(
+                            "Campo": "GUID",
+                            "Valor": detailed_item.get(
                                 "gd",
                                 ""
                             )
                         },
                         {
-                            "Campo": "UACL",
-                            "Valor": detailed_unit.get(
+                            "Campo": "Derechos de acceso",
+                            "Valor": detailed_item.get(
                                 "uacl",
                                 ""
                             )
-                        },
+                        }
                     ]
 
-                    general_df = pd.DataFrame(
-                        general_rows
-                    )
-
                     st.dataframe(
-                        general_df,
+                        pd.DataFrame(
+                            general_rows
+                        ),
                         use_container_width=True,
                         hide_index=True
                     )
-
-                    detail_download_tables[
-                        "Identificacion General"
-                    ] = general_df
 
                     # =================================================
                     # 2. INFORMACIÓN DEL VEHÍCULO
                     # =================================================
 
-                    st.markdown(
-                        "### 🚛 Información del vehículo"
-                    )
-
-                    vehicle_fields = (
-                        detailed_unit.get(
+                    flds = (
+                        detailed_item.get(
                             "flds",
                             {}
                         )
                         or {}
                     )
 
-                    vehicle_profile = (
-                        detailed_unit.get(
+                    pflds = (
+                        detailed_item.get(
                             "pflds",
                             {}
                         )
                         or {}
                     )
 
-                    vehicle_rows = [
-                        {
-                            "Campo": "Placa",
-                            "Valor": vehicle_fields.get(
-                                "PLACA",
-                                vehicle_profile.get(
-                                    "registration_plate",
-                                    ""
-                                )
-                            )
-                        },
-                        {
-                            "Campo": "VIN",
-                            "Valor": vehicle_fields.get(
-                                "VIN",
-                                vehicle_profile.get(
-                                    "vin",
-                                    ""
-                                )
-                            )
-                        },
-                        {
-                            "Campo": "Modelo",
-                            "Valor": vehicle_fields.get(
-                                "MODELO",
-                                vehicle_profile.get(
-                                    "model",
-                                    ""
-                                )
-                            )
-                        },
-                        {
-                            "Campo": "Unidad",
-                            "Valor": vehicle_fields.get(
-                                "UNIDAD",
-                                vehicle_profile.get(
-                                    "vehicle_type",
-                                    ""
-                                )
-                            )
-                        },
-                        {
-                            "Campo": "Año",
-                            "Valor": vehicle_profile.get(
-                                "year",
-                                ""
-                            )
-                        },
-                        {
-                            "Campo": "Marca",
-                            "Valor": vehicle_profile.get(
-                                "brand",
-                                ""
-                            )
-                        },
-                        {
-                            "Campo": "Tipo de vehículo",
-                            "Valor": vehicle_profile.get(
-                                "vehicle_type",
-                                ""
-                            )
-                        },
-                        {
-                            "Campo": "Clase de vehículo",
-                            "Valor": vehicle_profile.get(
-                                "vehicle_class",
-                                ""
-                            )
-                        },
-                    ]
+                    vehicle_rows = []
 
-                    vehicle_df = pd.DataFrame(
-                        vehicle_rows
-                    )
+                    # -------------------------------------------------
+                    # CUSTOM FIELDS
+                    # -------------------------------------------------
 
-                    st.dataframe(
-                        vehicle_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                    for field in flds.values():
 
-                    detail_download_tables[
-                        "Informacion Vehiculo"
-                    ] = vehicle_df
+                        vehicle_rows.append(
+                            {
+                                "Origen": "Campo personalizado",
+                                "Campo": field.get(
+                                    "n",
+                                    ""
+                                ),
+                                "Valor": field.get(
+                                    "v",
+                                    ""
+                                )
+                            }
+                        )
+
+                    # -------------------------------------------------
+                    # PROFILE FIELDS
+                    # -------------------------------------------------
+
+                    for field in pflds.values():
+
+                        vehicle_rows.append(
+                            {
+                                "Origen": "Perfil",
+                                "Campo": field.get(
+                                    "n",
+                                    ""
+                                ),
+                                "Valor": field.get(
+                                    "v",
+                                    ""
+                                )
+                            }
+                        )
+
+                    if vehicle_rows:
+
+                        st.markdown(
+                            "### 🚛 Información del vehículo"
+                        )
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                vehicle_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
 
                     # =================================================
                     # 3. POSICIÓN ACTUAL
                     # =================================================
 
-                    st.markdown(
-                        "### 📍 Posición actual"
-                    )
-
-                    current_position = (
-                        detailed_unit.get(
+                    position = (
+                        detailed_item.get(
                             "pos",
                             {}
                         )
                         or {}
                     )
 
+                    st.markdown(
+                        "### 📍 Posición actual"
+                    )
+
                     position_rows = [
                         {
-                            "Campo": "Timestamp",
-                            "Valor": current_position.get(
-                                "t",
-                                ""
-                            )
-                        },
-                        {
                             "Campo": "Latitud",
-                            "Valor": current_position.get(
+                            "Valor": position.get(
                                 "y",
                                 ""
                             )
                         },
                         {
                             "Campo": "Longitud",
-                            "Valor": current_position.get(
+                            "Valor": position.get(
                                 "x",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Rumbo",
-                            "Valor": current_position.get(
-                                "c",
-                                ""
-                            )
-                        },
-                        {
                             "Campo": "Altitud",
-                            "Valor": current_position.get(
+                            "Valor": position.get(
                                 "z",
                                 ""
                             )
                         },
                         {
+                            "Campo": "Rumbo",
+                            "Valor": position.get(
+                                "c",
+                                ""
+                            )
+                        },
+                        {
                             "Campo": "Velocidad",
-                            "Valor": current_position.get(
+                            "Valor": position.get(
                                 "s",
                                 ""
                             )
                         },
                         {
                             "Campo": "Satélites",
-                            "Valor": current_position.get(
+                            "Valor": position.get(
                                 "sc",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Flags",
-                            "Valor": current_position.get(
-                                "f",
+                            "Campo": "Timestamp",
+                            "Valor": position.get(
+                                "t",
                                 ""
                             )
-                        },
-                        {
-                            "Campo": "Localización",
-                            "Valor": current_position.get(
-                                "lc",
-                                ""
-                            )
-                        },
+                        }
                     ]
 
-                    position_df = pd.DataFrame(
-                        position_rows
-                    )
-
                     st.dataframe(
-                        position_df,
+                        pd.DataFrame(
+                            position_rows
+                        ),
                         use_container_width=True,
                         hide_index=True
                     )
-
-                    detail_download_tables[
-                        "Posicion Actual"
-                    ] = position_df
 
                     # =================================================
                     # 4. ESTADO DE CONEXIÓN
@@ -4758,9 +4658,9 @@ with tab_wialon:
                         "### 📡 Estado de conexión"
                     )
 
-                    network_status = (
-                        detailed_unit.get(
-                            "netconn",
+                    last_message = (
+                        detailed_item.get(
+                            "lmsg",
                             {}
                         )
                         or {}
@@ -4768,135 +4668,103 @@ with tab_wialon:
 
                     connection_rows = [
                         {
-                            "Campo": "Conexión activa",
-                            "Valor": network_status.get(
-                                "1",
-                                network_status.get(
-                                    "netconn",
-                                    ""
-                                )
+                            "Campo": "Conexión TCP/UDP",
+                            "Valor": detailed_item.get(
+                                "netconn",
+                                ""
                             )
                         },
                         {
-                            "Campo": "Activa",
-                            "Valor": detailed_unit.get(
+                            "Campo": "Activación",
+                            "Valor": detailed_item.get(
                                 "act",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Razón de desactivación",
-                            "Valor": detailed_unit.get(
+                            "Campo": "Razón de activación",
+                            "Valor": detailed_item.get(
                                 "act_reason",
                                 ""
                             )
                         },
                         {
-                            "Campo": "Tiempo de desactivación",
-                            "Valor": detailed_unit.get(
-                                "dactt",
+                            "Campo": "Último mensaje",
+                            "Valor": last_message.get(
+                                "t",
                                 ""
                             )
                         },
+                        {
+                            "Campo": "Registro en servidor",
+                            "Valor": last_message.get(
+                                "rt",
+                                ""
+                            )
+                        }
                     ]
 
-                    connection_df = pd.DataFrame(
-                        connection_rows
-                    )
-
                     st.dataframe(
-                        connection_df,
+                        pd.DataFrame(
+                            connection_rows
+                        ),
                         use_container_width=True,
                         hide_index=True
                     )
 
-                    detail_download_tables[
-                        "Estado Conexion"
-                    ] = connection_df
-
                     # =================================================
-                    # 5. SENSORES CONFIGURADOS
+                    # 5. SENSORES
                     # =================================================
-
-                    st.markdown(
-                        "### 🌡️ Sensores configurados"
-                    )
 
                     sensors = (
-                        detailed_unit.get(
+                        detailed_item.get(
                             "sens",
-                            []
+                            {}
                         )
-                        or []
+                        or {}
                     )
 
-                    sensor_rows = []
+                    if sensors:
 
-                    for sensor in sensors:
+                        st.markdown(
+                            "### 📊 Sensores configurados"
+                        )
 
-                        sensor_rows.append(
-                            {
-                                "ID": sensor.get(
-                                    "id",
-                                    ""
-                                ),
-                                "Nombre": sensor.get(
-                                    "n",
-                                    sensor.get(
-                                        "name",
+                        sensor_rows = []
+
+                        for sensor in sensors.values():
+
+                            sensor_rows.append(
+                                {
+                                    "ID": sensor.get(
+                                        "id",
+                                        ""
+                                    ),
+                                    "Nombre": sensor.get(
+                                        "n",
+                                        ""
+                                    ),
+                                    "Tipo": sensor.get(
+                                        "t",
+                                        ""
+                                    ),
+                                    "Unidad": sensor.get(
+                                        "m",
+                                        ""
+                                    ),
+                                    "Parámetro": sensor.get(
+                                        "p",
                                         ""
                                     )
-                                ),
-                                "Tipo": sensor.get(
-                                    "t",
-                                    ""
-                                ),
-                                "Parámetro": sensor.get(
-                                    "p",
-                                    ""
-                                ),
-                                "Unidad": sensor.get(
-                                    "m",
-                                    ""
-                                ),
-                                "Posición": sensor.get(
-                                    "pos",
-                                    ""
-                                ),
-                                "Modo": sensor.get(
-                                    "f",
-                                    ""
-                                ),
-                                "Configuración": json.dumps(
-                                    sensor.get(
-                                        "config",
-                                        {}
-                                    ),
-                                    ensure_ascii=False
-                                )
-                            }
-                        )
-
-                    if sensor_rows:
-
-                        sensors_df = pd.DataFrame(
-                            sensor_rows
-                        )
+                                }
+                            )
 
                         st.dataframe(
-                            sensors_df,
+                            pd.DataFrame(
+                                sensor_rows
+                            ),
                             use_container_width=True,
                             hide_index=True
-                        )
-
-                        detail_download_tables[
-                            "Sensores"
-                        ] = sensors_df
-
-                    else:
-
-                        st.info(
-                            "No hay sensores configurados."
                         )
 
                     # =================================================
@@ -4904,294 +4772,354 @@ with tab_wialon:
                     # =================================================
 
                     st.markdown(
-                        "### 📊 Contadores"
+                        "### 📈 Contadores"
                     )
 
                     counter_rows = [
                         {
                             "Contador": "Kilometraje",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
+                                "cnm",
+                                ""
+                            )
+                        },
+                        {
+                            "Contador": "Kilometraje (km)",
+                            "Valor": detailed_item.get(
                                 "cnm_km",
-                                detailed_unit.get(
-                                    "cnm",
-                                    ""
-                                )
+                                ""
                             )
                         },
                         {
                             "Contador": "Horas de motor",
-                            "Valor": detailed_unit.get(
+                            "Valor": detailed_item.get(
                                 "cneh",
                                 ""
                             )
                         },
                         {
-                            "Contador": "Kilobytes",
-                            "Valor": detailed_unit.get(
+                            "Contador": "Tráfico GPRS acumulado",
+                            "Valor": detailed_item.get(
                                 "cnkb",
                                 ""
                             )
-                        },
-                        {
-                            "Contador": "cfl",
-                            "Valor": detailed_unit.get(
-                                "cfl",
-                                ""
-                            )
-                        },
+                        }
                     ]
 
-                    counter_df = pd.DataFrame(
-                        counter_rows
-                    )
-
                     st.dataframe(
-                        counter_df,
+                        pd.DataFrame(
+                            counter_rows
+                        ),
                         use_container_width=True,
                         hide_index=True
                     )
 
-                    detail_download_tables[
-                        "Contadores"
-                    ] = counter_df
-
                     # =================================================
-                    # 7. CONFIGURACIÓN DEL DETECTOR DE VIAJES
+                    # 7. COMANDOS DISPONIBLES
                     # =================================================
 
-                    st.markdown(
-                        "### 🛣️ Configuración del detector de viajes"
+                    cmds = (
+                        detailed_item.get(
+                            "cmds",
+                            {}
+                        )
+                        or {}
                     )
 
-                    trip_detector = (
-                        detailed_unit.get(
+                    if cmds:
+
+                        st.markdown(
+                            "### 🎛️ Comandos disponibles"
+                        )
+
+                        command_rows = []
+
+                        for command in cmds.values():
+
+                            command_rows.append(
+                                {
+                                    "ID": command.get(
+                                        "id",
+                                        ""
+                                    ),
+                                    "Nombre": command.get(
+                                        "n",
+                                        ""
+                                    ),
+                                    "Tipo": command.get(
+                                        "c",
+                                        ""
+                                    ),
+                                    "Canal": command.get(
+                                        "t",
+                                        ""
+                                    ),
+                                    "Parámetro": command.get(
+                                        "p",
+                                        ""
+                                    )
+                                }
+                            )
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                command_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                    # =================================================
+                    # 8. DETECTOR DE VIAJES
+                    # =================================================
+
+                    rtd = (
+                        detailed_item.get(
                             "rtd",
                             {}
                         )
                         or {}
                     )
 
-                    trip_rows = [
-                        {
-                            "Parámetro": "Tipo",
-                            "Valor": trip_detector.get(
-                                "type",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "GPS Correction",
-                            "Valor": trip_detector.get(
-                                "gpsCorrection",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Satélites mínimos",
-                            "Valor": trip_detector.get(
-                                "minSat",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Velocidad mínima movimiento",
-                            "Valor": trip_detector.get(
-                                "minMovingSpeed",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Tiempo mínimo de estancia",
-                            "Valor": trip_detector.get(
-                                "minStayTime",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Distancia máxima entre mensajes",
-                            "Valor": trip_detector.get(
-                                "maxMessagesDistance",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Tiempo mínimo de viaje",
-                            "Valor": trip_detector.get(
-                                "minTripTime",
-                                ""
-                            )
-                        },
-                        {
-                            "Parámetro": "Distancia mínima de viaje",
-                            "Valor": trip_detector.get(
-                                "minTripDistance",
-                                ""
-                            )
-                        },
-                    ]
+                    if rtd:
 
-                    trip_df = pd.DataFrame(
-                        trip_rows
-                    )
+                        st.markdown(
+                            "### 🚦 Configuración del detector de viajes"
+                        )
 
-                    st.dataframe(
-                        trip_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                        trip_rows = [
+                            {
+                                "Parámetro": "Tipo",
+                                "Valor": rtd.get(
+                                    "type",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Corrección GPS",
+                                "Valor": rtd.get(
+                                    "gpsCorrection",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Satélites mínimos",
+                                "Valor": rtd.get(
+                                    "minSat",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Velocidad mínima",
+                                "Valor": rtd.get(
+                                    "minMovingSpeed",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Tiempo mínimo de parada",
+                                "Valor": rtd.get(
+                                    "minStayTime",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Distancia máxima entre mensajes",
+                                "Valor": rtd.get(
+                                    "maxMessagesDistance",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Tiempo mínimo de viaje",
+                                "Valor": rtd.get(
+                                    "minTripTime",
+                                    ""
+                                )
+                            },
+                            {
+                                "Parámetro": "Distancia mínima de viaje",
+                                "Valor": rtd.get(
+                                    "minTripDistance",
+                                    ""
+                                )
+                            }
+                        ]
 
-                    detail_download_tables[
-                        "Detector Viajes"
-                    ] = trip_df
+                        st.dataframe(
+                            pd.DataFrame(
+                                trip_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
 
                     # =================================================
-                    # 8. CONFIGURACIÓN DE COMBUSTIBLE
+                    # 9. CONFIGURACIÓN DE COMBUSTIBLE
                     # =================================================
 
-                    st.markdown(
-                        "### ⛽ Configuración de combustible"
-                    )
-
-                    fuel_config = (
-                        detailed_unit.get(
+                    rfc = (
+                        detailed_item.get(
                             "rfc",
                             {}
                         )
                         or {}
                     )
 
-                    fuel_rows = []
+                    if rfc:
 
-                    for section_name, section_data in fuel_config.items():
+                        st.markdown(
+                            "### ⛽ Configuración de combustible"
+                        )
 
-                        if isinstance(
-                            section_data,
-                            dict
-                        ):
+                        fuel_rows = []
 
-                            for parameter, value in section_data.items():
-
-                                fuel_rows.append(
-                                    {
-                                        "Sección": section_name,
-                                        "Parámetro": parameter,
-                                        "Valor": value
-                                    }
+                        fuel_rows.append(
+                            {
+                                "Sección": "General",
+                                "Parámetro": "Tipo de cálculo",
+                                "Valor": rfc.get(
+                                    "calcTypes",
+                                    ""
                                 )
+                            }
+                        )
 
-                        else:
+                        fuel_level_params = (
+                            rfc.get(
+                                "fuelLevelParams",
+                                {}
+                            )
+                            or {}
+                        )
+
+                        for key, value in fuel_level_params.items():
 
                             fuel_rows.append(
                                 {
-                                    "Sección": "",
-                                    "Parámetro": section_name,
-                                    "Valor": section_data
+                                    "Sección": "Nivel de combustible",
+                                    "Parámetro": key,
+                                    "Valor": value
                                 }
                             )
 
-                    if fuel_rows:
-
-                        fuel_df = pd.DataFrame(
-                            fuel_rows
+                        fuel_math = (
+                            rfc.get(
+                                "fuelConsMath",
+                                {}
+                            )
+                            or {}
                         )
 
+                        for key, value in fuel_math.items():
+
+                            fuel_rows.append(
+                                {
+                                    "Sección": "Consumo matemático",
+                                    "Parámetro": key,
+                                    "Valor": value
+                                }
+                            )
+
+                        fuel_rates = (
+                            rfc.get(
+                                "fuelConsRates",
+                                {}
+                            )
+                            or {}
+                        )
+
+                        for key, value in fuel_rates.items():
+
+                            fuel_rows.append(
+                                {
+                                    "Sección": "Tasas de consumo",
+                                    "Parámetro": key,
+                                    "Valor": value
+                                }
+                            )
+
                         st.dataframe(
-                            fuel_df,
+                            pd.DataFrame(
+                                fuel_rows
+                            ),
                             use_container_width=True,
                             hide_index=True
                         )
 
-                        detail_download_tables[
-                            "Combustible"
-                        ] = fuel_df
-
-                    else:
-
-                        st.info(
-                            "No hay configuración de combustible disponible."
-                        )
-
                     # =================================================
-                    # 9. HEALTH CHECK
+                    # 10. HEALTH CHECK
                     # =================================================
 
-                    st.markdown(
-                        "### 🩺 Health Check"
-                    )
-
-                    health_check = (
-                        detailed_unit.get(
+                    hch = (
+                        detailed_item.get(
                             "hch",
                             {}
                         )
                         or {}
                     )
 
-                    health_rows = []
+                    if hch:
 
-                    for condition, condition_data in health_check.items():
+                        st.markdown(
+                            "### 🏥 Health Check"
+                        )
 
-                        if isinstance(
-                            condition_data,
-                            dict
-                        ):
+                        health_rows = []
+
+                        for check_name, check_data in hch.items():
+
+                            if not isinstance(
+                                check_data,
+                                dict
+                            ):
+                                continue
+
+                            conditions = (
+                                check_data.get(
+                                    "unhealthy_conditions",
+                                    []
+                                )
+                                or []
+                            )
+
+                            condition_text = ""
+
+                            if conditions:
+
+                                condition_text = "; ".join(
+                                    [
+                                        (
+                                            f"{condition.get('type', '')} "
+                                            f"{condition.get('value', '')}"
+                                        )
+                                        for condition in conditions
+                                    ]
+                                )
 
                             health_rows.append(
                                 {
-                                    "Condición": condition,
-                                    "Periodo": condition_data.get(
+                                    "Criterio": check_name,
+                                    "Periodo": check_data.get(
                                         "period",
                                         ""
                                     ),
-                                    "Valor": condition_data.get(
-                                        "value",
-                                        condition_data.get(
-                                            "threshold",
-                                            ""
-                                        )
-                                    ),
-                                    "Estado": condition_data.get(
-                                        "status",
-                                        ""
-                                    )
+                                    "Condición": condition_text
                                 }
                             )
 
-                        else:
+                        if health_rows:
 
-                            health_rows.append(
-                                {
-                                    "Condición": condition,
-                                    "Periodo": "",
-                                    "Valor": condition_data,
-                                    "Estado": ""
-                                }
+                            st.dataframe(
+                                pd.DataFrame(
+                                    health_rows
+                                ),
+                                use_container_width=True,
+                                hide_index=True
                             )
-
-                    if health_rows:
-
-                        health_df = pd.DataFrame(
-                            health_rows
-                        )
-
-                        st.dataframe(
-                            health_df,
-                            use_container_width=True,
-                            hide_index=True
-                        )
-
-                        detail_download_tables[
-                            "Health Check"
-                        ] = health_df
-
-                    else:
-
-                        st.info(
-                            "No hay configuración de Health Check disponible."
-                        )
 
                     # =================================================
-                    # 10. VIDEO / RETRANSMISIÓN / IMAGEN
+                    # 11. VIDEO / RETRANSMISIÓN / IMAGEN
                     # =================================================
 
                     st.markdown(
@@ -5200,114 +5128,41 @@ with tab_wialon:
 
                     media_rows = [
                         {
-                            "Campo": "Video",
-                            "Valor": json.dumps(
-                                detailed_unit.get(
-                                    "si",
-                                    {}
-                                ),
-                                ensure_ascii=False
+                            "Elemento": "Video",
+                            "Valor": detailed_item.get(
+                                "vp",
+                                ""
                             )
                         },
                         {
-                            "Campo": "Retransmisión",
-                            "Valor": json.dumps(
-                                detailed_unit.get(
-                                    "retr",
-                                    {},
-                                ),
-                                ensure_ascii=False
+                            "Elemento": "Retransmisión",
+                            "Valor": detailed_item.get(
+                                "retr",
+                                ""
                             )
                         },
                         {
-                            "Campo": "URI imagen",
-                            "Valor": detailed_unit.get(
+                            "Elemento": "URI de imagen",
+                            "Valor": detailed_item.get(
                                 "uri",
                                 ""
                             )
                         },
                         {
-                            "Campo": "UGI",
-                            "Valor": detailed_unit.get(
+                            "Elemento": "UGI",
+                            "Valor": detailed_item.get(
                                 "ugi",
                                 ""
                             )
-                        },
+                        }
                     ]
 
-                    media_df = pd.DataFrame(
-                        media_rows
-                    )
-
                     st.dataframe(
-                        media_df,
+                        pd.DataFrame(
+                            media_rows
+                        ),
                         use_container_width=True,
                         hide_index=True
-                    )
-
-                    detail_download_tables[
-                        "Media"
-                    ] = media_df
-
-                    # =================================================
-                    # DOWNLOAD DETAILED INFORMATION
-                    # =================================================
-
-                    st.divider()
-
-                    safe_unit_name = re.sub(
-                        r'[\\/*?:"<>|]',
-                        "_",
-                        str(selected_unit_name)
-                    ).strip()
-
-                    if not safe_unit_name:
-
-                        safe_unit_name = str(
-                            selected_unit_id
-                        )
-
-                    detailed_excel = io.BytesIO()
-
-                    with pd.ExcelWriter(
-                        detailed_excel,
-                        engine="openpyxl"
-                    ) as writer:
-
-                        for (
-                            sheet_name,
-                            dataframe
-                        ) in detail_download_tables.items():
-
-                            safe_sheet_name = re.sub(
-                                r'[\[\]:*?/\\]',
-                                "_",
-                                str(sheet_name)
-                            )[:31]
-
-                            dataframe.to_excel(
-                                writer,
-                                index=False,
-                                sheet_name=safe_sheet_name
-                            )
-
-                    detailed_excel.seek(0)
-
-                    st.download_button(
-                        label="📥 Descargar información detallada",
-                        data=detailed_excel,
-                        file_name=(
-                            f"wialon_detalle_{safe_unit_name}.xlsx"
-                        ),
-                        mime=(
-                            "application/vnd.openxmlformats-"
-                            "officedocument.spreadsheetml.sheet"
-                        ),
-                        use_container_width=True,
-                        key=(
-                            f"download_wialon_detail_"
-                            f"{selected_unit_id}"
-                        )
                     )
 
                 else:
