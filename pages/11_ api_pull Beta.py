@@ -3981,7 +3981,6 @@ with tab_monarch:
                 f"Error consultando historial: {e}"
             )
 
-# =========================================
 # WIALON API
 # =========================================
 with tab_wialon:
@@ -5047,7 +5046,7 @@ with tab_wialon:
                             st.rerun()
 
                 # -------------------------------------------------
-                # DETAILED UNIT INFORMATION
+                # DETAILED UNIT INFORMATION MODAL
                 # -------------------------------------------------
 
                 detail_unit_id = st.session_state.get(
@@ -5072,739 +5071,763 @@ with tab_wialon:
 
                 if detail_unit:
 
-                    st.divider()
-
-                    st.subheader(
-                        "🔎 Información detallada de unidad"
+                    @st.dialog(
+                        f"Unidad {safe_value(detail_unit, 'nm', '-')}",
+                        width="large"
                     )
+                    def wialon_unit_detail_dialog():
 
-                    detailed_unit_response = wialon_request(
-                        "core/search_item",
-                        {
-                            "id": safe_value(
-                                detail_unit,
-                                "id"
-                            ),
-                            "flags": 4611686018427387903
-                        },
-                        sid=sid
-                    )
 
-                    detailed_item = safe_dict(
-                        safe_dict(
-                            detailed_unit_response
-                        ).get(
-                            "item"
+                        st.divider()
+
+                        st.subheader(
+                            "🔎 Información detallada de unidad"
                         )
-                    )
 
-                    if not detailed_item:
+                        detailed_unit_response = wialon_request(
+                            "core/search_item",
+                            {
+                                "id": safe_value(
+                                    detail_unit,
+                                    "id"
+                                ),
+                                "flags": 4611686018427387903
+                            },
+                            sid=sid
+                        )
+
                         detailed_item = safe_dict(
-                            detail_unit
+                            safe_dict(
+                                detailed_unit_response
+                            ).get(
+                                "item"
+                            )
                         )
 
-                    # ---------------------------------------------
-                    # GENERAL
-                    # ---------------------------------------------
-
-                    st.markdown(
-                        "### 📋 Identificación general"
-                    )
-
-                    general_rows = [
-                        {
-                            "Campo": "Nombre",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "nm"
+                        if not detailed_item:
+                            detailed_item = safe_dict(
+                                detail_unit
                             )
-                        },
-                        {
-                            "Campo": "ID Wialon",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "id"
-                            )
-                        },
-                        {
-                            "Campo": "Clase",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "cls"
-                            )
-                        },
-                        {
-                            "Campo": "Sistema de medición",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "mu"
-                            )
-                        },
-                        {
-                            "Campo": "Fecha de creación",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "ct"
-                            )
-                        },
-                        {
-                            "Campo": "ID creador",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "crt"
-                            )
-                        },
-                        {
-                            "Campo": "ID cuenta",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "bact"
-                            )
-                        },
-                        {
-                            "Campo": "GUID",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "gd"
-                            )
-                        },
-                        {
-                            "Campo": "Derechos de acceso",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "uacl"
-                            )
-                        }
-                    ]
 
-                    st.dataframe(
-                        pd.DataFrame(
-                            general_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                        # ---------------------------------------------
+                        # GENERAL
+                        # ---------------------------------------------
 
-                    # ---------------------------------------------
-                    # VEHICLE FIELDS
-                    # ---------------------------------------------
+                        st.markdown(
+                            "### 📋 Identificación general"
+                        )
 
-                    flds = safe_dict(
-                        detailed_item.get("flds")
-                    )
-
-                    pflds = safe_dict(
-                        detailed_item.get("pflds")
-                    )
-
-                    vehicle_rows = []
-
-                    for field in list(flds.values()) + list(pflds.values()):
-
-                        field = safe_dict(field)
-
-                        vehicle_rows.append(
+                        general_rows = [
                             {
-                                "Origen": (
-                                    "Campo personalizado"
-                                    if field in flds.values()
-                                    else "Perfil"
-                                ),
-                                "Campo": safe_value(
-                                    field,
-                                    "n"
-                                ),
+                                "Campo": "Nombre",
                                 "Valor": safe_value(
-                                    field,
-                                    "v"
+                                    detailed_item,
+                                    "nm"
                                 )
-                            }
-                        )
-
-                    st.markdown(
-                        "### 🚛 Información del vehículo"
-                    )
-
-                    if vehicle_rows:
-
-                        st.dataframe(
-                            pd.DataFrame(
-                                vehicle_rows
-                            ),
-                            use_container_width=True,
-                            hide_index=True
-                        )
-
-                    else:
-
-                        st.info(
-                            "No hay campos de vehículo configurados para esta unidad."
-                        )
-
-                    # ---------------------------------------------
-                    # POSITION
-                    # ---------------------------------------------
-
-                    position = safe_dict(
-                        detailed_item.get("pos")
-                    )
-
-                    st.markdown(
-                        "### 📍 Posición actual"
-                    )
-
-                    position_rows = [
-                        {
-                            "Campo": "Latitud",
-                            "Valor": safe_value(
-                                position,
-                                "y"
-                            )
-                        },
-                        {
-                            "Campo": "Longitud",
-                            "Valor": safe_value(
-                                position,
-                                "x"
-                            )
-                        },
-                        {
-                            "Campo": "Altitud",
-                            "Valor": safe_value(
-                                position,
-                                "z"
-                            )
-                        },
-                        {
-                            "Campo": "Rumbo",
-                            "Valor": safe_value(
-                                position,
-                                "c"
-                            )
-                        },
-                        {
-                            "Campo": "Velocidad",
-                            "Valor": safe_value(
-                                position,
-                                "s"
-                            )
-                        },
-                        {
-                            "Campo": "Satélites",
-                            "Valor": safe_value(
-                                position,
-                                "sc"
-                            )
-                        },
-                        {
-                            "Campo": "Timestamp",
-                            "Valor": safe_value(
-                                position,
-                                "t"
-                            )
-                        }
-                    ]
-
-                    st.dataframe(
-                        pd.DataFrame(
-                            position_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-
-                    # ---------------------------------------------
-                    # CONNECTION
-                    # ---------------------------------------------
-
-                    st.markdown(
-                        "### 📡 Estado de conexión"
-                    )
-
-                    last_message = safe_dict(
-                        detailed_item.get("lmsg")
-                    )
-
-                    connection_rows = [
-                        {
-                            "Campo": "Conexión TCP/UDP",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "netconn"
-                            )
-                        },
-                        {
-                            "Campo": "Activación",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "act"
-                            )
-                        },
-                        {
-                            "Campo": "Razón de activación",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "act_reason"
-                            )
-                        },
-                        {
-                            "Campo": "Último mensaje",
-                            "Valor": safe_value(
-                                last_message,
-                                "t"
-                            )
-                        },
-                        {
-                            "Campo": "Registro en servidor",
-                            "Valor": safe_value(
-                                last_message,
-                                "rt"
-                            )
-                        }
-                    ]
-
-                    st.dataframe(
-                        pd.DataFrame(
-                            connection_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-
-                    # ---------------------------------------------
-                    # SENSORS
-                    # ---------------------------------------------
-
-                    sensors = safe_dict(
-                        detailed_item.get("sens")
-                    )
-
-                    st.markdown(
-                        "### 📊 Sensores configurados"
-                    )
-
-                    sensor_rows = []
-
-                    for sensor in sensors.values():
-
-                        sensor = safe_dict(sensor)
-
-                        sensor_rows.append(
+                            },
                             {
-                                "ID": safe_value(
-                                    sensor,
+                                "Campo": "ID Wialon",
+                                "Valor": safe_value(
+                                    detailed_item,
                                     "id"
-                                ),
-                                "Nombre": safe_value(
-                                    sensor,
-                                    "n"
-                                ),
-                                "Tipo": safe_value(
-                                    sensor,
-                                    "t"
-                                ),
-                                "Unidad": safe_value(
-                                    sensor,
-                                    "m"
-                                ),
-                                "Parámetro": safe_value(
-                                    sensor,
-                                    "p"
                                 )
-                            }
-                        )
-
-                    if sensor_rows:
-
-                        st.dataframe(
-                            pd.DataFrame(
-                                sensor_rows
-                            ),
-                            use_container_width=True,
-                            hide_index=True
-                        )
-
-                    else:
-
-                        st.info(
-                            "No hay sensores configurados para esta unidad."
-                        )
-
-                    # ---------------------------------------------
-                    # COUNTERS
-                    # ---------------------------------------------
-
-                    st.markdown(
-                        "### 📈 Contadores"
-                    )
-
-                    counter_rows = [
-                        {
-                            "Contador": "Kilometraje",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "cnm"
-                            )
-                        },
-                        {
-                            "Contador": "Kilometraje (km)",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "cnm_km"
-                            )
-                        },
-                        {
-                            "Contador": "Horas de motor",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "cneh"
-                            )
-                        },
-                        {
-                            "Contador": "Tráfico GPRS acumulado",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "cnkb"
-                            )
-                        }
-                    ]
-
-                    st.dataframe(
-                        pd.DataFrame(
-                            counter_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-
-                    # ---------------------------------------------
-                    # COMMANDS
-                    # ---------------------------------------------
-
-                    cmds = safe_dict(
-                        detailed_item.get("cmds")
-                    )
-
-                    st.markdown(
-                        "### 🎛️ Comandos disponibles"
-                    )
-
-                    command_rows = []
-
-                    for command in cmds.values():
-
-                        command = safe_dict(command)
-
-                        command_rows.append(
+                            },
                             {
-                                "ID": safe_value(
-                                    command,
-                                    "id"
-                                ),
-                                "Nombre": safe_value(
-                                    command,
-                                    "n"
-                                ),
-                                "Tipo": safe_value(
-                                    command,
-                                    "c"
-                                ),
-                                "Canal": safe_value(
-                                    command,
-                                    "t"
-                                ),
-                                "Parámetro": safe_value(
-                                    command,
-                                    "p"
+                                "Campo": "Clase",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "cls"
+                                )
+                            },
+                            {
+                                "Campo": "Sistema de medición",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "mu"
+                                )
+                            },
+                            {
+                                "Campo": "Fecha de creación",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "ct"
+                                )
+                            },
+                            {
+                                "Campo": "ID creador",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "crt"
+                                )
+                            },
+                            {
+                                "Campo": "ID cuenta",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "bact"
+                                )
+                            },
+                            {
+                                "Campo": "GUID",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "gd"
+                                )
+                            },
+                            {
+                                "Campo": "Derechos de acceso",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "uacl"
                                 )
                             }
-                        )
-
-                    if command_rows:
+                        ]
 
                         st.dataframe(
                             pd.DataFrame(
-                                command_rows
+                                general_rows
                             ),
                             use_container_width=True,
                             hide_index=True
                         )
 
-                    else:
+                        # ---------------------------------------------
+                        # VEHICLE FIELDS
+                        # ---------------------------------------------
 
-                        st.info(
-                            "No hay comandos disponibles para esta unidad."
+                        flds = safe_dict(
+                            detailed_item.get("flds")
                         )
 
-                    # ---------------------------------------------
-                    # TRIP DETECTOR
-                    # ---------------------------------------------
-
-                    rtd = safe_dict(
-                        detailed_item.get("rtd")
-                    )
-
-                    st.markdown(
-                        "### 🚦 Configuración del detector de viajes"
-                    )
-
-                    trip_rows = [
-                        {
-                            "Parámetro": "Tipo",
-                            "Valor": safe_value(
-                                rtd,
-                                "type"
-                            )
-                        },
-                        {
-                            "Parámetro": "Corrección GPS",
-                            "Valor": safe_value(
-                                rtd,
-                                "gpsCorrection"
-                            )
-                        },
-                        {
-                            "Parámetro": "Satélites mínimos",
-                            "Valor": safe_value(
-                                rtd,
-                                "minSat"
-                            )
-                        },
-                        {
-                            "Parámetro": "Velocidad mínima",
-                            "Valor": safe_value(
-                                rtd,
-                                "minMovingSpeed"
-                            )
-                        },
-                        {
-                            "Parámetro": "Tiempo mínimo de parada",
-                            "Valor": safe_value(
-                                rtd,
-                                "minStayTime"
-                            )
-                        },
-                        {
-                            "Parámetro": "Distancia máxima entre mensajes",
-                            "Valor": safe_value(
-                                rtd,
-                                "maxMessagesDistance"
-                            )
-                        },
-                        {
-                            "Parámetro": "Tiempo mínimo de viaje",
-                            "Valor": safe_value(
-                                rtd,
-                                "minTripTime"
-                            )
-                        },
-                        {
-                            "Parámetro": "Distancia mínima de viaje",
-                            "Valor": safe_value(
-                                rtd,
-                                "minTripDistance"
-                            )
-                        }
-                    ]
-
-                    st.dataframe(
-                        pd.DataFrame(
-                            trip_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-
-                    # ---------------------------------------------
-                    # FUEL
-                    # ---------------------------------------------
-
-                    rfc = safe_dict(
-                        detailed_item.get("rfc")
-                    )
-
-                    st.markdown(
-                        "### ⛽ Configuración de combustible"
-                    )
-
-                    fuel_rows = [
-                        {
-                            "Sección": "General",
-                            "Parámetro": "Tipo de cálculo",
-                            "Valor": safe_value(
-                                rfc,
-                                "calcTypes"
-                            )
-                        }
-                    ]
-
-                    for section_key, section_name in [
-                        (
-                            "fuelLevelParams",
-                            "Nivel de combustible"
-                        ),
-                        (
-                            "fuelConsMath",
-                            "Consumo matemático"
-                        ),
-                        (
-                            "fuelConsRates",
-                            "Tasas de consumo"
-                        )
-                    ]:
-
-                        section_data = safe_dict(
-                            rfc.get(
-                                section_key
-                            )
+                        pflds = safe_dict(
+                            detailed_item.get("pflds")
                         )
 
-                        for key, value in section_data.items():
+                        vehicle_rows = []
 
-                            fuel_rows.append(
+                        for field in list(flds.values()) + list(pflds.values()):
+
+                            field = safe_dict(field)
+
+                            vehicle_rows.append(
                                 {
-                                    "Sección": section_name,
-                                    "Parámetro": key,
-                                    "Valor": (
-                                        ""
-                                        if value is None
-                                        else value
+                                    "Origen": (
+                                        "Campo personalizado"
+                                        if field in flds.values()
+                                        else "Perfil"
+                                    ),
+                                    "Campo": safe_value(
+                                        field,
+                                        "n"
+                                    ),
+                                    "Valor": safe_value(
+                                        field,
+                                        "v"
                                     )
                                 }
                             )
 
-                    st.dataframe(
-                        pd.DataFrame(
-                            fuel_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-
-                    # ---------------------------------------------
-                    # HEALTH CHECK
-                    # ---------------------------------------------
-
-                    hch = safe_dict(
-                        detailed_item.get("hch")
-                    )
-
-                    st.markdown(
-                        "### 🏥 Health Check"
-                    )
-
-                    health_rows = []
-
-                    for check_name, check_data in hch.items():
-
-                        check_data = safe_dict(
-                            check_data
+                        st.markdown(
+                            "### 🚛 Información del vehículo"
                         )
 
-                        conditions = check_data.get(
-                            "unhealthy_conditions",
-                            []
-                        )
+                        if vehicle_rows:
 
-                        if not isinstance(
-                            conditions,
-                            list
-                        ):
-                            conditions = []
-
-                        condition_parts = []
-
-                        for condition in conditions:
-
-                            condition = safe_dict(
-                                condition
+                            st.dataframe(
+                                pd.DataFrame(
+                                    vehicle_rows
+                                ),
+                                use_container_width=True,
+                                hide_index=True
                             )
 
-                            condition_text = (
-                                f"{safe_value(condition, 'type')} "
-                                f"{safe_value(condition, 'value')}"
-                            ).strip()
+                        else:
 
-                            if condition_text:
-                                condition_parts.append(
-                                    condition_text
-                                )
+                            st.info(
+                                "No hay campos de vehículo configurados para esta unidad."
+                            )
 
-                        health_rows.append(
-                            {
-                                "Criterio": check_name,
-                                "Periodo": safe_value(
-                                    check_data,
-                                    "period"
-                                ),
-                                "Condición": "; ".join(
-                                    condition_parts
-                                )
-                            }
+                        # ---------------------------------------------
+                        # POSITION
+                        # ---------------------------------------------
+
+                        position = safe_dict(
+                            detailed_item.get("pos")
                         )
 
-                    if health_rows:
+                        st.markdown(
+                            "### 📍 Posición actual"
+                        )
+
+                        position_rows = [
+                            {
+                                "Campo": "Latitud",
+                                "Valor": safe_value(
+                                    position,
+                                    "y"
+                                )
+                            },
+                            {
+                                "Campo": "Longitud",
+                                "Valor": safe_value(
+                                    position,
+                                    "x"
+                                )
+                            },
+                            {
+                                "Campo": "Altitud",
+                                "Valor": safe_value(
+                                    position,
+                                    "z"
+                                )
+                            },
+                            {
+                                "Campo": "Rumbo",
+                                "Valor": safe_value(
+                                    position,
+                                    "c"
+                                )
+                            },
+                            {
+                                "Campo": "Velocidad",
+                                "Valor": safe_value(
+                                    position,
+                                    "s"
+                                )
+                            },
+                            {
+                                "Campo": "Satélites",
+                                "Valor": safe_value(
+                                    position,
+                                    "sc"
+                                )
+                            },
+                            {
+                                "Campo": "Timestamp",
+                                "Valor": safe_value(
+                                    position,
+                                    "t"
+                                )
+                            }
+                        ]
 
                         st.dataframe(
                             pd.DataFrame(
-                                health_rows
+                                position_rows
                             ),
                             use_container_width=True,
                             hide_index=True
                         )
 
-                    else:
+                        # ---------------------------------------------
+                        # CONNECTION
+                        # ---------------------------------------------
 
-                        st.info(
-                            "No hay criterios de Health Check configurados para esta unidad."
+                        st.markdown(
+                            "### 📡 Estado de conexión"
                         )
 
-                    # ---------------------------------------------
-                    # MEDIA
-                    # ---------------------------------------------
+                        last_message = safe_dict(
+                            detailed_item.get("lmsg")
+                        )
 
-                    st.markdown(
-                        "### 🎥 Video, retransmisión e imagen"
-                    )
+                        connection_rows = [
+                            {
+                                "Campo": "Conexión TCP/UDP",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "netconn"
+                                )
+                            },
+                            {
+                                "Campo": "Activación",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "act"
+                                )
+                            },
+                            {
+                                "Campo": "Razón de activación",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "act_reason"
+                                )
+                            },
+                            {
+                                "Campo": "Último mensaje",
+                                "Valor": safe_value(
+                                    last_message,
+                                    "t"
+                                )
+                            },
+                            {
+                                "Campo": "Registro en servidor",
+                                "Valor": safe_value(
+                                    last_message,
+                                    "rt"
+                                )
+                            }
+                        ]
 
-                    media_rows = [
-                        {
-                            "Elemento": "Video",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "vp"
-                            )
-                        },
-                        {
-                            "Elemento": "Retransmisión",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "retr"
-                            )
-                        },
-                        {
-                            "Elemento": "URI de imagen",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "uri"
-                            )
-                        },
-                        {
-                            "Elemento": "UGI",
-                            "Valor": safe_value(
-                                detailed_item,
-                                "ugi"
-                            )
-                        }
-                    ]
+                        st.dataframe(
+                            pd.DataFrame(
+                                connection_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
 
-                    st.dataframe(
-                        pd.DataFrame(
-                            media_rows
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                        # ---------------------------------------------
+                        # SENSORS
+                        # ---------------------------------------------
+
+                        sensors = safe_dict(
+                            detailed_item.get("sens")
+                        )
+
+                        st.markdown(
+                            "### 📊 Sensores configurados"
+                        )
+
+                        sensor_rows = []
+
+                        for sensor in sensors.values():
+
+                            sensor = safe_dict(sensor)
+
+                            sensor_rows.append(
+                                {
+                                    "ID": safe_value(
+                                        sensor,
+                                        "id"
+                                    ),
+                                    "Nombre": safe_value(
+                                        sensor,
+                                        "n"
+                                    ),
+                                    "Tipo": safe_value(
+                                        sensor,
+                                        "t"
+                                    ),
+                                    "Unidad": safe_value(
+                                        sensor,
+                                        "m"
+                                    ),
+                                    "Parámetro": safe_value(
+                                        sensor,
+                                        "p"
+                                    )
+                                }
+                            )
+
+                        if sensor_rows:
+
+                            st.dataframe(
+                                pd.DataFrame(
+                                    sensor_rows
+                                ),
+                                use_container_width=True,
+                                hide_index=True
+                            )
+
+                        else:
+
+                            st.info(
+                                "No hay sensores configurados para esta unidad."
+                            )
+
+                        # ---------------------------------------------
+                        # COUNTERS
+                        # ---------------------------------------------
+
+                        st.markdown(
+                            "### 📈 Contadores"
+                        )
+
+                        counter_rows = [
+                            {
+                                "Contador": "Kilometraje",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "cnm"
+                                )
+                            },
+                            {
+                                "Contador": "Kilometraje (km)",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "cnm_km"
+                                )
+                            },
+                            {
+                                "Contador": "Horas de motor",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "cneh"
+                                )
+                            },
+                            {
+                                "Contador": "Tráfico GPRS acumulado",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "cnkb"
+                                )
+                            }
+                        ]
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                counter_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                        # ---------------------------------------------
+                        # COMMANDS
+                        # ---------------------------------------------
+
+                        cmds = safe_dict(
+                            detailed_item.get("cmds")
+                        )
+
+                        st.markdown(
+                            "### 🎛️ Comandos disponibles"
+                        )
+
+                        command_rows = []
+
+                        for command in cmds.values():
+
+                            command = safe_dict(command)
+
+                            command_rows.append(
+                                {
+                                    "ID": safe_value(
+                                        command,
+                                        "id"
+                                    ),
+                                    "Nombre": safe_value(
+                                        command,
+                                        "n"
+                                    ),
+                                    "Tipo": safe_value(
+                                        command,
+                                        "c"
+                                    ),
+                                    "Canal": safe_value(
+                                        command,
+                                        "t"
+                                    ),
+                                    "Parámetro": safe_value(
+                                        command,
+                                        "p"
+                                    )
+                                }
+                            )
+
+                        if command_rows:
+
+                            st.dataframe(
+                                pd.DataFrame(
+                                    command_rows
+                                ),
+                                use_container_width=True,
+                                hide_index=True
+                            )
+
+                        else:
+
+                            st.info(
+                                "No hay comandos disponibles para esta unidad."
+                            )
+
+                        # ---------------------------------------------
+                        # TRIP DETECTOR
+                        # ---------------------------------------------
+
+                        rtd = safe_dict(
+                            detailed_item.get("rtd")
+                        )
+
+                        st.markdown(
+                            "### 🚦 Configuración del detector de viajes"
+                        )
+
+                        trip_rows = [
+                            {
+                                "Parámetro": "Tipo",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "type"
+                                )
+                            },
+                            {
+                                "Parámetro": "Corrección GPS",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "gpsCorrection"
+                                )
+                            },
+                            {
+                                "Parámetro": "Satélites mínimos",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "minSat"
+                                )
+                            },
+                            {
+                                "Parámetro": "Velocidad mínima",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "minMovingSpeed"
+                                )
+                            },
+                            {
+                                "Parámetro": "Tiempo mínimo de parada",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "minStayTime"
+                                )
+                            },
+                            {
+                                "Parámetro": "Distancia máxima entre mensajes",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "maxMessagesDistance"
+                                )
+                            },
+                            {
+                                "Parámetro": "Tiempo mínimo de viaje",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "minTripTime"
+                                )
+                            },
+                            {
+                                "Parámetro": "Distancia mínima de viaje",
+                                "Valor": safe_value(
+                                    rtd,
+                                    "minTripDistance"
+                                )
+                            }
+                        ]
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                trip_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                        # ---------------------------------------------
+                        # FUEL
+                        # ---------------------------------------------
+
+                        rfc = safe_dict(
+                            detailed_item.get("rfc")
+                        )
+
+                        st.markdown(
+                            "### ⛽ Configuración de combustible"
+                        )
+
+                        fuel_rows = [
+                            {
+                                "Sección": "General",
+                                "Parámetro": "Tipo de cálculo",
+                                "Valor": safe_value(
+                                    rfc,
+                                    "calcTypes"
+                                )
+                            }
+                        ]
+
+                        for section_key, section_name in [
+                            (
+                                "fuelLevelParams",
+                                "Nivel de combustible"
+                            ),
+                            (
+                                "fuelConsMath",
+                                "Consumo matemático"
+                            ),
+                            (
+                                "fuelConsRates",
+                                "Tasas de consumo"
+                            )
+                        ]:
+
+                            section_data = safe_dict(
+                                rfc.get(
+                                    section_key
+                                )
+                            )
+
+                            for key, value in section_data.items():
+
+                                fuel_rows.append(
+                                    {
+                                        "Sección": section_name,
+                                        "Parámetro": key,
+                                        "Valor": (
+                                            ""
+                                            if value is None
+                                            else value
+                                        )
+                                    }
+                                )
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                fuel_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                        # ---------------------------------------------
+                        # HEALTH CHECK
+                        # ---------------------------------------------
+
+                        hch = safe_dict(
+                            detailed_item.get("hch")
+                        )
+
+                        st.markdown(
+                            "### 🏥 Health Check"
+                        )
+
+                        health_rows = []
+
+                        for check_name, check_data in hch.items():
+
+                            check_data = safe_dict(
+                                check_data
+                            )
+
+                            conditions = check_data.get(
+                                "unhealthy_conditions",
+                                []
+                            )
+
+                            if not isinstance(
+                                conditions,
+                                list
+                            ):
+                                conditions = []
+
+                            condition_parts = []
+
+                            for condition in conditions:
+
+                                condition = safe_dict(
+                                    condition
+                                )
+
+                                condition_text = (
+                                    f"{safe_value(condition, 'type')} "
+                                    f"{safe_value(condition, 'value')}"
+                                ).strip()
+
+                                if condition_text:
+                                    condition_parts.append(
+                                        condition_text
+                                    )
+
+                            health_rows.append(
+                                {
+                                    "Criterio": check_name,
+                                    "Periodo": safe_value(
+                                        check_data,
+                                        "period"
+                                    ),
+                                    "Condición": "; ".join(
+                                        condition_parts
+                                    )
+                                }
+                            )
+
+                        if health_rows:
+
+                            st.dataframe(
+                                pd.DataFrame(
+                                    health_rows
+                                ),
+                                use_container_width=True,
+                                hide_index=True
+                            )
+
+                        else:
+
+                            st.info(
+                                "No hay criterios de Health Check configurados para esta unidad."
+                            )
+
+                        # ---------------------------------------------
+                        # MEDIA
+                        # ---------------------------------------------
+
+                        st.markdown(
+                            "### 🎥 Video, retransmisión e imagen"
+                        )
+
+                        media_rows = [
+                            {
+                                "Elemento": "Video",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "vp"
+                                )
+                            },
+                            {
+                                "Elemento": "Retransmisión",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "retr"
+                                )
+                            },
+                            {
+                                "Elemento": "URI de imagen",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "uri"
+                                )
+                            },
+                            {
+                                "Elemento": "UGI",
+                                "Valor": safe_value(
+                                    detailed_item,
+                                    "ugi"
+                                )
+                            }
+                        ]
+
+                        st.dataframe(
+                            pd.DataFrame(
+                                media_rows
+                            ),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+
+                        st.divider()
+
+                        if st.button(
+                            "Cerrar",
+                            key="wialon_detail_close",
+                            use_container_width=True
+                        ):
+
+                            st.session_state[
+                                "wialon_detail_unit_id"
+                            ] = None
+
+                            st.rerun()
+
+                    wialon_unit_detail_dialog()
 
         # =====================================================
         # MAPA
