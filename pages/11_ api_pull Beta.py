@@ -5271,7 +5271,7 @@ with tab_wialon:
 
             trailers = safe_dict(
                 resource.get(
-                    "trailers"
+                    "trlrs"
                 )
             )
 
@@ -5390,7 +5390,7 @@ with tab_wialon:
         else:
 
             st.info(
-                "Wialon no devolvió cajas/remolques para los recursos disponibles."
+                "Wialon no devolvió cajas/remolques en los recursos disponibles."
             )
 
         # =========================================================
