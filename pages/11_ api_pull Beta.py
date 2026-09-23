@@ -4056,9 +4056,11 @@ with tab_wialon:
         )
 
         if not sid:
+
             st.error(
                 "❌ Wialon no devolvió un session ID."
             )
+
             st.stop()
 
         # -----------------------------------------------------
@@ -4337,6 +4339,89 @@ with tab_wialon:
                 hide_index=True
             )
 
+            # =====================================================
+            # DETAILED UNIT INFORMATION
+            # =====================================================
+
+            st.divider()
+
+            st.subheader(
+                "🔎 Información detallada de unidad"
+            )
+
+            # -----------------------------------------------------
+            # UNIT SELECTOR
+            # -----------------------------------------------------
+
+            unit_options = [
+                unit.get(
+                    "nm",
+                    ""
+                )
+                for unit in units
+                if unit.get("nm")
+            ]
+
+            selected_unit_name = st.selectbox(
+                "Selecciona una unidad",
+                unit_options,
+                index=0,
+                key="wialon_selected_unit"
+            )
+
+            # -----------------------------------------------------
+            # FIND SELECTED UNIT
+            # -----------------------------------------------------
+
+            selected_unit = next(
+                (
+                    unit
+                    for unit in units
+                    if unit.get("nm") == selected_unit_name
+                ),
+                None
+            )
+
+            if selected_unit:
+
+                selected_unit_id = selected_unit.get(
+                    "id"
+                )
+
+                st.caption(
+                    f"ID Wialon: {selected_unit_id}"
+                )
+
+                # =================================================
+                # REQUEST ALL AVAILABLE UNIT INFORMATION
+                # =================================================
+
+                detailed_unit_response = wialon_request(
+                    "core/search_item",
+                    {
+                        "id": selected_unit_id,
+                        "flags": 4611686018427387903
+                    },
+                    sid=sid
+                )
+
+                # -------------------------------------------------
+                # DISPLAY DETAILED RESPONSE
+                # -------------------------------------------------
+
+                if detailed_unit_response:
+
+                    st.json(
+                        detailed_unit_response
+                    )
+
+                else:
+
+                    st.warning(
+                        "Wialon no devolvió información detallada "
+                        "para la unidad seleccionada."
+                    )
+
         else:
 
             st.warning(
@@ -4344,9 +4429,9 @@ with tab_wialon:
                 "pero no devolvió unidades."
             )
 
-        # =====================================================
+        # =========================================================
         # LOGOUT
-        # =====================================================
+        # =========================================================
 
         try:
 
