@@ -5494,31 +5494,30 @@ if has_viaticos:
                                     # =================================
                                     # GET CREATOR EMAIL
                                     # =================================
-
-                                    correo_creador = obtener_email_usuario(
-                                        solicitud_row.get(
+                                    # For rejection/reopen notifications, the recipient
+                                    # must be the person who actually entered the
+                                    # comprobacion, not the current user and not the
+                                    # original solicitud creator.
+                                    correo_comprobacion = obtener_email_usuario(
+                                        row.get(
                                             "nombre_empleado_solicita",
                                             ""
                                         )
                                     )
 
-                                    destinatarios = construir_destinatarios(
-                                        empresa=row.get(
-                                            "empresa_brinda_servicio",
-                                            ""
-                                        ),
-                                        email_usuario_actual=email_usuario,
-                                        correo_creador=correo_creador
-                                    )
+                                    if not correo_comprobacion:
+                                        st.warning(
+                                            "No se pudo enviar correo: no se encontró el correo del usuario que ingresó la comprobación."
+                                        )
+                                        return
 
                                     # =================================
                                     # SEND EMAIL
                                     # =================================
-
                                     try:
 
                                         enviar_correo_estatus_solicitud(
-                                            destinatarios=destinatarios,
+                                            destinatarios=[correo_comprobacion],
                                             folio_solicitud=solicitud_row.get("folio_solicitud", ""),
                                             folio_comprobacion=row.get("folio_comprobacion", ""),
                                             estatus=estatus_solicitud,
@@ -5710,8 +5709,8 @@ if has_viaticos:
                                     )
 
                                     st.markdown(
-                                        "**Reabrir Solicitud:** la comprobación quedará **Rechazada**, "
-                                        "pero la solicitud regresará a **Aprobado** para que pueda continuar.  "
+                                        "**Reabrir Solicitud:** la comprobación será **eliminada**, "
+                                        "y la solicitud regresará a **Aprobado** para que el usuario que la capturó pueda ingresar una nueva comprobación.  "
                                         "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
                                     )
 
@@ -5736,17 +5735,45 @@ if has_viaticos:
                                                 folio_actual
                                             ).execute()
 
+                                            # =================================
+                                            # DELETE THE OLD COMPROBACION
+                                            # =================================
+                                            # When reopening the solicitud, the old
+                                            # comprobacion must be completely removed
+                                            # so the user can submit a new one.
+                                            comprobacion_id = row.get("id")
+
+                                            if comprobacion_id is not None:
+                                                supabase.table(
+                                                    "comprobacion_viaje"
+                                                ).delete().eq(
+                                                    "id",
+                                                    comprobacion_id
+                                                ).execute()
+                                            else:
+                                                supabase.table(
+                                                    "comprobacion_viaje"
+                                                ).delete().eq(
+                                                    "folio_comprobacion",
+                                                    row.get("folio_comprobacion", "")
+                                                ).execute()
+
+                                            # =================================
+                                            # REOPEN THE SOLICITUD
+                                            # =================================
                                             supabase.table(
-                                                "comprobacion_viaje"
+                                                "solicitud_viaje"
                                             ).update(
                                                 {
-                                                    "estatus": "Rechazado",
+                                                    "estatus": "Aprobado",
                                                 }
                                             ).eq(
-                                                "folio_comprobacion",
-                                                row.get("folio_comprobacion", "")
+                                                "folio_solicitud",
+                                                folio_actual
                                             ).execute()
 
+                                            # Notify ONLY the user who originally
+                                            # entered this comprobacion.
                                             enviar_notificacion_rechazo("Aprobado")
 
                                             st.session_state.pop(rechazo_key, None)
@@ -5757,7 +5784,7 @@ if has_viaticos:
                                             )
 
                                             st.success(
-                                                "Comprobación rechazada y solicitud reabierta. La solicitud regresó a Aprobado."
+                                                "Comprobación eliminada y solicitud reabierta. El usuario que ingresó la comprobación deberá capturar una nueva."
                                             )
 
                                             st.cache_data.clear()
