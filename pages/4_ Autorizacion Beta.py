@@ -3744,6 +3744,7 @@ if has_viaticos:
             @st.dialog(
                 "Detalle de Solicitud",
                 width="large",
+                on_dismiss="rerun",
             )
             def modal_ver_solicitud(row):
 
@@ -4715,6 +4716,7 @@ if has_viaticos:
                             @st.dialog(
                                 "Detalle de Comprobación",
                                 width="large",
+                                on_dismiss="rerun",
                             )
                             def modal_verificacion():
 
