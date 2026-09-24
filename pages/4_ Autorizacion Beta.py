@@ -5583,63 +5583,119 @@ if has_viaticos:
                                         ).execute()
 
                                         # =================================
-                                        # GET CREATOR EMAIL
+                                        # RELOAD THE EXACT RECORDS BEING CONCLUDED
                                         # =================================
+                                        # Do not build the notification from the
+                                        # currently displayed dataframe rows. The
+                                        # email must always correspond to the exact
+                                        # solicitud/comprobacion just concluded.
+                                        try:
 
-                                        correo_creador = (
-                                            obtener_email_usuario(
-                                                solicitud_row.get(
+                                            solicitud_email_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .select("*")
+                                                .eq("folio_solicitud", folio_actual)
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            folio_comprobacion_actual = (
+                                                row.get("folio_comprobacion", "")
+                                                if hasattr(row, "get")
+                                                else ""
+                                            )
+
+                                            comprobacion_query = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                            )
+
+                                            if folio_comprobacion_actual:
+                                                comprobacion_query = (
+                                                    comprobacion_query
+                                                    .eq("folio_comprobacion", folio_comprobacion_actual)
+                                                )
+                                            else:
+                                                comprobacion_query = (
+                                                    comprobacion_query
+                                                    .eq("folio_solicitud", folio_actual)
+                                                    .order("created_at", desc=True)
+                                                )
+
+                                            comprobacion_email_resp = (
+                                                comprobacion_query
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            solicitud_email_row = (
+                                                solicitud_email_resp.data[0]
+                                                if solicitud_email_resp.data
+                                                else {}
+                                            )
+
+                                            comprobacion_email_row = (
+                                                comprobacion_email_resp.data[0]
+                                                if comprobacion_email_resp.data
+                                                else {}
+                                            )
+
+                                            # Fallback to the exact records already
+                                            # loaded in the modal if a DB read returns
+                                            # no row.
+                                            if not solicitud_email_row:
+                                                solicitud_email_row = solicitud_row or {}
+
+                                            if not comprobacion_email_row:
+                                                comprobacion_email_row = row.to_dict() if hasattr(row, "to_dict") else (row or {})
+
+                                            correo_creador = obtener_email_usuario(
+                                                solicitud_email_row.get(
                                                     "nombre_empleado_solicita",
                                                     ""
                                                 )
                                             )
-                                        )
 
-                                        destinatarios = construir_destinatarios(
+                                            destinatarios = construir_destinatarios(
+                                                empresa=solicitud_email_row.get(
+                                                    "empresa_brinda_servicio",
+                                                    ""
+                                                ),
+                                                email_usuario_actual=email_usuario,
+                                                correo_creador=correo_creador
+                                            )
 
-                                            empresa=row.get(
-                                                "empresa_brinda_servicio",
-                                                ""
-                                            ),
-
-                                            email_usuario_actual=email_usuario,
-
-                                            correo_creador=correo_creador
-                                        )
-
-                                        # =================================
-                                        # SEND EMAIL
-                                        # =================================
-
-                                        try:
-
+                                            # =================================
+                                            # SEND EMAIL USING ONLY THE RELOADED RECORDS
+                                            # =================================
                                             enviar_correo_estatus_solicitud(
-
                                                 destinatarios=destinatarios,
-                                                folio_solicitud=solicitud_row.get("folio_solicitud", ""),
-                                                folio_comprobacion=row.get("folio_comprobacion", ""),
+                                                folio_solicitud=solicitud_email_row.get("folio_solicitud", folio_actual),
+                                                folio_comprobacion=comprobacion_email_row.get("folio_comprobacion", ""),
                                                 estatus="Concluido",
-                                                empleado=solicitud_row.get("nombre_empleado_solicita", ""),
-                                                empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
-                                                fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
-                                                fecha_comprobacion=row.get("created_at", ""),
-                                                fecha_inicio=solicitud_row.get("fecha_inicio", ""),
-                                                fecha_fin=solicitud_row.get("fecha_fin", ""),
-                                                empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
-                                                unidad_negocio=solicitud_row.get("unidad_negocio", ""),
-                                                sucursal=solicitud_row.get("sucursal", ""),
-                                                sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
-                                                nombre_cliente=solicitud_row.get("nombre_cliente", ""),
-                                                folio_sac=solicitud_row.get("folio_sac", ""),
-                                                motivo_viaje=solicitud_row.get("motivo_viaje", ""),
-                                                observaciones=solicitud_row.get("observaciones", ""),
-                                                conceptos=solicitud_row.get("conceptos", []),
-                                                total_estimado=solicitud_row.get("total_estimado", 0),
-                                                total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
-                                                empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
-                                                observaciones_comprobacion=row.get("observaciones", ""),
-                                                total_comprobado=row.get("total_comprobado", 0),
-                                                total_comprobado_usd=row.get("total_comprobado_usd", 0)
+                                                empleado=solicitud_email_row.get("nombre_empleado_solicita", ""),
+                                                empresa_servicio=solicitud_email_row.get("empresa_brinda_servicio", ""),
+                                                fecha_solicitud=solicitud_email_row.get("fecha_solicitud", ""),
+                                                fecha_comprobacion=comprobacion_email_row.get("created_at", ""),
+                                                fecha_inicio=solicitud_email_row.get("fecha_inicio", ""),
+                                                fecha_fin=solicitud_email_row.get("fecha_fin", ""),
+                                                empresa_cargo=solicitud_email_row.get("empresa_cargo_gastos", ""),
+                                                unidad_negocio=solicitud_email_row.get("unidad_negocio", ""),
+                                                sucursal=solicitud_email_row.get("sucursal", ""),
+                                                sucursal_especificar=solicitud_email_row.get("sucursal_especificar", ""),
+                                                nombre_cliente=solicitud_email_row.get("nombre_cliente", ""),
+                                                folio_sac=solicitud_email_row.get("folio_sac", ""),
+                                                motivo_viaje=solicitud_email_row.get("motivo_viaje", ""),
+                                                observaciones=solicitud_email_row.get("observaciones", ""),
+                                                conceptos=solicitud_email_row.get("conceptos", []),
+                                                total_estimado=solicitud_email_row.get("total_estimado", 0),
+                                                total_estimado_usd=solicitud_email_row.get("total_estimado_usd", 0),
+                                                empleado_comprobacion=comprobacion_email_row.get("nombre_empleado_solicita", ""),
+                                                observaciones_comprobacion=comprobacion_email_row.get("observaciones", ""),
+                                                total_comprobado=comprobacion_email_row.get("total_comprobado", 0),
+                                                total_comprobado_usd=comprobacion_email_row.get("total_comprobado_usd", 0)
                                             )
 
                                         except Exception as e:
@@ -5647,7 +5703,6 @@ if has_viaticos:
                                             st.warning(
                                                 f"No se pudo enviar correo: {e}"
                                             )
-
                                         log_activity(
                                             f"Autorizó Comprobación: {folio_actual}",
                                             "Gestión de Viáticos"
