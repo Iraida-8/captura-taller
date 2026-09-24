@@ -6494,14 +6494,456 @@ if has_viaticos:
             output.seek(0)
 
 
-            st.download_button(
-                label="📥 Descargar reporte de Solicitudes",
-                data=output.getvalue(),
-                file_name="Reporte_Solicitudes_Finalizadas.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=False,
-                key="descargar_reporte_final"
+            # =================================
+            # DOWNLOAD BUTTONS
+            # =================================
+
+            reporte_col1, reporte_col2 = st.columns(2)
+
+            with reporte_col1:
+
+                st.download_button(
+                    label="📥 Descargar reporte de Solicitudes",
+                    data=output.getvalue(),
+                    file_name="Reporte_Solicitudes_Finalizadas.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key="descargar_reporte_final"
+                )
+
+            # =================================
+            # REPORTE GENERAL — TODAS LAS SOLICITUDES Y COMPROBACIONES
+            # =================================
+            # Este reporte no depende de los filtros de Solicitudes Finalizadas.
+            # Incluye cualquier registro existente en cualquiera de las dos tablas,
+            # sin importar su estatus. Si existe solo una de las dos partes,
+            # las columnas de la otra quedan en blanco.
+
+            reporte_general_rows = []
+
+            solicitudes_general = df_solicitudes.copy()
+            comprobaciones_general = df_comprobaciones.copy()
+
+            # Garantizar las columnas utilizadas por el reporte, incluso para
+            # registros antiguos que no tengan los campos más recientes.
+            for col_name in [
+                "total_comprobado_usd",
+                "anticipo_viaje_usd",
+                "diferencia_cargo_favor_usd",
+                "nombre_empleado_solicita",
+                "conceptos",
+                "observaciones",
+                "archivos",
+                "created_at",
+                "folio_solicitud",
+                "folio_comprobacion",
+                "estatus",
+                "total_comprobado",
+                "anticipo_viaje",
+                "diferencia_cargo_favor",
+            ]:
+                if col_name not in comprobaciones_general.columns:
+                    comprobaciones_general[col_name] = ""
+
+            for col_name in [
+                "folio_solicitud",
+                "estatus",
+                "nombre_empleado_solicita",
+                "conceptos",
+                "observaciones",
+                "created_at",
+                "total_estimado",
+            ]:
+                if col_name not in solicitudes_general.columns:
+                    solicitudes_general[col_name] = ""
+
+            # Normalizar folios para poder relacionar ambos lados sin perder
+            # registros cuando solo exista Solicitud o solo Comprobación.
+            solicitudes_general["_folio_key"] = (
+                solicitudes_general["folio_solicitud"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
             )
+
+            comprobaciones_general["_folio_key"] = (
+                comprobaciones_general["folio_solicitud"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+            )
+
+            folios_general = []
+            folios_general.extend(
+                [x for x in solicitudes_general["_folio_key"].tolist() if x]
+            )
+            folios_general.extend(
+                [x for x in comprobaciones_general["_folio_key"].tolist() if x]
+            )
+
+            # También conservar registros que por alguna razón no tengan folio.
+            # Se manejan como registros independientes y no se intentan relacionar.
+            usados_solicitud_sin_folio = 0
+            usados_comprobacion_sin_folio = 0
+
+            for folio_general in dict.fromkeys(folios_general):
+
+                solicitud_rows_general = solicitudes_general[
+                    solicitudes_general["_folio_key"] == folio_general
+                ]
+
+                comprobacion_rows_general = comprobaciones_general[
+                    comprobaciones_general["_folio_key"] == folio_general
+                ]
+
+                # Si existen ambos, conservar cada comprobación existente
+                # asociada a la solicitud. Si hay varias comprobaciones para el
+                # mismo folio, no se elimina ninguna.
+                if not solicitud_rows_general.empty and not comprobacion_rows_general.empty:
+
+                    for _, solicitud_general in solicitud_rows_general.iterrows():
+                        solicitud_dict_general = solicitud_general.to_dict()
+
+                        for _, comprobacion_general in comprobacion_rows_general.iterrows():
+                            comprobacion_dict_general = comprobacion_general.to_dict()
+
+                            conceptos_solicitud_general = solicitud_dict_general.get("conceptos")
+                            if not isinstance(conceptos_solicitud_general, list):
+                                conceptos_solicitud_general = []
+                            if not conceptos_solicitud_general:
+                                conceptos_solicitud_general = [{}]
+
+                            conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
+                            if not isinstance(conceptos_comprobacion_general, list):
+                                conceptos_comprobacion_general = []
+                            if not conceptos_comprobacion_general:
+                                conceptos_comprobacion_general = [{}]
+
+                            max_len_general = max(
+                                len(conceptos_solicitud_general),
+                                len(conceptos_comprobacion_general)
+                            )
+
+                            for i in range(max_len_general):
+                                concepto_sol_general = (
+                                    conceptos_solicitud_general[i]
+                                    if i < len(conceptos_solicitud_general)
+                                    and isinstance(conceptos_solicitud_general[i], dict)
+                                    else {}
+                                )
+                                concepto_comp_general = (
+                                    conceptos_comprobacion_general[i]
+                                    if i < len(conceptos_comprobacion_general)
+                                    and isinstance(conceptos_comprobacion_general[i], dict)
+                                    else {}
+                                )
+
+                                reporte_general_rows.append({
+                                    "Folio Solicitud": solicitud_dict_general.get("folio_solicitud", ""),
+                                    "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
+                                    "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
+                                    "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
+                                    "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
+                                    "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
+                                    "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
+                                    "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
+                                    "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
+                                    "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
+                                    "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
+                                    "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
+                                    "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
+                                    "Sucursal": solicitud_dict_general.get("sucursal", ""),
+                                    "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
+                                    "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
+                                    "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
+                                    "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
+                                    "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
+                                    "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
+                                    "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
+                                    "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
+                                    "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
+                                    "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
+                                    "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
+                                    "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
+                                    "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
+                                    "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
+                                    "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
+                                    "Solicitud Monto": concepto_sol_general.get("Monto", ""),
+                                    "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
+                                    "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
+                                    "Solicitud Razon": concepto_sol_general.get("Razon", ""),
+                                    "Comprobacion Tipo": concepto_comp_general.get("Tipo", ""),
+                                    "Comprobacion Descripcion": concepto_comp_general.get("Descripcion", ""),
+                                    "Comprobacion Fecha Factura": concepto_comp_general.get("Fecha Factura", ""),
+                                    "Comprobacion Folio": concepto_comp_general.get("Folio", ""),
+                                    "Comprobacion Proveedor": concepto_comp_general.get("Proveedor", ""),
+                                    "Comprobacion Moneda": concepto_comp_general.get("Moneda", ""),
+                                    "Comprobacion Monto": concepto_comp_general.get("Monto", ""),
+                                    "Comprobacion Comprobante": concepto_comp_general.get("Comprobante", ""),
+                                    "Comprobacion Aplica IVA": concepto_comp_general.get("Aplica IVA", ""),
+                                    "Comprobacion IVA %": concepto_comp_general.get("IVA %", ""),
+                                    "Comprobacion Aplica Retencion": concepto_comp_general.get("Aplica Retencion", ""),
+                                    "Comprobacion Impuesto Acreditable": concepto_comp_general.get("Impuesto Acreditable", ""),
+                                    "Comprobacion Total Comprobado": concepto_comp_general.get("Total Comprobado", ""),
+                                })
+
+                elif not solicitud_rows_general.empty:
+                    # Solicitud existente sin comprobación.
+                    for _, solicitud_general in solicitud_rows_general.iterrows():
+                        solicitud_dict_general = solicitud_general.to_dict()
+                        conceptos_solicitud_general = solicitud_dict_general.get("conceptos")
+                        if not isinstance(conceptos_solicitud_general, list):
+                            conceptos_solicitud_general = []
+                        if not conceptos_solicitud_general:
+                            conceptos_solicitud_general = [{}]
+
+                        for concepto_sol_general in conceptos_solicitud_general:
+                            if not isinstance(concepto_sol_general, dict):
+                                concepto_sol_general = {}
+
+                            reporte_general_rows.append({
+                                "Folio Solicitud": solicitud_dict_general.get("folio_solicitud", ""),
+                                "Folio Comprobacion": "",
+                                "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
+                                "Estatus Comprobacion": "",
+                                "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
+                                "Empleado Comprobacion": "",
+                                "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
+                                "Fecha Comprobacion": "",
+                                "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
+                                "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
+                                "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
+                                "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
+                                "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
+                                "Sucursal": solicitud_dict_general.get("sucursal", ""),
+                                "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
+                                "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
+                                "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
+                                "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
+                                "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
+                                "Observaciones Comprobacion": "",
+                                "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
+                                "Total Comprobado MXP": "",
+                                "Anticipo Viaje MXP": "",
+                                "Diferencia Cargo Favor MXP": "",
+                                "Total Comprobado USD": "",
+                                "Anticipo Viaje USD": "",
+                                "Diferencia Cargo Favor USD": "",
+                                "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
+                                "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
+                                "Solicitud Monto": concepto_sol_general.get("Monto", ""),
+                                "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
+                                "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
+                                "Solicitud Razon": concepto_sol_general.get("Razon", ""),
+                                "Comprobacion Tipo": "",
+                                "Comprobacion Descripcion": "",
+                                "Comprobacion Fecha Factura": "",
+                                "Comprobacion Folio": "",
+                                "Comprobacion Proveedor": "",
+                                "Comprobacion Moneda": "",
+                                "Comprobacion Monto": "",
+                                "Comprobacion Comprobante": "",
+                                "Comprobacion Aplica IVA": "",
+                                "Comprobacion IVA %": "",
+                                "Comprobacion Aplica Retencion": "",
+                                "Comprobacion Impuesto Acreditable": "",
+                                "Comprobacion Total Comprobado": "",
+                            })
+
+                else:
+                    # Comprobación existente sin solicitud.
+                    for _, comprobacion_general in comprobacion_rows_general.iterrows():
+                        comprobacion_dict_general = comprobacion_general.to_dict()
+                        conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
+                        if not isinstance(conceptos_comprobacion_general, list):
+                            conceptos_comprobacion_general = []
+                        if not conceptos_comprobacion_general:
+                            conceptos_comprobacion_general = [{}]
+
+                        for concepto_comp_general in conceptos_comprobacion_general:
+                            if not isinstance(concepto_comp_general, dict):
+                                concepto_comp_general = {}
+
+                            reporte_general_rows.append({
+                                "Folio Solicitud": "",
+                                "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
+                                "Estatus Solicitud": "",
+                                "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
+                                "Empleado Solicita": "",
+                                "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
+                                "Fecha Solicitud": "",
+                                "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
+                                "Fecha Inicio": "",
+                                "Fecha Fin": "",
+                                "Empresa Brinda Servicio": "",
+                                "Empresa Cargo Gastos": "",
+                                "Unidad Negocio": "",
+                                "Sucursal": "",
+                                "Sucursal Especificar": "",
+                                "Nombre Cliente": "",
+                                "Registro SAC Ventas": "",
+                                "Motivo Viaje": "",
+                                "Observaciones Solicitud": "",
+                                "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
+                                "Monto Solicitado": "",
+                                "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
+                                "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
+                                "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
+                                "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
+                                "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
+                                "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
+                                "Solicitud Tipo": "",
+                                "Solicitud Descripcion": "",
+                                "Solicitud Monto": "",
+                                "Solicitud Tipo Cambio": "",
+                                "Solicitud Aprobado": "",
+                                "Solicitud Razon": "",
+                                "Comprobacion Tipo": concepto_comp_general.get("Tipo", ""),
+                                "Comprobacion Descripcion": concepto_comp_general.get("Descripcion", ""),
+                                "Comprobacion Fecha Factura": concepto_comp_general.get("Fecha Factura", ""),
+                                "Comprobacion Folio": concepto_comp_general.get("Folio", ""),
+                                "Comprobacion Proveedor": concepto_comp_general.get("Proveedor", ""),
+                                "Comprobacion Moneda": concepto_comp_general.get("Moneda", ""),
+                                "Comprobacion Monto": concepto_comp_general.get("Monto", ""),
+                                "Comprobacion Comprobante": concepto_comp_general.get("Comprobante", ""),
+                                "Comprobacion Aplica IVA": concepto_comp_general.get("Aplica IVA", ""),
+                                "Comprobacion IVA %": concepto_comp_general.get("IVA %", ""),
+                                "Comprobacion Aplica Retencion": concepto_comp_general.get("Aplica Retencion", ""),
+                                "Comprobacion Impuesto Acreditable": concepto_comp_general.get("Impuesto Acreditable", ""),
+                                "Comprobacion Total Comprobado": concepto_comp_general.get("Total Comprobado", ""),
+                            })
+
+            # Registros sin folio: conservarlos como filas independientes.
+            for _, solicitud_general in solicitudes_general[
+                solicitudes_general["_folio_key"] == ""
+            ].iterrows():
+                solicitud_dict_general = solicitud_general.to_dict()
+                reporte_general_rows.append({
+                    "Folio Solicitud": "",
+                    "Folio Comprobacion": "",
+                    "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
+                    "Estatus Comprobacion": "",
+                    "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
+                    "Empleado Comprobacion": "",
+                    "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
+                    "Fecha Comprobacion": "",
+                    "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
+                    "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
+                    "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
+                    "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
+                    "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
+                    "Sucursal": solicitud_dict_general.get("sucursal", ""),
+                    "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
+                    "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
+                    "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
+                    "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
+                    "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
+                    "Observaciones Comprobacion": "",
+                    "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
+                    "Total Comprobado MXP": "",
+                    "Anticipo Viaje MXP": "",
+                    "Diferencia Cargo Favor MXP": "",
+                    "Total Comprobado USD": "",
+                    "Anticipo Viaje USD": "",
+                    "Diferencia Cargo Favor USD": "",
+                    "Solicitud Tipo": "",
+                    "Solicitud Descripcion": "",
+                    "Solicitud Monto": "",
+                    "Solicitud Tipo Cambio": "",
+                    "Solicitud Aprobado": "",
+                    "Solicitud Razon": "",
+                    "Comprobacion Tipo": "",
+                    "Comprobacion Descripcion": "",
+                    "Comprobacion Fecha Factura": "",
+                    "Comprobacion Folio": "",
+                    "Comprobacion Proveedor": "",
+                    "Comprobacion Moneda": "",
+                    "Comprobacion Monto": "",
+                    "Comprobacion Comprobante": "",
+                    "Comprobacion Aplica IVA": "",
+                    "Comprobacion IVA %": "",
+                    "Comprobacion Aplica Retencion": "",
+                    "Comprobacion Impuesto Acreditable": "",
+                    "Comprobacion Total Comprobado": "",
+                })
+
+            for _, comprobacion_general in comprobaciones_general[
+                comprobaciones_general["_folio_key"] == ""
+            ].iterrows():
+                comprobacion_dict_general = comprobacion_general.to_dict()
+                reporte_general_rows.append({
+                    "Folio Solicitud": "",
+                    "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
+                    "Estatus Solicitud": "",
+                    "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
+                    "Empleado Solicita": "",
+                    "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
+                    "Fecha Solicitud": "",
+                    "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
+                    "Fecha Inicio": "",
+                    "Fecha Fin": "",
+                    "Empresa Brinda Servicio": "",
+                    "Empresa Cargo Gastos": "",
+                    "Unidad Negocio": "",
+                    "Sucursal": "",
+                    "Sucursal Especificar": "",
+                    "Nombre Cliente": "",
+                    "Registro SAC Ventas": "",
+                    "Motivo Viaje": "",
+                    "Observaciones Solicitud": "",
+                    "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
+                    "Monto Solicitado": "",
+                    "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
+                    "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
+                    "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
+                    "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
+                    "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
+                    "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
+                    "Solicitud Tipo": "",
+                    "Solicitud Descripcion": "",
+                    "Solicitud Monto": "",
+                    "Solicitud Tipo Cambio": "",
+                    "Solicitud Aprobado": "",
+                    "Solicitud Razon": "",
+                    "Comprobacion Tipo": "",
+                    "Comprobacion Descripcion": "",
+                    "Comprobacion Fecha Factura": "",
+                    "Comprobacion Folio": "",
+                    "Comprobacion Proveedor": "",
+                    "Comprobacion Moneda": "",
+                    "Comprobacion Monto": "",
+                    "Comprobacion Comprobante": "",
+                    "Comprobacion Aplica IVA": "",
+                    "Comprobacion IVA %": "",
+                    "Comprobacion Aplica Retencion": "",
+                    "Comprobacion Impuesto Acreditable": "",
+                    "Comprobacion Total Comprobado": "",
+                })
+
+            df_reporte_general = pd.DataFrame(reporte_general_rows)
+            output_general = BytesIO()
+
+            with pd.ExcelWriter(
+                output_general,
+                engine="openpyxl"
+            ) as writer:
+                df_reporte_general.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Todas las Solicitudes"
+                )
+
+            output_general.seek(0)
+
+            with reporte_col2:
+                st.download_button(
+                    label="📥 Descargar reporte general",
+                    data=output_general.getvalue(),
+                    file_name="Reporte_Solicitudes_Todas.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key="descargar_reporte_general"
+                )
 
 
             # =================================
