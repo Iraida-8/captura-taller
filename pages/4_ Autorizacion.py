@@ -2994,44 +2994,27 @@ if has_viaticos:
 
             def obtener_email_usuario(nombre_completo):
 
-                # Some solicitud_viaje records store the creator directly
-                # as an email address (for example,
-                # denisse.salaburu@set-freight.com). Do not try to match
-                # that value against profiles.full_name.
                 valor = str(nombre_completo or "").strip()
+
+                # If the value is already an email, use it directly.
                 if "@" in valor:
-                    return valor.lower()
+                    return valor
 
                 try:
-
                     response = (
                         supabase
                         .table("profiles")
                         .select("email")
-                        .eq(
-                            "full_name",
-                            nombre_completo
-                        )
+                        .eq("full_name", valor)
                         .limit(1)
                         .execute()
                     )
 
-                    if (
-                        response.data
-                        and len(response.data) > 0
-                    ):
-
-                        return (
-                            response
-                            .data[0]
-                            .get("email")
-                        )
+                    if response.data and len(response.data) > 0:
+                        return response.data[0].get("email")
 
                 except Exception as e:
-
-                    st.warning(
-                        f"Error obteniendo email: {e}"
-                    )
+                    st.warning(f"Error obteniendo email: {e}")
 
                 return None
 
