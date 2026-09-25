@@ -2945,6 +2945,17 @@ if has_viaticos:
 
             EMAILS_EMPRESA = {
 
+                # SET FREIGHT is stored in solicitud_viaje as
+                # "SET FREIGHT", while some older records/configuration
+                # use "SET FREIGHT INTERNATIONAL". Both must route to
+                # the same recipients.
+                "SET FREIGHT": [
+
+                    "karina.colina@palosgarza.com",
+
+                    "cindy.gonzalez@palosgarza.com"
+                ],
+
                 "SET FREIGHT INTERNATIONAL": [
 
                     "karina.colina@palosgarza.com",
@@ -2982,6 +2993,14 @@ if has_viaticos:
             # =================================
 
             def obtener_email_usuario(nombre_completo):
+
+                # Some solicitud_viaje records store the creator directly
+                # as an email address (for example,
+                # denisse.salaburu@set-freight.com). Do not try to match
+                # that value against profiles.full_name.
+                valor = str(nombre_completo or "").strip()
+                if "@" in valor:
+                    return valor.lower()
 
                 try:
 
@@ -3069,9 +3088,26 @@ if has_viaticos:
                     empresa or ""
                 ).strip().upper()
 
+                # Normalize company aliases used by the database and the
+                # email routing configuration. In particular, solicitud_viaje
+                # can contain "SET FREIGHT" while the legacy configuration
+                # used "SET FREIGHT INTERNATIONAL".
+                empresa_alias = {
+                    "SET FREIGHT": "SET FREIGHT",
+                    "SET FREIGHT INTERNATIONAL": "SET FREIGHT INTERNATIONAL",
+                    "LINCOLN": "LINCOLN FREIGHT",
+                    "IGLOO": "IGLOO TRANSPORT",
+                    "SET LOGIS": "SET LOGIS PLUS",
+                }
+
+                empresa_normalizada = empresa_alias.get(
+                    empresa,
+                    empresa
+                )
+
                 correos_empresa = (
                     EMAILS_EMPRESA.get(
-                        empresa,
+                        empresa_normalizada,
                         []
                     )
                 )
@@ -3368,6 +3404,11 @@ if has_viaticos:
 
                 </div>
                 """
+
+                if not destinatarios:
+                    raise ValueError(
+                        f"No hay destinatarios configurados para la solicitud {folio_solicitud}."
+                    )
 
                 resend.Emails.send({
 
