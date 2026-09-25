@@ -5525,17 +5525,98 @@ if has_viaticos:
 
                                     st.rerun()
 
-                                def enviar_notificacion_rechazo(estatus_solicitud):
+                                def enviar_notificacion_rechazo(estatus_solicitud, comprobacion_id=None):
 
                                     # =================================
-                                    # GET CREATOR EMAIL
+                                    # RE-READ THE EXACT DATABASE RECORDS
                                     # =================================
-                                    # For rejection/reopen notifications, the recipient
-                                    # must be the person who actually entered the
-                                    # comprobacion, not the current user and not the
-                                    # original solicitud creator.
+                                    # The email must use the values already stored in
+                                    # Supabase, never the UI/DataFrame row.
+                                    if comprobacion_id is None:
+                                        comprobacion_id = comprobacion_row.get("id")
+
+                                    comprobacion_email_query = (
+                                        supabase
+                                        .table("comprobacion_viaje")
+                                        .select("*")
+                                    )
+
+                                    if comprobacion_id is not None and not pd.isna(comprobacion_id):
+                                        comprobacion_email_query = comprobacion_email_query.eq(
+                                            "id",
+                                            comprobacion_id
+                                        )
+                                    else:
+                                        comprobacion_email_query = comprobacion_email_query.eq(
+                                            "folio_comprobacion",
+                                            str(comprobacion_row.get("folio_comprobacion", "") or "").strip()
+                                        )
+
+                                    comprobacion_email_resp = (
+                                        comprobacion_email_query
+                                        .limit(1)
+                                        .execute()
+                                    )
+
+                                    comprobacion_email_data = (
+                                        comprobacion_email_resp.data
+                                        if comprobacion_email_resp.data
+                                        else []
+                                    )
+
+                                    if not comprobacion_email_data:
+                                        st.warning(
+                                            "No se pudo enviar correo: no se encontró la comprobación seleccionada en Supabase."
+                                        )
+                                        return
+
+                                    comprobacion_email = comprobacion_email_data[0]
+
+                                    # Use the folio stored in the comprobación to
+                                    # retrieve the exact solicitud from Supabase.
+                                    folio_solicitud_email = str(
+                                        comprobacion_email.get("folio_solicitud", "") or ""
+                                    ).strip()
+
+                                    if not folio_solicitud_email:
+                                        st.warning(
+                                            "No se pudo enviar correo: la comprobación no tiene folio_solicitud almacenado."
+                                        )
+                                        return
+
+                                    solicitud_email_resp = (
+                                        supabase
+                                        .table("solicitud_viaje")
+                                        .select("*")
+                                        .eq(
+                                            "folio_solicitud",
+                                            folio_solicitud_email
+                                        )
+                                        .limit(1)
+                                        .execute()
+                                    )
+
+                                    solicitud_email_data = (
+                                        solicitud_email_resp.data
+                                        if solicitud_email_resp.data
+                                        else []
+                                    )
+
+                                    if not solicitud_email_data:
+                                        st.warning(
+                                            f"No se pudo enviar correo: no se encontró la solicitud {folio_solicitud_email} en Supabase."
+                                        )
+                                        return
+
+                                    solicitud_email = solicitud_email_data[0]
+
+                                    # =================================
+                                    # GET EMAIL FROM STORED COMPROBACION USER
+                                    # =================================
+                                    # This is the person who actually entered the
+                                    # comprobación, as stored in the database.
                                     correo_comprobacion = obtener_email_usuario(
-                                        row.get(
+                                        comprobacion_email.get(
                                             "nombre_empleado_solicita",
                                             ""
                                         )
@@ -5548,36 +5629,36 @@ if has_viaticos:
                                         return
 
                                     # =================================
-                                    # SEND EMAIL
+                                    # SEND EMAIL USING ONLY DB VALUES
                                     # =================================
                                     try:
 
                                         enviar_correo_estatus_solicitud(
                                             destinatarios=[correo_comprobacion],
-                                            folio_solicitud=solicitud_row.get("folio_solicitud", ""),
-                                            folio_comprobacion=row.get("folio_comprobacion", ""),
+                                            folio_solicitud=solicitud_email.get("folio_solicitud", ""),
+                                            folio_comprobacion=comprobacion_email.get("folio_comprobacion", ""),
                                             estatus=estatus_solicitud,
-                                            empleado=solicitud_row.get("nombre_empleado_solicita", ""),
-                                            empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
-                                            fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
-                                            fecha_comprobacion=row.get("created_at", ""),
-                                            fecha_inicio=solicitud_row.get("fecha_inicio", ""),
-                                            fecha_fin=solicitud_row.get("fecha_fin", ""),
-                                            empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
-                                            unidad_negocio=solicitud_row.get("unidad_negocio", ""),
-                                            sucursal=solicitud_row.get("sucursal", ""),
-                                            sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
-                                            nombre_cliente=solicitud_row.get("nombre_cliente", ""),
-                                            folio_sac=solicitud_row.get("folio_sac", ""),
-                                            motivo_viaje=solicitud_row.get("motivo_viaje", ""),
-                                            observaciones=solicitud_row.get("observaciones", ""),
-                                            conceptos=solicitud_row.get("conceptos", []),
-                                            total_estimado=solicitud_row.get("total_estimado", 0),
-                                            total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
-                                            empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
-                                            observaciones_comprobacion=row.get("observaciones", ""),
-                                            total_comprobado=row.get("total_comprobado", 0),
-                                            total_comprobado_usd=row.get("total_comprobado_usd", 0)
+                                            empleado=solicitud_email.get("nombre_empleado_solicita", ""),
+                                            empresa_servicio=solicitud_email.get("empresa_brinda_servicio", ""),
+                                            fecha_solicitud=solicitud_email.get("fecha_solicitud", ""),
+                                            fecha_comprobacion=comprobacion_email.get("created_at", ""),
+                                            fecha_inicio=solicitud_email.get("fecha_inicio", ""),
+                                            fecha_fin=solicitud_email.get("fecha_fin", ""),
+                                            empresa_cargo=solicitud_email.get("empresa_cargo_gastos", ""),
+                                            unidad_negocio=solicitud_email.get("unidad_negocio", ""),
+                                            sucursal=solicitud_email.get("sucursal", ""),
+                                            sucursal_especificar=solicitud_email.get("sucursal_especificar", ""),
+                                            nombre_cliente=solicitud_email.get("nombre_cliente", ""),
+                                            folio_sac=solicitud_email.get("folio_sac", ""),
+                                            motivo_viaje=solicitud_email.get("motivo_viaje", ""),
+                                            observaciones=solicitud_email.get("observaciones", ""),
+                                            conceptos=solicitud_email.get("conceptos", []),
+                                            total_estimado=solicitud_email.get("total_estimado", 0),
+                                            total_estimado_usd=solicitud_email.get("total_estimado_usd", 0),
+                                            empleado_comprobacion=comprobacion_email.get("nombre_empleado_solicita", ""),
+                                            observaciones_comprobacion=comprobacion_email.get("observaciones", ""),
+                                            total_comprobado=comprobacion_email.get("total_comprobado", 0),
+                                            total_comprobado_usd=comprobacion_email.get("total_comprobado_usd", 0)
                                         )
 
                                     except Exception as e:
@@ -6037,6 +6118,14 @@ if has_viaticos:
                                                     folio_comprobacion_rechazo
                                                 )
 
+                                            # Send the notification BEFORE deleting the comprobacion,
+                                            # so the notification function can read the exact stored
+                                            # comprobacion values from Supabase.
+                                            enviar_notificacion_rechazo(
+                                                "Aprobado",
+                                                comprobacion_id_reapertura
+                                            )
+
                                             delete_query.execute()
 
                                             # =================================
@@ -6052,10 +6141,6 @@ if has_viaticos:
                                                 "folio_solicitud",
                                                 folio_solicitud_rechazo
                                             ).execute()
-
-                                            # Notify ONLY the user who originally
-                                            # entered this comprobacion.
-                                            enviar_notificacion_rechazo("Aprobado")
 
                                             st.session_state.pop(rechazo_key, None)
 
