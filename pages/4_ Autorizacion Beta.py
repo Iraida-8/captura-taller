@@ -4734,6 +4734,16 @@ if has_viaticos:
 
                             comprobacion_row = row.to_dict()
 
+                            # Always start a newly opened comprobacion modal at the
+                            # first rejection step. Do not carry the second-step
+                            # Reabrir/Cerrar buttons over from a previous modal.
+                            rechazo_key_modal = (
+                                f"rechazo_comprobacion_pendiente_"
+                                f"{str(folio_actual).strip()}_"
+                                f"{str(comprobacion_row.get('folio_comprobacion', '') or '').strip()}"
+                            )
+                            st.session_state.pop(rechazo_key_modal, None)
+
                             # =================================
                             # MODAL
                             # =================================
@@ -5629,16 +5639,35 @@ if has_viaticos:
                                         solicitud_final = solicitud_final_data[0]
 
                                         # Use the EXACT comprobacion being viewed.
-                                        # The relationship is identified by BOTH folios.
-                                        comprobacion_final_resp = (
-                                            supabase
-                                            .table("comprobacion_viaje")
-                                            .select("*")
-                                            .eq("folio_solicitud", folio_final)
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
-                                            .limit(1)
-                                            .execute()
-                                        )
+                                        # The modal row already contains the primary-key id,
+                                        # so use that identity first instead of requiring both
+                                        # folios to match in the same lookup.
+                                        comprobacion_id_final = comprobacion_row.get("id")
+                                        if comprobacion_id_final is not None and not pd.isna(comprobacion_id_final):
+                                            try:
+                                                comprobacion_id_final = int(comprobacion_id_final)
+                                            except (TypeError, ValueError):
+                                                pass
+
+                                        if comprobacion_id_final is not None and not pd.isna(comprobacion_id_final):
+                                            comprobacion_final_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                                .eq("id", comprobacion_id_final)
+                                                .limit(1)
+                                                .execute()
+                                            )
+                                        else:
+                                            # Fallback only for legacy rows without id.
+                                            comprobacion_final_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                                .eq("folio_comprobacion", folio_comprobacion_final)
+                                                .limit(1)
+                                                .execute()
+                                            )
 
                                         comprobacion_final_data = (
                                             comprobacion_final_resp.data
@@ -5648,8 +5677,9 @@ if has_viaticos:
 
                                         if not comprobacion_final_data:
                                             st.error(
-                                                f"No se encontró la comprobación exacta de {folio_final}. "
-                                                "No se realizó el cierre ni se envió correo."
+                                                "La comprobación seleccionada no pudo recuperarse de Supabase. "
+                                                f"ID: {comprobacion_id_final} | "
+                                                f"Folio comprobación: {folio_comprobacion_final}"
                                             )
                                             st.stop()
 
@@ -5983,17 +6013,31 @@ if has_viaticos:
                                             # =================================
                                             # DELETE THE EXACT COMPROBACION
                                             # =================================
-                                            # The comprobacion is identified by BOTH
-                                            # folio_solicitud + folio_comprobacion.
-                                            supabase.table(
+                                            # Use the primary-key id from the row that
+                                            # is currently open in the modal.
+                                            comprobacion_id_reapertura = comprobacion_row.get("id")
+                                            if comprobacion_id_reapertura is not None and not pd.isna(comprobacion_id_reapertura):
+                                                try:
+                                                    comprobacion_id_reapertura = int(comprobacion_id_reapertura)
+                                                except (TypeError, ValueError):
+                                                    pass
+
+                                            delete_query = supabase.table(
                                                 "comprobacion_viaje"
-                                            ).delete().eq(
-                                                "folio_solicitud",
-                                                folio_solicitud_rechazo
-                                            ).eq(
-                                                "folio_comprobacion",
-                                                folio_comprobacion_rechazo
-                                            ).execute()
+                                            ).delete()
+
+                                            if comprobacion_id_reapertura is not None and not pd.isna(comprobacion_id_reapertura):
+                                                delete_query = delete_query.eq(
+                                                    "id",
+                                                    comprobacion_id_reapertura
+                                                )
+                                            else:
+                                                delete_query = delete_query.eq(
+                                                    "folio_comprobacion",
+                                                    folio_comprobacion_rechazo
+                                                )
+
+                                            delete_query.execute()
 
                                             # =================================
                                             # REOPEN THE SOLICITUD
@@ -6036,39 +6080,43 @@ if has_viaticos:
                                         ):
 
                                             # =================================
-                                            # CAPTURE THE EXACT RECORDS FIRST
+                                            # RESOLVE THE EXACT COMPROBACION
                                             # =================================
-                                            # Do not rely on the dataframe row for
-                                            # the final update/email. Re-query the
-                                            # exact solicitud + comprobacion that
-                                            # are being reviewed in this modal.
-                                            folio_solicitud_rechazo = str(
-                                                folio_actual
-                                            ).strip()
+                                            # The modal already contains the exact
+                                            # comprobacion row from Supabase, including
+                                            # its primary-key id. Use that id first.
+                                            # Do NOT require folio_solicitud +
+                                            # folio_comprobacion to match in one query.
+                                            comprobacion_id_rechazo = comprobacion_row.get("id")
 
-                                            folio_comprobacion_rechazo = str(
-                                                row.get(
-                                                    "folio_comprobacion",
-                                                    ""
-                                                )
-                                                or ""
-                                            ).strip()
+                                            if comprobacion_id_rechazo is not None and not pd.isna(comprobacion_id_rechazo):
+                                                try:
+                                                    comprobacion_id_rechazo = int(comprobacion_id_rechazo)
+                                                except (TypeError, ValueError):
+                                                    pass
 
-                                            comprobacion_exact_resp = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("*")
-                                                .eq(
-                                                    "folio_solicitud",
-                                                    folio_solicitud_rechazo
+                                            if comprobacion_id_rechazo is not None and not pd.isna(comprobacion_id_rechazo):
+                                                comprobacion_exact_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select("*")
+                                                    .eq("id", comprobacion_id_rechazo)
+                                                    .limit(1)
+                                                    .execute()
                                                 )
-                                                .eq(
-                                                    "folio_comprobacion",
-                                                    folio_comprobacion_rechazo
+                                            else:
+                                                # Fallback only for legacy rows without id.
+                                                folio_comprobacion_rechazo = str(
+                                                    comprobacion_row.get("folio_comprobacion", "") or ""
+                                                ).strip()
+                                                comprobacion_exact_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select("*")
+                                                    .eq("folio_comprobacion", folio_comprobacion_rechazo)
+                                                    .limit(1)
+                                                    .execute()
                                                 )
-                                                .limit(1)
-                                                .execute()
-                                            )
 
                                             comprobacion_exact_data = (
                                                 comprobacion_exact_resp.data
@@ -6078,15 +6126,29 @@ if has_viaticos:
 
                                             if not comprobacion_exact_data:
                                                 st.error(
-                                                    "No se encontró la comprobación "
-                                                    "exacta asociada a esta solicitud. "
-                                                    "No se realizó el rechazo."
+                                                    "La comprobación seleccionada no pudo recuperarse de Supabase. "
+                                                    f"ID: {comprobacion_id_rechazo} | "
+                                                    f"Folio comprobación: {comprobacion_row.get('folio_comprobacion', '')}"
                                                 )
                                                 st.stop()
 
-                                            comprobacion_exact = (
-                                                comprobacion_exact_data[0]
-                                            )
+                                            comprobacion_exact = comprobacion_exact_data[0]
+
+                                            # Use the actual database values from the
+                                            # record we just recovered.
+                                            folio_solicitud_rechazo = str(
+                                                comprobacion_exact.get("folio_solicitud", "") or ""
+                                            ).strip()
+                                            folio_comprobacion_rechazo = str(
+                                                comprobacion_exact.get("folio_comprobacion", "") or ""
+                                            ).strip()
+
+                                            if not folio_solicitud_rechazo:
+                                                st.error(
+                                                    "La comprobación existe, pero no tiene folio_solicitud asociado. "
+                                                    "No se realizó el rechazo."
+                                                )
+                                                st.stop()
 
                                             solicitud_exact_resp = (
                                                 supabase
@@ -6141,12 +6203,8 @@ if has_viaticos:
                                                     "estatus": "Rechazado"
                                                 })
                                                 .eq(
-                                                    "folio_solicitud",
-                                                    folio_solicitud_rechazo
-                                                )
-                                                .eq(
-                                                    "folio_comprobacion",
-                                                    folio_comprobacion_rechazo
+                                                    "id",
+                                                    comprobacion_exact.get("id")
                                                 )
                                                 .execute()
                                             )
