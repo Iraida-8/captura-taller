@@ -6080,99 +6080,307 @@ if has_viaticos:
                                             use_container_width=True
                                         ):
 
-                                            supabase.table(
-                                                "solicitud_viaje"
-                                            ).update(
-                                                {
-                                                    "estatus": "Rechazado",
-                                                }
-                                            ).eq(
-                                                "folio_solicitud",
+                                            # =================================
+                                            # CAPTURE THE EXACT RECORDS FIRST
+                                            # =================================
+                                            # Do not rely on the dataframe row for
+                                            # the final update/email. Re-query the
+                                            # exact solicitud + comprobacion that
+                                            # are being reviewed in this modal.
+                                            folio_solicitud_rechazo = str(
                                                 folio_actual
-                                            ).execute()
+                                            ).strip()
 
-                                            # =================================
-                                            # REJECT THE EXACT COMPROBACION
-                                            # =================================
-                                            # Keep the comprobacion in the database, but
-                                            # change ONLY this exact record to Rechazado.
-                                            comprobacion_id = row.get("id")
-                                            if pd.notna(comprobacion_id):
-                                                try:
-                                                    comprobacion_id = int(comprobacion_id)
-                                                except (TypeError, ValueError):
-                                                    pass
-
-                                            comprobacion_rechazo_update = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .update({"estatus": "Rechazado"})
-                                            )
-
-                                            if pd.notna(comprobacion_id):
-                                                comprobacion_rechazo_update = (
-                                                    comprobacion_rechazo_update.eq(
-                                                        "id",
-                                                        comprobacion_id
-                                                    )
-                                                )
-                                            else:
-                                                comprobacion_rechazo_update = (
-                                                    comprobacion_rechazo_update.eq(
-                                                        "folio_comprobacion",
-                                                        row.get("folio_comprobacion", "")
-                                                    )
-                                                )
-
-                                            comprobacion_rechazo_update.execute()
-
-                                            # Verify the exact record actually changed before
-                                            # sending the rejection email or rerunning the page.
-                                            comprobacion_verificacion = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("id, estatus, folio_solicitud, folio_comprobacion")
-                                            )
-
-                                            if pd.notna(comprobacion_id):
-                                                comprobacion_verificacion = comprobacion_verificacion.eq(
-                                                    "id",
-                                                    comprobacion_id
-                                                )
-                                            else:
-                                                comprobacion_verificacion = comprobacion_verificacion.eq(
+                                            folio_comprobacion_rechazo = str(
+                                                row.get(
                                                     "folio_comprobacion",
-                                                    row.get("folio_comprobacion", "")
+                                                    ""
                                                 )
+                                                or ""
+                                            ).strip()
 
-                                            comprobacion_verificacion_resp = (
-                                                comprobacion_verificacion
+                                            comprobacion_exact_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .eq(
+                                                    "folio_comprobacion",
+                                                    folio_comprobacion_rechazo
+                                                )
                                                 .limit(1)
                                                 .execute()
                                             )
 
-                                            comprobacion_verificacion_data = (
-                                                comprobacion_verificacion_resp.data
-                                                if comprobacion_verificacion_resp.data
+                                            comprobacion_exact_data = (
+                                                comprobacion_exact_resp.data
+                                                if comprobacion_exact_resp.data
+                                                else []
+                                            )
+
+                                            if not comprobacion_exact_data:
+                                                st.error(
+                                                    "No se encontró la comprobación "
+                                                    "exacta asociada a esta solicitud. "
+                                                    "No se realizó el rechazo."
+                                                )
+                                                st.stop()
+
+                                            comprobacion_exact = (
+                                                comprobacion_exact_data[0]
+                                            )
+
+                                            solicitud_exact_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .select("*")
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            solicitud_exact_data = (
+                                                solicitud_exact_resp.data
+                                                if solicitud_exact_resp.data
+                                                else []
+                                            )
+
+                                            if not solicitud_exact_data:
+                                                st.error(
+                                                    "No se encontró la solicitud exacta. "
+                                                    "No se realizó el rechazo."
+                                                )
+                                                st.stop()
+
+                                            solicitud_exact = solicitud_exact_data[0]
+
+                                            # =================================
+                                            # REJECT BOTH RECORDS
+                                            # =================================
+                                            # First reject the solicitud.
+                                            solicitud_rechazo_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .update({
+                                                    "estatus": "Rechazado"
+                                                })
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .execute()
+                                            )
+
+                                            # Then reject the EXACT comprobacion.
+                                            # Use its database id when available.
+                                            comprobacion_id = comprobacion_exact.get(
+                                                "id"
+                                            )
+
+                                            if pd.notna(comprobacion_id):
+                                                try:
+                                                    comprobacion_id = int(
+                                                        comprobacion_id
+                                                    )
+                                                except (TypeError, ValueError):
+                                                    pass
+
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_rechazo_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .update({
+                                                        "estatus": "Rechazado"
+                                                    })
+                                                    .eq(
+                                                        "id",
+                                                        comprobacion_id
+                                                    )
+                                                    .execute()
+                                                )
+                                            else:
+                                                # Fallback still identifies the
+                                                # exact comprobacion by BOTH folios.
+                                                comprobacion_rechazo_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .update({
+                                                        "estatus": "Rechazado"
+                                                    })
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                    .execute()
+                                                )
+
+                                            # =================================
+                                            # VERIFY BOTH DATABASE UPDATES
+                                            # =================================
+                                            solicitud_verify_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .select("folio_solicitud, estatus")
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            if (
+                                                not solicitud_verify_resp.data
+                                                or solicitud_verify_resp.data[0].get(
+                                                    "estatus"
+                                                ) != "Rechazado"
+                                            ):
+                                                st.error(
+                                                    "La solicitud no pudo actualizarse "
+                                                    "a Rechazado. No se envió el correo."
+                                                )
+                                                st.stop()
+
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_verify_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select(
+                                                        "id, estatus, folio_solicitud, "
+                                                        "folio_comprobacion"
+                                                    )
+                                                    .eq(
+                                                        "id",
+                                                        comprobacion_id
+                                                    )
+                                                    .limit(1)
+                                                    .execute()
+                                                )
+                                            else:
+                                                comprobacion_verify_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select(
+                                                        "id, estatus, folio_solicitud, "
+                                                        "folio_comprobacion"
+                                                    )
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                    .limit(1)
+                                                    .execute()
+                                                )
+
+                                            comprobacion_verify_data = (
+                                                comprobacion_verify_resp.data
+                                                if comprobacion_verify_resp.data
                                                 else []
                                             )
 
                                             if (
-                                                not comprobacion_verificacion_data
-                                                or comprobacion_verificacion_data[0].get("estatus") != "Rechazado"
+                                                not comprobacion_verify_data
+                                                or comprobacion_verify_data[0].get(
+                                                    "estatus"
+                                                ) != "Rechazado"
                                             ):
                                                 st.error(
-                                                    "No se pudo actualizar la comprobación exacta a Rechazado. "
-                                                    "La solicitud no se cerró ni se envió el correo."
+                                                    "La comprobación NO quedó en "
+                                                    "Rechazado. No se continuará "
+                                                    "con el correo."
                                                 )
                                                 st.stop()
 
-                                            enviar_notificacion_rechazo("Rechazado")
+                                            # =================================
+                                            # SEND EMAIL USING THE EXACT RECORDS
+                                            # =================================
+                                            # Refresh the exact comprobacion data
+                                            # after the status change so the email
+                                            # cannot use a stale dataframe row.
+                                            comprobacion_email_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                            )
 
-                                            st.session_state.pop(rechazo_key, None)
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_email_resp = (
+                                                    comprobacion_email_resp
+                                                    .eq("id", comprobacion_id)
+                                                )
+                                            else:
+                                                comprobacion_email_resp = (
+                                                    comprobacion_email_resp
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                )
+
+                                            comprobacion_email_resp = (
+                                                comprobacion_email_resp
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            comprobacion_email_data = (
+                                                comprobacion_email_resp.data
+                                                if comprobacion_email_resp.data
+                                                else []
+                                            )
+
+                                            if not comprobacion_email_data:
+                                                st.warning(
+                                                    "Ambos registros quedaron "
+                                                    "Rechazados, pero no se pudo "
+                                                    "recuperar la comprobación para "
+                                                    "enviar el correo."
+                                                )
+                                            else:
+                                                comprobacion_email = (
+                                                    comprobacion_email_data[0]
+                                                )
+
+                                                try:
+                                                    enviar_notificacion_rechazo(
+                                                        "Rechazado"
+                                                    )
+                                                except Exception as e:
+                                                    # The database state must NEVER
+                                                    # be rolled back because email
+                                                    # delivery failed.
+                                                    st.warning(
+                                                        f"Ambos registros quedaron "
+                                                        f"Rechazados, pero no se pudo "
+                                                        f"enviar el correo: {e}"
+                                                    )
+
+                                            st.session_state.pop(
+                                                rechazo_key,
+                                                None
+                                            )
 
                                             log_activity(
-                                                f"Rechazó Comprobación y cerró Solicitud: {folio_actual}",
+                                                f"Rechazó Comprobación y cerró Solicitud: "
+                                                f"{folio_solicitud_rechazo}",
                                                 "Gestión de Viáticos"
                                             )
 
