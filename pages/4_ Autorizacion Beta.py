@@ -5515,72 +5515,66 @@ if has_viaticos:
 
                                     st.rerun()
 
-                                def enviar_notificacion_rechazo(
-                                    estatus_solicitud,
-                                    comprobacion_data=None,
-                                    solicitud_data=None
-                                ):
-                                    comprobacion_email = (
-                                        comprobacion_data
-                                        if comprobacion_data is not None
-                                        else row.to_dict()
-                                    )
-                                    solicitud_email = (
-                                        solicitud_data
-                                        if solicitud_data is not None
-                                        else solicitud_row
-                                    )
+                                def enviar_notificacion_rechazo(estatus_solicitud):
 
-                                    correo_comprobacion = None
-                                    for campo in ("email", "correo", "correo_electronico"):
-                                        valor = str(comprobacion_email.get(campo, "") or "").strip()
-                                        if "@" in valor:
-                                            correo_comprobacion = valor
-                                            break
-
-                                    if not correo_comprobacion:
-                                        correo_comprobacion = obtener_email_usuario(
-                                            comprobacion_email.get("nombre_empleado_solicita", "")
+                                    # =================================
+                                    # GET CREATOR EMAIL
+                                    # =================================
+                                    # For rejection/reopen notifications, the recipient
+                                    # must be the person who actually entered the
+                                    # comprobacion, not the current user and not the
+                                    # original solicitud creator.
+                                    correo_comprobacion = obtener_email_usuario(
+                                        row.get(
+                                            "nombre_empleado_solicita",
+                                            ""
                                         )
+                                    )
 
                                     if not correo_comprobacion:
                                         st.warning(
                                             "No se pudo enviar correo: no se encontró el correo del usuario que ingresó la comprobación."
                                         )
-                                        return False
+                                        return
 
+                                    # =================================
+                                    # SEND EMAIL
+                                    # =================================
                                     try:
+
                                         enviar_correo_estatus_solicitud(
                                             destinatarios=[correo_comprobacion],
-                                            folio_solicitud=solicitud_email.get("folio_solicitud", ""),
-                                            folio_comprobacion=comprobacion_email.get("folio_comprobacion", ""),
+                                            folio_solicitud=solicitud_row.get("folio_solicitud", ""),
+                                            folio_comprobacion=row.get("folio_comprobacion", ""),
                                             estatus=estatus_solicitud,
-                                            empleado=solicitud_email.get("nombre_empleado_solicita", ""),
-                                            empresa_servicio=solicitud_email.get("empresa_brinda_servicio", ""),
-                                            fecha_solicitud=solicitud_email.get("fecha_solicitud", ""),
-                                            fecha_comprobacion=comprobacion_email.get("created_at", ""),
-                                            fecha_inicio=solicitud_email.get("fecha_inicio", ""),
-                                            fecha_fin=solicitud_email.get("fecha_fin", ""),
-                                            empresa_cargo=solicitud_email.get("empresa_cargo_gastos", ""),
-                                            unidad_negocio=solicitud_email.get("unidad_negocio", ""),
-                                            sucursal=solicitud_email.get("sucursal", ""),
-                                            sucursal_especificar=solicitud_email.get("sucursal_especificar", ""),
-                                            nombre_cliente=solicitud_email.get("nombre_cliente", ""),
-                                            folio_sac=solicitud_email.get("folio_sac", ""),
-                                            motivo_viaje=solicitud_email.get("motivo_viaje", ""),
-                                            observaciones=solicitud_email.get("observaciones", ""),
-                                            conceptos=solicitud_email.get("conceptos", []),
-                                            total_estimado=solicitud_email.get("total_estimado", 0),
-                                            total_estimado_usd=solicitud_email.get("total_estimado_usd", 0),
-                                            empleado_comprobacion=comprobacion_email.get("nombre_empleado_solicita", ""),
-                                            observaciones_comprobacion=comprobacion_email.get("observaciones", ""),
-                                            total_comprobado=comprobacion_email.get("total_comprobado", 0),
-                                            total_comprobado_usd=comprobacion_email.get("total_comprobado_usd", 0)
+                                            empleado=solicitud_row.get("nombre_empleado_solicita", ""),
+                                            empresa_servicio=solicitud_row.get("empresa_brinda_servicio", ""),
+                                            fecha_solicitud=solicitud_row.get("fecha_solicitud", ""),
+                                            fecha_comprobacion=row.get("created_at", ""),
+                                            fecha_inicio=solicitud_row.get("fecha_inicio", ""),
+                                            fecha_fin=solicitud_row.get("fecha_fin", ""),
+                                            empresa_cargo=solicitud_row.get("empresa_cargo_gastos", ""),
+                                            unidad_negocio=solicitud_row.get("unidad_negocio", ""),
+                                            sucursal=solicitud_row.get("sucursal", ""),
+                                            sucursal_especificar=solicitud_row.get("sucursal_especificar", ""),
+                                            nombre_cliente=solicitud_row.get("nombre_cliente", ""),
+                                            folio_sac=solicitud_row.get("folio_sac", ""),
+                                            motivo_viaje=solicitud_row.get("motivo_viaje", ""),
+                                            observaciones=solicitud_row.get("observaciones", ""),
+                                            conceptos=solicitud_row.get("conceptos", []),
+                                            total_estimado=solicitud_row.get("total_estimado", 0),
+                                            total_estimado_usd=solicitud_row.get("total_estimado_usd", 0),
+                                            empleado_comprobacion=row.get("nombre_empleado_solicita", ""),
+                                            observaciones_comprobacion=row.get("observaciones", ""),
+                                            total_comprobado=row.get("total_comprobado", 0),
+                                            total_comprobado_usd=row.get("total_comprobado_usd", 0)
                                         )
-                                        return True
+
                                     except Exception as e:
-                                        st.warning(f"No se pudo enviar correo: {e}")
-                                        return False
+
+                                        st.warning(
+                                            f"No se pudo enviar correo: {e}"
+                                        )
 
                                 btn1, btn2 = st.columns(2)
 
@@ -5642,10 +5636,7 @@ if has_viaticos:
                                                 supabase
                                                 .table("comprobacion_viaje")
                                                 .select("*")
-                                                .eq(
-                                                    "folio_comprobacion",
-                                                    row.get("folio_comprobacion", "")
-                                                )
+                                                .eq("folio_solicitud", folio_final)
                                                 .limit(1)
                                                 .execute()
                                             )
@@ -5753,11 +5744,8 @@ if has_viaticos:
                                         else:
                                             comprobacion_email_query = (
                                                 comprobacion_email_query.eq(
-                                                    "folio_comprobacion",
-                                                    comprobacion_final.get(
-                                                        "folio_comprobacion",
-                                                        row.get("folio_comprobacion", "")
-                                                    )
+                                                    "folio_solicitud",
+                                                    folio_final
                                                 )
                                             )
 
@@ -6025,49 +6013,50 @@ if has_viaticos:
                                             ).execute()
 
                                             # =================================
-                                            # REOPEN: SVG -> APROBADO
+                                            # DELETE THE OLD COMPROBACION
                                             # =================================
-                                            # Keep the exact comprobacion data before deleting
-                                            # it, because the email must go to the user who
-                                            # entered this CVG.
-                                            solicitud_reabrir = dict(solicitud_row)
-                                            comprobacion_reabrir = row.to_dict()
-                                            folio_comprobacion_reabrir = str(
-                                                comprobacion_reabrir.get("folio_comprobacion", "") or ""
-                                            ).strip()
+                                            # When reopening the solicitud, the old
+                                            # comprobacion must be completely removed
+                                            # so the user can submit a new one.
+                                            comprobacion_id = row.get("id")
+                                            if pd.notna(comprobacion_id):
+                                                try:
+                                                    comprobacion_id = int(comprobacion_id)
+                                                except (TypeError, ValueError):
+                                                    pass
 
-                                            # 1) Solicitud SVG -> Aprobado
+                                            if pd.notna(comprobacion_id):
+                                                supabase.table(
+                                                    "comprobacion_viaje"
+                                                ).delete().eq(
+                                                    "id",
+                                                    comprobacion_id
+                                                ).execute()
+                                            else:
+                                                supabase.table(
+                                                    "comprobacion_viaje"
+                                                ).delete().eq(
+                                                    "folio_comprobacion",
+                                                    row.get("folio_comprobacion", "")
+                                                ).execute()
+
+                                            # =================================
+                                            # REOPEN THE SOLICITUD
+                                            # =================================
                                             supabase.table(
                                                 "solicitud_viaje"
                                             ).update(
-                                                {"estatus": "Aprobado"}
+                                                {
+                                                    "estatus": "Aprobado",
+                                                }
                                             ).eq(
                                                 "folio_solicitud",
                                                 folio_actual
                                             ).execute()
 
-                                            # 2) Delete ONLY the exact comprobacion CVG.
-                                            if not folio_comprobacion_reabrir:
-                                                st.error(
-                                                    "No se encontró el folio de comprobación. "
-                                                    "No se eliminó la comprobación."
-                                                )
-                                                st.stop()
-
-                                            supabase.table(
-                                                "comprobacion_viaje"
-                                            ).delete().eq(
-                                                "folio_comprobacion",
-                                                folio_comprobacion_reabrir
-                                            ).execute()
-
-                                            # Notify the original comprobacion user that the
-                                            # same solicitud SVG is available for a new CVG.
-                                            enviar_notificacion_rechazo(
-                                                "Aprobado",
-                                                comprobacion_data=comprobacion_reabrir,
-                                                solicitud_data=solicitud_reabrir
-                                            )
+                                            # Notify ONLY the user who originally
+                                            # entered this comprobacion.
+                                            enviar_notificacion_rechazo("Aprobado")
 
                                             st.session_state.pop(rechazo_key, None)
 
@@ -6092,115 +6081,297 @@ if has_viaticos:
                                         ):
 
                                             # =================================
+                                            # CAPTURE THE EXACT RECORDS FIRST
+                                            # =================================
+                                            # Do not rely on the dataframe row for
+                                            # the final update/email. Re-query the
+                                            # exact solicitud + comprobacion that
+                                            # are being reviewed in this modal.
+                                            folio_solicitud_rechazo = str(
+                                                folio_actual
+                                            ).strip()
+
+                                            folio_comprobacion_rechazo = str(
+                                                row.get(
+                                                    "folio_comprobacion",
+                                                    ""
+                                                )
+                                                or ""
+                                            ).strip()
+
+                                            comprobacion_exact_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
+                                                .select("*")
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .eq(
+                                                    "folio_comprobacion",
+                                                    folio_comprobacion_rechazo
+                                                )
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            comprobacion_exact_data = (
+                                                comprobacion_exact_resp.data
+                                                if comprobacion_exact_resp.data
+                                                else []
+                                            )
+
+                                            if not comprobacion_exact_data:
+                                                st.error(
+                                                    "No se encontró la comprobación "
+                                                    "exacta asociada a esta solicitud. "
+                                                    "No se realizó el rechazo."
+                                                )
+                                                st.stop()
+
+                                            comprobacion_exact = (
+                                                comprobacion_exact_data[0]
+                                            )
+
+                                            solicitud_exact_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .select("*")
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
+                                                .limit(1)
+                                                .execute()
+                                            )
+
+                                            solicitud_exact_data = (
+                                                solicitud_exact_resp.data
+                                                if solicitud_exact_resp.data
+                                                else []
+                                            )
+
+                                            if not solicitud_exact_data:
+                                                st.error(
+                                                    "No se encontró la solicitud exacta. "
+                                                    "No se realizó el rechazo."
+                                                )
+                                                st.stop()
+
+                                            solicitud_exact = solicitud_exact_data[0]
+
+                                            # =================================
                                             # REJECT BOTH RECORDS
                                             # =================================
-                                            # SVG identifies the solicitud. CVG identifies
-                                            # the comprobacion. They are intentionally different.
-                                            folio_solicitud_rechazo = str(
-                                                folio_actual or row.get("folio_solicitud", "")
-                                            ).strip()
-                                            folio_comprobacion_rechazo = str(
-                                                row.get("folio_comprobacion", "") or ""
-                                            ).strip()
-
-                                            if not folio_solicitud_rechazo or not folio_comprobacion_rechazo:
-                                                st.error(
-                                                    "No se encontraron los folios de la solicitud y comprobación. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
-
-                                            # 1) Find/update the exact solicitud by SVG folio.
+                                            # First reject the solicitud.
                                             solicitud_rechazo_resp = (
-                                                supabase.table("solicitud_viaje")
-                                                .select("*")
-                                                .eq("folio_solicitud", folio_solicitud_rechazo)
-                                                .limit(1)
+                                                supabase
+                                                .table("solicitud_viaje")
+                                                .update({
+                                                    "estatus": "Rechazado"
+                                                })
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
                                                 .execute()
                                             )
-                                            if not solicitud_rechazo_resp.data:
-                                                st.error(
-                                                    f"No se encontró la solicitud {folio_solicitud_rechazo}. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
 
-                                            # 2) Find/update the exact comprobacion by CVG folio.
-                                            comprobacion_rechazo_resp = (
-                                                supabase.table("comprobacion_viaje")
-                                                .select("*")
-                                                .eq("folio_comprobacion", folio_comprobacion_rechazo)
-                                                .limit(1)
-                                                .execute()
+                                            # Then reject the EXACT comprobacion.
+                                            # Use its database id when available.
+                                            comprobacion_id = comprobacion_exact.get(
+                                                "id"
                                             )
-                                            if not comprobacion_rechazo_resp.data:
-                                                st.error(
-                                                    f"No se encontró la comprobación {folio_comprobacion_rechazo}. "
-                                                    "No se realizó el rechazo."
+
+                                            if pd.notna(comprobacion_id):
+                                                try:
+                                                    comprobacion_id = int(
+                                                        comprobacion_id
+                                                    )
+                                                except (TypeError, ValueError):
+                                                    pass
+
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_rechazo_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .update({
+                                                        "estatus": "Rechazado"
+                                                    })
+                                                    .eq(
+                                                        "id",
+                                                        comprobacion_id
+                                                    )
+                                                    .execute()
                                                 )
-                                                st.stop()
-
-                                            comprobacion_rechazo = comprobacion_rechazo_resp.data[0]
-
-                                            # Safety check: the CVG must belong to this SVG.
-                                            if str(comprobacion_rechazo.get("folio_solicitud", "")).strip() != folio_solicitud_rechazo:
-                                                st.error(
-                                                    "La comprobación seleccionada no pertenece a la solicitud seleccionada. "
-                                                    "No se realizó el rechazo."
+                                            else:
+                                                # Fallback still identifies the
+                                                # exact comprobacion by BOTH folios.
+                                                comprobacion_rechazo_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .update({
+                                                        "estatus": "Rechazado"
+                                                    })
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                    .execute()
                                                 )
-                                                st.stop()
 
-                                            # 3) SVG -> Rechazado.
-                                            supabase.table("solicitud_viaje").update({
-                                                "estatus": "Rechazado"
-                                            }).eq(
-                                                "folio_solicitud", folio_solicitud_rechazo
-                                            ).execute()
-
-                                            # 4) CVG -> Rechazado.
-                                            supabase.table("comprobacion_viaje").update({
-                                                "estatus": "Rechazado"
-                                            }).eq(
-                                                "folio_comprobacion", folio_comprobacion_rechazo
-                                            ).execute()
-
-                                            # 5) Verify BOTH independently.
-                                            solicitud_verify = (
-                                                supabase.table("solicitud_viaje")
+                                            # =================================
+                                            # VERIFY BOTH DATABASE UPDATES
+                                            # =================================
+                                            solicitud_verify_resp = (
+                                                supabase
+                                                .table("solicitud_viaje")
                                                 .select("folio_solicitud, estatus")
-                                                .eq("folio_solicitud", folio_solicitud_rechazo)
+                                                .eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                )
                                                 .limit(1)
                                                 .execute()
                                             )
-                                            comprobacion_verify = (
-                                                supabase.table("comprobacion_viaje")
+
+                                            if (
+                                                not solicitud_verify_resp.data
+                                                or solicitud_verify_resp.data[0].get(
+                                                    "estatus"
+                                                ) != "Rechazado"
+                                            ):
+                                                st.error(
+                                                    "La solicitud no pudo actualizarse "
+                                                    "a Rechazado. No se envió el correo."
+                                                )
+                                                st.stop()
+
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_verify_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select(
+                                                        "id, estatus, folio_solicitud, "
+                                                        "folio_comprobacion"
+                                                    )
+                                                    .eq(
+                                                        "id",
+                                                        comprobacion_id
+                                                    )
+                                                    .limit(1)
+                                                    .execute()
+                                                )
+                                            else:
+                                                comprobacion_verify_resp = (
+                                                    supabase
+                                                    .table("comprobacion_viaje")
+                                                    .select(
+                                                        "id, estatus, folio_solicitud, "
+                                                        "folio_comprobacion"
+                                                    )
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                    .limit(1)
+                                                    .execute()
+                                                )
+
+                                            comprobacion_verify_data = (
+                                                comprobacion_verify_resp.data
+                                                if comprobacion_verify_resp.data
+                                                else []
+                                            )
+
+                                            if (
+                                                not comprobacion_verify_data
+                                                or comprobacion_verify_data[0].get(
+                                                    "estatus"
+                                                ) != "Rechazado"
+                                            ):
+                                                st.error(
+                                                    "La comprobación NO quedó en "
+                                                    "Rechazado. No se continuará "
+                                                    "con el correo."
+                                                )
+                                                st.stop()
+
+                                            # =================================
+                                            # SEND EMAIL USING THE EXACT RECORDS
+                                            # =================================
+                                            # Refresh the exact comprobacion data
+                                            # after the status change so the email
+                                            # cannot use a stale dataframe row.
+                                            comprobacion_email_resp = (
+                                                supabase
+                                                .table("comprobacion_viaje")
                                                 .select("*")
-                                                .eq("folio_comprobacion", folio_comprobacion_rechazo)
+                                            )
+
+                                            if pd.notna(comprobacion_id):
+                                                comprobacion_email_resp = (
+                                                    comprobacion_email_resp
+                                                    .eq("id", comprobacion_id)
+                                                )
+                                            else:
+                                                comprobacion_email_resp = (
+                                                    comprobacion_email_resp
+                                                    .eq(
+                                                        "folio_solicitud",
+                                                        folio_solicitud_rechazo
+                                                    )
+                                                    .eq(
+                                                        "folio_comprobacion",
+                                                        folio_comprobacion_rechazo
+                                                    )
+                                                )
+
+                                            comprobacion_email_resp = (
+                                                comprobacion_email_resp
                                                 .limit(1)
                                                 .execute()
                                             )
 
-                                            if (
-                                                not solicitud_verify.data
-                                                or solicitud_verify.data[0].get("estatus") != "Rechazado"
-                                            ):
-                                                st.error("La solicitud no pudo actualizarse a Rechazado.")
-                                                st.stop()
-
-                                            if (
-                                                not comprobacion_verify.data
-                                                or comprobacion_verify.data[0].get("estatus") != "Rechazado"
-                                            ):
-                                                st.error("La comprobación no pudo actualizarse a Rechazado.")
-                                                st.stop()
-
-                                            # 6) Email is attempted only AFTER both records
-                                            # are confirmed Rechazado.
-                                            enviar_notificacion_rechazo(
-                                                "Rechazado",
-                                                comprobacion_data=comprobacion_verify.data[0],
-                                                solicitud_data=solicitud_rechazo_resp.data[0]
+                                            comprobacion_email_data = (
+                                                comprobacion_email_resp.data
+                                                if comprobacion_email_resp.data
+                                                else []
                                             )
+
+                                            if not comprobacion_email_data:
+                                                st.warning(
+                                                    "Ambos registros quedaron "
+                                                    "Rechazados, pero no se pudo "
+                                                    "recuperar la comprobación para "
+                                                    "enviar el correo."
+                                                )
+                                            else:
+                                                comprobacion_email = (
+                                                    comprobacion_email_data[0]
+                                                )
+
+                                                try:
+                                                    enviar_notificacion_rechazo(
+                                                        "Rechazado"
+                                                    )
+                                                except Exception as e:
+                                                    # The database state must NEVER
+                                                    # be rolled back because email
+                                                    # delivery failed.
+                                                    st.warning(
+                                                        f"Ambos registros quedaron "
+                                                        f"Rechazados, pero no se pudo "
+                                                        f"enviar el correo: {e}"
+                                                    )
 
                                             st.session_state.pop(
                                                 rechazo_key,
