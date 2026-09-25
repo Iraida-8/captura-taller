@@ -3011,7 +3011,26 @@ if has_viaticos:
                     )
 
                     if response.data and len(response.data) > 0:
-                        return response.data[0].get("email")
+                        email = response.data[0].get("email")
+                        if email:
+                            return email
+
+                    # Stored employee names can differ only by capitalization or
+                    # surrounding whitespace. Resolve the same stored identity
+                    # without using the current UI/user session.
+                    response = (
+                        supabase
+                        .table("profiles")
+                        .select("email")
+                        .ilike("full_name", valor)
+                        .limit(1)
+                        .execute()
+                    )
+
+                    if response.data and len(response.data) > 0:
+                        email = response.data[0].get("email")
+                        if email:
+                            return email
 
                 except Exception as e:
                     st.warning(f"Error obteniendo email: {e}")
@@ -5677,23 +5696,69 @@ if has_viaticos:
                                     ):
 
                                         # =================================
-                                        # CAPTURE THE EXACT RECORDS BEING
-                                        # APPROVED BEFORE CHANGING STATUS
+                                        # RESOLVE THE EXACT COMPROBACION FROM DB
                                         # =================================
-                                        folio_final = str(
-                                            solicitud_row.get(
-                                                "folio_solicitud",
-                                                folio_actual
+                                        # The comprobacion primary key is the identity of
+                                        # the record opened in this modal. Do not compare
+                                        # UI folios against each other; get the folio_solicitud
+                                        # directly from the stored comprobacion row.
+                                        comprobacion_id_final = comprobacion_row.get("id")
+
+                                        if comprobacion_id_final is None or pd.isna(comprobacion_id_final):
+                                            st.error(
+                                                "La comprobación seleccionada no tiene un ID válido en Supabase. "
+                                                "No se realizó el cierre ni se envió correo."
                                             )
-                                            or ""
+                                            st.stop()
+
+                                        try:
+                                            comprobacion_id_final = int(comprobacion_id_final)
+                                        except (TypeError, ValueError):
+                                            st.error(
+                                                f"El ID de la comprobación seleccionada no es válido: {comprobacion_id_final}. "
+                                                "No se realizó el cierre ni se envió correo."
+                                            )
+                                            st.stop()
+
+                                        comprobacion_final_resp = (
+                                            supabase
+                                            .table("comprobacion_viaje")
+                                            .select("*")
+                                            .eq("id", comprobacion_id_final)
+                                            .limit(1)
+                                            .execute()
+                                        )
+
+                                        comprobacion_final_data = (
+                                            comprobacion_final_resp.data
+                                            if comprobacion_final_resp.data
+                                            else []
+                                        )
+
+                                        if not comprobacion_final_data:
+                                            st.error(
+                                                f"No se encontró la comprobación seleccionada (ID {comprobacion_id_final}) en Supabase. "
+                                                "No se realizó el cierre ni se envió correo."
+                                            )
+                                            st.stop()
+
+                                        comprobacion_final = comprobacion_final_data[0]
+
+                                        # The solicitud folio comes ONLY from the stored
+                                        # comprobacion record.
+                                        folio_final = str(
+                                            comprobacion_final.get("folio_solicitud", "") or ""
                                         ).strip()
                                         folio_comprobacion_final = str(
-                                            comprobacion_row.get(
-                                                "folio_comprobacion",
-                                                ""
-                                            )
-                                            or ""
+                                            comprobacion_final.get("folio_comprobacion", "") or ""
                                         ).strip()
+
+                                        if not folio_final:
+                                            st.error(
+                                                "La comprobación seleccionada no tiene folio_solicitud almacenado. "
+                                                "No se realizó el cierre ni se envió correo."
+                                            )
+                                            st.stop()
 
                                         solicitud_final_resp = (
                                             supabase
@@ -5712,72 +5777,12 @@ if has_viaticos:
 
                                         if not solicitud_final_data:
                                             st.error(
-                                                f"No se encontró la solicitud exacta {folio_final}. "
+                                                f"No se encontró la solicitud {folio_final} asociada a la comprobación almacenada. "
                                                 "No se realizó el cierre ni se envió correo."
                                             )
                                             st.stop()
 
                                         solicitud_final = solicitud_final_data[0]
-
-                                        # Use the EXACT comprobacion being viewed.
-                                        # The modal row already contains the primary-key id,
-                                        # so use that identity first instead of requiring both
-                                        # folios to match in the same lookup.
-                                        comprobacion_id_final = comprobacion_row.get("id")
-                                        if comprobacion_id_final is not None and not pd.isna(comprobacion_id_final):
-                                            try:
-                                                comprobacion_id_final = int(comprobacion_id_final)
-                                            except (TypeError, ValueError):
-                                                pass
-
-                                        if comprobacion_id_final is not None and not pd.isna(comprobacion_id_final):
-                                            comprobacion_final_resp = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("*")
-                                                .eq("id", comprobacion_id_final)
-                                                .limit(1)
-                                                .execute()
-                                            )
-                                        else:
-                                            # Fallback only for legacy rows without id.
-                                            comprobacion_final_resp = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("*")
-                                                .eq("folio_comprobacion", folio_comprobacion_final)
-                                                .limit(1)
-                                                .execute()
-                                            )
-
-                                        comprobacion_final_data = (
-                                            comprobacion_final_resp.data
-                                            if comprobacion_final_resp.data
-                                            else []
-                                        )
-
-                                        if not comprobacion_final_data:
-                                            st.error(
-                                                "La comprobación seleccionada no pudo recuperarse de Supabase. "
-                                                f"ID: {comprobacion_id_final} | "
-                                                f"Folio comprobación: {folio_comprobacion_final}"
-                                            )
-                                            st.stop()
-
-                                        comprobacion_final = comprobacion_final_data[0]
-
-                                        # Safety check: never close/send an email
-                                        # using a record from another solicitud.
-                                        if (
-                                            str(comprobacion_final.get("folio_solicitud", "")).strip() != folio_final
-                                            or str(comprobacion_final.get("folio_comprobacion", "")).strip() != folio_comprobacion_final
-                                        ):
-                                            st.error(
-                                                "La comprobación seleccionada no corresponde "
-                                                "exactamente a la solicitud y comprobación que se están cerrando. "
-                                                "No se realizó el cierre ni se envió correo."
-                                            )
-                                            st.stop()
 
                                         # =================================
                                         # CLOSE ONLY THIS SOLICITUD +
@@ -5794,13 +5799,12 @@ if has_viaticos:
                                             folio_final
                                         ).execute()
 
-                                        # Update ONLY the comprobacion linked by BOTH folios.
+                                        # Update ONLY the exact comprobacion selected.
                                         (
                                             supabase
                                             .table("comprobacion_viaje")
                                             .update({"estatus": "Concluido"})
-                                            .eq("folio_solicitud", folio_final)
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
+                                            .eq("id", comprobacion_id_final)
                                             .execute()
                                         )
 
@@ -5823,8 +5827,7 @@ if has_viaticos:
                                             supabase
                                             .table("comprobacion_viaje")
                                             .select("*")
-                                            .eq("folio_solicitud", folio_final)
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
+                                            .eq("id", comprobacion_id_final)
                                             .limit(1)
                                             .execute()
                                         )
@@ -6401,7 +6404,8 @@ if has_viaticos:
 
                                                 try:
                                                     enviar_notificacion_rechazo(
-                                                        "Rechazado"
+                                                        "Rechazado",
+                                                        comprobacion_verify_data[0].get("id")
                                                     )
                                                 except Exception as e:
                                                     # The database state must NEVER
