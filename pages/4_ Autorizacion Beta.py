@@ -5624,22 +5624,49 @@ if has_viaticos:
 
                                     solicitud_email = solicitud_email_data[0]
 
-                                    correo_comprobacion = obtener_email_usuario(
-                                        comprobacion_email.get(
-                                            "nombre_empleado_solicita",
-                                            ""
+                                    # =================================
+                                    # BUILD THE COMPLETE RECIPIENT LIST
+                                    # Use nombre_empleado_solicita from the
+                                    # solicitud first. If it is blank, fall
+                                    # back to the comprobacion record.
+                                    # =================================
+                                    nombre_empleado_email = (
+                                        clean(
+                                            solicitud_email.get(
+                                                "nombre_empleado_solicita",
+                                                ""
+                                            )
+                                        )
+                                        or clean(
+                                            comprobacion_email.get(
+                                                "nombre_empleado_solicita",
+                                                ""
+                                            )
                                         )
                                     )
 
-                                    if not correo_comprobacion:
+                                    correo_creador = obtener_email_usuario(
+                                        nombre_empleado_email
+                                    )
+
+                                    if not correo_creador:
                                         st.warning(
-                                            "No se pudo enviar correo: no se encontró el correo del usuario que ingresó la comprobación."
+                                            "No se pudo enviar correo: no se encontró el correo del usuario en nombre_empleado_solicita de solicitud ni comprobación."
                                         )
                                         return
 
+                                    destinatarios = construir_destinatarios(
+                                        empresa=solicitud_email.get(
+                                            "empresa_cargo_gastos",
+                                            ""
+                                        ),
+                                        email_usuario_actual=email_usuario,
+                                        correo_creador=correo_creador
+                                    )
+
                                     try:
                                         enviar_correo_estatus_solicitud(
-                                            destinatarios=[correo_comprobacion],
+                                            destinatarios=destinatarios,
                                             folio_solicitud=solicitud_email.get("folio_solicitud", ""),
                                             folio_comprobacion=comprobacion_email.get("folio_comprobacion", ""),
                                             estatus=estatus_solicitud,
@@ -5845,13 +5872,27 @@ if has_viaticos:
 
                                         # =================================
                                         # GET CREATOR EMAIL
+                                        # Use solicitud first; if blank,
+                                        # fall back to comprobacion.
                                         # =================================
-                                        correo_creador = (
-                                            obtener_email_usuario(
+                                        nombre_empleado_email = (
+                                            clean(
                                                 solicitud_email.get(
                                                     "nombre_empleado_solicita",
                                                     ""
                                                 )
+                                            )
+                                            or clean(
+                                                comprobacion_email.get(
+                                                    "nombre_empleado_solicita",
+                                                    ""
+                                                )
+                                            )
+                                        )
+
+                                        correo_creador = (
+                                            obtener_email_usuario(
+                                                nombre_empleado_email
                                             )
                                         )
 
