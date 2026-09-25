@@ -4281,7 +4281,7 @@ if has_viaticos:
                             destinatarios = construir_destinatarios(
 
                                 empresa=row.get(
-                                    "empresa_brinda_servicio",
+                                    "empresa_cargo_gastos",
                                     ""
                                 ),
 
@@ -4379,7 +4379,7 @@ if has_viaticos:
                             destinatarios = construir_destinatarios(
 
                                 empresa=row.get(
-                                    "empresa_brinda_servicio",
+                                    "empresa_cargo_gastos",
                                     ""
                                 ),
 
@@ -5801,7 +5801,7 @@ if has_viaticos:
 
                                         destinatarios = construir_destinatarios(
                                             empresa=solicitud_email.get(
-                                                "empresa_brinda_servicio",
+                                                "empresa_cargo_gastos",
                                                 ""
                                             ),
                                             email_usuario_actual=email_usuario,
