@@ -2933,60 +2933,70 @@ if has_viaticos:
                     print(e)
 
             # =================================
-            # EMAIL CONFIG
+            # EMAIL CONFIG - SUPABASE
             # =================================
 
-            EMAILS_FIJOS = [
+            EMAIL_TEST_MODE = False
+            EMAIL_TEST_RECIPIENT = (
+                "aldo.sanchez@palosgarzalogistics.com"
+            )
 
-                "Maria.garcia@palosgarza.com",
+            def obtener_destinatarios(empresa):
+                """
+                Obtiene los destinatarios desde lista_correo_viaticos.
 
-                "practicas.auditoria@palosgarzalogistics.com"
-            ]
+                Reglas:
+                - Usa exactamente el valor de empresa recibido.
+                - Incluye siempre los registros cuya empresa sea "TODAS".
+                - No usa aliases ni listas hardcodeadas.
+                - Elimina correos duplicados.
+                """
 
-            EMAILS_EMPRESA = {
+                if EMAIL_TEST_MODE:
+                    return [EMAIL_TEST_RECIPIENT]
 
-                # SET FREIGHT is stored in solicitud_viaje as
-                # "SET FREIGHT", while some older records/configuration
-                # use "SET FREIGHT INTERNATIONAL". Both must route to
-                # the same recipients.
-                "SET FREIGHT": [
+                empresa_normalizada = str(
+                    empresa or ""
+                ).strip().upper()
 
-                    "karina.colina@palosgarza.com",
+                if not empresa_normalizada:
+                    return []
 
-                    "cindy.gonzalez@palosgarza.com"
-                ],
+                try:
+                    response = (
+                        supabase
+                        .table("lista_correo_viaticos")
+                        .select("email, empresa")
+                        .in_(
+                            "empresa",
+                            [
+                                empresa_normalizada,
+                                "TODAS"
+                            ]
+                        )
+                        .execute()
+                    )
 
-                "SET FREIGHT INTERNATIONAL": [
+                    destinatarios = []
 
-                    "karina.colina@palosgarza.com",
+                    for row in response.data or []:
+                        email = str(
+                            row.get("email") or ""
+                        ).strip()
 
-                    "cindy.gonzalez@palosgarza.com"
-                ],
+                        if email:
+                            destinatarios.append(email)
 
-                "LINCOLN FREIGHT": [
+                    return list(
+                        dict.fromkeys(destinatarios)
+                    )
 
-                    "karina.colina@palosgarza.com",
-
-                    "corina@palosgarza.com",
-
-                    "ivonne.hernandez@palosgarza.com"
-                ],
-
-                "PICUS": [
-
-                    "argelia.salinas@palosgarza.com"
-                ],
-
-                "IGLOO TRANSPORT": [
-
-                    "agustin.rodriguez@palosgarza.com"
-                ],
-
-                "SET LOGIS PLUS": [
-
-                    "juan.santos@palosgarza.com"
-                ]
-            }
+                except Exception as e:
+                    st.warning(
+                        "No se pudo consultar la lista de correo "
+                        f"de viáticos: {e}"
+                    )
+                    return []
 
             # =================================
             # GET EMAIL FROM PROFILE
@@ -3038,13 +3048,8 @@ if has_viaticos:
                 return None
 
             # =================================
-            # EMAIL TEST MODE
+            # BUILD EMAIL RECIPIENTS
             # =================================
-
-            EMAIL_TEST_MODE = False
-            EMAIL_TEST_RECIPIENT = (
-                "aldo.sanchez@palosgarzalogistics.com"
-            )
 
             def construir_destinatarios(
                 empresa,
@@ -3067,57 +3072,17 @@ if has_viaticos:
                     correo_creador
                     and correo_creador not in destinatarios
                 ):
-
                     destinatarios.append(
                         correo_creador
                     )
 
                 # =================================
-                # FIXED EMAILS
+                # SUPABASE EMAIL ROUTING
                 # =================================
 
-                for correo in EMAILS_FIJOS:
+                for correo in obtener_destinatarios(empresa):
 
                     if correo not in destinatarios:
-
-                        destinatarios.append(correo)
-
-                # =================================
-                # CONDITIONAL EMAILS
-                # =================================
-
-                empresa = str(
-                    empresa or ""
-                ).strip().upper()
-
-                # Normalize company aliases used by the database and the
-                # email routing configuration. In particular, solicitud_viaje
-                # can contain "SET FREIGHT" while the legacy configuration
-                # used "SET FREIGHT INTERNATIONAL".
-                empresa_alias = {
-                    "SET FREIGHT": "SET FREIGHT",
-                    "SET FREIGHT INTERNATIONAL": "SET FREIGHT INTERNATIONAL",
-                    "LINCOLN": "LINCOLN FREIGHT",
-                    "IGLOO": "IGLOO TRANSPORT",
-                    "SET LOGIS": "SET LOGIS PLUS",
-                }
-
-                empresa_normalizada = empresa_alias.get(
-                    empresa,
-                    empresa
-                )
-
-                correos_empresa = (
-                    EMAILS_EMPRESA.get(
-                        empresa_normalizada,
-                        []
-                    )
-                )
-
-                for correo in correos_empresa:
-
-                    if correo not in destinatarios:
-
                         destinatarios.append(correo)
 
                 return destinatarios
