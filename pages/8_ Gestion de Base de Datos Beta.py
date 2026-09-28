@@ -273,6 +273,54 @@ df_tc = load_table("tc_mensual")
 df_directorio = load_table("directorio_auxilio_carretero")
 df_directorio_911 = load_table("directorio_auxilio_carretero_911")
 df_lista_correo = load_table("lista_correo_viaticos") if is_admin else pd.DataFrame()
+
+# Normalize the email-routing table to the canonical schema used by this editor.
+# Canonical columns: id, name, email, empresa.
+if is_admin:
+    if not df_lista_correo.empty:
+        df_lista_correo.columns = [
+            str(c).strip().lower().replace(" ", "_")
+            for c in df_lista_correo.columns
+        ]
+
+        lista_aliases = {
+            "nombre": "name",
+            "nombre_destinatario": "name",
+            "nombre_completo": "name",
+            "destinatario": "name",
+            "correo": "email",
+            "correo_electronico": "email",
+            "correo_electrónico": "email",
+            "email_address": "email",
+            "company": "empresa",
+            "compania": "empresa",
+            "compañia": "empresa",
+            "empresa_nombre": "empresa",
+        }
+
+        for old_col, new_col in lista_aliases.items():
+            if old_col in df_lista_correo.columns and new_col not in df_lista_correo.columns:
+                df_lista_correo = df_lista_correo.rename(
+                    columns={old_col: new_col}
+                )
+
+    # Prevent a KeyError if the table is empty or its current schema is
+    # missing one of the editor columns.
+    for required_col in ["id", "name", "email", "empresa"]:
+        if required_col not in df_lista_correo.columns:
+            df_lista_correo[required_col] = pd.Series(
+                index=df_lista_correo.index,
+                dtype="object",
+            )
+
+    df_lista_correo = df_lista_correo[
+        ["id", "name", "email", "empresa"]
+        + [
+            c for c in df_lista_correo.columns
+            if c not in {"id", "name", "email", "empresa"}
+        ]
+    ]
+
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
