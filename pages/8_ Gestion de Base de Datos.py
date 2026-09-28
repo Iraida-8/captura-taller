@@ -11,8 +11,8 @@ import numpy as np
 # RELEASE CHANNEL
 # =================================
 
-#APP_CHANNEL = "BETA"
-APP_CHANNEL = "RELEASE"
+APP_CHANNEL = "BETA"
+#APP_CHANNEL = "RELEASE"
 
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
@@ -86,6 +86,7 @@ if is_admin:
         tab_proveedores,
         tab_tc,
         tab_directorio,
+        tab_lista_correo,
         tab_admin,
         tab_audit,
     ) = st.tabs([
@@ -94,6 +95,7 @@ if is_admin:
         "Proveedores IVA",
         "TC Mensual",
         "Directorio Auxilio Carretero",
+        "📧 Lista Correo Viáticos",
         "👤 Administración de Usuarios",
         "📋 Audit",
     ])
@@ -270,6 +272,55 @@ df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
 df_directorio = load_table("directorio_auxilio_carretero")
 df_directorio_911 = load_table("directorio_auxilio_carretero_911")
+df_lista_correo = load_table("lista_correo_viaticos") if is_admin else pd.DataFrame()
+
+# Normalize the email-routing table to the canonical schema used by this editor.
+# Canonical columns: id, name, email, empresa.
+if is_admin:
+    if not df_lista_correo.empty:
+        df_lista_correo.columns = [
+            str(c).strip().lower().replace(" ", "_")
+            for c in df_lista_correo.columns
+        ]
+
+        lista_aliases = {
+            "nombre": "name",
+            "nombre_destinatario": "name",
+            "nombre_completo": "name",
+            "destinatario": "name",
+            "correo": "email",
+            "correo_electronico": "email",
+            "correo_electrónico": "email",
+            "email_address": "email",
+            "company": "empresa",
+            "compania": "empresa",
+            "compañia": "empresa",
+            "empresa_nombre": "empresa",
+        }
+
+        for old_col, new_col in lista_aliases.items():
+            if old_col in df_lista_correo.columns and new_col not in df_lista_correo.columns:
+                df_lista_correo = df_lista_correo.rename(
+                    columns={old_col: new_col}
+                )
+
+    # Prevent a KeyError if the table is empty or its current schema is
+    # missing one of the editor columns.
+    for required_col in ["id", "name", "email", "empresa"]:
+        if required_col not in df_lista_correo.columns:
+            df_lista_correo[required_col] = pd.Series(
+                index=df_lista_correo.index,
+                dtype="object",
+            )
+
+    df_lista_correo = df_lista_correo[
+        ["id", "name", "email", "empresa"]
+        + [
+            c for c in df_lista_correo.columns
+            if c not in {"id", "name", "email", "empresa"}
+        ]
+    ]
+
 df_profiles = load_table("profiles") if is_admin else pd.DataFrame()
 df_activity = load_table("user_activity_log") if is_admin else pd.DataFrame()
 df_audit_log = load_table("audit_log") if is_admin else pd.DataFrame()
@@ -3073,6 +3124,628 @@ with tab_directorio:
                     )
 
                     st.rerun()
+
+# ==========================================
+# LISTA CORREO VIÁTICOS
+# ==========================================
+
+if is_admin:
+
+    with tab_lista_correo:
+
+        st.subheader("Lista de Correo Viáticos")
+
+        lista_correo_columns = [
+            "id",
+            "name",
+            "email",
+            "empresa",
+        ]
+
+        lista_correo_labels = {
+            "id": "ID",
+            "name": "Nombre",
+            "email": "Correo electrónico",
+            "empresa": "Empresa",
+        }
+
+        lista_correo_empresas = [
+            "TODAS",
+            "SET FREIGHT",
+            "LINCOLN",
+            "PICUS",
+            "IGLOO",
+            "SET LOGIS PLUS",
+        ]
+
+        # ==========================================
+        # DOWNLOAD TABLE
+        # ==========================================
+
+        excel_buffer = BytesIO()
+
+        df_lista_correo_download = (
+            df_lista_correo.reindex(columns=lista_correo_columns)
+            if not df_lista_correo.empty
+            else pd.DataFrame(columns=lista_correo_columns)
+        )
+
+        df_lista_correo_download = df_lista_correo_download.rename(
+            columns=lista_correo_labels
+        )
+
+        with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+            df_lista_correo_download.to_excel(
+                writer,
+                index=False,
+                sheet_name="Lista Correo Viáticos",
+            )
+
+        excel_buffer.seek(0)
+
+        st.download_button(
+            "📥 Descargar Tabla",
+            data=excel_buffer,
+            file_name="Lista_Correo_Viaticos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+        )
+
+        st.divider()
+
+        # ==========================================
+        # TABLE
+        # ==========================================
+
+        st.dataframe(
+            df_lista_correo_download,
+            use_container_width=True,
+            hide_index=True,
+            height=400,
+        )
+
+        st.divider()
+
+        tab_lista_add, tab_lista_edit, tab_lista_delete, tab_lista_replace = st.tabs([
+            "➕ Agregar Registro",
+            "✏️ Modificar Registro",
+            "🗑 Eliminar Registro",
+            "🔄 Reemplazar Tabla",
+        ])
+
+        # =====================================================
+        # ADD
+        # =====================================================
+
+        with tab_lista_add:
+
+            with st.form("add_lista_correo_viaticos"):
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    name = st.text_input("Nombre")
+
+                with col2:
+                    email = st.text_input("Correo electrónico")
+
+                with col3:
+                    empresa = st.selectbox(
+                        "Empresa",
+                        lista_correo_empresas,
+                        index=0,
+                        help="Selecciona TODAS para un destinatario común a todas las empresas.",
+                        key="add_lista_correo_empresa",
+                    )
+
+                submitted = st.form_submit_button(
+                    "Agregar Registro",
+                    use_container_width=True,
+                )
+
+                if submitted:
+
+                    name_clean = name.strip()
+                    email_clean = email.strip()
+                    empresa_clean = empresa.strip().upper()
+
+                    duplicate = df_lista_correo[
+                        (
+                            df_lista_correo["email"]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                            .str.lower()
+                            == email_clean.lower()
+                        )
+                        & (
+                            df_lista_correo["empresa"]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                            .str.upper()
+                            == empresa_clean
+                        )
+                    ]
+
+                    if not name_clean:
+                        st.error("El nombre es obligatorio.")
+
+                    elif not email_clean:
+                        st.error("El correo electrónico es obligatorio.")
+
+                    elif "@" not in email_clean:
+                        st.error("Ingresa un correo electrónico válido.")
+
+                    elif not empresa_clean:
+                        st.error("La empresa es obligatoria.")
+
+                    elif not duplicate.empty:
+                        st.error(
+                            "Ya existe un registro con ese correo y empresa."
+                        )
+
+                    else:
+
+                        supabase.table(
+                            "lista_correo_viaticos"
+                        ).insert({
+                            "name": name_clean,
+                            "email": email_clean,
+                            "empresa": empresa_clean,
+                        }).execute()
+
+                        log_action(
+                            "INSERT",
+                            "lista_correo_viaticos",
+                            email_clean,
+                            f"Agregó destinatario {email_clean} - {empresa_clean}",
+                        )
+
+                        st.cache_data.clear()
+                        st.success("Registro agregado correctamente.")
+                        st.rerun()
+
+        # =====================================================
+        # EDIT
+        # =====================================================
+
+        with tab_lista_edit:
+
+            if df_lista_correo.empty:
+
+                st.info("No existen registros en la lista de correo.")
+
+            else:
+
+                df_lista_edit = df_lista_correo.copy()
+
+                df_lista_edit["display"] = (
+                    df_lista_edit["id"].astype(str)
+                    + " — "
+                    + df_lista_edit["name"].fillna("").astype(str)
+                    + " — "
+                    + df_lista_edit["email"].fillna("").astype(str)
+                    + " — "
+                    + df_lista_edit["empresa"].fillna("").astype(str)
+                )
+
+                selected_display = st.selectbox(
+                    "Selecciona el registro",
+                    df_lista_edit["display"].tolist(),
+                    key="edit_lista_correo_viaticos",
+                )
+
+                row = df_lista_edit[
+                    df_lista_edit["display"] == selected_display
+                ].iloc[0]
+
+                def _str_lista_correo(value):
+                    if pd.isna(value):
+                        return ""
+                    return str(value)
+
+                with st.form("edit_lista_correo_viaticos_form"):
+
+                    st.markdown(
+                        f"##### Modificando: `{row['email']}`"
+                    )
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        name = st.text_input(
+                            "Nombre",
+                            value=_str_lista_correo(row["name"]),
+                        )
+
+                    with col2:
+                        email = st.text_input(
+                            "Correo electrónico",
+                            value=_str_lista_correo(row["email"]),
+                        )
+
+                    with col3:
+                        empresa_actual = _str_lista_correo(row["empresa"]).strip().upper()
+                        empresa_index = (
+                            lista_correo_empresas.index(empresa_actual)
+                            if empresa_actual in lista_correo_empresas
+                            else 0
+                        )
+
+                        empresa = st.selectbox(
+                            "Empresa",
+                            lista_correo_empresas,
+                            index=empresa_index,
+                            help="Selecciona TODAS para un destinatario común a todas las empresas.",
+                            key="edit_lista_correo_empresa",
+                        )
+
+                    submitted = st.form_submit_button(
+                        "Guardar Cambios",
+                        use_container_width=True,
+                    )
+
+                    if submitted:
+
+                        name_clean = name.strip()
+                        email_clean = email.strip()
+                        empresa_clean = empresa.strip().upper()
+
+                        duplicate = df_lista_correo[
+                            (
+                                df_lista_correo["id"].astype(str)
+                                != str(row["id"])
+                            )
+                            & (
+                                df_lista_correo["email"]
+                                .fillna("")
+                                .astype(str)
+                                .str.strip()
+                                .str.lower()
+                                == email_clean.lower()
+                            )
+                            & (
+                                df_lista_correo["empresa"]
+                                .fillna("")
+                                .astype(str)
+                                .str.strip()
+                                .str.upper()
+                                == empresa_clean
+                            )
+                        ]
+
+                        if not name_clean:
+                            st.error("El nombre es obligatorio.")
+
+                        elif not email_clean:
+                            st.error("El correo electrónico es obligatorio.")
+
+                        elif "@" not in email_clean:
+                            st.error("Ingresa un correo electrónico válido.")
+
+                        elif not empresa_clean:
+                            st.error("La empresa es obligatoria.")
+
+                        elif not duplicate.empty:
+                            st.error(
+                                "Ya existe otro registro con ese correo y empresa."
+                            )
+
+                        else:
+
+                            update_data = {
+                                "name": name_clean,
+                                "email": email_clean,
+                                "empresa": empresa_clean,
+                            }
+
+                            supabase.table(
+                                "lista_correo_viaticos"
+                            ).update(
+                                update_data
+                            ).eq(
+                                "id", row["id"]
+                            ).execute()
+
+                            log_action(
+                                "UPDATE",
+                                "lista_correo_viaticos",
+                                str(row["id"]),
+                                f"Modificó destinatario {email_clean} - {empresa_clean}",
+                            )
+
+                            st.cache_data.clear()
+                            st.success("Registro actualizado correctamente.")
+                            st.rerun()
+
+        # =====================================================
+        # DELETE
+        # =====================================================
+
+        with tab_lista_delete:
+
+            if df_lista_correo.empty:
+
+                st.info("No existen registros en la lista de correo.")
+
+            else:
+
+                df_lista_delete = df_lista_correo.copy()
+
+                df_lista_delete["display"] = (
+                    df_lista_delete["id"].astype(str)
+                    + " — "
+                    + df_lista_delete["name"].fillna("").astype(str)
+                    + " — "
+                    + df_lista_delete["email"].fillna("").astype(str)
+                    + " — "
+                    + df_lista_delete["empresa"].fillna("").astype(str)
+                )
+
+                selected_display = st.selectbox(
+                    "Selecciona el registro",
+                    df_lista_delete["display"].tolist(),
+                    key="delete_lista_correo_viaticos",
+                )
+
+                row = df_lista_delete[
+                    df_lista_delete["display"] == selected_display
+                ].iloc[0]
+
+                st.warning(
+                    f"⚠️ Se eliminará permanentemente el registro "
+                    f"**{row['email']} — {row['empresa']}**."
+                )
+
+                if st.button(
+                    "🗑 Eliminar Registro",
+                    type="primary",
+                    use_container_width=True,
+                    key="delete_lista_correo_viaticos_button",
+                ):
+
+                    supabase.table(
+                        "lista_correo_viaticos"
+                    ).delete().eq(
+                        "id", row["id"]
+                    ).execute()
+
+                    log_action(
+                        "DELETE",
+                        "lista_correo_viaticos",
+                        str(row["id"]),
+                        f"Eliminó destinatario {row['email']} - {row['empresa']}",
+                    )
+
+                    st.cache_data.clear()
+                    st.success("Registro eliminado correctamente.")
+                    st.rerun()
+
+        # =====================================================
+        # REPLACE TABLE
+        # =====================================================
+
+        with tab_lista_replace:
+
+            st.warning(
+                "⚠️ Esta acción eliminará TODOS los registros actuales "
+                "y los reemplazará con el archivo cargado."
+            )
+
+            uploaded = st.file_uploader(
+                "Selecciona el archivo",
+                type=["xlsx", "csv"],
+                key="lista_correo_viaticos_replace",
+            )
+
+            if uploaded:
+
+                try:
+                    if uploaded.name.lower().endswith(".csv"):
+                        new_df = pd.read_csv(
+                            uploaded,
+                            encoding="utf-8-sig",
+                        )
+                    else:
+                        new_df = pd.read_excel(
+                            uploaded,
+                            sheet_name=0,
+                        )
+
+                except Exception as e:
+                    st.error(
+                        f"No fue posible leer el archivo.\n\n{e}"
+                    )
+                    st.stop()
+
+                new_df.columns = [
+                    str(c).strip()
+                    for c in new_df.columns
+                ]
+
+                header_map_lista = {
+                    "ID": "id",
+                    "Nombre": "name",
+                    "Correo electrónico": "email",
+                    "Empresa": "empresa",
+                }
+
+                if set(header_map_lista).issubset(
+                    set(new_df.columns)
+                ):
+                    new_df = new_df.rename(
+                        columns=header_map_lista
+                    )
+                else:
+                    new_df.columns = [
+                        str(c).strip().lower()
+                        for c in new_df.columns
+                    ]
+
+                st.subheader("Vista previa")
+
+                preview = new_df.rename(
+                    columns=lista_correo_labels
+                )
+
+                st.dataframe(
+                    preview,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=350,
+                )
+
+                if st.button(
+                    "🔄 Reemplazar Tabla Completa",
+                    type="primary",
+                    use_container_width=True,
+                    key="replace_lista_correo_viaticos",
+                ):
+
+                    required = {
+                        "name",
+                        "email",
+                        "empresa",
+                    }
+
+                    if not required.issubset(
+                        set(new_df.columns)
+                    ):
+
+                        missing = sorted(
+                            required - set(new_df.columns)
+                        )
+
+                        st.error(
+                            "El archivo no contiene todas las columnas requeridas.\n\n"
+                            f"Faltantes: {', '.join(missing)}"
+                        )
+                        st.stop()
+
+                    records_df = new_df[
+                        ["name", "email", "empresa"]
+                    ].copy()
+
+                    for column in [
+                        "name",
+                        "email",
+                        "empresa",
+                    ]:
+                        records_df[column] = (
+                            records_df[column]
+                            .where(
+                                records_df[column].notna(),
+                                "",
+                            )
+                            .astype(str)
+                            .str.strip()
+                        )
+
+                    records_df["empresa"] = (
+                        records_df["empresa"].str.upper()
+                    )
+
+                    records = records_df.to_dict(
+                        "records"
+                    )
+
+                    # Validate before deleting existing data.
+                    if any(
+                        not str(record["name"]).strip()
+                        for record in records
+                    ):
+                        st.error(
+                            "Todos los registros deben tener un nombre."
+                        )
+                        st.stop()
+
+                    if any(
+                        not str(record["email"]).strip()
+                        for record in records
+                    ):
+                        st.error(
+                            "Todos los registros deben tener un correo electrónico."
+                        )
+                        st.stop()
+
+                    if any(
+                        "@" not in str(record["email"])
+                        for record in records
+                    ):
+                        st.error(
+                            "Todos los registros deben tener un correo electrónico válido."
+                        )
+                        st.stop()
+
+                    if any(
+                        not str(record["empresa"]).strip()
+                        for record in records
+                    ):
+                        st.error(
+                            "Todos los registros deben tener una empresa."
+                        )
+                        st.stop()
+
+                    duplicate_keys = (
+                        records_df[
+                            ["email", "empresa"]
+                        ]
+                        .assign(
+                            email=lambda df: df["email"]
+                            .str.lower()
+                            .str.strip(),
+                            empresa=lambda df: df["empresa"]
+                            .str.upper()
+                            .str.strip(),
+                        )
+                        .duplicated()
+                    )
+
+                    if duplicate_keys.any():
+                        st.error(
+                            "El archivo contiene registros duplicados "
+                            "por correo y empresa."
+                        )
+                        st.stop()
+
+                    try:
+
+                        supabase.table(
+                            "lista_correo_viaticos"
+                        ).delete().neq(
+                            "id", 0
+                        ).execute()
+
+                        if records:
+                            supabase.table(
+                                "lista_correo_viaticos"
+                            ).insert(
+                                records
+                            ).execute()
+
+                    except Exception as e:
+
+                        st.exception(e)
+                        st.stop()
+
+                    log_action(
+                        "REPLACE",
+                        "lista_correo_viaticos",
+                        f"{len(records)} registros",
+                        "Reemplazó completamente la tabla "
+                        "lista_correo_viaticos",
+                    )
+
+                    st.cache_data.clear()
+
+                    st.success(
+                        f"Se cargaron correctamente "
+                        f"{len(records)} registros."
+                    )
+
+                    st.rerun()
+
 
 # ADMINISTRACIÓN DE USUARIOS
 # ==========================================
