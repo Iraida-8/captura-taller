@@ -3149,6 +3149,15 @@ if is_admin:
             "empresa": "Empresa",
         }
 
+        lista_correo_empresas = [
+            "TODAS",
+            "SET FREIGHT",
+            "LINCOLN",
+            "PICUS",
+            "IGLOO",
+            "SET LOGIS PLUS",
+        ]
+
         # ==========================================
         # DOWNLOAD TABLE
         # ==========================================
@@ -3221,9 +3230,12 @@ if is_admin:
                     email = st.text_input("Correo electrónico")
 
                 with col3:
-                    empresa = st.text_input(
+                    empresa = st.selectbox(
                         "Empresa",
-                        help="Usa TODAS para un destinatario común a todas las empresas.",
+                        lista_correo_empresas,
+                        index=0,
+                        help="Selecciona TODAS para un destinatario común a todas las empresas.",
+                        key="add_lista_correo_empresa",
                     )
 
                 submitted = st.form_submit_button(
@@ -3354,10 +3366,19 @@ if is_admin:
                         )
 
                     with col3:
-                        empresa = st.text_input(
+                        empresa_actual = _str_lista_correo(row["empresa"]).strip().upper()
+                        empresa_index = (
+                            lista_correo_empresas.index(empresa_actual)
+                            if empresa_actual in lista_correo_empresas
+                            else 0
+                        )
+
+                        empresa = st.selectbox(
                             "Empresa",
-                            value=_str_lista_correo(row["empresa"]),
-                            help="Usa TODAS para un destinatario común a todas las empresas.",
+                            lista_correo_empresas,
+                            index=empresa_index,
+                            help="Selecciona TODAS para un destinatario común a todas las empresas.",
+                            key="edit_lista_correo_empresa",
                         )
 
                     submitted = st.form_submit_button(
