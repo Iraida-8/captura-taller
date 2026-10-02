@@ -24,6 +24,35 @@ DASHBOARD_PAGE = (
     else "pages/dashboard.py"
 )
 
+# =====================================================================
+# MODIFICADO POR HEIDI - 2026-10-02
+# Motivo: ValueError al presionar "Guardar Cambios" en una comprobacion
+# (Gestion de Viaticos) -> NaN/NaT dentro del JSON "conceptos" no se puede
+# serializar y fallaba en .execute(). Esta funcion limpia los datos antes
+# de enviarlos a Supabase (NaN/NaT -> None, fechas -> "YYYY-MM-DD",
+# tipos numpy -> tipos nativos de Python).
+# Se aplica en: modal_ver_solicitud (Actualizar Solicitud),
+# modal_verificacion (Guardar Cambios) y se corrigio _num (finalizadas).
+# =====================================================================
+def limpiar_json(obj):
+    if isinstance(obj, dict):
+        return {k: limpiar_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [limpiar_json(v) for v in obj]
+    if obj is None:
+        return None
+    if isinstance(obj, (pd.Timestamp, datetime)):
+        return None if pd.isna(obj) else obj.strftime("%Y-%m-%d")
+    try:
+        if pd.isna(obj):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if hasattr(obj, "item"):
+        return obj.item()
+    return obj
+
+
 def clean(val):
     import pandas as pd
     if pd.isna(val) or val is None:
@@ -4043,7 +4072,8 @@ if has_viaticos:
                             key=f"actualizar_sol_{row.get('id')}"
                         ):
 
-                            conceptos_actualizados = (
+                            # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT antes de guardar
+                            conceptos_actualizados = limpiar_json(
                                 edited_df.to_dict(
                                     orient="records"
                                 )
@@ -5472,7 +5502,9 @@ if has_viaticos:
                                             .dt.strftime("%Y-%m-%d")
                                         )
 
-                                    conceptos_actualizados = (
+                                    # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT (fechas o montos
+                                    # vacios) que causaban ValueError al hacer .execute()
+                                    conceptos_actualizados = limpiar_json(
                                         edited_df_comp.to_dict(
                                             orient="records"
                                         )
@@ -5484,9 +5516,9 @@ if has_viaticos:
 
                                         try:
                                             nuevo_total_comprobado += float(
-                                                item.get("Total Comprobado", 0) or 0
+                                                item.get("Total Comprobado") or 0
                                             )
-                                        except:
+                                        except Exception:
                                             pass
 
                                     supabase.table(
@@ -7937,8 +7969,10 @@ if has_viaticos:
                         return str(value or "").strip().upper() in ["USD", "US$", "DÓLARES", "DOLARES"]
 
                     def _num(value):
+                        # MODIFICADO POR HEIDI 2026-10-02: NaN ahora cuenta como 0
                         try:
-                            return float(value or 0)
+                            v = float(value)
+                            return 0.0 if v != v else v
                         except Exception:
                             return 0.0
 
