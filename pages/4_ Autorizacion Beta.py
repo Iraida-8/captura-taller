@@ -3140,6 +3140,7 @@ if has_viaticos:
                 motivo_viaje="",
                 observaciones="",
                 conceptos=None,
+                conceptos_comprobacion=None,
                 total_estimado=0,
                 total_estimado_usd=0,
                 folio_comprobacion="",
@@ -3152,6 +3153,9 @@ if has_viaticos:
 
                 if conceptos is None:
                     conceptos = []
+
+                if conceptos_comprobacion is None:
+                    conceptos_comprobacion = []
 
                 total_aprobado_mxn = 0.0
                 total_aprobado_usd = 0.0
@@ -3252,6 +3256,79 @@ if has_viaticos:
                         </td>
 
                     </tr>
+                    """
+
+                comprobacion_html = ""
+
+                if conceptos_comprobacion:
+                    comprobacion_rows = ""
+
+                    for item in conceptos_comprobacion:
+                        tipo = html.escape(str(item.get("Tipo", "") or ""))
+                        descripcion = html.escape(str(item.get("Descripcion", "") or ""))
+                        fecha_factura = html.escape(str(item.get("Fecha Factura", "") or ""))
+                        folio = html.escape(str(item.get("Folio", "") or ""))
+                        proveedor = html.escape(str(item.get("Proveedor", "") or ""))
+                        moneda = html.escape(str(item.get("Moneda", "") or ""))
+                        comprobante = html.escape(str(item.get("Comprobante", "") or ""))
+                        aplica_iva = html.escape(str(item.get("Aplica IVA", "") or ""))
+                        iva_pct = html.escape(str(item.get("IVA %", "") or ""))
+                        aplica_retencion = html.escape(str(item.get("Aplica Retencion", "") or ""))
+
+                        try:
+                            monto = f"{float(item.get('Monto', 0) or 0):,.2f}"
+                        except Exception:
+                            monto = str(item.get("Monto", "") or "")
+
+                        try:
+                            impuesto_acreditable = f"{float(item.get('Impuesto Acreditable', 0) or 0):,.2f}"
+                        except Exception:
+                            impuesto_acreditable = str(item.get("Impuesto Acreditable", "") or "")
+
+                        try:
+                            total_comprobado_item = f"{float(item.get('Total Comprobado', 0) or 0):,.2f}"
+                        except Exception:
+                            total_comprobado_item = str(item.get("Total Comprobado", "") or "")
+
+                        comprobacion_rows += f"""
+                        <tr>
+                            <td style="border:1px solid #ccc;padding:8px;">{tipo}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{descripcion}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{fecha_factura}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{folio}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{proveedor}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{moneda}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{monto}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{comprobante}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{aplica_iva}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{iva_pct}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{aplica_retencion}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{impuesto_acreditable}</td>
+                            <td style="border:1px solid #ccc;padding:8px;">{total_comprobado_item}</td>
+                        </tr>
+                        """
+
+                    comprobacion_html = f"""
+                    <h3 style="color:#151F6D;margin-top:24px;">🧾 Conceptos de la Comprobación</h3>
+
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr style="background:#151F6D;color:white;">
+                            <th style="padding:10px;">Tipo</th>
+                            <th style="padding:10px;">Descripción</th>
+                            <th style="padding:10px;">Fecha Factura</th>
+                            <th style="padding:10px;">Folio</th>
+                            <th style="padding:10px;">Proveedor</th>
+                            <th style="padding:10px;">Moneda</th>
+                            <th style="padding:10px;">Monto</th>
+                            <th style="padding:10px;">Comprobante</th>
+                            <th style="padding:10px;">Aplica IVA</th>
+                            <th style="padding:10px;">IVA %</th>
+                            <th style="padding:10px;">Aplica Retención</th>
+                            <th style="padding:10px;">Impuesto Acreditable</th>
+                            <th style="padding:10px;">Total Comprobado</th>
+                        </tr>
+                        {comprobacion_rows}
+                    </table>
                     """
 
                 if estatus in ["Aprobado", "Concluido"]:
@@ -3381,6 +3458,8 @@ if has_viaticos:
                         {conceptos_html}
 
                     </table>
+
+                    {comprobacion_html}
 
                     <h3 style="color:#151F6D;margin-top:24px;">💵 Totales</h3>
 
@@ -5682,6 +5761,7 @@ if has_viaticos:
                                             motivo_viaje=solicitud_email.get("motivo_viaje", ""),
                                             observaciones=solicitud_email.get("observaciones", ""),
                                             conceptos=solicitud_email.get("conceptos", []),
+                                            conceptos_comprobacion=comprobacion_email.get("conceptos", []),
                                             total_estimado=solicitud_email.get("total_estimado", 0),
                                             total_estimado_usd=solicitud_email.get("total_estimado_usd", 0),
                                             empleado_comprobacion=comprobacion_email.get("nombre_empleado_solicita", ""),
@@ -5978,6 +6058,10 @@ if has_viaticos:
                                                     ""
                                                 ),
                                                 conceptos=solicitud_email.get(
+                                                    "conceptos",
+                                                    []
+                                                ),
+                                                conceptos_comprobacion=comprobacion_email.get(
                                                     "conceptos",
                                                     []
                                                 ),
