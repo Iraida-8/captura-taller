@@ -6,6 +6,7 @@ from io import BytesIO
 from auth import require_login, require_access
 from supabase import create_client
 from pages.css import load_css
+import json
 import html
 import os
 import uuid
@@ -24,15 +25,6 @@ DASHBOARD_PAGE = (
     else "pages/dashboard.py"
 )
 
-# =====================================================================
-# MODIFICADO POR HEIDI - 2026-10-02
-# Motivo: ValueError al presionar "Guardar Cambios" en una comprobacion
-# (Gestion de Viaticos) -> NaN/NaT dentro del JSON "conceptos" no se puede
-# serializar y fallaba en .execute(). Esta funcion limpia los datos antes
-# de enviarlos a Supabase (NaN/NaT -> None, fechas -> "YYYY-MM-DD",
-# tipos numpy -> tipos nativos de Python).
-# Se aplica en: modal_ver_solicitud (Actualizar Solicitud),
-# modal_verificacion (Guardar Cambios) y se corrigio _num (finalizadas).
 # =====================================================================
 def limpiar_json(obj):
     if isinstance(obj, dict):
@@ -4806,26 +4798,80 @@ if has_viaticos:
                                 ""
                             )
 
-                            solicitud_match = df_solicitudes[
-                                df_solicitudes["folio_solicitud"]
-                                .astype(str)
-                                ==
-                                str(folio_actual)
-                            ]
+                            comprobacion_row = row.to_dict()
 
-                            if not solicitud_match.empty:
+                            # Resolve the solicitud using the folio stored on the
+                            # comprobacion first. df_solicitudes can be filtered and
+                            # therefore may not contain the dummy solicitud.
+                            folio_solicitud_comprobacion = str(
+                                comprobacion_row.get("folio_solicitud", "") or folio_actual or ""
+                            ).strip()
 
-                                solicitud_row = (
-                                    solicitud_match
-                                    .iloc[0]
-                                    .to_dict()
+                            solicitud_row = {}
+
+                            if folio_solicitud_comprobacion:
+                                solicitud_match = df_solicitudes[
+                                    df_solicitudes["folio_solicitud"]
+                                    .astype(str)
+                                    == folio_solicitud_comprobacion
+                                ]
+
+                                if not solicitud_match.empty:
+                                    solicitud_row = (
+                                        solicitud_match
+                                        .iloc[0]
+                                        .to_dict()
+                                    )
+                                else:
+                                    # The dummy solicitud may not be present in
+                                    # df_solicitudes. Read the exact record directly
+                                    # from Supabase so it is still treated as a
+                                    # linked solicitud.
+                                    solicitud_directa_resp = (
+                                        supabase
+                                        .table("solicitud_viaje")
+                                        .select("*")
+                                        .eq("folio_solicitud", folio_solicitud_comprobacion)
+                                        .limit(1)
+                                        .execute()
+                                    )
+                                    if solicitud_directa_resp.data:
+                                        solicitud_row = solicitud_directa_resp.data[0]
+
+                            # Dummy solicitud: created only to allow a comprobacion
+                            # without a real solicitud. It must never be reopened.
+                            # Normalize JSONB in case it arrives through pandas as a
+                            # JSON string instead of a Python list.
+                            conceptos_dummy = solicitud_row.get("conceptos", [])
+                            if isinstance(conceptos_dummy, str):
+                                try:
+                                    conceptos_dummy = json.loads(conceptos_dummy)
+                                except Exception:
+                                    conceptos_dummy = []
+                            if not isinstance(conceptos_dummy, list):
+                                conceptos_dummy = []
+
+                            def _normalizar_dummy_texto(valor):
+                                import unicodedata
+                                texto = str(valor or "").strip().lower()
+                                return "".join(
+                                    caracter
+                                    for caracter in unicodedata.normalize("NFD", texto)
+                                    if unicodedata.category(caracter) != "Mn"
                                 )
 
-                            else:
+                            es_solicitud_dummy_sin_solicitud = any(
+                                _normalizar_dummy_texto(concepto.get("Tipo", "")) == "otros"
+                                and _normalizar_dummy_texto(concepto.get("Descripcion", "")) == "operacion sin solicitud"
+                                and float(concepto.get("Monto", 0) or 0) == 0
+                                for concepto in conceptos_dummy
+                                if isinstance(concepto, dict)
+                            )
 
-                                solicitud_row = {}
-
-                            comprobacion_row = row.to_dict()
+                            # Keep the working folio synchronized with the exact
+                            # solicitud linked from the comprobacion.
+                            if folio_solicitud_comprobacion:
+                                folio_actual = folio_solicitud_comprobacion
 
                             # Always start a newly opened comprobacion modal at the
                             # first rejection step. Do not carry the second-step
@@ -6118,6 +6164,7 @@ if has_viaticos:
 
                                         # Si existe una solicitud relacionada, primero
                                         # preguntamos si debe reabrirse o cerrarse.
+                                        # Dummy = solicitud vinculada, pero SIN opción de reabrir.
                                         if solicitud_row:
                                             folio_comprobacion_rechazo = str(
                                                 row.get("folio_comprobacion", "") or ""
@@ -6174,73 +6221,83 @@ if has_viaticos:
                                         "¿Qué deseas hacer con la solicitud asociada?"
                                     )
 
-                                    st.markdown(
-                                        "**Reabrir Solicitud:** la comprobación será **eliminada**, "
-                                        "y la solicitud regresará a **Aprobado** para que el usuario que la capturó pueda ingresar una nueva comprobación.  "
-                                        "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
-                                    )
+                                    if es_solicitud_dummy_sin_solicitud:
+                                        st.markdown(
+                                            "**Solicitud dummy:** esta operación no tiene una solicitud real asociada. "
+                                            "Por lo tanto, **no puede reabrirse**. Si rechazas, tanto la solicitud dummy como la comprobación quedarán **Rechazadas**."
+                                        )
+                                    else:
+                                        st.markdown(
+                                            "**Reabrir Solicitud:** la comprobación será **eliminada**, "
+                                            "y la solicitud regresará a **Aprobado** para que el usuario que la capturó pueda ingresar una nueva comprobación.  "
+                                            "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
+                                        )
 
-                                    opcion_reabrir, opcion_cerrar = st.columns(2)
+                                    if es_solicitud_dummy_sin_solicitud:
+                                        opcion_cerrar = st.container()
+                                    else:
+                                        opcion_reabrir, opcion_cerrar = st.columns(2)
 
-                                    with opcion_reabrir:
+                                    if not es_solicitud_dummy_sin_solicitud:
+                                        with opcion_reabrir:
 
-                                        if st.button(
-                                            "🔄 Reabrir Solicitud",
-                                            key=f"reabrir_solicitud_{folio_actual}",
-                                            use_container_width=True
-                                        ):
+                                            if st.button(
+                                                "🔄 Reabrir Solicitud",
+                                                key=f"reabrir_solicitud_{folio_actual}",
+                                                use_container_width=True
+                                            ):
 
-                                            # =================================
-                                            # DELETE THE EXACT COMPROBACION
-                                            # =================================
-                                            # Identify the comprobacion by its own
-                                            # folio. The solicitud id is unrelated.
-                                            folio_comprobacion_reapertura = str(
-                                                comprobacion_row.get("folio_comprobacion", "") or ""
-                                            ).strip()
+                                                # =================================
+                                                # DELETE THE EXACT COMPROBACION
+                                                # =================================
+                                                # Identify the comprobacion by its own
+                                                # folio. The solicitud id is unrelated.
+                                                folio_comprobacion_reapertura = str(
+                                                    comprobacion_row.get("folio_comprobacion", "") or ""
+                                                ).strip()
 
-                                            # Send the notification BEFORE deleting the comprobacion,
-                                            # so the notification function can read the exact stored
-                                            # comprobacion values from Supabase.
-                                            enviar_notificacion_rechazo(
-                                                "Aprobado",
-                                                folio_comprobacion_reapertura
-                                            )
+                                                # Send the notification BEFORE deleting the comprobacion,
+                                                # so the notification function can read the exact stored
+                                                # comprobacion values from Supabase.
+                                                enviar_notificacion_rechazo(
+                                                    "Aprobado",
+                                                    folio_comprobacion_reapertura
+                                                )
 
-                                            supabase.table(
-                                                "comprobacion_viaje"
-                                            ).delete().eq(
-                                                "folio_comprobacion",
-                                                folio_comprobacion_reapertura
-                                            ).execute()
+                                                supabase.table(
+                                                    "comprobacion_viaje"
+                                                ).delete().eq(
+                                                    "folio_comprobacion",
+                                                    folio_comprobacion_reapertura
+                                                ).execute()
 
-                                            # =================================
-                                            # REOPEN THE SOLICITUD
-                                            # =================================
-                                            supabase.table(
-                                                "solicitud_viaje"
-                                            ).update(
-                                                {
-                                                    "estatus": "Aprobado",
-                                                }
-                                            ).eq(
-                                                "folio_solicitud",
-                                                folio_solicitud_rechazo
-                                            ).execute()
+                                                # =================================
+                                                # REOPEN THE SOLICITUD
+                                                # =================================
+                                                supabase.table(
+                                                    "solicitud_viaje"
+                                                ).update(
+                                                    {
+                                                        "estatus": "Aprobado",
+                                                    }
+                                                ).eq(
+                                                    "folio_solicitud",
+                                                    folio_solicitud_rechazo
+                                                ).execute()
 
-                                            st.session_state.pop(rechazo_key, None)
+                                                st.session_state.pop(rechazo_key, None)
 
-                                            log_activity(
-                                                f"Rechazó Comprobación y reabrió Solicitud: {folio_actual}",
-                                                "Gestión de Viáticos"
-                                            )
+                                                log_activity(
+                                                    f"Rechazó Comprobación y reabrió Solicitud: {folio_actual}",
+                                                    "Gestión de Viáticos"
+                                                )
 
-                                            st.success(
-                                                "Comprobación eliminada y solicitud reabierta. El usuario que ingresó la comprobación deberá capturar una nueva."
-                                            )
+                                                st.success(
+                                                    "Comprobación eliminada y solicitud reabierta. El usuario que ingresó la comprobación deberá capturar una nueva."
+                                                )
 
-                                            st.cache_data.clear()
-                                            st.rerun()
+                                                st.cache_data.clear()
+                                                st.rerun()
 
                                     with opcion_cerrar:
 
