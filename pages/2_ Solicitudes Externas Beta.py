@@ -576,7 +576,7 @@ if mostrar_guardar and st.button(
         "Tipo de Proveedor": tipo_proveedor,
         "Proveedor": proveedor_guardar,
         "Razones": None if tipo_proveedor == "Interno" else razones,
-        "Estado": "Inicio / Nuevo",
+        "Estado": "Por Completar",
         "Capturo": "Operador",
         "Oste": oste,
         "No. de Reporte": no_reporte,
