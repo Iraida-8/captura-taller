@@ -664,6 +664,19 @@ if has_pases:
             fila_match = unidades_catalogo[
                 unidades_catalogo["unidad"].astype(str).eq(str(no_unidad))
             ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
+
+            # When completing an existing order, match the unit against the company
+            # table from which that order was loaded. Unit numbers can repeat across
+            # companies, so choosing the first global match can return blank/wrong data.
+            orden_cargada_contexto = st.session_state.get("pase_orden_cargada") or {}
+            empresa_unidad_codigo = EMPRESA_CODIGOS.get(orden_cargada_contexto.get("empresa"))
+            if not fila_match.empty and empresa_unidad_codigo and "empresa" in fila_match.columns:
+                fila_match_empresa = fila_match[
+                    fila_match["empresa"].astype(str).str.strip().str.upper().eq(empresa_unidad_codigo)
+                ]
+                if not fila_match_empresa.empty:
+                    fila_match = fila_match_empresa
+
             fila_unidad = fila_match.iloc[0] if not fila_match.empty else {}
             raw_tipo_unidad = str(fila_unidad.get("tipo_unidad", "") or "").strip().upper()
             tipo_normalizado = raw_tipo_unidad.replace("_", " ").replace("-", " ")
@@ -847,12 +860,25 @@ if has_pases:
                     fecha_captura_original = registro_original.get("Fecha de Captura")
                     if fecha_captura_original not in (None, ""):
                         fecha_captura_guardar = fecha_captura_original
-                    # These values have no editable controls in this form, so keep
-                    # them exactly as stored on the selected order, including blanks.
-                    marca_guardar = registro_original.get("Marca")
-                    modelo_guardar = registro_original.get("Modelo")
-                    sucursal_guardar = registro_original.get("Sucursal")
-                    oste_guardar = registro_original.get("Oste")
+                    # Refresh vehicle metadata from vehicle_units when completing an
+                    # existing order. Fall back to the saved order only if the catalog
+                    # does not provide a value, so existing metadata is not erased.
+                    marca_catalogo = marca_valor
+                    modelo_catalogo = modelo_valor
+                    sucursal_catalogo = sucursal_valor
+                    marca_guardar = (
+                        marca_catalogo if pd.notna(marca_catalogo) and str(marca_catalogo).strip()
+                        else registro_original.get("Marca")
+                    )
+                    modelo_guardar = (
+                        modelo_catalogo if pd.notna(modelo_catalogo) and str(modelo_catalogo).strip()
+                        else registro_original.get("Modelo")
+                    )
+                    sucursal_guardar = (
+                        sucursal_catalogo if pd.notna(sucursal_catalogo) and str(sucursal_catalogo).strip()
+                        else registro_original.get("Sucursal")
+                    )
+                    oste_guardar = registro_original.get("Oste") if registro_original.get("Oste") not in (None, "") else oste
                 payload = {
                     "Fecha de Captura": fecha_captura_guardar,
                     "Fecha de Reporte": str(fecha_reporte),
