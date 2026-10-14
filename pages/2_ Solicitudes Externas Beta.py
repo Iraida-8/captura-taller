@@ -51,26 +51,25 @@ EMAIL_EMPRESA_MAP = {
 }
 
 def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
-    """Notify the selected company's routing list and all-company recipients."""
-    empresa_correo = EMAIL_EMPRESA_MAP.get(str(datos.get("Empresa", "")).strip().upper())
-    if not empresa_correo:
-        raise ValueError(f"No hay una empresa de correo configurada para {datos.get('Empresa', '')}.")
-
+    """For this test, send new-pass notifications only to Aldo Sanchez."""
+    destinatario_prueba = "aldo.sanchez@palosgarzalogistics.com"
     respuesta = (
         supabase.table("lista_correo_viaticos")
-        .select("nombre,email,empresa")
-        .in_("empresa", [empresa_correo, "TODAS"])
+        .select("email")
+        .eq("email", destinatario_prueba)
+        .eq("empresa", "TODAS")
+        .limit(1)
         .execute()
     )
-    destinatarios = []
-    vistos = set()
-    for fila_correo in respuesta.data or []:
-        correo = str(fila_correo.get("email") or "").strip()
-        if correo and correo.lower() not in vistos:
-            destinatarios.append(correo)
-            vistos.add(correo.lower())
+    destinatarios = [
+        str(fila.get("email") or "").strip()
+        for fila in (respuesta.data or [])
+        if str(fila.get("email") or "").strip().lower() == destinatario_prueba.lower()
+    ]
     if not destinatarios:
-        raise ValueError(f"No hay destinatarios configurados para {empresa_correo} ni para TODAS en lista_correo_viaticos.")
+        raise ValueError(
+            f"No se encontró {destinatario_prueba} en lista_correo_viaticos con empresa TODAS."
+        )
 
     resend.api_key = st.secrets["RESEND_API_KEY"]
 
@@ -93,7 +92,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
         f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
         for etiqueta, campo in campos
     )
-    observaciones = valor("Descripcion Problema").replace("\n", "<br>")
+    observaciones = valor("Descripcion Problema").replace("\\n", "<br>")
     correo_html = f"""
     <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
       <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
@@ -119,6 +118,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
         "html": correo_html,
     })
     return destinatarios
+
 
 @st.cache_data(ttl=3600)
 
