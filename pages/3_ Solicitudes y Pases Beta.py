@@ -8,21 +8,17 @@ import re
 # =================================
 # RELEASE CHANNEL
 # =================================
-
 APP_CHANNEL = "BETA"
 #APP_CHANNEL = "RELEASE"
-
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
     if APP_CHANNEL == "BETA"
     else "pages/dashboard.py"
 )
-
 # =================================
 # Security gates
 # =================================
 require_login()
-
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
@@ -30,7 +26,6 @@ user = st.session_state.user
 access = user.get("access", [])
 role = (user.get("role") or "").lower()
 require_access("pase_taller")
-
 # =================================
 # Page configuration
 # =================================
@@ -42,12 +37,10 @@ st.set_page_config(
     ),
     layout="wide"
 )
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
 load_css()
-
 # -------------------------------
 # AUDIT
 # -------------------------------
@@ -241,12 +234,14 @@ if has_pases:
             # =================================
             # =================================
             # ORDENES POR COMPLETAR — SOLO ADMIN / CONTROL_USER
-            # FILTRADAS POR EMPRESAS ASIGNADAS EN profiles.Empresas
+            # FILTRADAS POR EMPRESA EN profiles.Empresas O PERMISOS profiles.access
             # =================================
             role_normalized = str(role or "").strip().lower()
             can_view_ordenes = role_normalized in {"admin", "control_user"}
             if can_view_ordenes:
-                empresas_permitidas = user.get("Empresas", user.get("empresas", []))
+                # Current profiles schema stores company permissions in access.
+                # Use Empresas/empresas when present; otherwise fall back to access.
+                empresas_permitidas = user.get("Empresas", user.get("empresas"))
                 if isinstance(empresas_permitidas, str):
                     empresas_permitidas = [
                         empresa.strip() for empresa in re.split(r"[,;]", empresas_permitidas)
@@ -254,6 +249,11 @@ if has_pases:
                     ]
                 elif not isinstance(empresas_permitidas, (list, tuple, set)):
                     empresas_permitidas = []
+                if not empresas_permitidas:
+                    empresas_permitidas = [
+                        empresa for permiso, empresa in ACCESS_EMPRESA_MAP.items()
+                        if permiso in access
+                    ]
                 empresas_permitidas = {
                     str(empresa).strip().casefold()
                     for empresa in empresas_permitidas
@@ -278,7 +278,7 @@ if has_pases:
                         response_ordenes = (
                             supabase.table(tabla_ordenes)
                             .select('"No. de Folio", "Fecha de Captura"')
-                            .eq('"Estado"', "Por Completar")
+                            .eq("Estado", "Por Completar")
                             .order('"Fecha de Captura"', desc=True)
                             .execute()
                         )
@@ -682,15 +682,13 @@ if has_pases:
             def confirmacion():
                 st.success("Pase guardado con éxito")
                 st.markdown(
-                    f"**No. de Folio:** \`{st.session_state.folio_generado}\`"
+                    f"**No. de Folio:** `{st.session_state.folio_generado}`"
                 )
                 if st.button("Aceptar"):
                     st.session_state.mostrar_confirmacion = False
                     st.session_state.folio_generado = ""
                     st.switch_page(DASHBOARD_PAGE)
             confirmacion()
-
-            
 # =================================
 # CAPTURA DE BONOS
 # =================================
