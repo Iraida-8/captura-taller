@@ -6,6 +6,7 @@ from html import escape
 from pages.css import load_css
 
 APP_CHANNEL = "BETA"
+#APP_CHANNEL = "RELEASE"
 
 st.set_page_config(
     page_title="Captura Pase de Taller BETA" if APP_CHANNEL == "BETA" else "Captura Pase de Taller",
