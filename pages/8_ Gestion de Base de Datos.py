@@ -3763,6 +3763,7 @@ if is_admin:
             "field_user",
             "regular_user",
             "control_user",
+            "regular_pase_user",
         ]
 
         BRANCHES = [
