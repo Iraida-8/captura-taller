@@ -136,7 +136,7 @@ def buscar_folio_en_todas_empresas(folio: str):
             response = (
                 supabase.table(table_name)
                 .select("*")
-                .eq("No. de Folio", folio)
+                .eq('"No. de Folio"', folio)
                 .limit(2)
                 .execute()
             )
