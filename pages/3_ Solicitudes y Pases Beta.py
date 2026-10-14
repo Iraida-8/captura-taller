@@ -5,7 +5,7 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
-import resend
+import resend  #type: ignore
 from html import escape
 # =================================
 # RELEASE CHANNEL
@@ -631,7 +631,7 @@ if has_pases:
                     "Proveedor": proveedor_guardar,
                     "Razones": None if regular_pase_user or tipo_proveedor == "Interno" else razones,
                     "Estado": "Por Completar" if regular_pase_user else "Inicio / Nuevo",
-                    "Capturo": None if regular_pase_user else (st.session_state.user.get("name") or st.session_state.user.get("email")),
+                    "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
                     "Oste": oste, "No. de Reporte": None if regular_pase_user else no_reporte,
                     "Empresa": empresa, "Tipo de Reporte": None if regular_pase_user else tipo_reporte,
                     "Tipo de Unidad": tipo_unidad_auto,
