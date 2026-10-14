@@ -671,7 +671,7 @@ if st.session_state.get("mostrar_confirmacion", False):
         st.markdown(f"**No. de Folio:** \`{st.session_state.folio_generado}\`")
         if st.session_state.get("email_pase_estado") == "enviado":
             total_destinatarios = len(st.session_state.get("email_pase_destinatarios", []))
-            st.caption(f"Notificación enviada por correo a {total_destinatarios} destinatario(s).")
+            #st.caption(f"Notificación enviada por correo a {total_destinatarios} destinatario(s).")
         elif st.session_state.get("email_pase_estado") == "error":
             st.warning(f"El pase sí se guardó, pero no se pudo enviar el correo: {st.session_state.get('email_pase_error', 'Error desconocido')}")
         if st.button("Aceptar", use_container_width=True):
