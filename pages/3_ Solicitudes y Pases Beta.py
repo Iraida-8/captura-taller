@@ -5,7 +5,7 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
-import resend
+import resend  #type: ignore
 from html import escape
 # =================================
 # RELEASE CHANNEL
