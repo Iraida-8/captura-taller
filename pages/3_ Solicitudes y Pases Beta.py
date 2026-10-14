@@ -376,13 +376,16 @@ if has_pases:
                     else "Pase de Taller"
                 )
 
-            # La unidad se selecciona dentro de Pase de Taller; los datos dependientes se actualizan con ella.
-            no_unidad = st.selectbox(
-                "No. de Unidad",
-                unidad_options,
-                help="Busca escribiendo en el campo. La lista incluye todas las empresas.",
-                key="pase_no_unidad_global",
-            )
+            # La unidad, su tipo y el tipo de caja se muestran en una sola fila.
+            col_unidad, col_tipo_unidad, col_tipo_caja = st.columns([2, 1, 1])
+            with col_unidad:
+                no_unidad = st.selectbox(
+                    "No. de Unidad",
+                    unidad_options,
+                    help="Busca escribiendo en el campo. La lista incluye todas las empresas.",
+                    key="pase_no_unidad_global",
+                )
+
             fila_match = unidades_catalogo[
                 unidades_catalogo["unidad"].astype(str).eq(str(no_unidad))
             ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
@@ -391,7 +394,7 @@ if has_pases:
             tipo_normalizado = raw_tipo_unidad.replace("_", " ").replace("-", " ")
             if tipo_normalizado in ("TRACTOR", "TRACTORES", "TRACTOCAMION", "TRACTOCAMIONES", "CAMION", "CAMIONES"):
                 tipo_unidad_auto = "Tractores"
-            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER", "TRAILER")):
+            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER")):
                 tipo_unidad_auto = "Remolques"
             else:
                 tipo_unidad_auto = ""
@@ -402,15 +405,29 @@ if has_pases:
             if es_externo:
                 tipo_unidad_auto, tipo_caja_auto = "Remolques", ""
 
-            # Update the keyed disabled widget on every rerun; otherwise Streamlit
-            # retains its first (blank) value instead of the selected unit's type.
+            # Actualiza el campo bloqueado con el tipo correspondiente a la unidad seleccionada.
             st.session_state["pase_tipo_unidad_display"] = tipo_unidad_auto
-            st.text_input(
-                "Tipo de Unidad",
-                disabled=True,
-                key="pase_tipo_unidad_display",
-            )
+            with col_tipo_unidad:
+                st.text_input(
+                    "Tipo de Unidad",
+                    disabled=True,
+                    key="pase_tipo_unidad_display",
+                )
 
+            with col_tipo_caja:
+                if tipo_unidad_auto == "Remolques":
+                    opciones_caja = ["Caja Seca", "Caja Refrigerada"]
+                    indice_caja = opciones_caja.index(tipo_caja_auto) if tipo_caja_auto in opciones_caja else 0
+                    tipo_caja = st.selectbox(
+                        "Tipo de Caja", opciones_caja, index=indice_caja,
+                        key="pase_tipo_caja_externo" if es_externo else "pase_tipo_caja_catalogo",
+                    )
+                else:
+                    tipo_caja = st.selectbox(
+                        "Tipo de Caja", ["Caja no aplicable"], disabled=True, key="pase_tipo_caja_na"
+                    )
+
+            # Empresa a Cobrar ocupa una fila independiente.
             empresa_por_codigo = {
                 "IGT": "IGLOO TRANSPORT", "LIN": "LINCOLN FREIGHT", "PIC": "PICUS",
                 "SET": "SET FREIGHT INTERNATIONAL", "SLP": "SET LOGIS PLUS",
@@ -425,32 +442,24 @@ if has_pases:
             empresa = st.selectbox("Empresa a Cobrar", empresas_disponibles, key="pase_empresa_cobrar")
             empresa_codigo = EMPRESA_CODIGOS.get(empresa)
 
+            # Los datos de unidad externa comparten una fila debajo de Empresa a Cobrar.
+            col_unidad_externa, col_linea_externa = st.columns(2)
+            with col_unidad_externa:
+                no_unidad_externo = st.text_input(
+                    "No. de Unidad Externo", disabled=not es_externo,
+                    placeholder="Escribe el número externo", key="pase_no_unidad_externo"
+                )
+            with col_linea_externa:
+                linea_externa = st.text_input(
+                    "Nombre Línea Externa", disabled=not es_externo,
+                    placeholder="Escribe el nombre de la línea", key="pase_linea_externa"
+                )
+
             marca_valor = fila_unidad.get("marca", "")
             modelo_valor = fila_unidad.get("modelo", "")
             sucursal_valor = fila_unidad.get("SUCURSAL", fila_unidad.get("sucursal", ""))
             if es_externo:
                 marca_valor, modelo_valor, sucursal_valor = "EXTERNO", "0000", "EXTERNO"
-
-            if tipo_unidad_auto == "Remolques":
-                opciones_caja = ["Caja Seca", "Caja Refrigerada"]
-                indice_caja = opciones_caja.index(tipo_caja_auto) if tipo_caja_auto in opciones_caja else 0
-                tipo_caja = st.selectbox(
-                    "Tipo de Caja", opciones_caja, index=indice_caja,
-                    key="pase_tipo_caja_externo" if es_externo else "pase_tipo_caja_catalogo",
-                )
-            else:
-                tipo_caja = st.selectbox(
-                    "Tipo de Caja", ["Caja no aplicable"], disabled=True, key="pase_tipo_caja_na"
-                )
-
-            no_unidad_externo = st.text_input(
-                "No. de Unidad Externo", disabled=not es_externo,
-                placeholder="Escribe el número externo", key="pase_no_unidad_externo"
-            )
-            linea_externa = st.text_input(
-                "Nombre Línea Externa", disabled=not es_externo,
-                placeholder="Escribe el nombre de la línea", key="pase_linea_externa"
-            )
 
             if regular_pase_user:
                 aplica_cobro, responsable, genero_multa, no_inspeccion, reparacion_multa = "No", "", False, "", ""
