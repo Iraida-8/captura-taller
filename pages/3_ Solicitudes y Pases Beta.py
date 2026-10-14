@@ -5,7 +5,6 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
-
 # =================================
 # RELEASE CHANNEL
 # =================================
@@ -16,12 +15,10 @@ DASHBOARD_PAGE = (
     if APP_CHANNEL == "BETA"
     else "pages/dashboard.py"
 )
-
 # =================================
 # Security gates
 # =================================
 require_login()
-
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
@@ -29,7 +26,6 @@ user = st.session_state.user
 access = user.get("access", [])
 role = (user.get("role") or "").lower()
 require_access("pase_taller")
-
 # =================================
 # Page configuration
 # =================================
@@ -41,16 +37,13 @@ st.set_page_config(
     ),
     layout="wide"
 )
-
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
 load_css()
-
 # -------------------------------
 # AUDIT
 # -------------------------------
-
 def log_activity(action, page):
     try:
         supabase.table("user_activity_log").insert({
@@ -62,7 +55,6 @@ def log_activity(action, page):
         }).execute()
     except Exception as e:
         print(e)
-
 # =================================
 # Navigation
 # =================================
@@ -70,7 +62,6 @@ st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 st.divider()
-
 # =================================
 # MODULES
 # =================================
@@ -85,13 +76,11 @@ elif has_pases:
     tab_pases = st.container()
 elif has_bonos:
     tab_bonos = st.container()
-
 # =================================
 # CAPTURA PASE DE TALLER
 # =================================
 if has_pases:
     with tab_pases:
-
         # =================================
         # SUPABASE CONFIGURATION
         # =================================
@@ -116,7 +105,6 @@ if has_pases:
             df["unidad"] = df["unidad"].astype(str).str.strip()
             df["tipo_unidad"] = df["tipo_unidad"].astype(str).str.upper().str.strip()
             return df
-
         # =================================
         # SUPABASE TABLE MAP
         # =================================
@@ -142,7 +130,6 @@ if has_pases:
             "setfreight": "SET FREIGHT INTERNATIONAL",
             "setlogis": "SET LOGIS PLUS",
         }
-
         # =================================
         # Check duplicate unit in last 24h (SUPABASE)
         # =================================
@@ -163,7 +150,6 @@ if has_pases:
             if not data:
                 return None
             return data[0]["No. de Folio"]
-
         # =================================
         # Append Pase de Taller to Supabase
         # =================================
@@ -178,7 +164,6 @@ if has_pases:
                 "SET LOGIS PLUS": "SLP",
             }
             prefix = prefix_map.get(data["Empresa"])
-
             # ---- GET LAST FOLIO ----
             response = (
                 supabase.table(table_name)
@@ -195,7 +180,6 @@ if has_pases:
             else:
                 next_num = 1
             folio = f"{prefix}{str(next_num).zfill(5)}"
-
             # ---- INSERT INTO SUPABASE ----
             payload = data.copy()
             payload["No. de Folio"] = folio
@@ -211,7 +195,6 @@ if has_pases:
             except Exception as e:
                 st.error(f"Supabase error: {e.args}")
                 raise
-
         # =================================
         # Session state
         # =================================
@@ -225,32 +208,26 @@ if has_pases:
             st.session_state.confirmar_guardado = False
         if "forzar_guardado" not in st.session_state:
             st.session_state.forzar_guardado = False
-
         # =============================
         # FIELD USER VIEW
         # =============================
         if role == "field_user":
-
             # =================================
             # Page title
             # =================================
             st.title("🛠️ Captura Pase de Taller")
-
             # =================================
             # SECCIÓN 1 — DATOS DEL REPORTE
             # =================================
             st.subheader("WIP MY GUY")
-
         # =============================
         # ADMIN, MANAGER, REGULAR USER VIEW
         # =============================
         else:
-
             # =================================
             # Page title
             # =================================
             st.title("🛠️ Captura Pase de Taller")
-
             # =================================
             # SECCIÓN 1 — DATOS DEL REPORTE
             # =================================
@@ -400,7 +377,6 @@ if has_pases:
             no_reporte = st.text_input(
                 "No. de Reporte"
             )
-
             # =================================
             # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
             # =================================
@@ -411,7 +387,6 @@ if has_pases:
                     if tipo_proveedor == "Interno"
                     else "Pase de Taller Externo"
                 )
-
                 # =================================
                 # EMPRESA SEGÚN ACCESO DEL USUARIO
                 # =================================
@@ -428,7 +403,7 @@ if has_pases:
                     empresa = empresas_usuario[0]
                 else:
                     empresa = st.selectbox(
-                        "Empresa a Cobrar",
+                        "Empresa",
                         empresas_usuario,
                     )
                 empresa_codigo = EMPRESA_CODIGOS.get(empresa)
@@ -560,7 +535,7 @@ if has_pases:
                         disabled=aplica_cobro != "Sí"
                     )
                 descripcion_problema = st.text_area(
-                    "Observaciones y Comentarios"
+                    "Descripción del problema"
                 )
                 c1, c2 = st.columns([1, 3])
                 with c1:
@@ -577,7 +552,6 @@ if has_pases:
                 )
                 st.divider()
                 st.markdown("###")
-
         # =================================
         # GUARDAR
         # =================================
@@ -589,7 +563,6 @@ if has_pases:
             type="primary",
             use_container_width=True
         ):
-
             # ==========================================
             # HARD VALIDATIONS (LOCK)
             # ==========================================
@@ -615,7 +588,6 @@ if has_pases:
             st.session_state.setdefault("forzar_guardado", False)
             st.session_state.setdefault("confirmar_guardado", False)
             st.session_state.setdefault("folio_duplicado", "")
-
             # ==========================================
             # DUPLICATE CHECK — LAST 24 HOURS
             # ==========================================
@@ -632,7 +604,6 @@ if has_pases:
                 st.session_state.folio_duplicado = folio_existente
                 st.session_state.confirmar_guardado = True
                 st.rerun()
-
             # ==========================================
             # NORMAL SAVE
             # ==========================================
@@ -678,7 +649,6 @@ if has_pases:
             st.session_state.folio_generado = folio_real
             st.session_state.mostrar_confirmacion = True
             st.rerun()
-
         # =================================
         # DUPLICATE CONFIRMATION DIALOG
         # =================================
@@ -704,7 +674,6 @@ if has_pases:
                         st.session_state.mostrar_confirmacion = True
                         st.rerun()
             confirmar()
-
         # =================================
         # SUCCESS DIALOG
         # =================================
@@ -720,7 +689,6 @@ if has_pases:
                     st.session_state.folio_generado = ""
                     st.switch_page(DASHBOARD_PAGE)
             confirmacion()
-
 # =================================
 # CAPTURA DE BONOS
 # =================================
@@ -728,7 +696,6 @@ if has_bonos:
     with tab_bonos:
         if "bonos_operador" in access:
             st.title("💰 Captura Bono de Operadores")
-
             # ==========================================
             # CATALOGO DE UNIDADES
             # ==========================================
@@ -753,7 +720,6 @@ if has_bonos:
                     "No existen unidades en el catálogo."
                 )
                 st.stop()
-
             # ==========================================
             # VEHICLE UNITS TABLE
             # ==========================================
@@ -767,7 +733,6 @@ if has_bonos:
             vehicle_df = pd.DataFrame(
                 vehicle_response.data
             )
-
             # ==========================================
             # MERGE BOTH TABLES
             # ==========================================
@@ -797,12 +762,10 @@ if has_bonos:
                 how="left",
                 suffixes=("", "_bono")
             )
-
             # ==========================================
             # FORMULARIO
             # ==========================================
             st.subheader("📋 Formulario")
-
             # ==========================================
             # COMPANY ACCESS
             # ==========================================
@@ -842,7 +805,6 @@ if has_bonos:
             unidad_info = unidades_filtradas[
                 unidades_filtradas["unidad"] == unidad
             ].iloc[0]
-
             # ==========================================
             # Unidad Info (Hidden)
             # ==========================================
@@ -858,7 +820,6 @@ if has_bonos:
             rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
             with st.container(border=True, key="bono_form"):
                 col_form, col_calc = st.columns([1, 1])
-
                 # ==========================================
                 # LEFT COLUMN - FORM
                 # ==========================================
@@ -921,13 +882,11 @@ if has_bonos:
                         "🧮 Calcular",
                         use_container_width=True
                     )
-
                 # ==========================================
                 # RIGHT COLUMN - RESULTADO
                 # ==========================================
                 with col_calc:
                     if calcular:
-
                         # -----------------------------
                         # Required field validation
                         # -----------------------------
@@ -950,7 +909,6 @@ if has_bonos:
                             for e in errores:
                                 st.warning(e)
                             st.stop()
-
                         # -----------------------------
                         # Calculate
                         # -----------------------------
@@ -970,7 +928,6 @@ if has_bonos:
                         monto = (
                             diferencia_litros * PRECIO_DIESEL
                         )
-
                         # -----------------------------
                         # Business validation
                         # -----------------------------
@@ -1122,7 +1079,6 @@ if has_bonos:
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error guardando formulario: {e}")
-
                 # ==========================================
                 # SUCCESS POPUP
                 # ==========================================
