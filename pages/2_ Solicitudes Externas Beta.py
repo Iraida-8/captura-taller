@@ -5,10 +5,8 @@ from datetime import datetime, date, timezone
 from html import escape
 import resend  #type: ignore
 from pages.css import load_css
-
 APP_CHANNEL = "BETA"
 #APP_CHANNEL = "RELEASE"
-
 st.set_page_config(
     page_title="Captura Pase de Taller BETA" if APP_CHANNEL == "BETA" else "Captura Pase de Taller",
     layout="wide",
@@ -32,7 +30,9 @@ st.markdown("""
   }
 </style>
 """, unsafe_allow_html=True)
+
 @st.cache_resource
+
 def get_supabase():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 supabase = get_supabase()
@@ -43,6 +43,7 @@ EMAIL_EMPRESA_MAP = {
     "SET FREIGHT INTERNATIONAL": "SET FREIGHT",
     "SET LOGIS PLUS": "SET LOGIS PLUS",
 }
+
 def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
     """Send new-pass notifications to every recipient configured for CONTROL."""
     respuesta = (
@@ -79,7 +80,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
         f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
         for etiqueta, campo in campos
     )
-    observaciones = valor("Descripcion Problema").replace("\\n", "<br>")
+    observaciones = valor("Descripcion Problema").replace("\\\n", "<br>")
     correo_html = f"""
     <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
       <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
@@ -105,7 +106,9 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
         "html": correo_html,
     })
     return destinatarios
+
 @st.cache_data(ttl=3600)
+
 def cargar_todas_unidades_supabase():
     """Fetch the full vehicle catalog; unit choice is not filtered by company."""
     response = supabase.table("vehicle_units").select("*").execute()
@@ -134,6 +137,7 @@ EMPRESA_CODIGOS = {
     "SET LOGIS PLUS": "SLP",
 }
 EMPRESAS = list(TABLE_MAP.keys())
+
 def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     table_name = TABLE_MAP[empresa]
     unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
@@ -149,6 +153,7 @@ def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     )
     data = response.data or []
     return data[0].get("No. de Folio") if data else None
+
 def append_pase_to_sheet(data: dict):
     empresa = data["Empresa"]
     table_name = TABLE_MAP[empresa]
@@ -185,6 +190,31 @@ def append_pase_to_sheet(data: dict):
     except Exception as exc:
         st.error(f"Error de Supabase al guardar: {exc}")
         raise
+
+def registrar_evento_chatlog(folio: str, mensaje: str, usuario_chat: str = "Operador"):
+    """Append a chat event associated with the generated pass folio."""
+    folio = str(folio or "").strip()
+    if not folio:
+        raise ValueError("No se puede registrar el chatlog sin folio.")
+    existente = (
+        supabase.table("pase_taller_chatlog")
+        .select("chatlog")
+        .eq("no_de_folio", folio)
+        .limit(1)
+        .execute()
+    )
+    entradas = (existente.data or [{}])[0].get("chatlog", [])
+    if not isinstance(entradas, list):
+        entradas = [entradas] if entradas else []
+    ahora = datetime.now(timezone.utc).isoformat()
+    entradas.append({"message": mensaje, "user": usuario_chat, "timestamp": ahora})
+    supabase.table("pase_taller_chatlog").upsert({
+        "no_de_folio": folio,
+        "completado_por": usuario_chat,
+        "chatlog": entradas,
+        "updated_at": ahora,
+    }, on_conflict="no_de_folio").execute()
+
 def buscar_folio_en_todas_empresas(folio: str):
     """Search an exact folio across each company's destination table."""
     folio = str(folio or "").strip()
@@ -208,6 +238,7 @@ def buscar_folio_en_todas_empresas(folio: str):
     if errores and not resultados:
         raise RuntimeError("No se pudo consultar Supabase. " + " | ".join(errores))
     return resultados
+
 def crear_pdf_pase(registro: dict, empresa_tabla: str) -> bytes:
     """Create a simple, styled PDF using only Python's standard library."""
     import textwrap
@@ -367,7 +398,9 @@ def crear_pdf_pase(registro: dict, empresa_tabla: str) -> bytes:
         f"trailer\n<< /Size {len(objects)} /Root {catalog_id} 0 R >>\nstartxref\n{xref_offset}\n%%EOF".encode("ascii")
     )
     return bytes(output)
+
 # Preserve duplicate-check and confirmation flow across Streamlit reruns.
+
 for key, default in {
     "folio_generado": "",
     "mostrar_confirmacion": False,
@@ -380,6 +413,7 @@ for key, default in {
     if key not in st.session_state:
         st.session_state[key] = default
 # Reset widget values at the start of a rerun, before Streamlit creates those widgets.
+
 if st.session_state.pop("limpiar_captura_pendiente", False):
     for key in (
         "captura_no_unidad",
@@ -398,6 +432,7 @@ if st.session_state.pop("limpiar_captura_pendiente", False):
         st.session_state.pop(key, None)
 st.title("🛠️ Captura Pase de Taller")
 tab_captura, tab_consulta = st.tabs(["🛠️ Captura Pase de Taller", "🔎 Consultar Pase de Taller"])
+
 with tab_consulta:
     st.markdown("### Consulta de pases registrados")
     st.caption("Busca por No. de Folio. La consulta revisa las tablas de todas las empresas y muestra el registro encontrado.")
@@ -470,6 +505,35 @@ with tab_consulta:
                     [{"Campo": str(k), "Valor": "—" if v is None or str(v).strip() == "" else str(v)} for k, v in registro.items()]
                 )
                 st.dataframe(detalle, hide_index=True, use_container_width=True)
+            st.markdown("### Historial de seguimiento (Chatlog)")
+            try:
+                respuesta_chatlog = (
+                    supabase.table("pase_taller_chatlog")
+                    .select("chatlog")
+                    .eq("no_de_folio", folio)
+                    .limit(1)
+                    .execute()
+                )
+                chatlog = (respuesta_chatlog.data or [{}])[0].get("chatlog", [])
+                if not isinstance(chatlog, list):
+                    chatlog = [chatlog] if chatlog else []
+                if not chatlog:
+                    st.info("Este pase todavía no tiene mensajes en el chatlog.")
+                else:
+                    for entrada in chatlog:
+                        if not isinstance(entrada, dict):
+                            st.write(entrada)
+                            continue
+                        usuario_chat = str(entrada.get("user") or "Usuario")
+                        mensaje_chat = str(entrada.get("message") or "")
+                        fecha_chat = str(entrada.get("timestamp") or "")
+                        with st.container(border=True):
+                            st.markdown(f"**{escape(usuario_chat)}**")
+                            st.write(mensaje_chat or "(Mensaje vacío)")
+                            if fecha_chat:
+                                st.caption(fecha_chat)
+            except Exception as chat_exc:
+                st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
             try:
                 pdf_bytes = crear_pdf_pase(registro, empresa_tabla)
                 st.download_button(
@@ -486,6 +550,7 @@ with tab_consulta:
                 st.error(f"No se pudo generar el PDF: {exc}")
             if idx < len(resultados) - 1:
                 st.divider()
+
 with tab_captura:
     st.caption("Capture los datos esenciales del pase. Los demás campos del registro se guardan vacíos o como null.")
     unidades_df = cargar_todas_unidades_supabase()
@@ -630,6 +695,16 @@ with tab_captura:
             "Reparacion Multa": None,
         }
         folio_real = append_pase_to_sheet(payload)
+        try:
+            registrar_evento_chatlog(
+                folio_real,
+                f"Sistema: Operador ha creado la solicitud {folio_real}",
+                usuario_chat="Operador",
+            )
+            st.session_state.pop("chatlog_pase_error", None)
+        except Exception as chat_exc:
+            # The pass is already saved; a chatlog failure must not undo creation.
+            st.session_state["chatlog_pase_error"] = str(chat_exc)
         st.session_state.forzar_guardado = False
         st.session_state.folio_generado = folio_real
         try:
@@ -644,6 +719,7 @@ with tab_captura:
             st.session_state.pop("email_pase_destinatarios", None)
         st.session_state.mostrar_confirmacion = True
         st.rerun()
+
 if st.session_state.get("confirmar_guardado", False):
     @st.dialog("Registro duplicado detectado")
     def confirmar():
@@ -664,11 +740,17 @@ if st.session_state.get("confirmar_guardado", False):
                 st.session_state.mostrar_confirmacion = True
                 st.rerun()
     confirmar()
+
 if st.session_state.get("mostrar_confirmacion", False):
     @st.dialog("Pase guardado")
     def confirmacion():
         st.success("Pase guardado con éxito")
-        st.markdown(f"**No. de Folio:** \`{st.session_state.folio_generado}\`")
+        if st.session_state.get("chatlog_pase_error"):
+            st.warning(
+                "El pase sí se guardó, pero no se pudo registrar en el chatlog: "
+                f"{st.session_state.get('chatlog_pase_error')}"
+            )
+        st.markdown(f"**No. de Folio:** \\`{st.session_state.folio_generado}\\`")
         if st.session_state.get("email_pase_estado") == "enviado":
             total_destinatarios = len(st.session_state.get("email_pase_destinatarios", []))
             #st.caption(f"Notificación enviada por correo a {total_destinatarios} destinatario(s).")
@@ -679,7 +761,7 @@ if st.session_state.get("mostrar_confirmacion", False):
             st.session_state.folio_generado = ""
             # Defer widget cleanup until the next run, before widgets are instantiated.
             st.session_state["limpiar_captura_pendiente"] = True
-            for key in ("email_pase_estado", "email_pase_destinatarios", "email_pase_error"):
+            for key in ("email_pase_estado", "email_pase_destinatarios", "email_pase_error", "chatlog_pase_error"):
                 st.session_state.pop(key, None)
             st.rerun()
     confirmacion()
