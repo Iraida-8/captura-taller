@@ -388,19 +388,25 @@ if has_pases:
             ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
             fila_unidad = fila_match.iloc[0] if not fila_match.empty else {}
             raw_tipo_unidad = str(fila_unidad.get("tipo_unidad", "") or "").strip().upper()
-            tipo_unidad_auto = "Tractores" if raw_tipo_unidad == "TRACTOR" else (
-                "Remolques" if raw_tipo_unidad in ("CAJA SECA", "CAJA REFRIGERADA") else ""
-            )
-            tipo_caja_auto = "Caja Seca" if "SECA" in raw_tipo_unidad else (
-                "Caja Refrigerada" if "REFRIGERADA" in raw_tipo_unidad or "REFRIGER" in raw_tipo_unidad else ""
+            tipo_normalizado = raw_tipo_unidad.replace("_", " ").replace("-", " ")
+            if tipo_normalizado in ("TRACTOR", "TRACTORES", "TRACTOCAMION", "TRACTOCAMIONES", "CAMION", "CAMIONES"):
+                tipo_unidad_auto = "Tractores"
+            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER", "TRAILER")):
+                tipo_unidad_auto = "Remolques"
+            else:
+                tipo_unidad_auto = ""
+            tipo_caja_auto = "Caja Seca" if "SECA" in tipo_normalizado else (
+                "Caja Refrigerada" if any(token in tipo_normalizado for token in ("REFRIGERADA", "REFRIGER", "FRIA", "FRÍO")) else ""
             )
             es_externo = no_unidad == "REMOLQUE EXTERNO"
             if es_externo:
                 tipo_unidad_auto, tipo_caja_auto = "Remolques", ""
 
+            # Update the keyed disabled widget on every rerun; otherwise Streamlit
+            # retains its first (blank) value instead of the selected unit's type.
+            st.session_state["pase_tipo_unidad_display"] = tipo_unidad_auto
             st.text_input(
                 "Tipo de Unidad",
-                value=tipo_unidad_auto,
                 disabled=True,
                 key="pase_tipo_unidad_display",
             )
