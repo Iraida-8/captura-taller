@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
+from html import escape
 from pages.css import load_css
 
 APP_CHANNEL = "BETA"
