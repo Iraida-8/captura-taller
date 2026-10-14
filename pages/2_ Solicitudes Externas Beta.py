@@ -517,27 +517,62 @@ with tab_consulta:
                 chatlog = (respuesta_chatlog.data or [{}])[0].get("chatlog", [])
                 if not isinstance(chatlog, list):
                     chatlog = [chatlog] if chatlog else []
+
                 if not chatlog:
                     st.info("Este pase todavía no tiene mensajes en el chatlog.")
-                else:
-                    for entrada in chatlog:
-                        if not isinstance(entrada, dict):
-                            st.write(entrada)
-                            continue
-                        mensaje_chat = str(entrada.get("message") or "")
-                        fecha_chat = str(entrada.get("timestamp") or "")
-                        with st.container(border=True):
-                            st.markdown("**SISTEMA**")
-                            # Older chatlog entries may contain a person's name and a
-                            # redundant system prefix; hide the person and normalize the message.
-                            mensaje_visible = mensaje_chat.strip()
-                            if mensaje_visible.lower().startswith("sistema:"):
-                                mensaje_visible = mensaje_visible.split(":", 1)[1].strip()
-                            st.write(mensaje_visible or "(Mensaje vacío)")
-                            if fecha_chat:
-                                st.caption(fecha_chat)
+
+                for entrada in chatlog:
+                    if not isinstance(entrada, dict):
+                        st.write(entrada)
+                        continue
+
+                    mensaje_chat = str(entrada.get("message") or "").strip()
+                    fecha_chat = str(entrada.get("timestamp") or "")
+                    usuario_chat = str(entrada.get("user") or "").strip().casefold()
+                    es_operador = usuario_chat == "operador"
+                    mensaje_visible = mensaje_chat
+
+                    if not es_operador and mensaje_visible.lower().startswith("sistema:"):
+                        mensaje_visible = mensaje_visible.split(":", 1)[1].strip()
+
+                    with st.container(border=True):
+                        st.markdown("**OPERADOR**" if es_operador else "**SISTEMA**")
+                        st.write(mensaje_visible or "(Mensaje vacío)")
+                        if fecha_chat:
+                            st.caption(fecha_chat)
+
             except Exception as chat_exc:
                 st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
+
+            st.markdown("#### Agregar comentario")
+            with st.form(key=f"form_chatlog_operador_{idx}_{folio}", clear_on_submit=True):
+                comentario_operador = st.text_area(
+                    "Mensaje",
+                    placeholder="Escribe tu comentario para este pase...",
+                    key=f"chatlog_comentario_{idx}_{folio}",
+                )
+                enviar_comentario = st.form_submit_button(
+                    "Enviar comentario",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if enviar_comentario:
+                comentario_limpio = comentario_operador.strip()
+                if not comentario_limpio:
+                    st.warning("Escribe un comentario antes de enviarlo.")
+                else:
+                    try:
+                        registrar_evento_chatlog(
+                            folio,
+                            comentario_limpio,
+                            usuario_chat="Operador",
+                        )
+                        st.success("Comentario agregado al historial.")
+                        st.rerun()
+                    except Exception as chat_exc:
+                        st.error(f"No fue posible guardar el comentario: {chat_exc}")
+
             try:
                 pdf_bytes = crear_pdf_pase(registro, empresa_tabla)
                 st.download_button(
