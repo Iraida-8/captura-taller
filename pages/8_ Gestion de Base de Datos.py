@@ -3156,6 +3156,8 @@ if is_admin:
             "PICUS",
             "IGLOO",
             "SET LOGIS PLUS",
+            "CONTROL",
+            "PRUEBAS",
         ]
 
         # ==========================================
