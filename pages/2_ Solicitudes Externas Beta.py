@@ -4,7 +4,6 @@ from supabase import create_client
 from datetime import datetime, date, timezone
 from html import escape
 import resend  #type: ignore
-
 from pages.css import load_css
 
 APP_CHANNEL = "BETA"
@@ -14,10 +13,8 @@ st.set_page_config(
     page_title="Captura Pase de Taller BETA" if APP_CHANNEL == "BETA" else "Captura Pase de Taller",
     layout="wide",
 )
-
 load_css()
 # Mobile-first sizing: full-width controls, comfortable touch targets, and stacked fields on phones.
-
 st.markdown("""
 <style>
   .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1050px; }
@@ -36,12 +33,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 @st.cache_resource
-
 def get_supabase():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
-
 supabase = get_supabase()
-
 EMAIL_EMPRESA_MAP = {
     "IGLOO TRANSPORT": "IGLOO",
     "LINCOLN FREIGHT": "LINCOLN",
@@ -49,34 +43,27 @@ EMAIL_EMPRESA_MAP = {
     "SET FREIGHT INTERNATIONAL": "SET FREIGHT",
     "SET LOGIS PLUS": "SET LOGIS PLUS",
 }
-
 def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
-    """For this test, send new-pass notifications only to Aldo Sanchez."""
-    destinatario_prueba = "aldo.sanchez@palosgarzalogistics.com"
+    """Send new-pass notifications to every recipient configured for CONTROL."""
     respuesta = (
         supabase.table("lista_correo_viaticos")
         .select("email")
-        .eq("email", destinatario_prueba)
-        .eq("empresa", "TODAS")
-        .limit(1)
+        .eq("empresa", "CONTROL")
         .execute()
     )
-    destinatarios = [
+    destinatarios = sorted({
         str(fila.get("email") or "").strip()
         for fila in (respuesta.data or [])
-        if str(fila.get("email") or "").strip().lower() == destinatario_prueba.lower()
-    ]
+        if str(fila.get("email") or "").strip()
+    }, key=str.lower)
     if not destinatarios:
         raise ValueError(
-            f"No se encontró {destinatario_prueba} en lista_correo_viaticos con empresa TODAS."
+            "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
         )
-
     resend.api_key = st.secrets["RESEND_API_KEY"]
-
     def valor(campo):
         contenido = datos.get(campo)
         return escape(str(contenido).strip()) if contenido not in (None, "") else "—"
-
     campos = [
         ("Empresa a cobrar", "Empresa"),
         ("Fecha de captura", "Fecha de Captura"),
@@ -118,10 +105,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
         "html": correo_html,
     })
     return destinatarios
-
-
 @st.cache_data(ttl=3600)
-
 def cargar_todas_unidades_supabase():
     """Fetch the full vehicle catalog; unit choice is not filtered by company."""
     response = supabase.table("vehicle_units").select("*").execute()
@@ -135,7 +119,6 @@ def cargar_todas_unidades_supabase():
     df["tipo_unidad"] = df["tipo_unidad"].fillna("").astype(str).str.upper().str.strip()
     df["empresa"] = df["empresa"].fillna("").astype(str).str.upper().str.strip()
     return df[df["unidad"].ne("")].drop_duplicates(subset=["unidad"], keep="first")
-
 TABLE_MAP = {
     "IGLOO TRANSPORT": "IGLOO",
     "LINCOLN FREIGHT": "LINCOLN",
@@ -143,7 +126,6 @@ TABLE_MAP = {
     "SET FREIGHT INTERNATIONAL": "SFI",
     "SET LOGIS PLUS": "SLP",
 }
-
 EMPRESA_CODIGOS = {
     "IGLOO TRANSPORT": "IGT",
     "LINCOLN FREIGHT": "LIN",
@@ -151,9 +133,7 @@ EMPRESA_CODIGOS = {
     "SET FREIGHT INTERNATIONAL": "SET",
     "SET LOGIS PLUS": "SLP",
 }
-
 EMPRESAS = list(TABLE_MAP.keys())
-
 def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     table_name = TABLE_MAP[empresa]
     unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
@@ -169,7 +149,6 @@ def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     )
     data = response.data or []
     return data[0].get("No. de Folio") if data else None
-
 def append_pase_to_sheet(data: dict):
     empresa = data["Empresa"]
     table_name = TABLE_MAP[empresa]
@@ -206,7 +185,6 @@ def append_pase_to_sheet(data: dict):
     except Exception as exc:
         st.error(f"Error de Supabase al guardar: {exc}")
         raise
-
 def buscar_folio_en_todas_empresas(folio: str):
     """Search an exact folio across each company's destination table."""
     folio = str(folio or "").strip()
@@ -230,7 +208,6 @@ def buscar_folio_en_todas_empresas(folio: str):
     if errores and not resultados:
         raise RuntimeError("No se pudo consultar Supabase. " + " | ".join(errores))
     return resultados
-
 def crear_pdf_pase(registro: dict, empresa_tabla: str) -> bytes:
     """Create a simple, styled PDF using only Python's standard library."""
     import textwrap
@@ -391,7 +368,6 @@ def crear_pdf_pase(registro: dict, empresa_tabla: str) -> bytes:
     )
     return bytes(output)
 # Preserve duplicate-check and confirmation flow across Streamlit reruns.
-
 for key, default in {
     "folio_generado": "",
     "mostrar_confirmacion": False,
@@ -403,7 +379,6 @@ for key, default in {
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
-
 # Reset widget values at the start of a rerun, before Streamlit creates those widgets.
 if st.session_state.pop("limpiar_captura_pendiente", False):
     for key in (
@@ -421,11 +396,8 @@ if st.session_state.pop("limpiar_captura_pendiente", False):
         "folio_duplicado",
     ):
         st.session_state.pop(key, None)
-
 st.title("🛠️ Captura Pase de Taller")
-
 tab_captura, tab_consulta = st.tabs(["🛠️ Captura Pase de Taller", "🔎 Consultar Pase de Taller"])
-
 with tab_consulta:
     st.markdown("### Consulta de pases registrados")
     st.caption("Busca por No. de Folio. La consulta revisa las tablas de todas las empresas y muestra el registro encontrado.")
@@ -514,7 +486,6 @@ with tab_consulta:
                 st.error(f"No se pudo generar el PDF: {exc}")
             if idx < len(resultados) - 1:
                 st.divider()
-
 with tab_captura:
     st.caption("Capture los datos esenciales del pase. Los demás campos del registro se guardan vacíos o como null.")
     unidades_df = cargar_todas_unidades_supabase()
@@ -673,7 +644,6 @@ with tab_captura:
             st.session_state.pop("email_pase_destinatarios", None)
         st.session_state.mostrar_confirmacion = True
         st.rerun()
-
 if st.session_state.get("confirmar_guardado", False):
     @st.dialog("Registro duplicado detectado")
     def confirmar():
@@ -694,12 +664,11 @@ if st.session_state.get("confirmar_guardado", False):
                 st.session_state.mostrar_confirmacion = True
                 st.rerun()
     confirmar()
-
 if st.session_state.get("mostrar_confirmacion", False):
     @st.dialog("Pase guardado")
     def confirmacion():
         st.success("Pase guardado con éxito")
-        st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
+        st.markdown(f"**No. de Folio:** \`{st.session_state.folio_generado}\`")
         if st.session_state.get("email_pase_estado") == "enviado":
             total_destinatarios = len(st.session_state.get("email_pase_destinatarios", []))
             st.caption(f"Notificación enviada por correo a {total_destinatarios} destinatario(s).")
