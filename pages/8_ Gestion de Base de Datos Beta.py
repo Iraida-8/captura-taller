@@ -3290,7 +3290,7 @@ if is_admin:
                         supabase.table(
                             "lista_correo_viaticos"
                         ).insert({
-                            "name": name_clean,
+                            "nombre": name_clean,
                             "email": email_clean,
                             "empresa": empresa_clean,
                         }).execute()
@@ -3435,7 +3435,7 @@ if is_admin:
                         else:
 
                             update_data = {
-                                "name": name_clean,
+                                "nombre": name_clean,
                                 "email": email_clean,
                                 "empresa": empresa_clean,
                             }
@@ -3646,9 +3646,10 @@ if is_admin:
                         records_df["empresa"].str.upper()
                     )
 
-                    records = records_df.to_dict(
-                        "records"
-                    )
+                    # Translate the editor's internal alias to the real Supabase column.
+                    records = records_df.rename(
+                        columns={"name": "nombre"}
+                    ).to_dict("records")
 
                     # Validate before deleting existing data.
                     if any(
