@@ -524,12 +524,16 @@ with tab_consulta:
                         if not isinstance(entrada, dict):
                             st.write(entrada)
                             continue
-                        usuario_chat = str(entrada.get("user") or "Usuario")
                         mensaje_chat = str(entrada.get("message") or "")
                         fecha_chat = str(entrada.get("timestamp") or "")
                         with st.container(border=True):
-                            st.markdown(f"**{escape(usuario_chat)}**")
-                            st.write(mensaje_chat or "(Mensaje vacío)")
+                            st.markdown("**SISTEMA**")
+                            # Older chatlog entries may contain a person's name and a
+                            # redundant system prefix; hide the person and normalize the message.
+                            mensaje_visible = mensaje_chat.strip()
+                            if mensaje_visible.lower().startswith("sistema:"):
+                                mensaje_visible = mensaje_visible.split(":", 1)[1].strip()
+                            st.write(mensaje_visible or "(Mensaje vacío)")
                             if fecha_chat:
                                 st.caption(fecha_chat)
             except Exception as chat_exc:
@@ -698,7 +702,7 @@ with tab_captura:
         try:
             registrar_evento_chatlog(
                 folio_real,
-                f"Sistema: Operador ha creado la solicitud {folio_real}",
+                f"Solicitud {folio_real} creada",
                 usuario_chat="Operador",
             )
             st.session_state.pop("chatlog_pase_error", None)
