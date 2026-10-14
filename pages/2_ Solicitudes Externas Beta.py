@@ -175,15 +175,49 @@ with tab_captura:
         tipo_unidad_auto = "Remolques"
         tipo_caja_auto = ""
 
-    # Refresh dependent, read-only values before their widgets are instantiated.
-    # This ensures changing the unit updates both displayed fields on Streamlit reruns.
-    st.session_state["tipo_caja_display"] = tipo_caja_auto
+    es_externo = no_unidad == "REMOLQUE EXTERNO"
+
+    # Keep catalog-derived values synchronized with the selected unit.
     st.session_state["tipo_unidad_display"] = tipo_unidad_auto
 
-    # Read-only controls clearly communicate catalog-derived values.
-    st.text_input("Tipo de Caja", disabled=True, key="tipo_caja_display")
+    # External trailers have no catalog type, so let the operator choose the box type.
+    if es_externo:
+        if "tipo_caja_externo" not in st.session_state:
+            st.session_state["tipo_caja_externo"] = "Caja Seca"
+        tipo_caja = st.selectbox(
+            "Tipo de Caja",
+            ["Caja Seca", "Caja Refrigerada"],
+            key="tipo_caja_externo",
+        )
+    else:
+        st.session_state["tipo_caja_display"] = tipo_caja_auto
+        st.text_input("Tipo de Caja", disabled=True, key="tipo_caja_display")
+        tipo_caja = tipo_caja_auto
 
-    es_externo = no_unidad == "REMOLQUE EXTERNO"
+    # Suggest the charge company from the selected catalog unit, but allow manual override.
+    # Only reset the selectbox when the unit selection itself changes.
+    empresa_por_codigo = {
+        "IGT": "IGLOO TRANSPORT",
+        "LIN": "LINCOLN FREIGHT",
+        "PIC": "PICUS",
+        "SET": "SET FREIGHT INTERNATIONAL",
+        "SLP": "SET LOGIS PLUS",
+    }
+    empresa_por_catalogo = {
+        **{name: name for name in EMPRESAS},
+        **empresa_por_codigo,
+    }
+    unidad_anterior = st.session_state.get("_unidad_anterior_empresa")
+    if no_unidad != unidad_anterior:
+        empresa_sugerida = empresa_por_catalogo.get(
+            str(fila.get("empresa", "") or "").strip().upper()
+        )
+        if empresa_sugerida in EMPRESAS:
+            st.session_state["empresa_cobrar"] = empresa_sugerida
+        elif "empresa_cobrar" not in st.session_state:
+            st.session_state["empresa_cobrar"] = EMPRESAS[0]
+        st.session_state["_unidad_anterior_empresa"] = no_unidad
+
     if not es_externo:
         # Avoid retaining stale external-unit details when switching back to a catalog unit.
         st.session_state["no_unidad_externo"] = ""
@@ -204,7 +238,7 @@ with tab_captura:
 
     st.text_input("Tipo de Unidad", disabled=True, key="tipo_unidad_display")
 
-    # Company selection is independent from the unit dropdown.
+    # The company is suggested from the unit but remains editable by the operator.
     empresa = st.selectbox(
         "Empresa a Cobrar",
         EMPRESAS,
@@ -255,7 +289,7 @@ with tab_captura:
             "Marca": None,
             "Modelo": None,
             "Sucursal": None,
-            "Tipo de Caja": tipo_caja_auto or None,
+            "Tipo de Caja": tipo_caja or None,
             "No. de Unidad Externo": no_unidad_externo if es_externo else None,
             "Nombre Linea Externa": linea_externa if es_externo else None,
             "Cobro": None,
