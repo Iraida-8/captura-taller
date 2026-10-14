@@ -5,6 +5,8 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
+import resend
+from html import escape
 # =================================
 # RELEASE CHANNEL
 # =================================
@@ -195,6 +197,72 @@ if has_pases:
             except Exception as e:
                 st.error(f"Supabase error: {e.args}")
                 raise
+
+        def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
+            """Envía el aviso del nuevo pase a los destinatarios configurados para CONTROL."""
+            respuesta = (
+                supabase.table("lista_correo_viaticos")
+                .select("email")
+                .eq("empresa", "CONTROL")
+                .execute()
+            )
+            destinatarios = sorted({
+                str(fila.get("email") or "").strip()
+                for fila in (respuesta.data or [])
+                if str(fila.get("email") or "").strip()
+            }, key=str.lower)
+            if not destinatarios:
+                raise ValueError(
+                    "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
+                )
+
+            resend.api_key = st.secrets["RESEND_API_KEY"]
+
+            def valor(campo):
+                contenido = datos.get(campo)
+                return escape(str(contenido).strip()).replace("\n", "<br>") if contenido not in (None, "") else "—"
+
+            campos = [
+                ("Empresa a cobrar", "Empresa"),
+                ("Fecha de captura", "Fecha de Captura"),
+                ("Estado", "Estado"),
+                ("No. de Unidad", "No. de Unidad"),
+                ("Tipo de Unidad", "Tipo de Unidad"),
+                ("Tipo de Caja", "Tipo de Caja"),
+                ("No. de Unidad Externo", "No. de Unidad Externo"),
+                ("Nombre Línea Externa", "Nombre Linea Externa"),
+            ]
+            filas_html = "".join(
+                f"<tr><td style='padding:8px;border-bottom:1px solid #e5e7eb;color:#555;width:38%'><b>{escape(etiqueta)}</b></td>"
+                f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
+                for etiqueta, campo in campos
+            )
+            correo_html = f"""
+            <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
+              <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
+                <div style="font-size:13px;opacity:.9">CAPTURA PASE DE TALLER</div>
+                <h1 style="font-size:24px;margin:8px 0 0">Nuevo pase registrado</h1>
+              </div>
+              <div style="border:1px solid #e5e7eb;border-top:0;padding:24px;border-radius:0 0 12px 12px">
+                <p>Se generó un nuevo folio al guardar un Pase de Taller.</p>
+                <div style="background:#f3f5ff;border:1px solid #dbe2ff;border-radius:8px;padding:16px;margin:16px 0">
+                  <div style="font-size:12px;color:#555">NO. DE FOLIO</div>
+                  <div style="font-size:25px;font-weight:800;color:#151F6D;margin-top:4px">{escape(folio)}</div>
+                </div>
+                <table style="width:100%;border-collapse:collapse">{filas_html}</table>
+                <h3 style="color:#151F6D;margin:22px 0 8px">Observaciones y comentarios</h3>
+                <div style="background:#f8f9fa;border-radius:8px;padding:14px;white-space:normal">{valor('Descripcion Problema')}</div>
+              </div>
+            </div>
+            """
+            resend.Emails.send({
+                "from": "PG Data Analyst <notificaciones@pgdataanalyst.com>",
+                "to": destinatarios,
+                "subject": f"Nuevo Pase de Taller: {folio}",
+                "html": correo_html,
+            })
+            return destinatarios
+
         # =================================
         # Session state
         # =================================
@@ -327,7 +395,6 @@ if has_pases:
                 tipo_proveedor, proveedor, proveedor_otro = "Externo", "Selecciona proveedor", ""
                 razones, tipo_reporte = "Selecciona razón", "Selecciona tipo de mantenimiento"
                 operador, oste, no_reporte = "", "", ""
-                st.title("🛠️ Captura Pase de Taller")
                 st.subheader("Pase de Taller")
             else:
                 st.subheader("Datos del Reporte")
@@ -376,16 +443,13 @@ if has_pases:
                     else "Pase de Taller"
                 )
 
-            # La unidad, su tipo y el tipo de caja se muestran en una sola fila.
-            col_unidad, col_tipo_unidad, col_tipo_caja = st.columns([2, 1, 1])
-            with col_unidad:
-                no_unidad = st.selectbox(
-                    "No. de Unidad",
-                    unidad_options,
-                    help="Busca escribiendo en el campo. La lista incluye todas las empresas.",
-                    key="pase_no_unidad_global",
-                )
-
+            # La unidad se selecciona dentro de Pase de Taller; los datos dependientes se actualizan con ella.
+            no_unidad = st.selectbox(
+                "No. de Unidad",
+                unidad_options,
+                help="Busca escribiendo en el campo. La lista incluye todas las empresas.",
+                key="pase_no_unidad_global",
+            )
             fila_match = unidades_catalogo[
                 unidades_catalogo["unidad"].astype(str).eq(str(no_unidad))
             ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
@@ -394,7 +458,7 @@ if has_pases:
             tipo_normalizado = raw_tipo_unidad.replace("_", " ").replace("-", " ")
             if tipo_normalizado in ("TRACTOR", "TRACTORES", "TRACTOCAMION", "TRACTOCAMIONES", "CAMION", "CAMIONES"):
                 tipo_unidad_auto = "Tractores"
-            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER")):
+            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER", "TRAILER")):
                 tipo_unidad_auto = "Remolques"
             else:
                 tipo_unidad_auto = ""
@@ -405,29 +469,15 @@ if has_pases:
             if es_externo:
                 tipo_unidad_auto, tipo_caja_auto = "Remolques", ""
 
-            # Actualiza el campo bloqueado con el tipo correspondiente a la unidad seleccionada.
+            # Update the keyed disabled widget on every rerun; otherwise Streamlit
+            # retains its first (blank) value instead of the selected unit's type.
             st.session_state["pase_tipo_unidad_display"] = tipo_unidad_auto
-            with col_tipo_unidad:
-                st.text_input(
-                    "Tipo de Unidad",
-                    disabled=True,
-                    key="pase_tipo_unidad_display",
-                )
+            st.text_input(
+                "Tipo de Unidad",
+                disabled=True,
+                key="pase_tipo_unidad_display",
+            )
 
-            with col_tipo_caja:
-                if tipo_unidad_auto == "Remolques":
-                    opciones_caja = ["Caja Seca", "Caja Refrigerada"]
-                    indice_caja = opciones_caja.index(tipo_caja_auto) if tipo_caja_auto in opciones_caja else 0
-                    tipo_caja = st.selectbox(
-                        "Tipo de Caja", opciones_caja, index=indice_caja,
-                        key="pase_tipo_caja_externo" if es_externo else "pase_tipo_caja_catalogo",
-                    )
-                else:
-                    tipo_caja = st.selectbox(
-                        "Tipo de Caja", ["Caja no aplicable"], disabled=True, key="pase_tipo_caja_na"
-                    )
-
-            # Empresa a Cobrar ocupa una fila independiente.
             empresa_por_codigo = {
                 "IGT": "IGLOO TRANSPORT", "LIN": "LINCOLN FREIGHT", "PIC": "PICUS",
                 "SET": "SET FREIGHT INTERNATIONAL", "SLP": "SET LOGIS PLUS",
@@ -442,24 +492,32 @@ if has_pases:
             empresa = st.selectbox("Empresa a Cobrar", empresas_disponibles, key="pase_empresa_cobrar")
             empresa_codigo = EMPRESA_CODIGOS.get(empresa)
 
-            # Los datos de unidad externa comparten una fila debajo de Empresa a Cobrar.
-            col_unidad_externa, col_linea_externa = st.columns(2)
-            with col_unidad_externa:
-                no_unidad_externo = st.text_input(
-                    "No. de Unidad Externo", disabled=not es_externo,
-                    placeholder="Escribe el número externo", key="pase_no_unidad_externo"
-                )
-            with col_linea_externa:
-                linea_externa = st.text_input(
-                    "Nombre Línea Externa", disabled=not es_externo,
-                    placeholder="Escribe el nombre de la línea", key="pase_linea_externa"
-                )
-
             marca_valor = fila_unidad.get("marca", "")
             modelo_valor = fila_unidad.get("modelo", "")
             sucursal_valor = fila_unidad.get("SUCURSAL", fila_unidad.get("sucursal", ""))
             if es_externo:
                 marca_valor, modelo_valor, sucursal_valor = "EXTERNO", "0000", "EXTERNO"
+
+            if tipo_unidad_auto == "Remolques":
+                opciones_caja = ["Caja Seca", "Caja Refrigerada"]
+                indice_caja = opciones_caja.index(tipo_caja_auto) if tipo_caja_auto in opciones_caja else 0
+                tipo_caja = st.selectbox(
+                    "Tipo de Caja", opciones_caja, index=indice_caja,
+                    key="pase_tipo_caja_externo" if es_externo else "pase_tipo_caja_catalogo",
+                )
+            else:
+                tipo_caja = st.selectbox(
+                    "Tipo de Caja", ["Caja no aplicable"], disabled=True, key="pase_tipo_caja_na"
+                )
+
+            no_unidad_externo = st.text_input(
+                "No. de Unidad Externo", disabled=not es_externo,
+                placeholder="Escribe el número externo", key="pase_no_unidad_externo"
+            )
+            linea_externa = st.text_input(
+                "Nombre Línea Externa", disabled=not es_externo,
+                placeholder="Escribe el nombre de la línea", key="pase_linea_externa"
+            )
 
             if regular_pase_user:
                 aplica_cobro, responsable, genero_multa, no_inspeccion, reparacion_multa = "No", "", False, "", ""
@@ -531,8 +589,11 @@ if has_pases:
                     "Empresa": empresa, "Tipo de Reporte": None if regular_pase_user else tipo_reporte,
                     "Tipo de Unidad": tipo_unidad_auto,
                     "Operador": None if regular_pase_user else operador, "No. de Unidad": no_unidad,
-                    "Marca": marca_valor, "Modelo": modelo_valor, "Sucursal": sucursal_valor,
-                    "Tipo de Caja": tipo_caja, "No. de Unidad Externo": no_unidad_externo if es_externo else None,
+                    "Marca": None if regular_pase_user else marca_valor,
+                    "Modelo": None if regular_pase_user else modelo_valor,
+                    "Sucursal": None if regular_pase_user else sucursal_valor,
+                    "Tipo de Caja": tipo_caja,
+                    "No. de Unidad Externo": no_unidad_externo if es_externo else None,
                     "Nombre Linea Externa": linea_externa if es_externo else None,
                     "Cobro": None if regular_pase_user else str(aplica_cobro),
                     "Responsable": None if regular_pase_user else responsable,
@@ -545,6 +606,16 @@ if has_pases:
                 log_activity(f"Pase {folio_real} creado", "Solicitudes y Pases")
                 st.session_state.forzar_guardado = False
                 st.session_state.folio_generado = folio_real
+                if regular_pase_user:
+                    try:
+                        destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
+                        st.session_state.email_pase_estado = "enviado"
+                        st.session_state.email_pase_destinatarios = destinatarios_email
+                        st.session_state.pop("email_pase_error", None)
+                    except Exception as email_exc:
+                        st.session_state.email_pase_estado = "error"
+                        st.session_state.email_pase_error = str(email_exc)
+                        st.session_state.pop("email_pase_destinatarios", None)
                 st.session_state.mostrar_confirmacion = True
                 st.rerun()
         # =================================
@@ -582,9 +653,17 @@ if has_pases:
                 st.markdown(
                     f"**No. de Folio:** \`{st.session_state.folio_generado}\`"
                 )
+                if role_normalized == "regular_pase_user" and st.session_state.get("email_pase_estado") == "error":
+                    st.warning(
+                        "El pase sí se guardó, pero no se pudo enviar el correo: "
+                        f"{st.session_state.get('email_pase_error', 'Error desconocido')}"
+                    )
                 if st.button("Aceptar"):
                     st.session_state.mostrar_confirmacion = False
                     st.session_state.folio_generado = ""
+                    st.session_state.pop("email_pase_estado", None)
+                    st.session_state.pop("email_pase_error", None)
+                    st.session_state.pop("email_pase_destinatarios", None)
                     st.switch_page(DASHBOARD_PAGE)
             confirmacion()
 # =================================
