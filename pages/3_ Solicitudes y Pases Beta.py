@@ -5,6 +5,7 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
+
 # =================================
 # RELEASE CHANNEL
 # =================================
@@ -15,10 +16,12 @@ DASHBOARD_PAGE = (
     if APP_CHANNEL == "BETA"
     else "pages/dashboard.py"
 )
+
 # =================================
 # Security gates
 # =================================
 require_login()
+
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
@@ -26,6 +29,7 @@ user = st.session_state.user
 access = user.get("access", [])
 role = (user.get("role") or "").lower()
 require_access("pase_taller")
+
 # =================================
 # Page configuration
 # =================================
@@ -37,13 +41,16 @@ st.set_page_config(
     ),
     layout="wide"
 )
+
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
 load_css()
+
 # -------------------------------
 # AUDIT
 # -------------------------------
+
 def log_activity(action, page):
     try:
         supabase.table("user_activity_log").insert({
@@ -55,6 +62,7 @@ def log_activity(action, page):
         }).execute()
     except Exception as e:
         print(e)
+
 # =================================
 # Navigation
 # =================================
@@ -62,6 +70,7 @@ st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 st.divider()
+
 # =================================
 # MODULES
 # =================================
@@ -76,11 +85,13 @@ elif has_pases:
     tab_pases = st.container()
 elif has_bonos:
     tab_bonos = st.container()
+
 # =================================
 # CAPTURA PASE DE TALLER
 # =================================
 if has_pases:
     with tab_pases:
+
         # =================================
         # SUPABASE CONFIGURATION
         # =================================
@@ -105,6 +116,7 @@ if has_pases:
             df["unidad"] = df["unidad"].astype(str).str.strip()
             df["tipo_unidad"] = df["tipo_unidad"].astype(str).str.upper().str.strip()
             return df
+
         # =================================
         # SUPABASE TABLE MAP
         # =================================
@@ -130,6 +142,7 @@ if has_pases:
             "setfreight": "SET FREIGHT INTERNATIONAL",
             "setlogis": "SET LOGIS PLUS",
         }
+
         # =================================
         # Check duplicate unit in last 24h (SUPABASE)
         # =================================
@@ -150,6 +163,7 @@ if has_pases:
             if not data:
                 return None
             return data[0]["No. de Folio"]
+
         # =================================
         # Append Pase de Taller to Supabase
         # =================================
@@ -164,6 +178,7 @@ if has_pases:
                 "SET LOGIS PLUS": "SLP",
             }
             prefix = prefix_map.get(data["Empresa"])
+
             # ---- GET LAST FOLIO ----
             response = (
                 supabase.table(table_name)
@@ -180,6 +195,7 @@ if has_pases:
             else:
                 next_num = 1
             folio = f"{prefix}{str(next_num).zfill(5)}"
+
             # ---- INSERT INTO SUPABASE ----
             payload = data.copy()
             payload["No. de Folio"] = folio
@@ -195,6 +211,7 @@ if has_pases:
             except Exception as e:
                 st.error(f"Supabase error: {e.args}")
                 raise
+
         # =================================
         # Session state
         # =================================
@@ -208,26 +225,32 @@ if has_pases:
             st.session_state.confirmar_guardado = False
         if "forzar_guardado" not in st.session_state:
             st.session_state.forzar_guardado = False
+
         # =============================
         # FIELD USER VIEW
         # =============================
         if role == "field_user":
+
             # =================================
             # Page title
             # =================================
             st.title("🛠️ Captura Pase de Taller")
+
             # =================================
             # SECCIÓN 1 — DATOS DEL REPORTE
             # =================================
             st.subheader("WIP MY GUY")
+
         # =============================
         # ADMIN, MANAGER, REGULAR USER VIEW
         # =============================
         else:
+
             # =================================
             # Page title
             # =================================
             st.title("🛠️ Captura Pase de Taller")
+
             # =================================
             # SECCIÓN 1 — DATOS DEL REPORTE
             # =================================
@@ -293,228 +316,369 @@ if has_pases:
                     ["Selecciona una orden por completar"] + ordenes_por_completar,
                     key="orden_por_completar"
                 )
-            role_normalized = str(role or "").strip().lower()
-            regular_pase_user = role_normalized == "regular_pase_user"
+            st.subheader("Datos del Reporte")
+            # Hidden - always today's date
             fecha_reporte = date.today()
-            @st.cache_data(ttl=3600)
-            def cargar_todas_unidades_supabase():
-                response = supabase.table("vehicle_units").select("*").execute()
-                df = pd.DataFrame(response.data or [])
-                if not df.empty:
-                    df["unidad"] = df["unidad"].astype(str).str.strip()
-                    df["tipo_unidad"] = df["tipo_unidad"].astype(str).str.upper().str.strip()
-                return df
-            unidades_catalogo = cargar_todas_unidades_supabase()
-            if unidades_catalogo.empty:
-                st.warning("No fue posible cargar el catálogo de unidades.")
-                st.stop()
-            unidad_options = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
-                u for u in unidades_catalogo["unidad"].dropna().unique().tolist()
-                if u and u.upper() != "REMOLQUE EXTERNO"
-            )
-            no_unidad = st.session_state.get("pase_no_unidad_global", "Selecciona Unidad")
-            if no_unidad not in unidad_options:
-                no_unidad = "Selecciona Unidad"
-            fila_match = unidades_catalogo[
-                unidades_catalogo["unidad"].astype(str).eq(str(no_unidad))
-            ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
-            fila_unidad = fila_match.iloc[0] if not fila_match.empty else {}
-            raw_tipo_unidad = str(fila_unidad.get("tipo_unidad", "") or "").strip().upper()
-            tipo_unidad_auto = "Tractores" if raw_tipo_unidad == "TRACTOR" else (
-                "Remolques" if raw_tipo_unidad in ("CAJA SECA", "CAJA REFRIGERADA") else ""
-            )
-            tipo_caja_auto = "Caja Seca" if "SECA" in raw_tipo_unidad else (
-                "Caja Refrigerada" if "REFRIGERADA" in raw_tipo_unidad or "REFRIGER" in raw_tipo_unidad else ""
-            )
-            es_externo = no_unidad == "REMOLQUE EXTERNO"
-            if es_externo:
-                tipo_unidad_auto, tipo_caja_auto = "Remolques", ""
-            empresas_usuario = [
-                empresa for permiso, empresa in ACCESS_EMPRESA_MAP.items() if permiso in access
-            ]
-            empresas_disponibles = EMPRESAS if regular_pase_user else empresas_usuario
-            if not empresas_disponibles:
-                st.error("Tu usuario no tiene ninguna empresa asignada.")
-                st.stop()
-            empresa_por_codigo = {
-                "IGT": "IGLOO TRANSPORT", "LIN": "LINCOLN FREIGHT", "PIC": "PICUS",
-                "SET": "SET FREIGHT INTERNATIONAL", "SLP": "SET LOGIS PLUS",
-            }
-            codigo_catalogo = str(fila_unidad.get("empresa", "") or "").strip().upper()
-            empresa_sugerida = empresa_por_codigo.get(codigo_catalogo, codigo_catalogo)
-            if empresa_sugerida not in empresas_disponibles:
-                empresa_sugerida = empresas_disponibles[0]
-            if st.session_state.get("_pase_empresa_unidad_anterior") != no_unidad:
-                st.session_state["pase_empresa_cobrar"] = empresa_sugerida
-                st.session_state["_pase_empresa_unidad_anterior"] = no_unidad
-            if regular_pase_user:
-                tipo_proveedor, proveedor, proveedor_otro = "Externo", "Selecciona proveedor", ""
-                razones, tipo_reporte = "Selecciona razón", "Selecciona tipo de mantenimiento"
-                tipo_unidad_operador, operador, oste, no_reporte = tipo_unidad_auto, "", "", ""
-                st.title("🛠️ Captura Pase de Taller")
-                st.subheader("Pase de Taller")
-            else:
-                st.subheader("Datos del Reporte")
-                tp1, tp2, tp25, tp3 = st.columns(4)
-                with tp1:
-                    tipo_proveedor = st.selectbox("Tipo de Orden", ["----", "Interno", "Externo"], key="tipo_orden_pase")
-                with tp2:
-                    if tipo_proveedor == "Interno":
-                        proveedor = st.selectbox("Proveedor / Taller", ["WNC", "OTRO"], index=0)
-                    else:
-                        proveedor = st.selectbox("Proveedor / Taller", [
-                            "Selecciona proveedor", "TALLER", "K9", "NAVARRO",
-                            "KEVIN DANIEL RAUDALES MEDINA (RM)", "KINOS", "OTRO"
-                        ])
-                with tp25:
-                    proveedor_otro = st.text_input("Proveedor / Otro", disabled=proveedor != "OTRO", placeholder="Especificar proveedor")
-                with tp3:
-                    if "razones" not in st.session_state:
-                        st.session_state.razones = "Selecciona razón"
-                    if tipo_proveedor == "Interno":
-                        st.session_state.razones = "Selecciona razón"
-                    razones = st.selectbox("Razones", [
-                        "Selecciona razón", "Taller Saturado", "Caja fuera de Patio",
-                        "Taller no Cuenta con las Refacciones", "Taller da Respuesta",
-                        "Taller PG no va al RFE"
-                    ], key="razones", disabled=tipo_proveedor != "Externo")
-                st.text_input("Capturó", value=st.session_state.user.get("name") or st.session_state.user.get("email"), disabled=True)
-                oste = ""
-                no_reporte = st.text_input("No. de Reporte")
-                tipo_reporte = st.selectbox("Tipo de Mantenimiento", [
-                    "Selecciona tipo de mantenimiento", "Orden Preventivo", "Orden Correctivo"
-                ])
-                tipo_unidad_operador = st.selectbox(
-                    "Tipo de Unidad", ["Seleccionar tipo de unidad", "Tractores", "Remolques"],
-                    index=(["Seleccionar tipo de unidad", "Tractores", "Remolques"].index(tipo_unidad_auto)
-                           if tipo_unidad_auto in ("Tractores", "Remolques") else 0)
+            tp1, tp2, tp25, tp3 = st.columns(4)
+            with tp1:
+                tipo_proveedor = st.selectbox(
+                    "Tipo de Orden",
+                    ["----", "Interno", "Externo"]
                 )
-                operador = st.text_input("Operador")
+            with tp2:
+                # Proveedor / Taller behavior:
+                # Interno: only WNC and OTRO, with WNC as the default.
+                # Externo: all existing options except WNC.
+                if tipo_proveedor == "Interno":
+                    opciones_proveedor = [
+                        "WNC",
+                        "OTRO"
+                    ]
+                    proveedor = st.selectbox(
+                        "Proveedor / Taller",
+                        opciones_proveedor,
+                        index=0
+                    )
+                else:
+                    opciones_proveedor = [
+                        "Selecciona proveedor",
+                        "TALLER",
+                        "K9",
+                        "NAVARRO",
+                        "KEVIN DANIEL RAUDALES MEDINA (RM)",
+                        "KINOS",
+                        "OTRO"
+                    ]
+                    proveedor = st.selectbox(
+                        "Proveedor / Taller",
+                        opciones_proveedor,
+                        index=0
+                    )
+            with tp25:
+                proveedor_otro = st.text_input(
+                    "Proveedor / Otro",
+                    disabled=proveedor != "OTRO",
+                    placeholder="Especificar proveedor"
+                )
+            with tp3:
+                if "razones" not in st.session_state:
+                    st.session_state.razones = "Selecciona razón"
+                if tipo_proveedor == "Interno":
+                    st.session_state.razones = "Selecciona razón"
+                razones = st.selectbox(
+                    "Razones",
+                    [
+                        "Selecciona razón",
+                        "Taller Saturado",
+                        "Caja fuera de Patio",
+                        "Taller no Cuenta con las Refacciones",
+                        "Taller da Respuesta",
+                        "Taller PG no va al RFE"
+                    ],
+                    key="razones",
+                    disabled=tipo_proveedor != "Externo"
+                )
+            # Hidden value
+            estado = "Inicio / Nuevo"
+            st.text_input(
+                "Capturó",
+                value=st.session_state.user.get("name") or st.session_state.user.get("email"),
+                disabled=True
+            )
+            folio_display = (
+                st.session_state.folio_generado
+                if st.session_state.folio_generado
+                else "Folio generado al guardar"
+            )
+            # Hidden values
+            oste = ""
+            folio_display = (
+                st.session_state.folio_generado
+                if st.session_state.folio_generado
+                else "Folio generado al guardar"
+            )
+            no_reporte = st.text_input(
+                "No. de Reporte"
+            )
+
+            # =================================
+            # SECCIÓN 2 — INFORMACIÓN DEL OPERADOR
+            # =================================
+            if tipo_proveedor in ["Interno", "Externo"]:
                 st.divider()
                 st.subheader(
-                    "Pase de Taller Interno" if tipo_proveedor == "Interno"
-                    else "Pase de Taller Externo" if tipo_proveedor == "Externo"
-                    else "Pase de Taller"
+                    "Pase de Taller Interno"
+                    if tipo_proveedor == "Interno"
+                    else "Pase de Taller Externo"
                 )
-            no_unidad = st.selectbox(
-                "No. de Unidad", unidad_options,
-                index=unidad_options.index(no_unidad),
-                help="Busca escribiendo en el campo. La lista incluye todas las empresas.",
-                key="pase_no_unidad_global",
-            )
-            fila_match = unidades_catalogo[
-                unidades_catalogo["unidad"].astype(str).eq(str(no_unidad))
-            ] if no_unidad not in ("Selecciona Unidad", "REMOLQUE EXTERNO") else pd.DataFrame()
-            fila_unidad = fila_match.iloc[0] if not fila_match.empty else {}
-            raw_tipo_unidad = str(fila_unidad.get("tipo_unidad", "") or "").strip().upper()
-            tipo_unidad_auto = "Tractores" if raw_tipo_unidad == "TRACTOR" else (
-                "Remolques" if raw_tipo_unidad in ("CAJA SECA", "CAJA REFRIGERADA") else ""
-            )
-            tipo_caja_auto = "Caja Seca" if "SECA" in raw_tipo_unidad else (
-                "Caja Refrigerada" if "REFRIGERADA" in raw_tipo_unidad or "REFRIGER" in raw_tipo_unidad else ""
-            )
-            es_externo = no_unidad == "REMOLQUE EXTERNO"
-            if es_externo:
-                tipo_unidad_auto, tipo_caja_auto = "Remolques", ""
-            empresa = st.selectbox("Empresa a Cobrar", empresas_disponibles, key="pase_empresa_cobrar")
-            empresa_codigo = EMPRESA_CODIGOS.get(empresa)
-            marca_valor = fila_unidad.get("marca", "")
-            modelo_valor = fila_unidad.get("modelo", "")
-            sucursal_valor = fila_unidad.get("SUCURSAL", fila_unidad.get("sucursal", ""))
-            if es_externo:
-                marca_valor, modelo_valor, sucursal_valor = "EXTERNO", "0000", "EXTERNO"
-            if es_externo:
-                tipo_caja = st.selectbox("Tipo de Caja", ["Caja Seca", "Caja Refrigerada"], key="pase_tipo_caja_externo")
-            elif tipo_caja_auto:
-                opciones_caja = ["Caja Seca", "Caja Refrigerada"]
-                tipo_caja = st.selectbox("Tipo de Caja", opciones_caja, index=opciones_caja.index(tipo_caja_auto), key="pase_tipo_caja_catalogo")
-            else:
-                tipo_caja = st.selectbox("Tipo de Caja", ["Caja no aplicable"], disabled=True, key="pase_tipo_caja_na")
-            no_unidad_externo = st.text_input("No. de Unidad Externo", disabled=not es_externo, placeholder="Escribe el número externo", key="pase_no_unidad_externo")
-            linea_externa = st.text_input("Nombre Línea Externa", disabled=not es_externo, placeholder="Escribe el nombre de la línea", key="pase_linea_externa")
-            if regular_pase_user:
-                st.text_input("Tipo de Unidad", value=tipo_unidad_auto, disabled=True, key="pase_tipo_unidad_display")
-                aplica_cobro, responsable, genero_multa, no_inspeccion, reparacion_multa = "No", "", False, "", ""
+
+                # =================================
+                # EMPRESA SEGÚN ACCESO DEL USUARIO
+                # =================================
+                empresas_usuario = [
+                    empresa
+                    for permiso, empresa in ACCESS_EMPRESA_MAP.items()
+                    if permiso in access
+                ]
+                if not empresas_usuario:
+                    st.error("Tu usuario no tiene ninguna empresa asignada.")
+                    st.stop()
+                elif len(empresas_usuario) == 1:
+                    # Auto-select company and don't show the field
+                    empresa = empresas_usuario[0]
+                else:
+                    empresa = st.selectbox(
+                        "Empresa a Cobrar",
+                        empresas_usuario,
+                    )
+                empresa_codigo = EMPRESA_CODIGOS.get(empresa)
+                unidades_df = cargar_unidades_supabase(empresa_codigo)
+                # Split dataset
+                tractores_df = unidades_df[
+                    unidades_df["tipo_unidad"] == "TRACTOR"
+                ]
+                remolques_df = unidades_df[
+                    unidades_df["tipo_unidad"].isin(["CAJA SECA", "CAJA REFRIGERADA"])
+                ]
+                tr1, tr2 = st.columns(2)
+                with tr1:
+                    tipo_reporte = st.selectbox(
+                        "Tipo de Mantenimiento",
+                        [
+                            "Selecciona tipo de mantenimiento",
+                            "Orden Preventivo",
+                            "Orden Correctivo"
+                        ]
+                    )
+                with tr2:
+                    tipo_unidad_operador = st.selectbox(
+                        "Tipo de Unidad",
+                        ["Seleccionar tipo de unidad", "Tractores", "Remolques"]
+                    )
+                operador = st.text_input("Operador")
+                c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
+                if tipo_unidad_operador == "Tractores":
+                    unidades = ["Selecciona Unidad"] + sorted(
+                        tractores_df["unidad"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                elif tipo_unidad_operador == "Remolques":
+                    unidades = ["Selecciona Unidad", "REMOLQUE EXTERNO"] + sorted(
+                        remolques_df["unidad"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                else:
+                    unidades = ["Selecciona Unidad"]
+                with c1:
+                    no_unidad = st.selectbox(
+                        "No. de Unidad",
+                        unidades,
+                        disabled=tipo_unidad_operador == "Seleccionar tipo de unidad"
+                    )
+                marca_valor = ""
+                modelo_valor = ""
+                sucursal_valor = ""
+                tipo_caja_auto = ""
+                tipo_unidad_valor = ""
+                if tipo_unidad_operador == "Tractores" and no_unidad != "Selecciona Unidad":
+                    fila_match = tractores_df[
+                        tractores_df["unidad"] == str(no_unidad)
+                    ]
+                    if not fila_match.empty:
+                        fila = fila_match.iloc[0]
+                    else:
+                        fila = {}
+                    marca_valor = fila.get("marca", "")
+                    modelo_valor = fila.get("modelo", "")
+                    if pd.notna(modelo_valor):
+                        try:
+                            modelo_valor = int(float(modelo_valor))
+                        except:
+                            modelo_valor = None
+                    sucursal_valor = fila.get("SUCURSAL", "")
+                elif tipo_unidad_operador == "Remolques":
+                    if no_unidad == "REMOLQUE EXTERNO":
+                        marca_valor = "EXTERNO"
+                        modelo_valor = "0000"
+                        sucursal_valor = "EXTERNO"
+                        tipo_caja_auto = ""
+                    elif no_unidad != "Selecciona Unidad":
+                        fila_match = remolques_df[
+                            remolques_df["unidad"].astype(str) == str(no_unidad)
+                        ]
+                        if not fila_match.empty:
+                            fila = fila_match.iloc[0]
+                        else:
+                            fila = {}
+                        marca_valor = fila.get("marca", "")
+                        modelo_valor = fila.get("modelo", "")
+                        sucursal_valor = fila.get("sucursal", "")
+                        tipo_unidad_valor = fila.get("tipo_unidad", "")
+                with c2:
+                    opciones_caja = ["Selecciona Caja", "Caja Seca", "Caja Refrigerada"]
+                    if tipo_unidad_operador == "Remolques":
+                        tipo_lower = str(tipo_unidad_valor).lower()
+                        if "seca" in tipo_lower:
+                            index_default = 1
+                        elif "refriger" in tipo_lower or "fria" in tipo_lower or "frío" in tipo_lower:
+                            index_default = 2
+                        else:
+                            index_default = 0
+                    else:
+                        index_default = 0
+                    tipo_caja = st.selectbox(
+                        "Tipo de Caja",
+                        opciones_caja if tipo_unidad_operador == "Remolques" else ["Caja no aplicable"],
+                        index=index_default,
+                        disabled=tipo_unidad_operador != "Remolques"
+                    )
+                with c3:
+                    no_unidad_externo = st.text_input(
+                        "No. de Unidad Externo",
+                        disabled=no_unidad != "REMOLQUE EXTERNO"
+                    )
+                with c4:
+                    linea_externa = st.text_input(
+                        "Nombre Línea Externa",
+                        disabled=no_unidad != "REMOLQUE EXTERNO"
+                    )
+                c1, c2 = st.columns([1, 3])
+                with c1:
+                    aplica_cobro = st.radio(
+                        "¿Aplica Cobro?",
+                        ["No", "Sí"],
+                        horizontal=True,
+                        index=0
+                    )
+                with c2:
+                    responsable = st.text_input(
+                        "Responsable",
+                        disabled=aplica_cobro != "Sí"
+                    )
                 descripcion_problema = st.text_area(
-                    "Observaciones y Comentarios",
-                    placeholder="Describe brevemente el problema o los comentarios relevantes",
-                    height=150, key="pase_observaciones_regular"
+                    "Observaciones y Comentarios"
                 )
-            else:
                 c1, c2 = st.columns([1, 3])
                 with c1:
-                    aplica_cobro = st.radio("¿Aplica Cobro?", ["No", "Sí"], horizontal=True, index=0, key="pase_aplica_cobro")
+                    genero_multa = st.checkbox("¿Generó multa?")
                 with c2:
-                    responsable = st.text_input("Responsable", disabled=aplica_cobro != "Sí")
-                descripcion_problema = st.text_area("Observaciones y Comentarios", key="pase_observaciones")
-                c1, c2 = st.columns([1, 3])
-                with c1:
-                    genero_multa = st.checkbox("¿Generó multa?", key="pase_genero_multa")
-                with c2:
-                    no_inspeccion = st.text_input("No. de Inspección", disabled=not genero_multa)
+                    no_inspeccion = st.text_input(
+                        "No. de Inspección",
+                        disabled=not genero_multa
+                    )
                 reparacion_multa = st.text_area(
                     "Reparación que generó multa",
                     placeholder="Por favor introducir # de reporte aplicable",
-                    disabled=not genero_multa,
+                    disabled=not genero_multa
                 )
-            st.divider()
-            mostrar_guardar = regular_pase_user or tipo_proveedor in ["Interno", "Externo"]
-            if mostrar_guardar and st.button("💾 Guardar Pase", type="primary", use_container_width=True):
-                if no_unidad == "Selecciona Unidad":
-                    st.error("Debes seleccionar un No. de Unidad válido antes de guardar.")
-                    st.stop()
-                if es_externo and not (no_unidad_externo and no_unidad_externo.strip()):
-                    st.error("Debes capturar el No. de Unidad Externo.")
-                    st.stop()
-                if not regular_pase_user and aplica_cobro == "Sí" and not (responsable and responsable.strip()):
-                    st.error("Debes capturar el Responsable cuando aplica cobro.")
-                    st.stop()
-                if not regular_pase_user and genero_multa and not (no_inspeccion and no_inspeccion.strip()):
-                    st.error("Debes capturar el No. de Inspección cuando se genera multa.")
-                    st.stop()
-                if not regular_pase_user and genero_multa and not (reparacion_multa and reparacion_multa.strip()):
-                    st.error("Debes capturar la Reparación que generó multa cuando se genera multa.")
-                    st.stop()
-                if not regular_pase_user and proveedor == "OTRO" and not proveedor_otro.strip():
-                    st.error("Debes capturar el nombre del proveedor.")
-                    st.stop()
-                st.session_state.setdefault("forzar_guardado", False)
-                st.session_state.setdefault("confirmar_guardado", False)
-                st.session_state.setdefault("folio_duplicado", "")
-                folio_existente = buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo)
-                if folio_existente and not st.session_state.forzar_guardado:
-                    st.session_state.folio_duplicado = folio_existente
-                    st.session_state.confirmar_guardado = True
-                    st.rerun()
-                proveedor_guardar = f"OTRO, {proveedor_otro.strip()}" if not regular_pase_user and proveedor == "OTRO" else (None if regular_pase_user else proveedor)
-                payload = {
-                    "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-                    "Fecha de Reporte": str(fecha_reporte),
-                    "Tipo de Proveedor": None if regular_pase_user else tipo_proveedor,
-                    "Proveedor": proveedor_guardar,
-                    "Razones": None if regular_pase_user or tipo_proveedor == "Interno" else razones,
-                    "Estado": "Por Completar" if regular_pase_user else "Inicio / Nuevo",
-                    "Capturo": None if regular_pase_user else (st.session_state.user.get("name") or st.session_state.user.get("email")),
-                    "Oste": oste, "No. de Reporte": None if regular_pase_user else no_reporte,
-                    "Empresa": empresa, "Tipo de Reporte": None if regular_pase_user else tipo_reporte,
-                    "Tipo de Unidad": tipo_unidad_auto if regular_pase_user else tipo_unidad_operador,
-                    "Operador": None if regular_pase_user else operador, "No. de Unidad": no_unidad,
-                    "Marca": marca_valor, "Modelo": modelo_valor, "Sucursal": sucursal_valor,
-                    "Tipo de Caja": tipo_caja, "No. de Unidad Externo": no_unidad_externo if es_externo else None,
-                    "Nombre Linea Externa": linea_externa if es_externo else None,
-                    "Cobro": None if regular_pase_user else str(aplica_cobro),
-                    "Responsable": None if regular_pase_user else responsable,
-                    "Descripcion Problema": descripcion_problema,
-                    "Multa": None if regular_pase_user else ("Sí" if genero_multa else "No"),
-                    "No. de Inspeccion": None if regular_pase_user else no_inspeccion,
-                    "Reparacion Multa": None if regular_pase_user else reparacion_multa,
-                }
-                folio_real = append_pase_to_sheet(payload)
-                log_activity(f"Pase {folio_real} creado", "Solicitudes y Pases")
-                st.session_state.forzar_guardado = False
-                st.session_state.folio_generado = folio_real
-                st.session_state.mostrar_confirmacion = True
+                st.divider()
+                st.markdown("###")
+
+        # =================================
+        # GUARDAR
+        # =================================
+        mostrar_guardar = (
+            tipo_proveedor in ["Interno", "Externo"]
+        )
+        if mostrar_guardar and st.button(
+            "💾 Guardar Pase",
+            type="primary",
+            use_container_width=True
+        ):
+
+            # ==========================================
+            # HARD VALIDATIONS (LOCK)
+            # ==========================================
+            if no_unidad == "Selecciona Unidad":
+                st.error("Debes seleccionar un No. de Unidad válido antes de guardar.")
+                st.stop()
+            if no_unidad == "REMOLQUE EXTERNO" and not (no_unidad_externo and str(no_unidad_externo).strip()):
+                st.error("Debes capturar el No. de Unidad Externo.")
+                st.stop()
+            if aplica_cobro == "Sí" and not (responsable and str(responsable).strip()):
+                st.error("Debes capturar el Responsable cuando aplica cobro.")
+                st.stop()
+            if genero_multa and not (no_inspeccion and str(no_inspeccion).strip()):
+                st.error("Debes capturar el No. de Inspección cuando se genera multa.")
+                st.stop()
+            if genero_multa and not (reparacion_multa and str(reparacion_multa).strip()):
+                st.error("Debes capturar la Reparación que generó multa cuando se genera multa.")
+                st.stop()
+            if proveedor == "OTRO" and not proveedor_otro.strip():
+                st.error("Debes capturar el nombre del proveedor.")
+                st.stop()
+            # make sure flags exist
+            st.session_state.setdefault("forzar_guardado", False)
+            st.session_state.setdefault("confirmar_guardado", False)
+            st.session_state.setdefault("folio_duplicado", "")
+
+            # ==========================================
+            # DUPLICATE CHECK — LAST 24 HOURS
+            # ==========================================
+            unidad_a_buscar = (
+                no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
+            )
+            folio_existente = buscar_unidad_reciente(
+                empresa,
+                no_unidad,
+                no_unidad_externo
+            )
+            # If duplicate AND not forcing → ask confirmation
+            if folio_existente and not st.session_state.forzar_guardado:
+                st.session_state.folio_duplicado = folio_existente
+                st.session_state.confirmar_guardado = True
                 st.rerun()
+
+            # ==========================================
+            # NORMAL SAVE
+            # ==========================================
+            if proveedor == "OTRO":
+                proveedor_guardar = f"OTRO, {proveedor_otro.strip()}"
+            else:
+                proveedor_guardar = proveedor
+            payload = {
+                "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                "Fecha de Reporte": str(fecha_reporte),
+                "Tipo de Proveedor": tipo_proveedor,
+                "Proveedor": proveedor_guardar,
+                "Razones": None if tipo_proveedor == "Interno" else razones,
+                "Estado": "Inicio / Nuevo",
+                "Capturo": st.session_state.user.get("name") or st.session_state.user.get("email"),
+                "Oste": oste,
+                "No. de Reporte": no_reporte,
+                "Empresa": empresa,
+                "Tipo de Reporte": tipo_reporte,
+                "Tipo de Unidad": tipo_unidad_operador,
+                "Operador": operador,
+                "No. de Unidad": no_unidad,
+                "Marca": marca_valor,
+                "Modelo": modelo_valor,
+                "Sucursal": sucursal_valor,
+                "Tipo de Caja": tipo_caja,
+                "No. de Unidad Externo": no_unidad_externo,
+                "Nombre Linea Externa": linea_externa,
+                "Cobro": str(aplica_cobro),
+                "Responsable": responsable,
+                "Descripcion Problema": descripcion_problema,
+                "Multa": "Sí" if genero_multa else "No",
+                "No. de Inspeccion": no_inspeccion,
+                "Reparacion Multa": reparacion_multa,
+            }
+            folio_real = append_pase_to_sheet(payload)
+            log_activity(
+                f"Pase {folio_real} creado",
+                "Solicitudes y Pases"
+            )
+            # important → clear force flag after using it
+            st.session_state.forzar_guardado = False
+            st.session_state.folio_generado = folio_real
+            st.session_state.mostrar_confirmacion = True
+            st.rerun()
+
         # =================================
         # DUPLICATE CONFIRMATION DIALOG
         # =================================
@@ -540,6 +704,7 @@ if has_pases:
                         st.session_state.mostrar_confirmacion = True
                         st.rerun()
             confirmar()
+
         # =================================
         # SUCCESS DIALOG
         # =================================
@@ -548,13 +713,14 @@ if has_pases:
             def confirmacion():
                 st.success("Pase guardado con éxito")
                 st.markdown(
-                    f"**No. de Folio:** \`{st.session_state.folio_generado}\`"
+                    f"**No. de Folio:** `{st.session_state.folio_generado}`"
                 )
                 if st.button("Aceptar"):
                     st.session_state.mostrar_confirmacion = False
                     st.session_state.folio_generado = ""
                     st.switch_page(DASHBOARD_PAGE)
             confirmacion()
+
 # =================================
 # CAPTURA DE BONOS
 # =================================
@@ -562,6 +728,7 @@ if has_bonos:
     with tab_bonos:
         if "bonos_operador" in access:
             st.title("💰 Captura Bono de Operadores")
+
             # ==========================================
             # CATALOGO DE UNIDADES
             # ==========================================
@@ -586,6 +753,7 @@ if has_bonos:
                     "No existen unidades en el catálogo."
                 )
                 st.stop()
+
             # ==========================================
             # VEHICLE UNITS TABLE
             # ==========================================
@@ -599,6 +767,7 @@ if has_bonos:
             vehicle_df = pd.DataFrame(
                 vehicle_response.data
             )
+
             # ==========================================
             # MERGE BOTH TABLES
             # ==========================================
@@ -628,10 +797,12 @@ if has_bonos:
                 how="left",
                 suffixes=("", "_bono")
             )
+
             # ==========================================
             # FORMULARIO
             # ==========================================
             st.subheader("📋 Formulario")
+
             # ==========================================
             # COMPANY ACCESS
             # ==========================================
@@ -671,6 +842,7 @@ if has_bonos:
             unidad_info = unidades_filtradas[
                 unidades_filtradas["unidad"] == unidad
             ].iloc[0]
+
             # ==========================================
             # Unidad Info (Hidden)
             # ==========================================
@@ -686,6 +858,7 @@ if has_bonos:
             rendimiento_minimo_txt = clean_value(unidad_info["rendimiento_minimo"])
             with st.container(border=True, key="bono_form"):
                 col_form, col_calc = st.columns([1, 1])
+
                 # ==========================================
                 # LEFT COLUMN - FORM
                 # ==========================================
@@ -748,11 +921,13 @@ if has_bonos:
                         "🧮 Calcular",
                         use_container_width=True
                     )
+
                 # ==========================================
                 # RIGHT COLUMN - RESULTADO
                 # ==========================================
                 with col_calc:
                     if calcular:
+
                         # -----------------------------
                         # Required field validation
                         # -----------------------------
@@ -775,6 +950,7 @@ if has_bonos:
                             for e in errores:
                                 st.warning(e)
                             st.stop()
+
                         # -----------------------------
                         # Calculate
                         # -----------------------------
@@ -794,6 +970,7 @@ if has_bonos:
                         monto = (
                             diferencia_litros * PRECIO_DIESEL
                         )
+
                         # -----------------------------
                         # Business validation
                         # -----------------------------
@@ -945,6 +1122,7 @@ if has_bonos:
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error guardando formulario: {e}")
+
                 # ==========================================
                 # SUCCESS POPUP
                 # ==========================================
