@@ -3762,6 +3762,7 @@ if is_admin:
             "manager",
             "field_user",
             "regular_user",
+            "control_user",
         ]
 
         BRANCHES = [

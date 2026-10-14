@@ -5,12 +5,13 @@ from datetime import datetime, date, timezone
 from auth import require_login, require_access
 from pages.css import load_css
 import re
-
 # =================================
 # RELEASE CHANNEL
 # =================================
+
 APP_CHANNEL = "BETA"
 #APP_CHANNEL = "RELEASE"
+
 DASHBOARD_PAGE = (
     "pages/dashboard_beta.py"
     if APP_CHANNEL == "BETA"
@@ -21,6 +22,7 @@ DASHBOARD_PAGE = (
 # Security gates
 # =================================
 require_login()
+
 # -------------------------------
 # RELEASE GATE
 # -------------------------------
@@ -40,14 +42,15 @@ st.set_page_config(
     ),
     layout="wide"
 )
+
 # -------------------------------
 # PAGE STYLE
 # -------------------------------
 load_css()
+
 # -------------------------------
 # AUDIT
 # -------------------------------
-
 def log_activity(action, page):
     try:
         supabase.table("user_activity_log").insert({
@@ -59,7 +62,6 @@ def log_activity(action, page):
         }).execute()
     except Exception as e:
         print(e)
-
 # =================================
 # Navigation
 # =================================
@@ -67,7 +69,6 @@ st.write("")
 if st.button("⬅ Volver al Dashboard"):
     st.switch_page(DASHBOARD_PAGE)
 st.divider()
-
 # =================================
 # MODULES
 # =================================
@@ -82,11 +83,9 @@ elif has_pases:
     tab_pases = st.container()
 elif has_bonos:
     tab_bonos = st.container()
-
 # =================================
 # CAPTURA PASE DE TALLER
 # =================================
-
 if has_pases:
     with tab_pases:
         # =================================
@@ -240,31 +239,60 @@ if has_pases:
             # SECCIÓN 1 — DATOS DEL REPORTE
             # =================================
             # =================================
-            # ORDENES POR COMPLETAR — SEGÚN ACCESO
             # =================================
-            ordenes_por_completar = []
-            for permiso, empresa_orden in ACCESS_EMPRESA_MAP.items():
-                if permiso not in access:
-                    continue
-                tabla_ordenes = TABLE_MAP[empresa_orden]
-                try:
-                    response_ordenes = (
-                        supabase.table(tabla_ordenes).select('"No. de Folio", "Fecha de Captura"')
-                        .eq('"Estado"', "Por Completar")
-                        .order('"Fecha de Captura"', desc=True)
-                        .execute()
-                    )
-                    for orden in (response_ordenes.data or []):
-                        folio = orden.get("No. de Folio")
-                        if folio:
-                            ordenes_por_completar.append(f"{empresa_orden} — {folio}")
-                except Exception as e:
-                    st.error(f"No fue posible cargar las órdenes por completar de {empresa_orden}: {e}")
-            st.selectbox(
-                "Órdenes por Completar",
-                ["Selecciona una orden por completar"] + ordenes_por_completar,
-                key="orden_por_completar"
-            )
+            # ORDENES POR COMPLETAR — SOLO ADMIN / CONTROL_USER
+            # FILTRADAS POR EMPRESAS ASIGNADAS EN profiles.Empresas
+            # =================================
+            role_normalized = str(role or "").strip().lower()
+            can_view_ordenes = role_normalized in {"admin", "control_user"}
+            if can_view_ordenes:
+                empresas_permitidas = user.get("Empresas", user.get("empresas", []))
+                if isinstance(empresas_permitidas, str):
+                    empresas_permitidas = [
+                        empresa.strip() for empresa in re.split(r"[,;]", empresas_permitidas)
+                        if empresa.strip()
+                    ]
+                elif not isinstance(empresas_permitidas, (list, tuple, set)):
+                    empresas_permitidas = []
+                empresas_permitidas = {
+                    str(empresa).strip().casefold()
+                    for empresa in empresas_permitidas
+                    if str(empresa).strip()
+                }
+                alias_empresa = {
+                    "igloo": "IGLOO TRANSPORT", "igloo transport": "IGLOO TRANSPORT", "igt": "IGLOO TRANSPORT",
+                    "lincoln": "LINCOLN FREIGHT", "lincoln freight": "LINCOLN FREIGHT", "lin": "LINCOLN FREIGHT",
+                    "picus": "PICUS", "pic": "PICUS",
+                    "setfreight": "SET FREIGHT INTERNATIONAL", "set freight international": "SET FREIGHT INTERNATIONAL", "sfi": "SET FREIGHT INTERNATIONAL",
+                    "setlogis": "SET LOGIS PLUS", "set logis plus": "SET LOGIS PLUS", "slp": "SET LOGIS PLUS",
+                }
+                empresas_permitidas_canonicas = {
+                    alias_empresa.get(empresa, empresa.upper()) for empresa in empresas_permitidas
+                }
+                ordenes_por_completar = []
+                for permiso, empresa_orden in ACCESS_EMPRESA_MAP.items():
+                    if permiso not in access or empresa_orden not in empresas_permitidas_canonicas:
+                        continue
+                    tabla_ordenes = TABLE_MAP[empresa_orden]
+                    try:
+                        response_ordenes = (
+                            supabase.table(tabla_ordenes)
+                            .select('"No. de Folio", "Fecha de Captura"')
+                            .eq('"Estado"', "Por Completar")
+                            .order('"Fecha de Captura"', desc=True)
+                            .execute()
+                        )
+                        for orden in (response_ordenes.data or []):
+                            folio = orden.get("No. de Folio")
+                            if folio:
+                                ordenes_por_completar.append(f"{empresa_orden} — {folio}")
+                    except Exception as e:
+                        st.error(f"No fue posible cargar las órdenes por completar de {empresa_orden}: {e}")
+                st.selectbox(
+                    "Órdenes por Completar",
+                    ["Selecciona una orden por completar"] + ordenes_por_completar,
+                    key="orden_por_completar"
+                )
             st.subheader("Datos del Reporte")
             # Hidden - always today's date
             fecha_reporte = date.today()
@@ -654,7 +682,7 @@ if has_pases:
             def confirmacion():
                 st.success("Pase guardado con éxito")
                 st.markdown(
-                    f"**No. de Folio:** `{st.session_state.folio_generado}`"
+                    f"**No. de Folio:** \`{st.session_state.folio_generado}\`"
                 )
                 if st.button("Aceptar"):
                     st.session_state.mostrar_confirmacion = False
@@ -662,10 +690,10 @@ if has_pases:
                     st.switch_page(DASHBOARD_PAGE)
             confirmacion()
 
+            
 # =================================
 # CAPTURA DE BONOS
 # =================================
-
 if has_bonos:
     with tab_bonos:
         if "bonos_operador" in access:
