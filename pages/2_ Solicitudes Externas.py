@@ -323,6 +323,24 @@ for key, default in {
     if key not in st.session_state:
         st.session_state[key] = default
 
+# Reset widget values at the start of a rerun, before Streamlit creates those widgets.
+if st.session_state.pop("limpiar_captura_pendiente", False):
+    for key in (
+        "captura_no_unidad",
+        "tipo_caja_externo",
+        "tipo_caja_display",
+        "tipo_unidad_display",
+        "no_unidad_externo",
+        "linea_externa",
+        "empresa_cobrar",
+        "observaciones_comentarios",
+        "_unidad_anterior_empresa",
+        "forzar_guardado",
+        "confirmar_guardado",
+        "folio_duplicado",
+    ):
+        st.session_state.pop(key, None)
+
 st.title("🛠️ Captura Pase de Taller")
 
 tab_captura, tab_consulta = st.tabs(["🛠️ Captura Pase de Taller", "🔎 Consultar Pase de Taller"])
@@ -594,21 +612,7 @@ if st.session_state.get("mostrar_confirmacion", False):
         if st.button("Aceptar", use_container_width=True):
             st.session_state.mostrar_confirmacion = False
             st.session_state.folio_generado = ""
-            # Clear all capture widget state before rerunning so the form is blank.
-            for key in (
-                "captura_no_unidad",
-                "tipo_caja_externo",
-                "tipo_caja_display",
-                "tipo_unidad_display",
-                "no_unidad_externo",
-                "linea_externa",
-                "empresa_cobrar",
-                "observaciones_comentarios",
-                "_unidad_anterior_empresa",
-                "forzar_guardado",
-                "confirmar_guardado",
-                "folio_duplicado",
-            ):
-                st.session_state.pop(key, None)
+            # Defer widget cleanup until the next run, before widgets are instantiated.
+            st.session_state["limpiar_captura_pendiente"] = True
             st.rerun()
     confirmacion()
