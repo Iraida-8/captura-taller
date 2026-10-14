@@ -3,6 +3,8 @@ import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
 from html import escape
+import resend  #type: ignore
+
 from pages.css import load_css
 
 APP_CHANNEL = "BETA"
@@ -39,6 +41,85 @@ def get_supabase():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 
 supabase = get_supabase()
+
+EMAIL_EMPRESA_MAP = {
+    "IGLOO TRANSPORT": "IGLOO",
+    "LINCOLN FREIGHT": "LINCOLN",
+    "PICUS": "PICUS",
+    "SET FREIGHT INTERNATIONAL": "SET FREIGHT",
+    "SET LOGIS PLUS": "SET LOGIS PLUS",
+}
+
+def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
+    """Notify the selected company's routing list and all-company recipients."""
+    empresa_correo = EMAIL_EMPRESA_MAP.get(str(datos.get("Empresa", "")).strip().upper())
+    if not empresa_correo:
+        raise ValueError(f"No hay una empresa de correo configurada para {datos.get('Empresa', '')}.")
+
+    respuesta = (
+        supabase.table("lista_correo_viaticos")
+        .select("nombre,email,empresa")
+        .in_("empresa", [empresa_correo, "TODAS"])
+        .execute()
+    )
+    destinatarios = []
+    vistos = set()
+    for fila_correo in respuesta.data or []:
+        correo = str(fila_correo.get("email") or "").strip()
+        if correo and correo.lower() not in vistos:
+            destinatarios.append(correo)
+            vistos.add(correo.lower())
+    if not destinatarios:
+        raise ValueError(f"No hay destinatarios configurados para {empresa_correo} ni para TODAS en lista_correo_viaticos.")
+
+    resend.api_key = st.secrets["RESEND_API_KEY"]
+
+    def valor(campo):
+        contenido = datos.get(campo)
+        return escape(str(contenido).strip()) if contenido not in (None, "") else "—"
+
+    campos = [
+        ("Empresa a cobrar", "Empresa"),
+        ("Fecha de captura", "Fecha de Captura"),
+        ("Estado", "Estado"),
+        ("No. de Unidad", "No. de Unidad"),
+        ("Tipo de Unidad", "Tipo de Unidad"),
+        ("Tipo de Caja", "Tipo de Caja"),
+        ("No. de Unidad Externo", "No. de Unidad Externo"),
+        ("Nombre Línea Externa", "Nombre Linea Externa"),
+    ]
+    filas_html = "".join(
+        f"<tr><td style='padding:8px;border-bottom:1px solid #e5e7eb;color:#555;width:38%'><b>{escape(etiqueta)}</b></td>"
+        f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
+        for etiqueta, campo in campos
+    )
+    observaciones = valor("Descripcion Problema").replace("\n", "<br>")
+    correo_html = f"""
+    <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
+      <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
+        <div style="font-size:13px;opacity:.9">CAPTURA PASE DE TALLER</div>
+        <h1 style="font-size:24px;margin:8px 0 0">Nuevo pase registrado</h1>
+      </div>
+      <div style="border:1px solid #e5e7eb;border-top:0;padding:24px;border-radius:0 0 12px 12px">
+        <p>Se generó un nuevo folio al guardar un Pase de Taller.</p>
+        <div style="background:#f3f5ff;border:1px solid #dbe2ff;border-radius:8px;padding:16px;margin:16px 0">
+          <div style="font-size:12px;color:#555">NO. DE FOLIO</div>
+          <div style="font-size:25px;font-weight:800;color:#151F6D;margin-top:4px">{escape(folio)}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">{filas_html}</table>
+        <h3 style="color:#151F6D;margin:22px 0 8px">Observaciones y comentarios</h3>
+        <div style="background:#f8f9fa;border-radius:8px;padding:14px;white-space:normal">{observaciones}</div>
+      </div>
+    </div>
+    """
+    resend.Emails.send({
+        "from": "PG Data Analyst <notificaciones@pgdataanalyst.com>",
+        "to": destinatarios,
+        "subject": f"Nuevo Pase de Taller: {folio}",
+        "html": correo_html,
+    })
+    return destinatarios
+
 @st.cache_data(ttl=3600)
 
 def cargar_todas_unidades_supabase():
@@ -580,6 +661,16 @@ with tab_captura:
         folio_real = append_pase_to_sheet(payload)
         st.session_state.forzar_guardado = False
         st.session_state.folio_generado = folio_real
+        try:
+            destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
+            st.session_state.email_pase_estado = "enviado"
+            st.session_state.email_pase_destinatarios = destinatarios_email
+            st.session_state.pop("email_pase_error", None)
+        except Exception as email_exc:
+            # The pass is already saved; an email failure must not undo the save.
+            st.session_state.email_pase_estado = "error"
+            st.session_state.email_pase_error = str(email_exc)
+            st.session_state.pop("email_pase_destinatarios", None)
         st.session_state.mostrar_confirmacion = True
         st.rerun()
 
@@ -609,10 +700,17 @@ if st.session_state.get("mostrar_confirmacion", False):
     def confirmacion():
         st.success("Pase guardado con éxito")
         st.markdown(f"**No. de Folio:** `{st.session_state.folio_generado}`")
+        if st.session_state.get("email_pase_estado") == "enviado":
+            total_destinatarios = len(st.session_state.get("email_pase_destinatarios", []))
+            st.caption(f"Notificación enviada por correo a {total_destinatarios} destinatario(s).")
+        elif st.session_state.get("email_pase_estado") == "error":
+            st.warning(f"El pase sí se guardó, pero no se pudo enviar el correo: {st.session_state.get('email_pase_error', 'Error desconocido')}")
         if st.button("Aceptar", use_container_width=True):
             st.session_state.mostrar_confirmacion = False
             st.session_state.folio_generado = ""
             # Defer widget cleanup until the next run, before widgets are instantiated.
             st.session_state["limpiar_captura_pendiente"] = True
+            for key in ("email_pase_estado", "email_pase_destinatarios", "email_pase_error"):
+                st.session_state.pop(key, None)
             st.rerun()
     confirmacion()
