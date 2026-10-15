@@ -3,17 +3,22 @@ import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
 from html import escape
+import base64
+import mimetypes
 import resend  #type: ignore
 from pages.css import load_css
 
 #APP_CHANNEL = "BETA"
 APP_CHANNEL = "RELEASE"
+
 st.set_page_config(
     page_title="Captura Pase de Taller BETA" if APP_CHANNEL == "BETA" else "Captura Pase de Taller",
     layout="wide",
 )
 load_css()
+
 # Mobile-first sizing: full-width controls, comfortable touch targets, and stacked fields on phones.
+
 st.markdown("""
 <style>
   .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1050px; }
@@ -45,7 +50,7 @@ EMAIL_EMPRESA_MAP = {
     "SET LOGIS PLUS": "SET LOGIS PLUS",
 }
 
-def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
+def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str]:
     """Send new-pass notifications to every recipient configured for CONTROL."""
     respuesta = (
         supabase.table("lista_correo_viaticos")
@@ -100,12 +105,27 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
       </div>
     </div>
     """
-    resend.Emails.send({
+    adjuntos_email = []
+    for archivo in archivos or []:
+        contenido = archivo.getvalue()
+        mime_type = archivo.type or mimetypes.guess_type(archivo.name)[0]
+        if not mime_type or not mime_type.startswith("image/"):
+            raise ValueError(f"El archivo {archivo.name} no es una imagen válida.")
+        adjuntos_email.append({
+            "filename": archivo.name,
+            "content": base64.b64encode(contenido).decode("ascii"),
+            "content_type": mime_type,
+        })
+
+    correo_payload = {
         "from": "PG Data Analyst <notificaciones@pgdataanalyst.com>",
         "to": destinatarios,
         "subject": f"Nuevo Pase de Taller: {folio}",
         "html": correo_html,
-    })
+    }
+    if adjuntos_email:
+        correo_payload["attachments"] = adjuntos_email
+    resend.Emails.send(correo_payload)
     return destinatarios
 
 @st.cache_data(ttl=3600)
@@ -690,6 +710,15 @@ with tab_captura:
         height=150,
         key="observaciones_comentarios",
     )
+    archivos_pase = st.file_uploader(
+        "📎 Adjuntar imágenes al correo de confirmación",
+        type=["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff"],
+        accept_multiple_files=True,
+        key="archivos_pase_nuevo",
+        help="Las imágenes seleccionadas se adjuntarán al correo que confirma la creación del pase.",
+    )
+    if archivos_pase:
+        st.caption("Imágenes seleccionadas: " + ", ".join(archivo.name for archivo in archivos_pase))
     st.divider()
     guardar = st.button("💾 Guardar Pase de Taller", type="primary", use_container_width=True, key="guardar_pase_simplificado")
     if guardar:
@@ -748,7 +777,7 @@ with tab_captura:
         st.session_state.forzar_guardado = False
         st.session_state.folio_generado = folio_real
         try:
-            destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
+            destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload, archivos=archivos_pase)
             st.session_state.email_pase_estado = "enviado"
             st.session_state.email_pase_destinatarios = destinatarios_email
             st.session_state.pop("email_pase_error", None)
