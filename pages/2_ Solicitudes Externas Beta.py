@@ -46,7 +46,7 @@ EMAIL_EMPRESA_MAP = {
     "SET LOGIS PLUS": "SET LOGIS PLUS",
 }
 
-def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
+def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str]:
     """Send new-pass notifications to every recipient configured for CONTROL."""
     respuesta = (
         supabase.table("lista_correo_viaticos")
@@ -101,12 +101,27 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
       </div>
     </div>
     """
-    resend.Emails.send({
+    adjuntos_email = []
+    for archivo in archivos or []:
+        contenido = archivo.getvalue()
+        mime_type = archivo.type or mimetypes.guess_type(archivo.name)[0]
+        if not mime_type or not mime_type.startswith("image/"):
+            raise ValueError(f"El archivo {archivo.name} no es una imagen válida.")
+        adjuntos_email.append({
+            "filename": archivo.name,
+            "content": base64.b64encode(contenido).decode("ascii"),
+            "content_type": mime_type,
+        })
+
+    correo_payload = {
         "from": "PG Data Analyst <notificaciones@pgdataanalyst.com>",
         "to": destinatarios,
         "subject": f"Nuevo Pase de Taller: {folio}",
         "html": correo_html,
-    })
+    }
+    if adjuntos_email:
+        correo_payload["attachments"] = adjuntos_email
+    resend.Emails.send(correo_payload)
     return destinatarios
 
 @st.cache_data(ttl=3600)
@@ -216,55 +231,6 @@ def registrar_evento_chatlog(folio: str, mensaje: str, usuario_chat: str = "Oper
         "chatlog": entradas,
         "updated_at": ahora,
     }, on_conflict="no_de_folio").execute()
-
-def enviar_correo_comentario(folio: str, comentario: str, archivos=None) -> list[str]:
-    """Send a follow-up notification with optional image attachments."""
-    respuesta = (
-        supabase.table("lista_correo_viaticos")
-        .select("email")
-        .eq("empresa", "CONTROL")
-        .execute()
-    )
-    destinatarios = sorted({
-        str(fila.get("email") or "").strip()
-        for fila in (respuesta.data or [])
-        if str(fila.get("email") or "").strip()
-    }, key=str.lower)
-    if not destinatarios:
-        raise ValueError(
-            "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
-        )
-
-    adjuntos_email = []
-    for archivo in archivos or []:
-        mime_type = archivo.type or mimetypes.guess_type(archivo.name)[0] or ""
-        if not mime_type.startswith("image/"):
-            raise ValueError(f"El archivo {archivo.name} no es una imagen válida.")
-        adjuntos_email.append({
-            "filename": archivo.name,
-            "content": base64.b64encode(archivo.getvalue()).decode("ascii"),
-            "content_type": mime_type,
-        })
-
-    resend.api_key = st.secrets["RESEND_API_KEY"]
-    payload = {
-        "from": "PG Data Analyst <notificaciones@pgdataanalyst.com>",
-        "to": destinatarios,
-        "subject": f"Comentario de seguimiento - Pase de Taller {folio}",
-        "html": (
-            "<div style='font-family:Arial,sans-serif;color:#202124'>"
-            "<h2 style='color:#151F6D'>Comentario de seguimiento</h2>"
-            f"<p><b>No. de folio:</b> {escape(folio)}</p>"
-            "<p><b>Operador:</b></p>"
-            "<div style='padding:14px;background:#f4f6fa;border-radius:8px;white-space:pre-wrap'>"
-            f"{escape(comentario)}</div>"
-            f"<p>Imágenes adjuntas: {len(adjuntos_email)}</p></div>"
-        ),
-    }
-    if adjuntos_email:
-        payload["attachments"] = adjuntos_email
-    resend.Emails.send(payload)
-    return destinatarios
 
 def buscar_folio_en_todas_empresas(folio: str):
     """Search an exact folio across each company's destination table."""
@@ -602,18 +568,6 @@ with tab_consulta:
                     placeholder="Escribe tu comentario para este pase...",
                     key=f"chatlog_comentario_{idx}_{folio}",
                 )
-                archivos_operador = st.file_uploader(
-                    "📎 Adjuntar imágenes",
-                    type=["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff"],
-                    accept_multiple_files=True,
-                    key=f"chatlog_archivos_{idx}_{folio}",
-                    help="Selecciona una o varias imágenes para adjuntarlas al correo de notificación.",
-                )
-                if archivos_operador:
-                    st.caption(
-                        "Archivos seleccionados: "
-                        + ", ".join(archivo.name for archivo in archivos_operador)
-                    )
                 enviar_comentario = st.form_submit_button(
                     "Enviar comentario",
                     type="primary",
@@ -626,28 +580,15 @@ with tab_consulta:
                     st.warning("Escribe un comentario antes de enviarlo.")
                 else:
                     try:
-                        # Save the comment first so a mail failure does not lose it.
                         registrar_evento_chatlog(
                             folio,
                             comentario_limpio,
                             usuario_chat="Operador",
                         )
+                        st.success("Comentario agregado al historial.")
+                        st.rerun()
                     except Exception as chat_exc:
                         st.error(f"No fue posible guardar el comentario: {chat_exc}")
-                    else:
-                        try:
-                            enviar_correo_comentario(
-                                folio,
-                                comentario_limpio,
-                                archivos_operador,
-                            )
-                            st.success("Comentario guardado y notificación enviada correctamente.")
-                        except Exception as email_exc:
-                            st.error(
-                                "El comentario se guardó en el Chatlog, pero no se pudo enviar "
-                                f"la notificación por correo: {email_exc}"
-                            )
-                        st.rerun()
 
             try:
                 pdf_bytes = crear_pdf_pase(registro, empresa_tabla)
@@ -765,6 +706,15 @@ with tab_captura:
         height=150,
         key="observaciones_comentarios",
     )
+    archivos_pase = st.file_uploader(
+        "📎 Adjuntar imágenes al correo de confirmación",
+        type=["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff"],
+        accept_multiple_files=True,
+        key="archivos_pase_nuevo",
+        help="Las imágenes seleccionadas se adjuntarán al correo que confirma la creación del pase.",
+    )
+    if archivos_pase:
+        st.caption("Imágenes seleccionadas: " + ", ".join(archivo.name for archivo in archivos_pase))
     st.divider()
     guardar = st.button("💾 Guardar Pase de Taller", type="primary", use_container_width=True, key="guardar_pase_simplificado")
     if guardar:
@@ -823,7 +773,7 @@ with tab_captura:
         st.session_state.forzar_guardado = False
         st.session_state.folio_generado = folio_real
         try:
-            destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
+            destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload, archivos=archivos_pase)
             st.session_state.email_pase_estado = "enviado"
             st.session_state.email_pase_destinatarios = destinatarios_email
             st.session_state.pop("email_pase_error", None)
