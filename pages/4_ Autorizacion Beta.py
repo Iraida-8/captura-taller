@@ -237,7 +237,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Estado": nuevo_estado})\
-                .eq('"No. de Folio"', folio)\
+                .eq("No. de Folio", folio)\
                 .execute()
 
         # =================================
@@ -262,7 +262,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Oste": oste})\
-                .eq('"No. de Folio"', folio)\
+                .eq("No. de Folio", folio)\
                 .execute()
 
         # =================================
@@ -295,7 +295,7 @@ if has_autorizacion:
                 .update({
                     "No. de Reporte": valor_final
                 })\
-                .eq('"No. de Folio"', folio)\
+                .eq("No. de Folio", folio)\
                 .execute()
             
         # =================================
@@ -319,7 +319,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Descripcion Problema": nueva_descripcion})\
-                .eq('"No. de Folio"', folio)\
+                .eq("No. de Folio", folio)\
                 .execute()
 
         # =================================
@@ -333,7 +333,7 @@ if has_autorizacion:
                 supabase
                 .table("INVOICES")
                 .select("*")
-                .eq('"No. de Folio"', folio)
+                .eq("No. de Folio", folio)
                 .execute()
             )
 
@@ -342,7 +342,7 @@ if has_autorizacion:
             if data:
                 supabase.table("INVOICES")\
                     .update({"No. de Factura": numero_factura})\
-                    .eq('"No. de Folio"', folio)\
+                    .eq("No. de Folio", folio)\
                     .execute()
             else:
                 supabase.table("INVOICES")\
@@ -425,7 +425,7 @@ if has_autorizacion:
                 supabase
                 .table("SERVICES")
                 .select("*")
-                .eq('"No. de Folio"', folio)
+                .eq("No. de Folio", folio)
                 .execute()
             )
 
