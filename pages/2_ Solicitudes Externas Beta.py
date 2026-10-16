@@ -161,10 +161,10 @@ def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     limite = (datetime.now() - pd.Timedelta(hours=24)).isoformat()
     response = (
         supabase.table(table_name)
-        .select('"No. de Folio", "Fecha de Captura"')
-        .eq('"No. de Unidad"', unidad)
-        .gte('"Fecha de Captura"', limite)
-        .order('"Fecha de Captura"', desc=True)
+        .select("No. de Folio, Fecha de Captura")
+        .eq("No. de Unidad", unidad)
+        .gte("Fecha de Captura", limite)
+        .order("Fecha de Captura", desc=True)
         .limit(1)
         .execute()
     )
@@ -184,9 +184,9 @@ def append_pase_to_sheet(data: dict):
     prefix = prefix_map[empresa]
     response = (
         supabase.table(table_name)
-        .select('"No. de Folio"')
-        .ilike('"No. de Folio"', f"{prefix}%")
-        .order('"No. de Folio"', desc=True)
+        .select("No. de Folio")
+        .ilike("No. de Folio", f"{prefix}%")
+        .order("No. de Folio", desc=True)
         .limit(1)
         .execute()
     )
@@ -244,7 +244,7 @@ def buscar_folio_en_todas_empresas(folio: str):
             response = (
                 supabase.table(table_name)
                 .select("*")
-                .eq('"No. de Folio"', folio)
+                .eq("No. de Folio", folio)
                 .limit(2)
                 .execute()
             )
