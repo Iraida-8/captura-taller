@@ -383,16 +383,35 @@ if has_autorizacion:
         def cargar_servicios_folio(folio):
 
             supabase = get_supabase_client()
+            folio_buscado = str(folio).strip()
 
-            response = (
-                supabase
-                .table("SERVICES")
-                .select("*")
-                .eq('"No. de Folio"', folio)
-                .execute()
-            )
+            # PostgREST cannot reliably filter this legacy column name because
+            # it contains spaces and punctuation. Fetch SERVICES in pages and
+            # apply the folio filter locally instead of sending a broken filter.
+            page_size = 1000
+            start = 0
+            data = []
 
-            data = response.data
+            while True:
+                response = (
+                    supabase
+                    .table("SERVICES")
+                    .select("*")
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+                page = response.data or []
+                if not page:
+                    break
+                data.extend(page)
+                if len(page) < page_size:
+                    break
+                start += page_size
+
+            data = [
+                row for row in data
+                if str(row.get("No. de Folio", "")).strip() == folio_buscado
+            ]
 
             if not data:
                 return pd.DataFrame(columns=[
