@@ -51,43 +51,6 @@ def clean(val):
         return ""
     return str(val).strip()
 
-
-def registrar_evento_chatlog(folio: str, mensaje: str, usuario_chat: str):
-    """Agrega un comentario o evento del sistema al chat compartido del pase."""
-    folio = str(folio or "").strip()
-    mensaje = str(mensaje or "").strip()
-    if not folio or not mensaje:
-        return
-    ahora = datetime.now(timezone.utc).isoformat()
-    existente = (
-        supabase.table("pase_taller_chatlog")
-        .select("chatlog")
-        .eq("no_de_folio", folio)
-        .limit(1)
-        .execute()
-    )
-    entradas = (existente.data or [{}])[0].get("chatlog", [])
-    if not isinstance(entradas, list):
-        entradas = [entradas] if entradas else []
-    entradas.append({"message": mensaje, "user": usuario_chat, "timestamp": ahora})
-    supabase.table("pase_taller_chatlog").upsert({
-        "no_de_folio": folio,
-        "completado_por": usuario_chat,
-        "chatlog": entradas,
-        "updated_at": ahora,
-    }, on_conflict="no_de_folio").execute()
-
-
-def mensaje_estado_chatlog(estado):
-    """Texto legible para los cambios de estado registrados por el sistema."""
-    mensajes = {
-        "Inicio / Nuevo": "La orden fue creada o quedó en estado Nuevo.",
-        "En Curso / Proceso": "La orden quedó en curso.",
-        "Cerrado / Terminado": "La orden fue cerrada y concluida.",
-        "Cerrado / Cancelado": "La orden fue cerrada y cancelada.",
-    }
-    return mensajes.get(str(estado or "").strip(), f"El estado de la orden cambió a: {estado}.")
-
 # =================================
 # Page Cache and State Management
 # =================================
@@ -237,7 +200,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Estado": nuevo_estado})\
-                .eq("No. de Folio", folio)\
+                .eq('"No. de Folio"', folio)\
                 .execute()
 
         # =================================
@@ -262,7 +225,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Oste": oste})\
-                .eq("No. de Folio", folio)\
+                .eq('"No. de Folio"', folio)\
                 .execute()
 
         # =================================
@@ -295,7 +258,7 @@ if has_autorizacion:
                 .update({
                     "No. de Reporte": valor_final
                 })\
-                .eq("No. de Folio", folio)\
+                .eq('"No. de Folio"', folio)\
                 .execute()
             
         # =================================
@@ -319,7 +282,7 @@ if has_autorizacion:
 
             supabase.table(table_name)\
                 .update({"Descripcion Problema": nueva_descripcion})\
-                .eq("No. de Folio", folio)\
+                .eq('"No. de Folio"', folio)\
                 .execute()
 
         # =================================
@@ -333,7 +296,7 @@ if has_autorizacion:
                 supabase
                 .table("INVOICES")
                 .select("*")
-                .eq("No. de Folio", folio)
+                .eq('"No. de Folio"', folio)
                 .execute()
             )
 
@@ -342,7 +305,7 @@ if has_autorizacion:
             if data:
                 supabase.table("INVOICES")\
                     .update({"No. de Factura": numero_factura})\
-                    .eq("No. de Folio", folio)\
+                    .eq('"No. de Folio"', folio)\
                     .execute()
             else:
                 supabase.table("INVOICES")\
@@ -425,7 +388,7 @@ if has_autorizacion:
                 supabase
                 .table("SERVICES")
                 .select("*")
-                .eq("No. de Folio", folio)
+                .eq('"No. de Folio"', folio)
                 .execute()
             )
 
@@ -1710,12 +1673,6 @@ if has_autorizacion:
                             comentario=motivo.strip()
                         )
 
-                        registrar_evento_chatlog(
-                            data_reabrir["NoFolio"],
-                            f"Sistema: La orden fue reabierta y quedó en curso. Motivo: {motivo.strip()}",
-                            "Sistema",
-                        )
-
                         refresh_cached_data()
 
                         st.session_state.modal_reabrir = None
@@ -2671,68 +2628,6 @@ if has_autorizacion:
                 ]
 
                 # =====================================================
-                # CHATLOG COMPARTIDO DEL PASE
-                # =====================================================
-                st.divider()
-                st.subheader("💬 Chat / Seguimiento de la orden")
-                folio_chat = str(r.get("NoFolio", r.get("No. de Folio", ""))).strip()
-                try:
-                    chat_resp = (
-                        supabase.table("pase_taller_chatlog")
-                        .select("chatlog")
-                        .eq("no_de_folio", folio_chat)
-                        .limit(1)
-                        .execute()
-                    )
-                    mensajes_chat = (chat_resp.data or [{}])[0].get("chatlog", [])
-                    if not isinstance(mensajes_chat, list):
-                        mensajes_chat = [mensajes_chat] if mensajes_chat else []
-                except Exception as exc:
-                    mensajes_chat = []
-                    st.warning(f"No fue posible cargar el chat de esta orden: {exc}")
-
-                if mensajes_chat:
-                    for entrada in mensajes_chat:
-                        if not isinstance(entrada, dict):
-                            continue
-                        autor = str(entrada.get("user") or "Sistema").strip()
-                        mensaje = str(entrada.get("message") or "").strip()
-                        timestamp = str(entrada.get("timestamp") or "")
-                        if not mensaje:
-                            continue
-                        etiqueta = "SISTEMA" if autor.casefold() == "sistema" else autor
-                        with st.container(border=True):
-                            st.markdown(f"**{html.escape(etiqueta)}**")
-                            st.write(mensaje.removeprefix("Sistema: ").strip() if autor.casefold() == "sistema" else mensaje)
-                            if timestamp:
-                                st.caption(timestamp.replace("T", " ").replace("+00:00", " UTC")[:25])
-                else:
-                    st.info("Todavía no hay mensajes para este pase.")
-
-                nombre_chat = str(
-                    st.session_state.get("user", {}).get("name")
-                    or st.session_state.get("user", {}).get("email")
-                    or "Usuario"
-                ).strip()
-                with st.form(key=f"form_chatlog_autorizacion_{folio_chat}", clear_on_submit=True):
-                    comentario_chat = st.text_area(
-                        "Escribe un comentario",
-                        placeholder="Escribe un mensaje para el seguimiento de esta orden...",
-                        height=90,
-                    )
-                    enviar_chat = st.form_submit_button("Enviar mensaje", type="primary", use_container_width=True)
-                if enviar_chat:
-                    if not comentario_chat.strip():
-                        st.warning("Escribe un comentario antes de enviarlo.")
-                    else:
-                        try:
-                            registrar_evento_chatlog(folio_chat, comentario_chat.strip(), nombre_chat)
-                            st.success("Mensaje enviado.")
-                            st.rerun()
-                        except Exception as exc:
-                            st.error(f"No se pudo enviar el mensaje: {exc}")
-
-                # =====================================================
                 # OPEN ORDERS
                 # =====================================================
                 if es_abierta:
@@ -2758,11 +2653,6 @@ if has_autorizacion:
                                 r["Empresa"],
                                 r["NoFolio"],
                                 "Cerrado / Cancelado"
-                            )
-                            registrar_evento_chatlog(
-                                r["NoFolio"],
-                                "Sistema: La orden fue cerrada y cancelada.",
-                                "Sistema",
                             )
 
                             registrar_cambio_log(
@@ -2834,11 +2724,6 @@ if has_autorizacion:
                                     r["Empresa"],
                                     r["NoFolio"],
                                     nuevo_estado
-                                )
-                                registrar_evento_chatlog(
-                                    r["NoFolio"],
-                                    "Sistema: " + mensaje_estado_chatlog(nuevo_estado),
-                                    "Sistema",
                                 )
 
                                 registrar_cambio_log(
