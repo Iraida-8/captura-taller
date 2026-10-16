@@ -155,21 +155,48 @@ EMPRESA_CODIGOS = {
 }
 EMPRESAS = list(TABLE_MAP.keys())
 
+def obtener_registros_tabla(table_name: str, page_size: int = 1000) -> list[dict]:
+    """Read a table in pages; avoids PostgREST filter parsing issues for column names with spaces/dots."""
+    registros = []
+    inicio = 0
+    while True:
+        respuesta = (
+            supabase.table(table_name)
+            .select("*")
+            .range(inicio, inicio + page_size - 1)
+            .execute()
+        )
+        pagina = respuesta.data or []
+        registros.extend(pagina)
+        if len(pagina) < page_size:
+            break
+        inicio += page_size
+    return registros
+
+
 def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
     table_name = TABLE_MAP[empresa]
-    unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
-    limite = (datetime.now() - pd.Timedelta(hours=24)).isoformat()
-    response = (
-        supabase.table(table_name)
-        .select("No. de Folio, Fecha de Captura")
-        .eq("No. de Unidad", unidad)
-        .gte("Fecha de Captura", limite)
-        .order("Fecha de Captura", desc=True)
-        .limit(1)
-        .execute()
-    )
-    data = response.data or []
-    return data[0].get("No. de Folio") if data else None
+    unidad = str(no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad).strip()
+    limite = pd.Timestamp.now(tz="UTC") - pd.Timedelta(hours=24)
+    coincidencias = []
+    for registro in obtener_registros_tabla(table_name):
+        unidad_registro = str(registro.get("No. de Unidad") or "").strip()
+        if unidad_registro != unidad:
+            continue
+        fecha_raw = registro.get("Fecha de Captura")
+        if not fecha_raw:
+            continue
+        try:
+            fecha = pd.to_datetime(fecha_raw, utc=True, errors="coerce")
+        except Exception:
+            continue
+        if pd.notna(fecha) and fecha >= limite:
+            coincidencias.append((fecha, registro.get("No. de Folio")))
+    if not coincidencias:
+        return None
+    coincidencias.sort(key=lambda item: item[0], reverse=True)
+    return coincidencias[0][1]
+
 
 def append_pase_to_sheet(data: dict):
     empresa = data["Empresa"]
@@ -182,16 +209,19 @@ def append_pase_to_sheet(data: dict):
         "SET LOGIS PLUS": "SLP",
     }
     prefix = prefix_map[empresa]
-    response = (
-        supabase.table(table_name)
-        .select("No. de Folio")
-        .ilike("No. de Folio", f"{prefix}%")
-        .order("No. de Folio", desc=True)
-        .limit(1)
-        .execute()
-    )
-    last = response.data or []
-    next_num = int(last[0]["No. de Folio"].replace(prefix, "")) + 1 if last else 1
+    # The folio column contains spaces and periods, which PostgREST can parse as
+    # embedded-resource syntax. Read rows in pages and match the value in Python.
+    folios = [
+        str(row.get("No. de Folio") or "").strip()
+        for row in obtener_registros_tabla(table_name)
+    ]
+    numeros = []
+    for valor in folios:
+        if valor.startswith(prefix):
+            sufijo = valor[len(prefix):]
+            if sufijo.isdigit():
+                numeros.append(int(sufijo))
+    next_num = max(numeros, default=0) + 1
     folio = f"{prefix}{str(next_num).zfill(5)}"
     payload = data.copy()
     payload["No. de Folio"] = folio
@@ -233,7 +263,7 @@ def registrar_evento_chatlog(folio: str, mensaje: str, usuario_chat: str = "Oper
     }, on_conflict="no_de_folio").execute()
 
 def buscar_folio_en_todas_empresas(folio: str):
-    """Search an exact folio across each company's destination table."""
+    """Search an exact folio across company tables without PostgREST column filters."""
     folio = str(folio or "").strip()
     if not folio:
         return []
@@ -241,15 +271,13 @@ def buscar_folio_en_todas_empresas(folio: str):
     errores = []
     for empresa_nombre, table_name in TABLE_MAP.items():
         try:
-            response = (
-                supabase.table(table_name)
-                .select("*")
-                .eq("No. de Folio", folio)
-                .limit(2)
-                .execute()
-            )
-            for registro in (response.data or []):
-                resultados.append({"empresa_tabla": empresa_nombre, "tabla": table_name, "registro": registro})
+            # "No. de Folio" has both spaces and periods; filtering it in PostgREST
+            # is parsed as an embedded resource. Match the returned column in Python.
+            for registro in obtener_registros_tabla(table_name):
+                if str(registro.get("No. de Folio") or "").strip() == folio:
+                    resultados.append({"empresa_tabla": empresa_nombre, "tabla": table_name, "registro": registro})
+                    if len(resultados) >= 2:
+                        return resultados
         except Exception as exc:
             errores.append(f"{table_name}: {exc}")
     if errores and not resultados:
