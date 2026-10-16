@@ -316,6 +316,92 @@ if has_autorizacion:
                     .execute()
 
         # =================================
+        # Chatlog compartido del Pase de Taller
+        # =================================
+        def cargar_chatlog_folio(folio):
+            folio = clean(folio)
+            if not folio:
+                return []
+
+            response = (
+                get_supabase_client()
+                .table("pase_taller_chatlog")
+                .select("chatlog")
+                .eq("no_de_folio", folio)
+                .limit(1)
+                .execute()
+            )
+            entradas = (response.data or [{}])[0].get("chatlog", [])
+            if not isinstance(entradas, list):
+                entradas = [entradas] if entradas else []
+            return [entrada for entrada in entradas if entrada is not None]
+
+        def registrar_mensaje_chatlog(folio, mensaje, usuario_chat):
+            folio = clean(folio)
+            mensaje = str(mensaje or "").strip()
+            usuario_chat = clean(usuario_chat) or "Usuario"
+            if not folio:
+                raise ValueError("No se puede registrar el chatlog sin folio.")
+            if not mensaje:
+                raise ValueError("Escribe un mensaje antes de enviarlo.")
+
+            supabase_chat = get_supabase_client()
+            existente = (
+                supabase_chat
+                .table("pase_taller_chatlog")
+                .select("chatlog")
+                .eq("no_de_folio", folio)
+                .limit(1)
+                .execute()
+            )
+            entradas = (existente.data or [{}])[0].get("chatlog", [])
+            if not isinstance(entradas, list):
+                entradas = [entradas] if entradas else []
+
+            ahora = datetime.now(timezone.utc).isoformat()
+            entradas.append({
+                "message": mensaje,
+                "user": usuario_chat,
+                "timestamp": ahora,
+            })
+            supabase_chat.table("pase_taller_chatlog").upsert({
+                "no_de_folio": folio,
+                "completado_por": usuario_chat,
+                "chatlog": entradas,
+                "updated_at": ahora,
+            }, on_conflict="no_de_folio").execute()
+
+        def registrar_chatlog_cambio_sistema(
+            folio,
+            tipo_cambio,
+            estado_anterior=None,
+            estado_nuevo=None,
+            oste_anterior=None,
+            oste_nuevo=None,
+            comentario="",
+        ):
+            partes = [clean(tipo_cambio) or "Actualización registrada"]
+            estado_anterior_txt = clean(estado_anterior)
+            estado_nuevo_txt = clean(estado_nuevo)
+            if estado_anterior_txt != estado_nuevo_txt and (estado_anterior_txt or estado_nuevo_txt):
+                partes.append(f"Estado: {estado_anterior_txt or '—'} → {estado_nuevo_txt or '—'}")
+
+            oste_anterior_txt = clean(oste_anterior)
+            oste_nuevo_txt = clean(oste_nuevo)
+            if oste_anterior_txt != oste_nuevo_txt and (oste_anterior_txt or oste_nuevo_txt):
+                partes.append(f"OSTE: {oste_anterior_txt or '—'} → {oste_nuevo_txt or '—'}")
+
+            comentario_txt = clean(comentario)
+            if comentario_txt:
+                partes.append(comentario_txt)
+
+            registrar_mensaje_chatlog(
+                folio,
+                " · ".join(partes),
+                "Sistema",
+            )
+
+        # =================================
         # Registrar Cambio en CHANGELOG
         # =================================
         def registrar_cambio_log(
@@ -347,6 +433,21 @@ if has_autorizacion:
 
             if getattr(response, "error", None):
                 st.error(f"Audit log error: {response.error}")
+            else:
+                # Mirror each successful activity-log entry in the shared chatlog.
+                # A chatlog failure must not interrupt the underlying pass update.
+                try:
+                    registrar_chatlog_cambio_sistema(
+                        folio=folio,
+                        tipo_cambio=tipo_cambio,
+                        estado_anterior=estado_anterior,
+                        estado_nuevo=estado_nuevo,
+                        oste_anterior=oste_anterior,
+                        oste_nuevo=oste_nuevo,
+                        comentario=comentario,
+                    )
+                except Exception as chat_exc:
+                    st.warning(f"El cambio se registró en actividad, pero no en el chatlog: {chat_exc}")
 
         # =================================
         # Log estado sin refacciones
@@ -2635,6 +2736,78 @@ if has_autorizacion:
                     column_config=column_config,
                 )
                 
+                # =====================================================
+                # CHATLOG DEL PASE (solo en el modal de Tab 1)
+                # =====================================================
+                st.divider()
+                st.subheader("💬 Historial de seguimiento")
+
+                folio_chat = clean(r.get("NoFolio", r.get("No. de Folio", "")))
+                try:
+                    entradas_chat = cargar_chatlog_folio(folio_chat)
+                    if not entradas_chat:
+                        st.info("Este pase todavía no tiene mensajes.")
+                    else:
+                        for idx_chat, entrada_chat in enumerate(entradas_chat):
+                            if not isinstance(entrada_chat, dict):
+                                with st.container(border=True):
+                                    st.write(str(entrada_chat))
+                                continue
+
+                            mensaje_chat = str(entrada_chat.get("message") or "").strip()
+                            usuario_chat = str(entrada_chat.get("user") or "Usuario").strip()
+                            fecha_chat = str(entrada_chat.get("timestamp") or "")
+                            es_sistema_chat = usuario_chat.casefold() == "sistema"
+
+                            if es_sistema_chat and mensaje_chat.lower().startswith("sistema:"):
+                                mensaje_chat = mensaje_chat.split(":", 1)[1].strip()
+
+                            with st.container(border=True):
+                                st.markdown(
+                                    "**SISTEMA**" if es_sistema_chat
+                                    else f"**{html.escape(usuario_chat)}**"
+                                )
+                                st.write(mensaje_chat or "(Mensaje vacío)")
+                                if fecha_chat:
+                                    st.caption(fecha_chat)
+                except Exception as chat_exc:
+                    st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
+
+                clave_form_chat = f"form_chat_modal_pase_{folio_chat}"
+
+                with st.form(key=clave_form_chat, clear_on_submit=True):
+                    comentario_chat = st.text_area(
+                        "Enviar mensaje",
+                        placeholder="Escribe un comentario sobre este pase...",
+                        height=85,
+                        key=f"texto_chat_modal_pase_{folio_chat}",
+                    )
+                    enviar_chat = st.form_submit_button(
+                        "Enviar mensaje",
+                        use_container_width=True,
+                    )
+
+                if enviar_chat:
+                    comentario_limpio = str(comentario_chat or "").strip()
+                    if not comentario_limpio:
+                        st.warning("Escribe un mensaje antes de enviarlo.")
+                    else:
+                        usuario_chat = (
+                            st.session_state.user.get("name")
+                            or st.session_state.user.get("email")
+                            or "Usuario"
+                        )
+                        try:
+                            registrar_mensaje_chatlog(
+                                folio_chat,
+                                comentario_limpio,
+                                usuario_chat,
+                            )
+                            st.success("Mensaje enviado.")
+                            st.rerun(scope="fragment")
+                        except Exception as chat_exc:
+                            st.error(f"No fue posible enviar el mensaje: {chat_exc}")
+
                 # =====================================================
                 # METRIC
                 # =====================================================
