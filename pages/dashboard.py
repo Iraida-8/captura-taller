@@ -259,41 +259,203 @@ st.markdown("""
 
 current_date = datetime.now().strftime("%d %B %Y")
 
-display_name = user["name"] or user["email"]
+display_name = user.get("name") or user.get("email") or "Usuario"
 
 display_role = (
     role.replace("_", " ").upper()
     if role else "USER"
 )
 
+# -------------------------------
+# NOTIFICATIONS
+# -------------------------------
+# Company access is read from the same `access` list already used by the dashboard.
+ACCESS_TABLE_MAP = {
+    "igloo": "IGLOO",
+    "lincoln": "LINCOLN",
+    "picus": "PICUS",
+    "setlogis": "SLP",
+    "setfreight": "SFI",
+}
+COMPANY_LABELS = {
+    "igloo": "IGLOO",
+    "lincoln": "LINCOLN",
+    "picus": "PICUS",
+    "setlogis": "SLP",
+    "setfreight": "SFI",
+}
+
+
+def _normalise_text(value):
+    return str(value or "").strip().casefold()
+
+
+def _visible_companies():
+    return {
+        permission: table
+        for permission, table in ACCESS_TABLE_MAP.items()
+        if permission in access
+    }
+
+
+def _has_travel_permissions():
+    return any(key in access for key in ("solicitud_viaticos", "gestion_viaticos"))
+
+
+def _company_permission_from_name(company):
+    label = _normalise_text(company)
+    aliases = {
+        "igloo": "igloo", "igloo transport": "igloo",
+        "lincoln": "lincoln", "lincoln transport": "lincoln",
+        "picus": "picus",
+        "set freight": "setfreight", "setfreight": "setfreight",
+        "set freight logistics": "setfreight",
+        "set logis plus": "setlogis", "setlogis": "setlogis", "slp": "setlogis",
+    }
+    return aliases.get(label)
+
+
+def _travel_company_permissions(row):
+    """Resolve both company fields; unknown non-empty names fail closed."""
+    required = set()
+    for key in ("empresa_cargo_gastos", "empresa_brinda_servicio"):
+        raw = row.get(key)
+        if not raw or not str(raw).strip() or _normalise_text(raw) in {
+            "seleccione una opción...", "seleccione una opcion..."
+        }:
+            continue
+        permission = _company_permission_from_name(raw)
+        if permission is None:
+            return {"__unknown_company__"}
+        required.add(permission)
+    return required
+
+
+def _query_pending_workshop_rows(table):
+    try:
+        response = (
+            supabase.table(table)
+            .select('"No. de Folio", "Estado"')
+            .ilike("Estado", "Por Completar")
+            .limit(200)
+            .execute()
+        )
+        return [
+            row for row in (response.data or [])
+            if _normalise_text(row.get("Estado")) == "por completar"
+        ]
+    except Exception as exc:
+        # Show an explicit warning rather than silently treating a failed query as zero.
+        st.warning(f"No fue posible consultar las notificaciones de {table}.")
+        print(f"Notification query failed for {table}: {exc}")
+        return []
+
+
+def _query_pending_rows(table, status, columns):
+    try:
+        response = (
+            supabase.table(table)
+            .select(columns)
+            .ilike("estatus", status)
+            .limit(300)
+            .execute()
+        )
+        return [
+            row for row in (response.data or [])
+            if _normalise_text(row.get("estatus")) == _normalise_text(status)
+        ]
+    except Exception as exc:
+        st.warning(f"No fue posible consultar las notificaciones de {table}.")
+        print(f"Notification query failed for {table}: {exc}")
+        return []
+
+
+def _query_request_company(folio):
+    if not folio:
+        return None
+    try:
+        response = (
+            supabase.table("solicitud_viaje")
+            .select("folio_solicitud, empresa_cargo_gastos, empresa_brinda_servicio")
+            .eq("folio_solicitud", folio)
+            .limit(1)
+            .execute()
+        )
+        rows = response.data or []
+        return rows[0] if rows else None
+    except Exception as exc:
+        print(f"Unable to resolve company for travel request {folio}: {exc}")
+        return None
+
+
+def get_dashboard_notifications():
+    items = []
+    permitted_companies = set(_visible_companies())
+
+    # Workshop requests: only query companies the current user can access.
+    for permission, table in _visible_companies().items():
+        for row in _query_pending_workshop_rows(table):
+            items.append({
+                "category": "Pase de taller",
+                "company": COMPANY_LABELS[permission],
+                "reference": row.get("No. de Folio") or "Sin folio",
+                "status": "Por Completar",
+                "destination": "pases",
+            })
+
+    # Travel work appears only to users already granted one of the travel permissions.
+    if _has_travel_permissions():
+        for row in _query_pending_rows(
+            "solicitud_viaje", "Pendiente",
+            "folio_solicitud, empresa_cargo_gastos, empresa_brinda_servicio, estatus",
+        ):
+            required = _travel_company_permissions(row)
+            # Do not expose travel records when company fields are blank/unknown.
+            if required and "__unknown_company__" not in required and required.issubset(permitted_companies):
+                items.append({
+                    "category": "Solicitud de viaje",
+                    "company": row.get("empresa_cargo_gastos") or row.get("empresa_brinda_servicio") or "Empresa no especificada",
+                    "reference": row.get("folio_solicitud") or "Sin folio",
+                    "status": "Pendiente",
+                    "destination": "viaticos",
+                })
+
+        for row in _query_pending_rows(
+            "comprobacion_viaje", "Verificar",
+            "folio_comprobacion, folio_solicitud, nombre_empleado_solicita, estatus",
+        ):
+            request_row = _query_request_company(row.get("folio_solicitud"))
+            # When company scope cannot be determined, don't expose this record.
+            if not request_row:
+                continue
+            required = _travel_company_permissions(request_row)
+            if not required or "__unknown_company__" in required or not required.issubset(permitted_companies):
+                continue
+            items.append({
+                "category": "Comprobación de viaje",
+                "company": request_row.get("empresa_cargo_gastos") or request_row.get("empresa_brinda_servicio") or "Empresa no especificada",
+                "reference": row.get("folio_comprobacion") or row.get("folio_solicitud") or "Sin folio",
+                "status": "Verificar",
+                "destination": "viaticos",
+            })
+    return items
+
+
 st.markdown(
     f"""
 <div class="hero-card">
-
-<div class="hero-welcome">
-Bienvenid@
+  <div class="hero-welcome">Bienvenid@</div>
+  <div class="hero-date">{current_date}</div>
+  <div class="hero-name">{display_name}</div>
+  <div class="hero-role">{display_role}</div>
+  <div class="hero-footer">OMEGA · SYS. VER {latest_version}</div>
 </div>
-
-<div class="hero-date">
-{current_date}
-</div>
-
-<div class="hero-name">
-{display_name}
-</div>
-
-<div class="hero-role">
-{display_role}
-</div>
-
-<div class="hero-footer">
-OMEGA · SYS. VER {latest_version}
-</div>
-
-</div>
-    """,
+""",
     unsafe_allow_html=True,
 )
+
+notifications = get_dashboard_notifications()
+notification_count = len(notifications)
 
 # -------------------------------
 # HELPERS
@@ -360,7 +522,48 @@ show_kpis = role in ["admin", "manager"]
 
 if show_kpis:
 
-    st.markdown("## 📊 Resumen General")
+    title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
+    with title_column:
+        st.markdown("## 📊 Resumen General")
+
+    # Compact bell immediately to the right of the section title.
+    with bell_column:
+        st.markdown(
+            f"""
+            <style>
+            div.st-key-dashboard_notifications button {{
+                width: 46px;
+                min-height: 46px;
+                padding: 0;
+                border: 1px solid transparent;
+                border-radius: 50%;
+                background: transparent;
+                font-size: 25px;
+                position: relative;
+            }}
+            div.st-key-dashboard_notifications button:hover {{
+                background: rgba(128,128,128,0.10);
+                border-color: rgba(128,128,128,0.25);
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        bell_label = "🔔 🔴" if notification_count else "🔔"
+        with st.popover(bell_label, help="Notificaciones pendientes", use_container_width=False, key="dashboard_notifications"):
+            st.markdown("### Notificaciones pendientes")
+            if not notifications:
+                st.success("No tienes pendientes por atender.")
+            else:
+                st.caption(f"{notification_count} elemento(s) requieren atención.")
+                for item in notifications:
+                    with st.container(border=True):
+                        st.markdown(f"**{item['category']} · {item['reference']}**")
+                        st.caption(f"{item['company']} — {item['status']}")
+                        if item["destination"] == "viaticos":
+                            st.caption("Abre Gestión de Órdenes y Pases para revisar este registro.")
+                        else:
+                            st.caption("Abre Solicitudes y Pases para completar este registro.")
 
     # =====================================================
     # KPI TOTALS
@@ -379,14 +582,6 @@ if show_kpis:
         .execute()
         .count
     )
-
-    ACCESS_TABLE_MAP = {
-        "igloo": "IGLOO",
-        "lincoln": "LINCOLN",
-        "picus": "PICUS",
-        "setlogis": "SLP",
-        "setfreight": "SFI",
-    }
 
     pase_tables = [
         tabla
