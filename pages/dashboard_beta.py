@@ -457,49 +457,6 @@ st.markdown(
 notifications = get_dashboard_notifications()
 notification_count = len(notifications)
 
-st.markdown(
-    """
-<style>
-div.st-key-dashboard_notifications button {
-    min-height: 42px;
-    border-radius: 999px !important;
-    border: 1px solid #D9DDEF !important;
-    font-weight: 700;
-}
-div.st-key-dashboard_notifications button:hover {
-    border-color: #E23B2F !important;
-    color: #E23B2F !important;
-}
-.notification-dot {
-    display:inline-block;
-    width:9px;height:9px;margin-left:5px;
-    border-radius:50%;background:#E53935;
-    vertical-align:middle;box-shadow:0 0 0 2px #fff;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-# Align the interactive notification popover to the right, underneath the date.
-bell_spacer, bell_column = st.columns([8, 1.6])
-with bell_column:
-    bell_label = f"🔔 🔴 Notificaciones ({notification_count})" if notification_count else "🔔 Notificaciones"
-    with st.popover(bell_label, use_container_width=True):
-        st.markdown("### Notificaciones pendientes")
-        if not notifications:
-            st.success("No tienes pendientes por atender.")
-        else:
-            st.caption(f"{notification_count} elemento(s) requieren atención.")
-            for item in notifications:
-                with st.container(border=True):
-                    st.markdown(f"**{item['category']} · {item['reference']}**")
-                    st.caption(f"{item['company']} — {item['status']}")
-                    if item["destination"] == "viaticos":
-                        st.caption("Abre Gestión de Órdenes y Pases para revisar este registro.")
-                    else:
-                        st.caption("Abre Solicitudes y Pases para completar este registro.")
-
 # -------------------------------
 # HELPERS
 # -------------------------------
@@ -565,7 +522,48 @@ show_kpis = role in ["admin", "manager"]
 
 if show_kpis:
 
-    st.markdown("## 📊 Resumen General")
+    title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
+    with title_column:
+        st.markdown("## 📊 Resumen General")
+
+    # Compact bell immediately to the right of the section title.
+    with bell_column:
+        st.markdown(
+            f"""
+            <style>
+            div.st-key-dashboard_notifications button {{
+                width: 46px;
+                min-height: 46px;
+                padding: 0;
+                border: 1px solid transparent;
+                border-radius: 50%;
+                background: transparent;
+                font-size: 25px;
+                position: relative;
+            }}
+            div.st-key-dashboard_notifications button:hover {{
+                background: rgba(128,128,128,0.10);
+                border-color: rgba(128,128,128,0.25);
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        bell_label = "🔔 🔴" if notification_count else "🔔"
+        with st.popover(bell_label, help="Notificaciones pendientes", use_container_width=False, key="dashboard_notifications"):
+            st.markdown("### Notificaciones pendientes")
+            if not notifications:
+                st.success("No tienes pendientes por atender.")
+            else:
+                st.caption(f"{notification_count} elemento(s) requieren atención.")
+                for item in notifications:
+                    with st.container(border=True):
+                        st.markdown(f"**{item['category']} · {item['reference']}**")
+                        st.caption(f"{item['company']} — {item['status']}")
+                        if item["destination"] == "viaticos":
+                            st.caption("Abre Gestión de Órdenes y Pases para revisar este registro.")
+                        else:
+                            st.caption("Abre Solicitudes y Pases para completar este registro.")
 
     # =====================================================
     # KPI TOTALS
