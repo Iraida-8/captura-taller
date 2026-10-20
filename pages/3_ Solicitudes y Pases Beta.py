@@ -381,37 +381,23 @@ if has_pases:
                         reset_pase_form_values()
                         return
 
-                    try:
-                        respuesta = (
-                            supabase.table(detalle["tabla"])
-                            .select("*")
-                            .eq('"No. de Folio"', str(detalle["folio"]).strip())
-                            .limit(1)
-                            .execute()
-                        )
-                    except Exception as exc:
-                        st.error(
-                            f"Failed loading folio {detalle['folio']} "
-                            f"from table {detalle['tabla']}"
-                        )
-                        st.code(
-                            f"Exception: {type(exc).__name__}\n"
-                            f"Message: {getattr(exc, 'message', None)}\n"
-                            f"Code: {getattr(exc, 'code', None)}\n"
-                            f"Details: {getattr(exc, 'details', None)}\n"
-                            f"Hint: {getattr(exc, 'hint', None)}\n"
-                            f"Arguments: {repr(exc.args)}\n"
-                            f"Data: {repr(getattr(exc, '__dict__', {}))}"
-                        )
-                        st.stop()
-                    if not respuesta.data:
+                    # PostgREST parses the period in "No. de Folio" as filter syntax.
+                    # Fetch the table rows and match the folio in Python instead.
+                    respuesta = supabase.table(detalle["tabla"]).select("*").execute()
+                    folio_buscado = str(detalle["folio"]).strip()
+                    registro = next(
+                        (
+                            fila for fila in (respuesta.data or [])
+                            if str(fila.get("No. de Folio", "")).strip() == folio_buscado
+                        ),
+                        None,
+                    )
+                    if registro is None:
                         reset_pase_form_values()
                         st.session_state["pase_orden_error"] = (
                             f"No se encontró el folio {detalle['folio']} en {detalle['tabla']}."
                         )
                         return
-
-                    registro = respuesta.data[0]
                     reset_pase_form_values()
                     st.session_state["pase_orden_cargada"] = {
                         **detalle,
@@ -929,7 +915,12 @@ if has_pases:
                         else v
                         for k, v in payload.items()
                     }
-                    supabase.table(tabla_actualizar).update(payload_actualizar).eq('"No. de Folio"', folio_real).execute()
+                    id_registro = registro_original.get("id")
+                    if id_registro is None:
+                        raise ValueError(
+                            f"No se pudo actualizar el folio {folio_real}: falta el id del registro original."
+                        )
+                    supabase.table(tabla_actualizar).update(payload_actualizar).eq("id", id_registro).execute()
                     log_activity(f"Pase {folio_real} completado/actualizado", "Solicitudes y Pases")
                 else:
                     folio_real = append_pase_to_sheet(payload)
