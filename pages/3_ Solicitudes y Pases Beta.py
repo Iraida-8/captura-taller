@@ -381,13 +381,29 @@ if has_pases:
                         reset_pase_form_values()
                         return
 
-                    respuesta = (
-                        supabase.table(detalle["tabla"])
-                        .select("*")
-                        .eq("No. de Folio", str(detalle["folio"]).strip())
-                        .limit(1)
-                        .execute()
-                    )
+                    try:
+                        respuesta = (
+                            supabase.table(detalle["tabla"])
+                            .select("*")
+                            .eq("No. de Folio", str(detalle["folio"]).strip())
+                            .limit(1)
+                            .execute()
+                        )
+                    except Exception as exc:
+                        st.error(
+                            f"Failed loading folio {detalle['folio']} "
+                            f"from table {detalle['tabla']}"
+                        )
+                        st.code(
+                            f"Exception: {type(exc).__name__}\n"
+                            f"Message: {getattr(exc, 'message', None)}\n"
+                            f"Code: {getattr(exc, 'code', None)}\n"
+                            f"Details: {getattr(exc, 'details', None)}\n"
+                            f"Hint: {getattr(exc, 'hint', None)}\n"
+                            f"Arguments: {repr(exc.args)}\n"
+                            f"Data: {repr(getattr(exc, '__dict__', {}))}"
+                        )
+                        st.stop()
                     if not respuesta.data:
                         reset_pase_form_values()
                         st.session_state["pase_orden_error"] = (
