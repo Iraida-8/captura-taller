@@ -384,7 +384,7 @@ if has_pases:
                     respuesta = (
                         supabase.table(detalle["tabla"])
                         .select("*")
-                        .eq('"No. de Folio"', detalle["folio"])
+                        .eq("No. de Folio", str(detalle["folio"]).strip())
                         .limit(1)
                         .execute()
                     )
