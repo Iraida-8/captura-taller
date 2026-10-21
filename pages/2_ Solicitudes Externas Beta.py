@@ -134,13 +134,15 @@ def cargar_todas_unidades_supabase():
     df = pd.DataFrame(response.data or [])
     if df.empty:
         return df
-    for col in ("unidad", "tipo_unidad", "empresa"):
+    for col in ("unidad", "tipo_unidad", "empresa", "estado"):
         if col not in df:
             df[col] = ""
     df["unidad"] = df["unidad"].fillna("").astype(str).str.strip()
     df["tipo_unidad"] = df["tipo_unidad"].fillna("").astype(str).str.upper().str.strip()
     df["empresa"] = df["empresa"].fillna("").astype(str).str.upper().str.strip()
-    return df[df["unidad"].ne("")].drop_duplicates(subset=["unidad"], keep="first")
+    df["estado"] = df["estado"].fillna("").astype(str).str.upper().str.strip()
+    # Keep BAJA units in Supabase, but exclude them from this page's selectable catalog.
+    return df[df["unidad"].ne("") & df["estado"].ne("BAJA")].drop_duplicates(subset=["unidad"], keep="first")
 TABLE_MAP = {
     "IGLOO TRANSPORT": "IGLOO",
     "LINCOLN FREIGHT": "LINCOLN",
@@ -660,11 +662,12 @@ with tab_captura:
         if not match.empty:
             fila = match.iloc[0]
     raw_tipo_unidad = str(fila.get("tipo_unidad", "") or "").strip().upper()
+    es_thermo = any(token in raw_tipo_unidad for token in ("THERMO", "REFRIGERADA", "REFRIGER", "FRIA", "FRÍO"))
     tipo_unidad_auto = "Tractores" if raw_tipo_unidad == "TRACTOR" else (
-        "Remolques" if raw_tipo_unidad in ("CAJA SECA", "CAJA REFRIGERADA") else ""
+        "Remolques" if "CAJA" in raw_tipo_unidad or "REMOLQUE" in raw_tipo_unidad or "TRAILER" in raw_tipo_unidad or "THERMO" in raw_tipo_unidad else ""
     )
     tipo_caja_auto = "Caja Seca" if "SECA" in raw_tipo_unidad else (
-        "Caja Refrigerada" if "REFRIGERADA" in raw_tipo_unidad or "REFRIGER" in raw_tipo_unidad else ""
+        "Thermo" if es_thermo else ""
     )
     if no_unidad == "REMOLQUE EXTERNO":
         tipo_unidad_auto = "Remolques"
@@ -678,7 +681,7 @@ with tab_captura:
             st.session_state["tipo_caja_externo"] = "Caja Seca"
         tipo_caja = st.selectbox(
             "Tipo de Caja",
-            ["Caja Seca", "Caja Refrigerada"],
+            ["Caja Seca", "Thermo"],
             key="tipo_caja_externo",
         )
     else:
