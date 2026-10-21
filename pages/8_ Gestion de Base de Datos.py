@@ -90,7 +90,7 @@ if is_admin:
         tab_admin,
         tab_audit,
     ) = st.tabs([
-        "Gestión, Creación y Carga de Unidades",
+        "Descarga de datos de Unidades",
         "Refacciones",
         "Proveedores IVA",
         "TC Mensual",
@@ -109,7 +109,7 @@ else:
         tab_tc,
         tab_directorio,
     ) = st.tabs([
-        "Gestión, Creación y Carga de Unidades",
+        "Descarga de datos de Unidades",
         "Refacciones",
         "Proveedores IVA",
         "TC Mensual",
