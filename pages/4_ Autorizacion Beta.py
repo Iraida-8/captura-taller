@@ -146,13 +146,22 @@ st.divider()
 # =================================
 # MODULES
 # =================================
+# The dashboard notification bell sets this before navigating here.
+# Use it to open the relevant tab on arrival, then consume it so later
+# visits do not keep forcing the same tab.
+notification_target_tab = st.session_state.pop("autorizacion_target_tab", None)
 
 if has_autorizacion and has_viaticos:
 
-    tab_autorizacion, tab_viaticos = st.tabs([
-        "📋 Autorización y Actualización de Pases de Taller",
-        "💳 Gestión de Viáticos",
-    ])
+    default_tab_index = 1 if notification_target_tab == "viaticos" else 0
+
+    tab_autorizacion, tab_viaticos = st.tabs(
+        [
+            "📋 Autorización y Actualización de Pases de Taller",
+            "💳 Gestión de Viáticos",
+        ],
+        default=default_tab_index,
+    )
 
 elif has_autorizacion:
 
