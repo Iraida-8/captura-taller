@@ -4,6 +4,7 @@ from auth import require_login
 from pathlib import Path
 from PIL import Image
 import json
+import unicodedata
 import streamlit.components.v1 as components
 from supabase import create_client
 from pages.css import load_css
@@ -287,7 +288,28 @@ COMPANY_LABELS = {
 
 
 def _normalise_text(value):
-    return str(value or "").strip().casefold()
+    text = str(value or "").strip().casefold()
+    return "".join(
+        char for char in unicodedata.normalize("NFKD", text)
+        if not unicodedata.combining(char)
+    )
+
+
+def _current_pass_capture_name():
+    return (
+        user.get("name") or user.get("full_name") or ""
+    ).strip()
+
+
+def _has_pass_notification_permission():
+    return any(
+        permission in access
+        for permission in (
+            "regular_pase_user",
+            "espectador_pases",
+            "espectador_selectivo",
+        )
+    )
 
 
 def _visible_companies():
@@ -335,9 +357,9 @@ def _query_pending_workshop_rows(table):
     try:
         response = (
             supabase.table(table)
-            .select('"No. de Folio", "Estado"')
+            .select('"No. de Folio", "Estado", "Capturo"')
             .ilike("Estado", "Por Completar")
-            .limit(200)
+            .limit(500)
             .execute()
         )
         return [
@@ -392,15 +414,35 @@ def get_dashboard_notifications():
     items = []
     permitted_companies = set(_visible_companies())
 
-    # Workshop requests: only query companies the current user can access.
-    for permission, table in _visible_companies().items():
+    # Workshop notifications follow the same scope as the Pase a Taller post-it:
+    # - espectador_selectivo: all companies, but only rows captured by this user.
+    # - regular_pase_user / espectador_pases: only companies in the user's access list.
+    # - Other users retain the existing company-access scope.
+    has_espectador_selectivo = "espectador_selectivo" in access
+    capture_name = _current_pass_capture_name()
+
+    if has_espectador_selectivo:
+        workshop_companies = list(ACCESS_TABLE_MAP.items())
+    else:
+        workshop_companies = list(_visible_companies().items())
+
+    for permission, table in workshop_companies:
         for row in _query_pending_workshop_rows(table):
+            if has_espectador_selectivo:
+                # Fail closed if the profile has no name; normalize accents/case/spaces.
+                if not capture_name:
+                    continue
+                if _normalise_text(row.get("Capturo")) != _normalise_text(capture_name):
+                    continue
+
             items.append({
                 "category": "Pase de taller",
                 "company": COMPANY_LABELS[permission],
                 "reference": row.get("No. de Folio") or "Sin folio",
                 "status": "Por Completar",
                 "destination": "pases",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                "tab": "pases",
             })
 
     # Travel work appears only to users already granted one of the travel permissions.
@@ -418,6 +460,8 @@ def get_dashboard_notifications():
                     "reference": row.get("folio_solicitud") or "Sin folio",
                     "status": "Pendiente",
                     "destination": "viaticos",
+                    "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                    "tab": "viaticos",
                 })
 
         for row in _query_pending_rows(
@@ -437,6 +481,8 @@ def get_dashboard_notifications():
                 "reference": row.get("folio_comprobacion") or row.get("folio_solicitud") or "Sin folio",
                 "status": "Verificar",
                 "destination": "viaticos",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                "tab": "viaticos",
             })
     return items
 
@@ -519,14 +565,19 @@ def render_dashboard_cards(buttons, columns_per_row=3):
 # =============================
 
 show_kpis = role in ["admin", "manager"]
+show_pass_notifications = _has_pass_notification_permission()
 
-if show_kpis:
+if show_kpis or show_pass_notifications:
 
-    title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
-    with title_column:
-        st.markdown("## 📊 Resumen General")
+    if show_kpis:
+        title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
+        with title_column:
+            st.markdown("## 📊 Resumen General")
+    else:
+        bell_column = st.container()
 
-    # Compact bell immediately to the right of the section title.
+    # Compact bell immediately to the right of the section title for admins/managers;
+    # pass-permission users also get the bell even when they do not see general KPIs.
     with bell_column:
         st.markdown(
             f"""
@@ -556,15 +607,26 @@ if show_kpis:
                 st.success("No tienes pendientes por atender.")
             else:
                 st.caption(f"{notification_count} elemento(s) requieren atención.")
-                for item in notifications:
+                for idx, item in enumerate(notifications):
                     with st.container(border=True):
                         st.markdown(f"**{item['category']} · {item['reference']}**")
                         st.caption(f"{item['company']} — {item['status']}")
-                        if item["destination"] == "viaticos":
-                            st.caption("Abre Gestión de Órdenes y Pases para revisar este registro.")
-                        else:
-                            st.caption("Abre Solicitudes y Pases para completar este registro.")
 
+                        destination_label = (
+                            "💳 Abrir Gestión de Viáticos"
+                            if item["destination"] == "viaticos"
+                            else "📋 Abrir Gestión de Órdenes y Pases"
+                        )
+                        if st.button(
+                            destination_label,
+                            key=f"notification_open_{item['destination']}_{idx}",
+                            use_container_width=True,
+                        ):
+                            # The destination page consumes this value to select its tab.
+                            st.session_state["autorizacion_target_tab"] = item["tab"]
+                            st.switch_page(item["page"])
+
+if show_kpis:
     # =====================================================
     # KPI TOTALS
     # =====================================================
