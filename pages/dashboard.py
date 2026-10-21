@@ -4,6 +4,7 @@ from auth import require_login
 from pathlib import Path
 from PIL import Image
 import json
+import unicodedata
 import streamlit.components.v1 as components
 from supabase import create_client
 from pages.css import load_css
@@ -287,7 +288,28 @@ COMPANY_LABELS = {
 
 
 def _normalise_text(value):
-    return str(value or "").strip().casefold()
+    text = str(value or "").strip().casefold()
+    return "".join(
+        char for char in unicodedata.normalize("NFKD", text)
+        if not unicodedata.combining(char)
+    )
+
+
+def _current_pass_capture_name():
+    return (
+        user.get("name") or user.get("full_name") or ""
+    ).strip()
+
+
+def _has_pass_notification_permission():
+    return any(
+        permission in access
+        for permission in (
+            "regular_pase_user",
+            "espectador_pases",
+            "espectador_selectivo",
+        )
+    )
 
 
 def _visible_companies():
@@ -335,9 +357,9 @@ def _query_pending_workshop_rows(table):
     try:
         response = (
             supabase.table(table)
-            .select('"No. de Folio", "Estado"')
+            .select('"No. de Folio", "Estado", "Capturo"')
             .ilike("Estado", "Por Completar")
-            .limit(200)
+            .limit(500)
             .execute()
         )
         return [
@@ -392,15 +414,35 @@ def get_dashboard_notifications():
     items = []
     permitted_companies = set(_visible_companies())
 
-    # Workshop requests: only query companies the current user can access.
-    for permission, table in _visible_companies().items():
+    # Workshop notifications follow the same scope as the Pase a Taller post-it:
+    # - espectador_selectivo: all companies, but only rows captured by this user.
+    # - regular_pase_user / espectador_pases: only companies in the user's access list.
+    # - Other users retain the existing company-access scope.
+    has_espectador_selectivo = "espectador_selectivo" in access
+    capture_name = _current_pass_capture_name()
+
+    if has_espectador_selectivo:
+        workshop_companies = list(ACCESS_TABLE_MAP.items())
+    else:
+        workshop_companies = list(_visible_companies().items())
+
+    for permission, table in workshop_companies:
         for row in _query_pending_workshop_rows(table):
+            if has_espectador_selectivo:
+                # Fail closed if the profile has no name; normalize accents/case/spaces.
+                if not capture_name:
+                    continue
+                if _normalise_text(row.get("Capturo")) != _normalise_text(capture_name):
+                    continue
+
             items.append({
                 "category": "Pase de taller",
                 "company": COMPANY_LABELS[permission],
                 "reference": row.get("No. de Folio") or "Sin folio",
                 "status": "Por Completar",
                 "destination": "pases",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                "tab": "pases",
             })
 
     # Travel work appears only to users already granted one of the travel permissions.
@@ -418,6 +460,8 @@ def get_dashboard_notifications():
                     "reference": row.get("folio_solicitud") or "Sin folio",
                     "status": "Pendiente",
                     "destination": "viaticos",
+                    "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                    "tab": "viaticos",
                 })
 
         for row in _query_pending_rows(
@@ -437,6 +481,8 @@ def get_dashboard_notifications():
                 "reference": row.get("folio_comprobacion") or row.get("folio_solicitud") or "Sin folio",
                 "status": "Verificar",
                 "destination": "viaticos",
+                "page": f"pages/4_ Autorizacion{PAGE_SUFFIX}.py",
+                "tab": "viaticos",
             })
     return items
 
@@ -519,14 +565,19 @@ def render_dashboard_cards(buttons, columns_per_row=3):
 # =============================
 
 show_kpis = role in ["admin", "manager"]
+show_pass_notifications = _has_pass_notification_permission()
 
-if show_kpis:
+if show_kpis or show_pass_notifications:
 
-    title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
-    with title_column:
-        st.markdown("## 📊 Resumen General")
+    if show_kpis:
+        title_column, bell_column = st.columns([12, 1], vertical_alignment="center")
+        with title_column:
+            st.markdown("## 📊 Resumen General")
+    else:
+        bell_column = st.container()
 
-    # Compact bell immediately to the right of the section title.
+    # Compact bell immediately to the right of the section title for admins/managers;
+    # pass-permission users also get the bell even when they do not see general KPIs.
     with bell_column:
         st.markdown(
             f"""
@@ -556,15 +607,14 @@ if show_kpis:
                 st.success("No tienes pendientes por atender.")
             else:
                 st.caption(f"{notification_count} elemento(s) requieren atención.")
-                for item in notifications:
+                for idx, item in enumerate(notifications):
                     with st.container(border=True):
                         st.markdown(f"**{item['category']} · {item['reference']}**")
                         st.caption(f"{item['company']} — {item['status']}")
-                        if item["destination"] == "viaticos":
-                            st.caption("Abre Gestión de Órdenes y Pases para revisar este registro.")
-                        else:
-                            st.caption("Abre Solicitudes y Pases para completar este registro.")
 
+                        # Notifications are informational only; they do not navigate.
+
+if show_kpis:
     # =====================================================
     # KPI TOTALS
     # =====================================================
@@ -583,23 +633,44 @@ if show_kpis:
         .count
     )
 
-    pase_tables = [
-        tabla
-        for permiso, tabla in ACCESS_TABLE_MAP.items()
-        if permiso in access
-    ]
+    # Pase a Taller KPI:
+    # - espectador_selectivo: count only records captured by this user,
+    #   across all companies (this permission ignores company access).
+    # - regular_pase_user / espectador_pases: keep the user's company scope.
+    # - Standard users: keep the existing company-scope behavior.
+    has_espectador_selectivo = "espectador_selectivo" in access
+    display_name_for_passes = (
+        user.get("name") or user.get("full_name") or ""
+    ).strip()
+
+    if has_espectador_selectivo:
+        pase_tables = list(ACCESS_TABLE_MAP.values())
+    else:
+        pase_tables = [
+            tabla
+            for permiso, tabla in ACCESS_TABLE_MAP.items()
+            if permiso in access
+        ]
 
     total_pases = 0
 
-    for table in pase_tables:
-
-        response = (
-            supabase.table(table)
-            .select("*", count="exact", head=True)
-            .execute()
+    if has_espectador_selectivo and not display_name_for_passes:
+        st.warning(
+            "No se puede calcular el total de Pases de Taller: "
+            "el perfil no tiene nombre configurado para validar Capturó."
         )
+    else:
+        for table in pase_tables:
+            query = (
+                supabase.table(table)
+                .select("*", count="exact", head=True)
+            )
 
-        total_pases += response.count or 0
+            if has_espectador_selectivo:
+                query = query.ilike("Capturo", display_name_for_passes)
+
+            response = query.execute()
+            total_pases += response.count or 0
 
     # =====================================================
     # MODULES
@@ -683,6 +754,75 @@ if show_kpis:
     st.write("")
 
     st.divider()
+
+# Non-admin/manager users can see the Pase a Taller post-it without exposing
+# the Viáticos and Bonos KPI totals reserved for elevated roles.
+has_pase_view_mode = any(
+    permission in access
+    for permission in (
+        "regular_pase_user",
+        "espectador_pases",
+        "espectador_selectivo",
+    )
+)
+
+if not show_kpis and "pase_taller" in access and has_pase_view_mode:
+    selective_name = (
+        user.get("name") or user.get("full_name") or ""
+    ).strip()
+
+    if "espectador_selectivo" in access:
+        count_tables = list(ACCESS_TABLE_MAP.values())
+    else:
+        count_tables = [
+            table
+            for permission, table in ACCESS_TABLE_MAP.items()
+            if permission in access
+        ]
+
+    visible_pass_total = 0
+    if "espectador_selectivo" in access and not selective_name:
+        st.warning(
+            "No se puede calcular el total de Pases de Taller: "
+            "el perfil no tiene nombre configurado para validar Capturó."
+        )
+    else:
+        for table in count_tables:
+            count_query = (
+                supabase.table(table)
+                .select("*", count="exact", head=True)
+            )
+            if "espectador_selectivo" in access:
+                count_query = count_query.ilike("Capturo", selective_name)
+            count_response = count_query.execute()
+            visible_pass_total += count_response.count or 0
+
+        postit_html = f"""
+        <div style="padding:6px 6px 18px 6px; max-width:420px;">
+            <div style="
+                background:#FFF7D6;
+                padding:20px;
+                border-radius:18px;
+                box-shadow:0 4px 10px rgba(0,0,0,.10);
+                min-height:185px;
+                color:#111;
+                font-family:sans-serif;
+            ">
+                <div style="color:#666;font-size:15px;font-weight:600;">
+                    Total de registros visibles
+                </div>
+                <div style="
+                    color:#111;font-size:28px;font-weight:700;
+                    margin-top:18px;line-height:1.25;
+                ">Pase a Taller</div>
+                <div style="
+                    text-align:center;color:#111;font-size:58px;
+                    font-weight:800;margin-top:42px;
+                ">{visible_pass_total:,}</div>
+            </div>
+        </div>
+        """
+        components.html(postit_html, height=255)
 
 # =================================
 #  ROW 1 OPERACIÓN / GESTIÓN

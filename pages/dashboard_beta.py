@@ -612,19 +612,7 @@ if show_kpis or show_pass_notifications:
                         st.markdown(f"**{item['category']} · {item['reference']}**")
                         st.caption(f"{item['company']} — {item['status']}")
 
-                        destination_label = (
-                            "💳 Abrir Gestión de Viáticos"
-                            if item["destination"] == "viaticos"
-                            else "📋 Abrir Gestión de Órdenes y Pases"
-                        )
-                        if st.button(
-                            destination_label,
-                            key=f"notification_open_{item['destination']}_{idx}",
-                            use_container_width=True,
-                        ):
-                            # The destination page consumes this value to select its tab.
-                            st.session_state["autorizacion_target_tab"] = item["tab"]
-                            st.switch_page(item["page"])
+                        # Notifications are informational only; they do not navigate.
 
 if show_kpis:
     # =====================================================
