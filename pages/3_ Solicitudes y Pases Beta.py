@@ -460,6 +460,9 @@ if has_pases:
                         st.session_state["pase_empresa_cobrar"] = detalle["empresa"]
 
                     tipo_caja_guardado = str(registro.get("Tipo de Caja") or "").strip()
+                    # Normalize legacy saved values so future edits save "Thermo".
+                    if tipo_caja_guardado.casefold() in {"caja refrigerada", "thermo"}:
+                        tipo_caja_guardado = "Thermo"
                     if tipo_caja_guardado:
                         st.session_state["pase_tipo_caja_externo"] = tipo_caja_guardado
                         st.session_state["pase_tipo_caja_catalogo"] = tipo_caja_guardado
@@ -684,12 +687,12 @@ if has_pases:
             tipo_normalizado = raw_tipo_unidad.replace("_", " ").replace("-", " ")
             if tipo_normalizado in ("TRACTOR", "TRACTORES", "TRACTOCAMION", "TRACTOCAMIONES", "CAMION", "CAMIONES"):
                 tipo_unidad_auto = "Tractores"
-            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER")):
+            elif any(token in tipo_normalizado for token in ("REMOLQUE", "REMOLQUES", "CAJA", "TRAILER", "THERMO")):
                 tipo_unidad_auto = "Remolques"
             else:
                 tipo_unidad_auto = ""
             tipo_caja_auto = "Caja Seca" if "SECA" in tipo_normalizado else (
-                "Caja Refrigerada" if any(token in tipo_normalizado for token in ("REFRIGERADA", "REFRIGER", "FRIA", "FRÍO")) else ""
+                "Thermo" if any(token in tipo_normalizado for token in ("THERMO", "REFRIGERADA", "REFRIGER", "FRIA", "FRÍO")) else ""
             )
             es_externo = no_unidad == "REMOLQUE EXTERNO"
             if es_externo:
@@ -738,8 +741,10 @@ if has_pases:
                 marca_valor, modelo_valor, sucursal_valor = "EXTERNO", "0000", "EXTERNO"
 
             if tipo_unidad_auto == "Remolques":
-                opciones_caja = ["Caja Seca", "Caja Refrigerada"]
+                opciones_caja = ["Caja Seca", "Thermo"]
                 caja_guardada = str(registro_orden_cargada.get("Tipo de Caja") or "").strip()
+                if caja_guardada.casefold() in {"caja refrigerada", "thermo"}:
+                    caja_guardada = "Thermo"
                 if caja_guardada and caja_guardada not in opciones_caja:
                     opciones_caja.append(caja_guardada)
                 indice_caja = opciones_caja.index(tipo_caja_auto) if tipo_caja_auto in opciones_caja else 0
