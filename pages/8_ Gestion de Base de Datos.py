@@ -267,6 +267,8 @@ if "last_saved_unit" not in st.session_state:
 
 #loaders
 df_units = load_table("vehicle_units")
+df_trucks = load_table("vehicle_trucks")
+df_trailers = load_table("vehicle_trailers")
 df_parts = load_table("parts")
 df_proveedores = load_table("proveedores_iva")
 df_tc = load_table("tc_mensual")
@@ -331,41 +333,38 @@ df_audit = load_table("AUDIT") if is_admin else pd.DataFrame()
 # ==========================================
 with tab_unidades:
 
-    st.subheader("Gestión, Creación y Carga de Unidades")
+    st.subheader("Descarga datos de Unidades")
 
     # ==========================================
-    # DOWNLOAD
+    # VEHICLE UNITS
     # ==========================================
+
+    st.markdown("### Vehicle Units")
+
+    df_units_download = df_units.drop(columns=["id"], errors="ignore")
 
     excel_buffer = BytesIO()
 
-    df_download = df_units.drop(columns=["id"], errors="ignore")
-
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        df_download.to_excel(
+        df_units_download.to_excel(
             writer,
             index=False,
-            sheet_name="Unidades"
+            sheet_name="Vehicle Units"
         )
 
     excel_buffer.seek(0)
 
     st.download_button(
-        "📥 Descargar Tabla",
+        "📥 Descargar Vehicle Units",
         data=excel_buffer,
         file_name="Vehicle_Units.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
+        key="download_vehicle_units",
     )
 
-    st.divider()
-
-    # ==========================================
-    # TABLE
-    # ==========================================
-
     st.dataframe(
-        df_download,
+        df_units_download,
         use_container_width=True,
         hide_index=True,
         height=450,
@@ -373,464 +372,77 @@ with tab_unidades:
 
     st.divider()
 
-    tab_add, tab_edit, tab_delete, tab_replace = st.tabs([
-        "➕ Agregar Unidad",
-        "✏️ Modificar Unidad",
-        "🗑 Eliminar Unidad",
-        "🔄 Reemplazar Tabla"
-    ])
+    # ==========================================
+    # VEHICLE TRUCKS
+    # ==========================================
 
-    # =====================================================
-    # ADD
-    # =====================================================
+    st.markdown("### Vehicle Trucks")
 
-    with tab_add:
+    df_trucks_download = df_trucks.drop(columns=["id"], errors="ignore")
 
-        empresa_map = {
-            "SET": "Set Freight International",
-            "LIN": "Lincoln Freight",
-            "PIC": "Picus",
-            "IGT": "Igloo Transport",
-            "SLP": "Set Logis Plus"
-        }
+    excel_buffer = BytesIO()
 
-        reverse_empresa = {v: k for k, v in empresa_map.items()}
-
-        with st.form("add_unit"):
-
-            empresa_nombre = st.selectbox(
-                "Empresa",
-                list(empresa_map.values())
-            )
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                unidad = st.text_input("Unidad")
-                marca = st.text_input("Marca")
-
-            with col2:
-                modelo = st.text_input("Modelo")
-                vin = st.text_input("VIN")
-
-            with col3:
-
-                tipo_unidad = st.selectbox(
-                    "Tipo Unidad",
-                    [
-                        "CAJA SECA",
-                        "CAJA REFRIGERADA",
-                        "TRACTOR"
-                    ]
-                )
-
-                sucursal = st.text_input("Sucursal")
-
-                estado = st.selectbox(
-                    "Estado",
-                    [
-                        "ACTIVA",
-                        "BAJA"
-                    ]
-                )
-
-            submitted = st.form_submit_button(
-                "Agregar Unidad",
-                use_container_width=True
-            )
-
-            if submitted:
-
-                empresa = reverse_empresa[empresa_nombre]
-
-                existe = df_units[
-                    (df_units["empresa"] == empresa) &
-                    (df_units["unidad"] == unidad)
-                ]
-
-                if not unidad.strip():
-
-                    st.error("La unidad es obligatoria.")
-
-                elif not existe.empty:
-
-                    st.error("La unidad ya existe.")
-
-                else:
-
-                    supabase.table("vehicle_units").insert({
-
-                        "empresa": empresa,
-                        "unidad": unidad.strip(),
-                        "marca": marca.strip(),
-                        "modelo": modelo.strip(),
-                        "vin": vin.strip(),
-                        "tipo_unidad": tipo_unidad,
-                        "sucursal": sucursal.strip(),
-                        "estado": estado,
-                        "created_at": datetime.now(timezone.utc).strftime(
-                            "%Y-%m-%d %H:%M:%S.%f+00"
-                        )
-
-                    }).execute()
-
-                    log_action(
-                        "INSERT",
-                        "vehicle_units",
-                        unidad,
-                        f"Agregó unidad {unidad}"
-                    )
-
-                    st.cache_data.clear()
-
-                    st.success("Unidad agregada.")
-
-                    st.rerun()
-
-    # =====================================================
-    # MODIFY
-    # =====================================================
-
-    with tab_edit:
-
-        empresa_map = {
-            "SET": "Set Freight International",
-            "LIN": "Lincoln Freight",
-            "PIC": "Picus",
-            "IGT": "Igloo Transport",
-            "SLP": "Set Logis Plus"
-        }
-
-        reverse_empresa = {v: k for k, v in empresa_map.items()}
-
-        empresa_nombre = st.selectbox(
-            "Empresa",
-            list(empresa_map.values()),
-            key="edit_empresa"
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_trucks_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Vehicle Trucks"
         )
 
-        empresa_codigo = reverse_empresa[empresa_nombre]
+    excel_buffer.seek(0)
 
-        df_empresa = df_units[
-            df_units["empresa"] == empresa_codigo
-        ].sort_values("unidad")
+    st.download_button(
+        "📥 Descargar Vehicle Trucks",
+        data=excel_buffer,
+        file_name="Vehicle_Trucks.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+        key="download_vehicle_trucks",
+    )
 
-        if df_empresa.empty:
+    st.dataframe(
+        df_trucks_download,
+        use_container_width=True,
+        hide_index=True,
+        height=450,
+    )
 
-            st.info("No existen unidades para esta empresa.")
+    st.divider()
 
-        else:
+    # ==========================================
+    # VEHICLE TRAILERS
+    # ==========================================
 
-            unidad = st.selectbox(
-                "Unidad",
-                df_empresa["unidad"].tolist(),
-                key="edit_unidad"
-            )
+    st.markdown("### Vehicle Trailers")
 
-            row = df_empresa[
-                df_empresa["unidad"] == unidad
-            ].iloc[0]
+    df_trailers_download = df_trailers.drop(columns=["id"], errors="ignore")
 
-            with st.form("edit_unit"):
+    excel_buffer = BytesIO()
 
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-
-                    marca = st.text_input(
-                        "Marca",
-                        value=row["marca"] or ""
-                    )
-
-                    modelo = st.text_input(
-                        "Modelo",
-                        value=row["modelo"] or ""
-                    )
-
-                with col2:
-
-                    vin = st.text_input(
-                        "VIN",
-                        value=row["vin"] or ""
-                    )
-
-                    tipo_options = [
-                        "CAJA SECA",
-                        "CAJA REFRIGERADA",
-                        "TRACTOR"
-                    ]
-
-                    tipo_actual = str(
-                        row["tipo_unidad"]
-                    ).upper()
-
-                    tipo_index = (
-                        tipo_options.index(tipo_actual)
-                        if tipo_actual in tipo_options
-                        else 0
-                    )
-
-                    tipo_unidad = st.selectbox(
-                        "Tipo Unidad",
-                        tipo_options,
-                        index=tipo_index
-                    )
-
-                with col3:
-
-                    sucursal = st.text_input(
-                        "Sucursal",
-                        value=row["sucursal"] or ""
-                    )
-
-                    estado_options = [
-                        "ACTIVA",
-                        "BAJA"
-                    ]
-
-                    estado_actual = str(
-                        row["estado"]
-                    ).upper()
-
-                    estado_index = (
-                        estado_options.index(estado_actual)
-                        if estado_actual in estado_options
-                        else 0
-                    )
-
-                    estado = st.selectbox(
-                        "Estado",
-                        estado_options,
-                        index=estado_index
-                    )
-
-                guardar = st.form_submit_button(
-                    "Guardar Cambios",
-                    use_container_width=True
-                )
-
-                if guardar:
-
-                    supabase.table("vehicle_units") \
-                        .update({
-
-                            "marca": marca.strip(),
-                            "modelo": modelo.strip(),
-                            "vin": vin.strip(),
-                            "tipo_unidad": tipo_unidad,
-                            "sucursal": sucursal.strip(),
-                            "estado": estado
-
-                        }) \
-                        .eq("id", row["id"]) \
-                        .execute()
-                    
-                    log_action(
-                        "UPDATE",
-                        "vehicle_units",
-                        unidad,
-                        f"Modificó unidad {unidad}"
-                    )
-
-                    st.cache_data.clear()
-
-                    st.success("Unidad actualizada.")
-
-                    st.rerun()
-
-    # =====================================================
-    # DELETE
-    # =====================================================
-
-    with tab_delete:
-
-        empresa_map = {
-            "SET": "Set Freight International",
-            "LIN": "Lincoln Freight",
-            "PIC": "Picus",
-            "IGT": "Igloo Transport",
-            "SLP": "Set Logis Plus"
-        }
-
-        reverse_empresa = {v: k for k, v in empresa_map.items()}
-
-        empresa_nombre = st.selectbox(
-            "Empresa",
-            list(empresa_map.values()),
-            key="delete_empresa"
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        df_trailers_download.to_excel(
+            writer,
+            index=False,
+            sheet_name="Vehicle Trailers"
         )
 
-        empresa_codigo = reverse_empresa[empresa_nombre]
+    excel_buffer.seek(0)
 
-        df_empresa = (
-            df_units[df_units["empresa"] == empresa_codigo]
-            .sort_values("unidad")
-        )
+    st.download_button(
+        "📥 Descargar Vehicle Trailers",
+        data=excel_buffer,
+        file_name="Vehicle_Trailers.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+        key="download_vehicle_trailers",
+    )
 
-        if df_empresa.empty:
-
-            st.info("No existen unidades para esta empresa.")
-
-        else:
-
-            unidad = st.selectbox(
-                "Unidad",
-                df_empresa["unidad"].tolist(),
-                key="delete_unidad"
-            )
-
-            row = df_empresa[
-                df_empresa["unidad"] == unidad
-            ].iloc[0]
-
-            st.warning(
-                f"⚠️ Se eliminará la unidad **{unidad}** de forma permanente."
-            )
-
-            if st.button(
-                "🗑 Eliminar Unidad",
-                type="primary",
-                use_container_width=True,
-                key="delete_unit_button"
-            ):
-
-                supabase.table("vehicle_units") \
-                    .delete() \
-                    .eq("id", row["id"]) \
-                    .execute()
-                
-                log_action(
-                    "DELETE",
-                    "vehicle_units",
-                    unidad,
-                    f"Eliminó unidad {unidad}"
-                )
-
-                st.cache_data.clear()
-
-                st.success("Unidad eliminada correctamente.")
-
-                st.rerun()
-
-    # =====================================================
-    # REPLACE TABLE
-    # =====================================================
-
-    with tab_replace:
-
-        st.warning(
-            "⚠️ Esta acción eliminará TODAS las unidades actuales y las reemplazará con el archivo cargado."
-        )
-
-        uploaded = st.file_uploader(
-            "Selecciona el archivo",
-            type=["xlsx", "csv"],
-            key="vehicle_units_replace"
-        )
-
-        if uploaded:
-
-            try:
-
-                if uploaded.name.endswith(".csv"):
-                    new_df = pd.read_csv(uploaded)
-                else:
-                    new_df = pd.read_excel(uploaded)
-
-            except Exception as e:
-
-                st.error(f"No fue posible leer el archivo.\n\n{e}")
-                st.stop()
-
-            st.subheader("Vista previa")
-
-            st.dataframe(
-                new_df,
-                use_container_width=True,
-                hide_index=True,
-                height=350,
-            )
-
-            if st.button(
-                "🔄 Reemplazar Tabla Completa",
-                type="primary",
-                use_container_width=True,
-                key="replace_vehicle_units"
-            ):
-
-                new_df.columns = [
-                    c.strip().lower()
-                    for c in new_df.columns
-                ]
-
-                required = {
-                    "empresa",
-                    "unidad",
-                    "marca",
-                    "modelo",
-                    "vin",
-                    "tipo_unidad",
-                    "sucursal",
-                    "estado"
-                }
-
-                if not required.issubset(set(new_df.columns)):
-
-                    st.error(
-                        "El archivo no contiene las columnas requeridas."
-                    )
-                    st.stop()
-
-                records = (
-                    new_df[
-                        [
-                            "empresa",
-                            "unidad",
-                            "marca",
-                            "modelo",
-                            "vin",
-                            "tipo_unidad",
-                            "sucursal",
-                            "estado",
-                        ]
-                    ]
-                    .fillna("")
-                    .to_dict("records")
-                )
-
-                # Delete existing rows
-                supabase.table("vehicle_units") \
-                    .delete() \
-                    .neq("unidad", "") \
-                    .execute()
-
-                # Add timestamps
-                now = datetime.now(timezone.utc).strftime(
-                    "%Y-%m-%d %H:%M:%S.%f+00"
-                )
-
-                for record in records:
-                    record["created_at"] = now
-
-                if records:
-                    supabase.table("vehicle_units") \
-                        .insert(records) \
-                        .execute()
-                    
-                log_action(
-                    "REPLACE",
-                    "vehicle_units",
-                    f"{len(records)} registros",
-                    f"Reemplazó completamente la tabla vehicle_units"
-                )
-
-                st.cache_data.clear()
-
-                st.success(
-                    f"Se cargaron correctamente {len(records)} unidades."
-                )
-
-                st.rerun()
+    st.dataframe(
+        df_trailers_download,
+        use_container_width=True,
+        hide_index=True,
+        height=450,
+    )
 
 # ==========================================
 # REFACCIONES
