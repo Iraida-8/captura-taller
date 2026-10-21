@@ -1,9 +1,22 @@
 [
     {
-    "version": "2.09.02.26",
-    "date": "02/09/2026",
-    "changes":
-        [
+        "version": "2.10.21.26",
+        "date": "21/10/2026",
+        "changes": [
+            "Ejecución y validación de la sincronización del catálogo vehicle_units en Supabase con las unidades de tractores y remolques, conservando los registros existentes que no tienen coincidencia en las fuentes",
+            "Normalización de los valores de tipo_unidad a mayúsculas durante la sincronización del catálogo de unidades",
+            "Conversión del tipo de unidad Caja Refrigerada a THERMO en el catálogo sincronizado para estandarizar su identificación",
+            "Configuración de la sincronización automática del catálogo vehicle_units mediante una tarea programada cada hora en Supabase",
+            "Actualización de la página principal de Captura de Pase de Taller para mostrar Thermo en lugar de Caja Refrigerada y guardar el nuevo valor al registrar pases",
+            "Actualización de la página complementaria de Captura de Pase de Taller, accesible sin inicio de sesión, para excluir del selector las unidades con estado BAJA sin eliminarlas de Supabase",
+            "Actualización de la página complementaria para mostrar Thermo en lugar de Caja Refrigerada en la clasificación de unidades y en el selector de tipo de caja para remolques externos",
+            "Mantenimiento del flujo existente de captura, guardado, consulta y notificación por correo en las páginas de Captura de Pase de Taller"
+        ]
+    },
+    {
+        "version": "2.09.02.26",
+        "date": "02/09/2026",
+        "changes": [
             "Modificación del módulo Gestión de Viáticos para separar los montos solicitados por moneda, eliminando la conversión entre MXP y USD",
             "Incorporación de la columna total_estimado_usd en la tabla solicitud_viaje para almacenar de forma independiente el monto solicitado en USD",
             "Ajuste del cálculo de total_estimado para considerar exclusivamente los conceptos registrados en MXP",
@@ -29,10 +42,9 @@
         ]
     },
     {
-    "version": "2.08.25.26",
-    "date": "25/08/2026",
-    "changes":
-        [
+        "version": "2.08.25.26",
+        "date": "25/08/2026",
+        "changes": [
             "Reestructuración de la arquitectura del módulo Rastreador y Seguimiento GPS de Unidades para separar la actualización de datos GPS de la ejecución de la página Streamlit",
             "Implementación de proceso automatizado en Supabase para consultar periódicamente la información de unidades desde la API de GPS Insight",
             "Configuración de la automatización de actualización de unidades para ejecutarse cada 5 minutos en lugar de cada hora",
@@ -64,10 +76,9 @@
         ]
     },
     {
-    "version": "2.08.19.26",
-    "date": "19/08/2026",
-    "changes":
-        [
+        "version": "2.08.19.26",
+        "date": "19/08/2026",
+        "changes": [
             "Creación de la tabla Directorio Auxilio Carretero en Supabase para administrar información de proveedores de auxilio carretero",
             "Implementación de políticas RLS para la tabla Directorio Auxilio Carretero, permitiendo consulta, inserción, actualización y eliminación para usuarios autenticados",
             "Incorporación de la tabla Directorio Auxilio Carretero 911 en Supabase para administrar información de servicios de emergencia y auxilio carretero",
@@ -86,21 +97,19 @@
         ]
     },
     {
-    "version": "2.08.14.26",
-    "date": "17/08/2026",
-    "changes":
-        [
-        "Corrección del reporte descargable de Historial de Viajes de Unidad para limpiar el nombre de la unidad antes de generar el archivo Excel",
-        "Implementación de eliminación automática del prefijo de texto y espacio en el campo Unidad del reporte descargado, convirtiendo valores como \"Caja P1001\" en \"P1001\"",
-        "Conservación del nombre original de la unidad utilizado por GPS Insight para las consultas y procesamiento internos, aplicando la limpieza únicamente al valor exportado en el reporte",
-        "Mantenimiento sin cambios de la tabla Datos Completos GPS Insight, la consulta de viajes y el resto de la funcionalidad del Historial de Viajes de Unidad"
+        "version": "2.08.14.26",
+        "date": "17/08/2026",
+        "changes": [
+            "Corrección del reporte descargable de Historial de Viajes de Unidad para limpiar el nombre de la unidad antes de generar el archivo Excel",
+            "Implementación de eliminación automática del prefijo de texto y espacio en el campo Unidad del reporte descargado, convirtiendo valores como \"Caja P1001\" en \"P1001\"",
+            "Conservación del nombre original de la unidad utilizado por GPS Insight para las consultas y procesamiento internos, aplicando la limpieza únicamente al valor exportado en el reporte",
+            "Mantenimiento sin cambios de la tabla Datos Completos GPS Insight, la consulta de viajes y el resto de la funcionalidad del Historial de Viajes de Unidad"
         ]
     },
     {
-    "version": "2.08.12.26",
-    "date": "12/08/2026",
-    "changes":
-        [
+        "version": "2.08.12.26",
+        "date": "12/08/2026",
+        "changes": [
             "Ampliación del módulo Rastreador y Seguimiento GPS de Unidades para incorporar consulta y visualización de Landmarks provenientes de las cuentas PICUS y PGL de GPS Insight",
             "Implementación de procesamiento y conversión de las coordenadas de Landmarks para generar polígonos geográficos a partir de la información proporcionada por GPS Insight",
             "Corrección de la interpretación de coordenadas de Landmarks para respetar el formato Longitud, Latitud utilizado por GPS Insight y evitar desplazamientos incorrectos de las zonas geográficas",
@@ -122,10 +131,9 @@
         ]
     },
     {
-    "version": "2.08.05.26",
-    "date": "05/08/2026",
-    "changes":
-        [
+        "version": "2.08.05.26",
+        "date": "05/08/2026",
+        "changes": [
             "Ampliación del módulo Gestión de Base de Datos para incorporar administración visual de usuarios basada en Roles, Branch, Empresas y Permisos",
             "Implementación de control de visibilidad para las pestañas Administración de Usuarios y Audit utilizando el rol del usuario (admin) en lugar de los permisos del campo Access",
             "Corrección del flujo de navegación para evitar referencias a pestañas administrativas en usuarios sin privilegios de administrador",
@@ -143,12 +151,10 @@
             "Mejoras generales de estabilidad, seguridad, mantenimiento y experiencia de administración del Portal OMEGA"
         ]
     },
-
     {
-    "version": "2.07.30.26",
-    "date": "30/07/2026",
-    "changes":
-        [
+        "version": "2.07.30.26",
+        "date": "30/07/2026",
+        "changes": [
             "Rediseño de la sección de acciones del modal Detalle del Pase de Taller para mostrar dinámicamente los controles según el estatus de la orden",
             "Implementación de visualización condicional de botones para órdenes abiertas mostrando únicamente Cancelar Orden, Guardar Cambios y Cerrar Ventana",
             "Implementación de visualización condicional para órdenes cerradas mostrando únicamente las opciones Re-Abrir Orden (Administradores y Managers) y Cerrar Ventana",
@@ -160,10 +166,9 @@
         ]
     },
     {
-    "version": "2.07.29.26",
-    "date": "29/07/2026",
-    "changes": 
-        [
+        "version": "2.07.29.26",
+        "date": "29/07/2026",
+        "changes": [
             "Implementación del nuevo módulo Consulta de Reparación para consulta unificada de Mano de Obra Interna, Mano de Obra Externa (OSTES) y Refacciones por empresa",
             "Integración de carga dinámica de información desde Supabase para IGLOO TRANSPORT, LINCOLN FREIGHT, PICUS, SET LOGIS PLUS y SET FREIGHT INTERNATIONAL",
             "Normalización automática de columnas y formatos de datos para unificar la estructura de información entre empresas",
@@ -183,12 +188,10 @@
             "Mejoras generales de organización del código, rendimiento y experiencia de consulta del módulo Consulta de Reparación"
         ]
     },
-
     {
-    "version": "2.07.28.26",
-    "date": "28/07/2026",
-    "changes": 
-        [
+        "version": "2.07.28.26",
+        "date": "28/07/2026",
+        "changes": [
             "Implementación de notificaciones automáticas por correo electrónico para el módulo de Solicitudes y Gestión de Viáticos",
             "Integración de envío de notificaciones por cambio de estatus durante el proceso de revisión, aprobación, rechazo y conclusión de solicitudes",
             "Optimización de la distribución automática de destinatarios considerando empresa, usuario solicitante y participantes del flujo de autorización",
@@ -198,12 +201,10 @@
             "Mejoras generales de estabilidad, rendimiento y experiencia de usuario en el módulo de Gestión de Viáticos"
         ]
     },
-
     {
-    "version": "2.00.24.26",
-    "date": "24/07/2026",
-    "changes": 
-        [
+        "version": "2.00.24.26",
+        "date": "24/07/2026",
+        "changes": [
             "Creación del módulo Gestión de Base de Datos para administración centralizada de catálogos del sistema",
             "Implementación de administración completa de Unidades con funciones de alta, modificación, eliminación y reemplazo masivo mediante archivos Excel y CSV",
             "Implementación de administración completa del catálogo de Refacciones con operaciones CRUD y reemplazo masivo de información",
