@@ -3376,6 +3376,7 @@ if is_admin:
             "regular_user",
             "control_user",
             "regular_pase_user",
+            "proveedor"
         ]
 
         BRANCHES = [
