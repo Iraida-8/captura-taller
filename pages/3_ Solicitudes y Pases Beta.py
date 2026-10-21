@@ -27,6 +27,7 @@ require_login()
 user = st.session_state.user
 access = user.get("access", [])
 role = (user.get("role") or "").lower()
+regular_pase_user = "regular_pase_user" in access
 require_access("pase_taller")
 # =================================
 # Page configuration
@@ -305,7 +306,7 @@ if has_pases:
             # FILTRADAS POR EMPRESA EN profiles.Empresas O PERMISOS profiles.access
             # =================================
             role_normalized = str(role or "").strip().lower()
-            can_view_ordenes = role_normalized in {"admin", "control_user"}
+            can_view_ordenes = role_normalized in {"admin", "controlador"}
             if can_view_ordenes:
                 # Current profiles schema stores company permissions in access.
                 # Use Empresas/empresas when present; otherwise fall back to access.
@@ -517,8 +518,7 @@ if has_pases:
                 if st.session_state.get("pase_orden_error"):
                     st.warning(st.session_state.pop("pase_orden_error"))
             role_normalized = str(role or "").strip().lower()
-            regular_pase_user = role_normalized == "regular_pase_user"
-            pase_orden_cargada = st.session_state.get("pase_orden_cargada") if role_normalized in {"admin", "control_user"} else None
+            pase_orden_cargada = st.session_state.get("pase_orden_cargada") if role_normalized in {"admin", "controlador"} else None
             registro_orden_cargada = (pase_orden_cargada or {}).get("registro", {})
             current_user_name = str(
                 st.session_state.user.get("name") or st.session_state.user.get("email") or "Usuario"
@@ -966,7 +966,7 @@ if has_pases:
                 st.session_state.forzar_guardado = False
                 st.session_state.folio_generado = folio_real
                 st.session_state.pase_orden_cargada = None
-                if role_normalized in {"admin", "control_user"}:
+                if role_normalized in {"admin", "controlador"}:
                     st.session_state["_reset_pase_form_next_run"] = True
                 if regular_pase_user:
                     try:
@@ -1020,7 +1020,7 @@ if has_pases:
                         "El pase sí se guardó, pero no se pudo registrar en el chatlog: "
                         f"{st.session_state.get('pase_chatlog_error')}"
                     )
-                if role_normalized == "regular_pase_user" and st.session_state.get("email_pase_estado") == "error":
+                if "regular_pase_user" in access and st.session_state.get("email_pase_estado") == "error":
                     st.warning(
                         "El pase sí se guardó, pero no se pudo enviar el correo: "
                         f"{st.session_state.get('email_pase_error', 'Error desconocido')}"

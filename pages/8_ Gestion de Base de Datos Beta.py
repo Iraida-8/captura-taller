@@ -3374,8 +3374,7 @@ if is_admin:
             "manager",
             "field_user",
             "regular_user",
-            "control_user",
-            "regular_pase_user",
+            "controlador",
             "proveedor"
         ]
 
@@ -3408,6 +3407,7 @@ if is_admin:
             "bonos_operador",
             "consulta_bonos_operador",
             "directorio_auxilio",
+            "regular_pase_user",
         ]
 
         st.subheader("Administración de Usuarios")
