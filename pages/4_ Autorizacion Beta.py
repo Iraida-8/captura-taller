@@ -144,2318 +144,1969 @@ if st.button("⬅ Volver al Dashboard"):
 st.divider()
 
 # =================================
-# MODULES
+# MODULE SELECTION
 # =================================
 # The dashboard notification bell sets this before navigating here.
-# Use it to open the relevant tab on arrival, then consume it so later
-# visits do not keep forcing the same tab.
+# Use a radio selector instead of st.tabs(default=...), which is not
+# supported by the Streamlit version currently deployed.
 notification_target_tab = st.session_state.pop("autorizacion_target_tab", None)
 
-if has_autorizacion and has_viaticos:
+module_options = []
+if has_autorizacion:
+    module_options.append("📋 Autorización y Actualización de Pases de Taller")
+if has_viaticos:
+    module_options.append("💳 Gestión de Viáticos")
 
-    default_tab_index = 1 if notification_target_tab == "viaticos" else 0
-
-    tab_autorizacion, tab_viaticos = st.tabs(
-        [
-            "📋 Autorización y Actualización de Pases de Taller",
-            "💳 Gestión de Viáticos",
-        ],
-        default=default_tab_index,
+if len(module_options) > 1:
+    preferred_module = (
+        "💳 Gestión de Viáticos"
+        if notification_target_tab == "viaticos"
+        else "📋 Autorización y Actualización de Pases de Taller"
     )
+    default_module_index = module_options.index(preferred_module) if preferred_module in module_options else 0
+    if notification_target_tab in ("pases", "viaticos") and preferred_module in module_options:
+        st.session_state["autorizacion_selected_module"] = preferred_module
+    selected_module = st.radio(
+        "Módulo",
+        options=module_options,
+        index=default_module_index,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="autorizacion_selected_module",
+    )
+elif module_options:
+    selected_module = module_options[0]
+else:
+    selected_module = None
 
-elif has_autorizacion:
-
-    tab_autorizacion = st.container()
-
-elif has_viaticos:
-
-    tab_viaticos = st.container()
+show_pases_module = selected_module == "📋 Autorización y Actualización de Pases de Taller"
+show_viaticos_module = selected_module == "💳 Gestión de Viáticos"
 
 # =================================
 # TAB 1 Autorización y Actualización de Pases de Taller
 # =================================
 
-if can_access_pases_tab:
-    with tab_autorizacion:
-        # =================================
-        # Defensive reset on page entry
-        # =================================
-        if st.session_state.get("_reset_autorizacion_page", True):
-            st.session_state.modal_reporte = None
-            st.session_state.modal_factura = None
-            st.session_state.modal_factura_open = False
-            st.session_state.buscar_trigger = False
-            st.session_state["_reset_autorizacion_page"] = False
+if can_access_pases_tab and show_pases_module:
+    # =================================
+    # Defensive reset on page entry
+    # =================================
+    if st.session_state.get("_reset_autorizacion_page", True):
+        st.session_state.modal_reporte = None
+        st.session_state.modal_factura = None
+        st.session_state.modal_factura_open = False
+        st.session_state.buscar_trigger = False
+        st.session_state["_reset_autorizacion_page"] = False
 
-        # =================================
-        # Update Estado
-        # =================================
-        VALID_ESTADOS = [
-            "Inicio / Nuevo",
-            "En Curso / Proceso",
-            "Cerrado / Terminado",
-            "Cerrado / Cancelado",
+    # =================================
+    # Update Estado
+    # =================================
+    VALID_ESTADOS = [
+        "Inicio / Nuevo",
+        "En Curso / Proceso",
+        "Cerrado / Terminado",
+        "Cerrado / Cancelado",
+    ]
+
+    ACCESS_TABLE_MAP = {
+        "igloo": "IGLOO",
+        "lincoln": "LINCOLN",
+        "picus": "PICUS",
+        "setlogis": "SLP",
+        "setfreight": "SFI",
+    }
+
+    ACCESS_COMPANY_MAP = {
+        "igloo": "IGLOO TRANSPORT",
+        "lincoln": "LINCOLN FREIGHT",
+        "picus": "PICUS",
+        "setlogis": "SET LOGIS PLUS",
+        "setfreight": "SET FREIGHT INTERNATIONAL",
+    }
+
+    def actualizar_estado_pase(empresa, folio, nuevo_estado):
+
+        if nuevo_estado not in VALID_ESTADOS:
+            return
+
+        table_map = {
+            "IGLOO TRANSPORT": "IGLOO",
+            "LINCOLN FREIGHT": "LINCOLN",
+            "PICUS": "PICUS",
+            "SET FREIGHT INTERNATIONAL": "SFI",
+            "SET LOGIS PLUS": "SLP",
+        }
+
+        table_name = table_map.get(empresa)
+        if not table_name:
+            return
+
+        supabase = get_supabase_client()
+
+        supabase.table(table_name)\
+            .update({"Estado": nuevo_estado})\
+            .eq('"No. de Folio"', folio)\
+            .execute()
+
+    # =================================
+    # Update OSTE (SUPABASE)
+    # =================================
+    def actualizar_oste_pase(empresa, folio, oste):
+
+        table_map = {
+            "IGLOO TRANSPORT": "IGLOO",
+            "LINCOLN FREIGHT": "LINCOLN",
+            "PICUS": "PICUS",
+            "SET FREIGHT INTERNATIONAL": "SFI",
+            "SET LOGIS PLUS": "SLP",
+        }
+
+        table_name = table_map.get(empresa)
+
+        if not table_name:
+            return
+
+        supabase = get_supabase_client()
+
+        supabase.table(table_name)\
+            .update({"Oste": oste})\
+            .eq('"No. de Folio"', folio)\
+            .execute()
+
+    # =================================
+    # Update No. de Orden (SUPABASE)
+    # =================================
+
+    def actualizar_no_reporte_pase(empresa, folio, nuevo_no_reporte):
+
+        table_map = {
+            "IGLOO TRANSPORT": "IGLOO",
+            "LINCOLN FREIGHT": "LINCOLN",
+            "PICUS": "PICUS",
+            "SET FREIGHT INTERNATIONAL": "SFI",
+            "SET LOGIS PLUS": "SLP",
+        }
+
+        table_name = table_map.get(empresa)
+
+        if not table_name:
+            return
+
+        supabase = get_supabase_client()
+
+        valor_final = str(nuevo_no_reporte).strip()
+
+        if valor_final == "":
+            valor_final = None
+
+        supabase.table(table_name)\
+            .update({
+                "No. de Reporte": valor_final
+            })\
+            .eq('"No. de Folio"', folio)\
+            .execute()
+        
+    # =================================
+    # Update Descripcion Problema
+    # =================================
+    def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
+
+        table_map = {
+            "IGLOO TRANSPORT": "IGLOO",
+            "LINCOLN FREIGHT": "LINCOLN",
+            "PICUS": "PICUS",
+            "SET FREIGHT INTERNATIONAL": "SFI",
+            "SET LOGIS PLUS": "SLP",
+        }
+
+        table_name = table_map.get(empresa)
+        if not table_name:
+            return
+
+        supabase = get_supabase_client()
+
+        supabase.table(table_name)\
+            .update({"Descripcion Problema": nueva_descripcion})\
+            .eq('"No. de Folio"', folio)\
+            .execute()
+
+    # =================================
+    # GUARDAR FACTURA
+    # =================================
+    def guardar_factura(folio, numero_factura):
+
+        supabase = get_supabase_client()
+
+        response = (
+            supabase
+            .table("INVOICES")
+            .select("*")
+            .eq('"No. de Folio"', folio)
+            .execute()
+        )
+
+        data = response.data
+
+        if data:
+            supabase.table("INVOICES")\
+                .update({"No. de Factura": numero_factura})\
+                .eq('"No. de Folio"', folio)\
+                .execute()
+        else:
+            supabase.table("INVOICES")\
+                .insert({
+                    "No. de Folio": folio,
+                    "No. de Factura": numero_factura
+                })\
+                .execute()
+
+    # =================================
+    # Chatlog compartido del Pase de Taller
+    # =================================
+    def cargar_chatlog_folio(folio):
+        folio = clean(folio)
+        if not folio:
+            return []
+
+        response = (
+            get_supabase_client()
+            .table("pase_taller_chatlog")
+            .select("chatlog")
+            .eq("no_de_folio", folio)
+            .limit(1)
+            .execute()
+        )
+        entradas = (response.data or [{}])[0].get("chatlog", [])
+        if not isinstance(entradas, list):
+            entradas = [entradas] if entradas else []
+        return [entrada for entrada in entradas if entrada is not None]
+
+    def registrar_mensaje_chatlog(folio, mensaje, usuario_chat):
+        folio = clean(folio)
+        mensaje = str(mensaje or "").strip()
+        usuario_chat = clean(usuario_chat) or "Usuario"
+        if not folio:
+            raise ValueError("No se puede registrar el chatlog sin folio.")
+        if not mensaje:
+            raise ValueError("Escribe un mensaje antes de enviarlo.")
+
+        supabase_chat = get_supabase_client()
+        existente = (
+            supabase_chat
+            .table("pase_taller_chatlog")
+            .select("chatlog")
+            .eq("no_de_folio", folio)
+            .limit(1)
+            .execute()
+        )
+        entradas = (existente.data or [{}])[0].get("chatlog", [])
+        if not isinstance(entradas, list):
+            entradas = [entradas] if entradas else []
+
+        ahora = datetime.now(timezone.utc).isoformat()
+        entradas.append({
+            "message": mensaje,
+            "user": usuario_chat,
+            "timestamp": ahora,
+        })
+        supabase_chat.table("pase_taller_chatlog").upsert({
+            "no_de_folio": folio,
+            "completado_por": usuario_chat,
+            "chatlog": entradas,
+            "updated_at": ahora,
+        }, on_conflict="no_de_folio").execute()
+
+    def registrar_chatlog_cambio_sistema(
+        folio,
+        tipo_cambio,
+        estado_anterior=None,
+        estado_nuevo=None,
+        oste_anterior=None,
+        oste_nuevo=None,
+        comentario="",
+    ):
+        partes = [clean(tipo_cambio) or "Actualización registrada"]
+        estado_anterior_txt = clean(estado_anterior)
+        estado_nuevo_txt = clean(estado_nuevo)
+        if estado_anterior_txt != estado_nuevo_txt and (estado_anterior_txt or estado_nuevo_txt):
+            partes.append(f"Estado: {estado_anterior_txt or '—'} → {estado_nuevo_txt or '—'}")
+
+        oste_anterior_txt = clean(oste_anterior)
+        oste_nuevo_txt = clean(oste_nuevo)
+        if oste_anterior_txt != oste_nuevo_txt and (oste_anterior_txt or oste_nuevo_txt):
+            partes.append(f"OSTE: {oste_anterior_txt or '—'} → {oste_nuevo_txt or '—'}")
+
+        comentario_txt = clean(comentario)
+        if comentario_txt:
+            partes.append(comentario_txt)
+
+        registrar_mensaje_chatlog(
+            folio,
+            " · ".join(partes),
+            "Sistema",
+        )
+
+    # =================================
+    # Registrar Cambio en CHANGELOG
+    # =================================
+    def registrar_cambio_log(
+        usuario,
+        empresa,
+        folio,
+        tipo_cambio,
+        estado_anterior=None,
+        estado_nuevo=None,
+        oste_anterior=None,
+        oste_nuevo=None,
+        comentario=""
+    ):
+
+        supabase = get_supabase_client()
+
+        response = supabase.table("AUDIT").insert({
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Usuario": clean(usuario),
+            "Empresa": clean(empresa),
+            "No. de Folio": clean(folio),
+            "Tipo Cambio": clean(tipo_cambio),
+            "Estado Anterior": clean(estado_anterior),
+            "Estado Nuevo": clean(estado_nuevo),
+            "OSTE Anterior": clean(oste_anterior),
+            "OSTE Nuevo": clean(oste_nuevo),
+            "Comentario": clean(comentario)
+        }).execute()
+
+        if getattr(response, "error", None):
+            st.error(f"Audit log error: {response.error}")
+        else:
+            # Mirror each successful activity-log entry in the shared chatlog.
+            # A chatlog failure must not interrupt the underlying pass update.
+            try:
+                registrar_chatlog_cambio_sistema(
+                    folio=folio,
+                    tipo_cambio=tipo_cambio,
+                    estado_anterior=estado_anterior,
+                    estado_nuevo=estado_nuevo,
+                    oste_anterior=oste_anterior,
+                    oste_nuevo=oste_nuevo,
+                    comentario=comentario,
+                )
+            except Exception as chat_exc:
+                st.warning(f"El cambio se registró en actividad, pero no en el chatlog: {chat_exc}")
+
+    # =================================
+    # Log estado sin refacciones
+    # =================================
+    def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
+
+        supabase = get_supabase_client()
+
+        estado_fecha_map = {
+            "En Curso / Proceso": "Fecha En Proceso",
+            "Cerrado / Terminado": "Fecha Terminado",
+            "Cerrado / Cancelado": "Fecha Cancelado",
+        }
+
+        fecha_col = estado_fecha_map.get(nuevo_estado)
+
+        if not fecha_col:
+            return
+
+        fecha_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        payload = {
+            "No. de Folio": folio,
+            "Modifico": usuario,
+            "Fecha Mod": fecha_now,
+            fecha_col: fecha_now
+        }
+
+        supabase.table("SERVICES").insert(payload).execute()
+
+    # =================================
+    # Load Servicios for Folio (SUPABASE)
+    # =================================
+    def cargar_servicios_folio(folio):
+
+        supabase = get_supabase_client()
+        folio_buscado = str(folio).strip()
+
+        # PostgREST cannot reliably filter this legacy column name because
+        # it contains spaces and punctuation. Fetch SERVICES in pages and
+        # apply the folio filter locally instead of sending a broken filter.
+        page_size = 1000
+        start = 0
+        data = []
+
+        while True:
+            response = (
+                supabase
+                .table("SERVICES")
+                .select("*")
+                .range(start, start + page_size - 1)
+                .execute()
+            )
+            page = response.data or []
+            if not page:
+                break
+            data.extend(page)
+            if len(page) < page_size:
+                break
+            start += page_size
+
+        data = [
+            row for row in data
+            if str(row.get("No. de Folio", "")).strip() == folio_buscado
         ]
 
-        ACCESS_TABLE_MAP = {
-            "igloo": "IGLOO",
-            "lincoln": "LINCOLN",
-            "picus": "PICUS",
-            "setlogis": "SLP",
-            "setfreight": "SFI",
+        if not data:
+            return pd.DataFrame(columns=[
+                "Parte",
+                "Tipo De Parte",
+                "Posicion",
+                "Cantidad"
+            ])
+
+        df = pd.DataFrame(data)
+
+        # remove status rows
+        if "Parte" in df.columns:
+            df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
+
+        return df[
+            ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
+        ]
+
+    # =================================
+    # UPSERT Servicios / Refacciones (SUPABASE)
+    # =================================
+    def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=None):
+
+        supabase = get_supabase_client()
+
+        if servicios_df is None or servicios_df.empty:
+            return
+
+        fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        estado_fecha_map = {
+            "En Curso / Proceso": "Fecha En Proceso",
+            "Cerrado / Terminado": "Fecha Terminado",
+            "Cerrado / Cancelado": "Fecha Cancelado",
         }
 
-        ACCESS_COMPANY_MAP = {
-            "igloo": "IGLOO TRANSPORT",
-            "lincoln": "LINCOLN FREIGHT",
-            "picus": "PICUS",
-            "setlogis": "SET LOGIS PLUS",
-            "setfreight": "SET FREIGHT INTERNATIONAL",
-        }
+        fecha_col = estado_fecha_map.get(nuevo_estado)
 
-        def actualizar_estado_pase(empresa, folio, nuevo_estado):
+        for _, r in servicios_df.iterrows():
 
-            if nuevo_estado not in VALID_ESTADOS:
-                return
+            cantidad = r.get("Cantidad", 0)
 
-            table_map = {
-                "IGLOO TRANSPORT": "IGLOO",
-                "LINCOLN FREIGHT": "LINCOLN",
-                "PICUS": "PICUS",
-                "SET FREIGHT INTERNATIONAL": "SFI",
-                "SET LOGIS PLUS": "SLP",
+            if pd.isna(cantidad) or cantidad == "":
+                cantidad = 0
+
+            payload = {
+                "No. de Folio": folio,
+                "Modifico": usuario,
+                "Parte": str(r.get("Parte", "")).strip(),
+                "Tipo De Parte": str(r.get("Tipo De Parte", "")).strip(),
+                "Posicion": str(r.get("Posicion", "")).strip(),
+                "Cantidad": int(float(cantidad)),
+                "Fecha Mod": fecha_mod,
             }
 
-            table_name = table_map.get(empresa)
-            if not table_name:
-                return
+            if fecha_col:
+                payload[fecha_col] = fecha_mod
 
-            supabase = get_supabase_client()
+            supabase.table("SERVICES").insert(payload).execute()
 
-            supabase.table(table_name)\
-                .update({"Estado": nuevo_estado})\
-                .eq('"No. de Folio"', folio)\
-                .execute()
+    # =================================
+    # Load Pase de Taller (SUPABASE)
+    # =================================
+    @st.cache_data(ttl=300)
+    def cargar_pases_taller(user_access):
 
-        # =================================
-        # Update OSTE (SUPABASE)
-        # =================================
-        def actualizar_oste_pase(empresa, folio, oste):
+        supabase = get_supabase_client()
 
-            table_map = {
-                "IGLOO TRANSPORT": "IGLOO",
-                "LINCOLN FREIGHT": "LINCOLN",
-                "PICUS": "PICUS",
-                "SET FREIGHT INTERNATIONAL": "SFI",
-                "SET LOGIS PLUS": "SLP",
-            }
+        tablas = [
+            tabla
+            for permiso, tabla in ACCESS_TABLE_MAP.items()
+            if permiso in user_access
+        ]
 
-            table_name = table_map.get(empresa)
+        dfs = []
 
-            if not table_name:
-                return
-
-            supabase = get_supabase_client()
-
-            supabase.table(table_name)\
-                .update({"Oste": oste})\
-                .eq('"No. de Folio"', folio)\
-                .execute()
-
-        # =================================
-        # Update No. de Orden (SUPABASE)
-        # =================================
-
-        def actualizar_no_reporte_pase(empresa, folio, nuevo_no_reporte):
-
-            table_map = {
-                "IGLOO TRANSPORT": "IGLOO",
-                "LINCOLN FREIGHT": "LINCOLN",
-                "PICUS": "PICUS",
-                "SET FREIGHT INTERNATIONAL": "SFI",
-                "SET LOGIS PLUS": "SLP",
-            }
-
-            table_name = table_map.get(empresa)
-
-            if not table_name:
-                return
-
-            supabase = get_supabase_client()
-
-            valor_final = str(nuevo_no_reporte).strip()
-
-            if valor_final == "":
-                valor_final = None
-
-            supabase.table(table_name)\
-                .update({
-                    "No. de Reporte": valor_final
-                })\
-                .eq('"No. de Folio"', folio)\
-                .execute()
-            
-        # =================================
-        # Update Descripcion Problema
-        # =================================
-        def actualizar_descripcion_pase(empresa, folio, nueva_descripcion):
-
-            table_map = {
-                "IGLOO TRANSPORT": "IGLOO",
-                "LINCOLN FREIGHT": "LINCOLN",
-                "PICUS": "PICUS",
-                "SET FREIGHT INTERNATIONAL": "SFI",
-                "SET LOGIS PLUS": "SLP",
-            }
-
-            table_name = table_map.get(empresa)
-            if not table_name:
-                return
-
-            supabase = get_supabase_client()
-
-            supabase.table(table_name)\
-                .update({"Descripcion Problema": nueva_descripcion})\
-                .eq('"No. de Folio"', folio)\
-                .execute()
-
-        # =================================
-        # GUARDAR FACTURA
-        # =================================
-        def guardar_factura(folio, numero_factura):
-
-            supabase = get_supabase_client()
+        for tabla in tablas:
 
             response = (
                 supabase
-                .table("INVOICES")
+                .table(tabla)
                 .select("*")
-                .eq('"No. de Folio"', folio)
                 .execute()
             )
 
             data = response.data
 
             if data:
-                supabase.table("INVOICES")\
-                    .update({"No. de Factura": numero_factura})\
-                    .eq('"No. de Folio"', folio)\
-                    .execute()
-            else:
-                supabase.table("INVOICES")\
-                    .insert({
-                        "No. de Folio": folio,
-                        "No. de Factura": numero_factura
-                    })\
-                    .execute()
+                dfs.append(pd.DataFrame(data))
 
-        # =================================
-        # Chatlog compartido del Pase de Taller
-        # =================================
-        def cargar_chatlog_folio(folio):
-            folio = clean(folio)
-            if not folio:
-                return []
+        if not dfs:
+            return pd.DataFrame()
 
-            response = (
-                get_supabase_client()
-                .table("pase_taller_chatlog")
-                .select("chatlog")
-                .eq("no_de_folio", folio)
-                .limit(1)
-                .execute()
-            )
-            entradas = (response.data or [{}])[0].get("chatlog", [])
-            if not isinstance(entradas, list):
-                entradas = [entradas] if entradas else []
-            return [entrada for entrada in entradas if entrada is not None]
+        df = pd.concat(dfs, ignore_index=True)
 
-        def registrar_mensaje_chatlog(folio, mensaje, usuario_chat):
-            folio = clean(folio)
-            mensaje = str(mensaje or "").strip()
-            usuario_chat = clean(usuario_chat) or "Usuario"
-            if not folio:
-                raise ValueError("No se puede registrar el chatlog sin folio.")
-            if not mensaje:
-                raise ValueError("Escribe un mensaje antes de enviarlo.")
+        df.rename(columns={
+            "No. de Folio": "NoFolio",
+            "Fecha de Captura": "Fecha",
+            #"Tipo de Proveedor": "Proveedor",
+        }, inplace=True)
 
-            supabase_chat = get_supabase_client()
-            existente = (
-                supabase_chat
-                .table("pase_taller_chatlog")
-                .select("chatlog")
-                .eq("no_de_folio", folio)
-                .limit(1)
-                .execute()
-            )
-            entradas = (existente.data or [{}])[0].get("chatlog", [])
-            if not isinstance(entradas, list):
-                entradas = [entradas] if entradas else []
+        df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", utc=True).dt.tz_localize(None)
+        df["NoFolio"] = df["NoFolio"].astype(str)
 
-            ahora = datetime.now(timezone.utc).isoformat()
-            entradas.append({
-                "message": mensaje,
-                "user": usuario_chat,
-                "timestamp": ahora,
-            })
-            supabase_chat.table("pase_taller_chatlog").upsert({
-                "no_de_folio": folio,
-                "completado_por": usuario_chat,
-                "chatlog": entradas,
-                "updated_at": ahora,
-            }, on_conflict="no_de_folio").execute()
+        return df
 
-        def registrar_chatlog_cambio_sistema(
-            folio,
-            tipo_cambio,
-            estado_anterior=None,
-            estado_nuevo=None,
-            oste_anterior=None,
-            oste_nuevo=None,
-            comentario="",
-        ):
-            partes = [clean(tipo_cambio) or "Actualización registrada"]
-            estado_anterior_txt = clean(estado_anterior)
-            estado_nuevo_txt = clean(estado_nuevo)
-            if estado_anterior_txt != estado_nuevo_txt and (estado_anterior_txt or estado_nuevo_txt):
-                partes.append(f"Estado: {estado_anterior_txt or '—'} → {estado_nuevo_txt or '—'}")
+    # =================================
+    # Load FACTURAS (SUPABASE)
+    # =================================
+    @st.cache_data(ttl=300)
+    def cargar_facturas():
 
-            oste_anterior_txt = clean(oste_anterior)
-            oste_nuevo_txt = clean(oste_nuevo)
-            if oste_anterior_txt != oste_nuevo_txt and (oste_anterior_txt or oste_nuevo_txt):
-                partes.append(f"OSTE: {oste_anterior_txt or '—'} → {oste_nuevo_txt or '—'}")
+        supabase = get_supabase_client()
 
-            comentario_txt = clean(comentario)
-            if comentario_txt:
-                partes.append(comentario_txt)
+        response = (
+            supabase
+            .table("INVOICES")
+            .select("*")
+            .execute()
+        )
 
-            registrar_mensaje_chatlog(
-                folio,
-                " · ".join(partes),
-                "Sistema",
-            )
+        data = response.data
 
-        # =================================
-        # Registrar Cambio en CHANGELOG
-        # =================================
-        def registrar_cambio_log(
-            usuario,
-            empresa,
-            folio,
-            tipo_cambio,
-            estado_anterior=None,
-            estado_nuevo=None,
-            oste_anterior=None,
-            oste_nuevo=None,
-            comentario=""
-        ):
+        if not data:
+            return pd.DataFrame()
 
-            supabase = get_supabase_client()
+        df = pd.DataFrame(data)
 
-            response = supabase.table("AUDIT").insert({
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Usuario": clean(usuario),
-                "Empresa": clean(empresa),
-                "No. de Folio": clean(folio),
-                "Tipo Cambio": clean(tipo_cambio),
-                "Estado Anterior": clean(estado_anterior),
-                "Estado Nuevo": clean(estado_nuevo),
-                "OSTE Anterior": clean(oste_anterior),
-                "OSTE Nuevo": clean(oste_nuevo),
-                "Comentario": clean(comentario)
-            }).execute()
+        df.columns = df.columns.str.strip()
 
-            if getattr(response, "error", None):
-                st.error(f"Audit log error: {response.error}")
-            else:
-                # Mirror each successful activity-log entry in the shared chatlog.
-                # A chatlog failure must not interrupt the underlying pass update.
-                try:
-                    registrar_chatlog_cambio_sistema(
-                        folio=folio,
-                        tipo_cambio=tipo_cambio,
-                        estado_anterior=estado_anterior,
-                        estado_nuevo=estado_nuevo,
-                        oste_anterior=oste_anterior,
-                        oste_nuevo=oste_nuevo,
-                        comentario=comentario,
-                    )
-                except Exception as chat_exc:
-                    st.warning(f"El cambio se registró en actividad, pero no en el chatlog: {chat_exc}")
-
-        # =================================
-        # Log estado sin refacciones
-        # =================================
-        def registrar_cambio_estado_sin_servicios(folio, usuario, nuevo_estado):
-
-            supabase = get_supabase_client()
-
-            estado_fecha_map = {
-                "En Curso / Proceso": "Fecha En Proceso",
-                "Cerrado / Terminado": "Fecha Terminado",
-                "Cerrado / Cancelado": "Fecha Cancelado",
-            }
-
-            fecha_col = estado_fecha_map.get(nuevo_estado)
-
-            if not fecha_col:
-                return
-
-            fecha_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            payload = {
-                "No. de Folio": folio,
-                "Modifico": usuario,
-                "Fecha Mod": fecha_now,
-                fecha_col: fecha_now
-            }
-
-            supabase.table("SERVICES").insert(payload).execute()
-
-        # =================================
-        # Load Servicios for Folio (SUPABASE)
-        # =================================
-        def cargar_servicios_folio(folio):
-
-            supabase = get_supabase_client()
-            folio_buscado = str(folio).strip()
-
-            # PostgREST cannot reliably filter this legacy column name because
-            # it contains spaces and punctuation. Fetch SERVICES in pages and
-            # apply the folio filter locally instead of sending a broken filter.
-            page_size = 1000
-            start = 0
-            data = []
-
-            while True:
-                response = (
-                    supabase
-                    .table("SERVICES")
-                    .select("*")
-                    .range(start, start + page_size - 1)
-                    .execute()
-                )
-                page = response.data or []
-                if not page:
-                    break
-                data.extend(page)
-                if len(page) < page_size:
-                    break
-                start += page_size
-
-            data = [
-                row for row in data
-                if str(row.get("No. de Folio", "")).strip() == folio_buscado
-            ]
-
-            if not data:
-                return pd.DataFrame(columns=[
-                    "Parte",
-                    "Tipo De Parte",
-                    "Posicion",
-                    "Cantidad"
-                ])
-
-            df = pd.DataFrame(data)
-
-            # remove status rows
-            if "Parte" in df.columns:
-                df = df[df["Parte"].notna() & (df["Parte"].astype(str).str.strip() != "")]
-
-            return df[
-                ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
-            ]
-
-        # =================================
-        # UPSERT Servicios / Refacciones (SUPABASE)
-        # =================================
-        def guardar_servicios_refacciones(folio, usuario, servicios_df, nuevo_estado=None):
-
-            supabase = get_supabase_client()
-
-            if servicios_df is None or servicios_df.empty:
-                return
-
-            fecha_mod = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            estado_fecha_map = {
-                "En Curso / Proceso": "Fecha En Proceso",
-                "Cerrado / Terminado": "Fecha Terminado",
-                "Cerrado / Cancelado": "Fecha Cancelado",
-            }
-
-            fecha_col = estado_fecha_map.get(nuevo_estado)
-
-            for _, r in servicios_df.iterrows():
-
-                cantidad = r.get("Cantidad", 0)
-
-                if pd.isna(cantidad) or cantidad == "":
-                    cantidad = 0
-
-                payload = {
-                    "No. de Folio": folio,
-                    "Modifico": usuario,
-                    "Parte": str(r.get("Parte", "")).strip(),
-                    "Tipo De Parte": str(r.get("Tipo De Parte", "")).strip(),
-                    "Posicion": str(r.get("Posicion", "")).strip(),
-                    "Cantidad": int(float(cantidad)),
-                    "Fecha Mod": fecha_mod,
-                }
-
-                if fecha_col:
-                    payload[fecha_col] = fecha_mod
-
-                supabase.table("SERVICES").insert(payload).execute()
-
-        # =================================
-        # Load Pase de Taller (SUPABASE)
-        # =================================
-        @st.cache_data(ttl=300)
-        def cargar_pases_taller(user_access):
-
-            supabase = get_supabase_client()
-
-            tablas = [
-                tabla
-                for permiso, tabla in ACCESS_TABLE_MAP.items()
-                if permiso in user_access
-            ]
-
-            dfs = []
-
-            for tabla in tablas:
-
-                response = (
-                    supabase
-                    .table(tabla)
-                    .select("*")
-                    .execute()
-                )
-
-                data = response.data
-
-                if data:
-                    dfs.append(pd.DataFrame(data))
-
-            if not dfs:
-                return pd.DataFrame()
-
-            df = pd.concat(dfs, ignore_index=True)
-
-            df.rename(columns={
-                "No. de Folio": "NoFolio",
-                "Fecha de Captura": "Fecha",
-                #"Tipo de Proveedor": "Proveedor",
-            }, inplace=True)
-
-            df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", utc=True).dt.tz_localize(None)
-            df["NoFolio"] = df["NoFolio"].astype(str)
-
-            return df
-
-        # =================================
-        # Load FACTURAS (SUPABASE)
-        # =================================
-        @st.cache_data(ttl=300)
-        def cargar_facturas():
-
-            supabase = get_supabase_client()
-
-            response = (
-                supabase
-                .table("INVOICES")
-                .select("*")
-                .execute()
-            )
-
-            data = response.data
-
-            if not data:
-                return pd.DataFrame()
-
-            df = pd.DataFrame(data)
-
-            df.columns = df.columns.str.strip()
-
-            if "No. de Factura" in df.columns:
-                df["No. de Factura"] = (
-                    df["No. de Factura"]
-                    .astype(str)
-                    .str.replace(".0", "", regex=False)
-                    .str.strip()
-                )
-
-            if "No. de Folio" in df.columns:
-                df["No. de Folio"] = df["No. de Folio"].astype(str).str.strip()
-
-            return df
-
-        # =================================
-        # LOAD SERVICES
-        # =================================
-        @st.cache_data(ttl=300)
-        def cargar_services():
-
-            supabase = get_supabase_client()
-
-            page_size = 1000
-            start = 0
-            all_rows = []
-
-            while True:
-
-                response = (
-                    supabase
-                    .table("SERVICES")
-                    .select("*")
-                    .range(start, start + page_size - 1)
-                    .execute()
-                )
-
-                data = response.data
-
-                if not data:
-                    break
-
-                all_rows.extend(data)
-                start += page_size
-
-            if not all_rows:
-                return pd.DataFrame()
-
-            df = pd.DataFrame(all_rows)
-
-            df.columns = df.columns.str.strip()
-
-            if "No. de Folio" in df.columns:
-                df = df.rename(
-                    columns={
-                        "No. de Folio": "NoFolio"
-                    }
-                )
-
-            df["NoFolio"] = (
-                df["NoFolio"]
+        if "No. de Factura" in df.columns:
+            df["No. de Factura"] = (
+                df["No. de Factura"]
                 .astype(str)
+                .str.replace(".0", "", regex=False)
                 .str.strip()
             )
 
-            return df
+        if "No. de Folio" in df.columns:
+            df["No. de Folio"] = df["No. de Folio"].astype(str).str.strip()
 
-        # =================================
-        # Load Audit Log
-        # =================================
-        @st.cache_data(ttl=120)
-        def cargar_audit():
+        return df
 
-            supabase = get_supabase_client()
+    # =================================
+    # LOAD SERVICES
+    # =================================
+    @st.cache_data(ttl=300)
+    def cargar_services():
+
+        supabase = get_supabase_client()
+
+        page_size = 1000
+        start = 0
+        all_rows = []
+
+        while True:
 
             response = (
                 supabase
-                .table("AUDIT")
+                .table("SERVICES")
                 .select("*")
-                .order("Timestamp", desc=True)
-                .limit(200)
+                .range(start, start + page_size - 1)
                 .execute()
             )
 
             data = response.data
 
             if not data:
-                return pd.DataFrame()
+                break
 
-            df = pd.DataFrame(data)
+            all_rows.extend(data)
+            start += page_size
 
-            if "Timestamp" in df.columns:
-                df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        if not all_rows:
+            return pd.DataFrame()
 
-            return df
+        df = pd.DataFrame(all_rows)
 
-        # =================================
-        # REFRESH CACHED DATA
-        # =================================
-        def refresh_cached_data():
-            cargar_pases_taller.clear()
-            cargar_facturas.clear()
-            cargar_audit.clear()
+        df.columns = df.columns.str.strip()
 
-        # =================================
-        # LOADERS
-        # =================================
-        #cache
-        refresh_cached_data()
+        if "No. de Folio" in df.columns:
+            df = df.rename(
+                columns={
+                    "No. de Folio": "NoFolio"
+                }
+            )
 
-        user_access = tuple(
-            access.lower()
-            for access in st.session_state["user"].get("access", [])
+        df["NoFolio"] = (
+            df["NoFolio"]
+            .astype(str)
+            .str.strip()
         )
 
-        allowed_companies = {
-            ACCESS_COMPANY_MAP[perm]
-            for perm in user_access
-            if perm in ACCESS_COMPANY_MAP
-        }
+        return df
 
-        # Selective users can load passes from every company, then see only
-        # records whose Capturo value matches their logged-in profile name.
-        pases_load_access = user_access
-        if is_pases_selective:
-            pases_load_access = tuple(sorted(
-                set(user_access) | set(ACCESS_TABLE_MAP.keys())
-            ))
+    # =================================
+    # Load Audit Log
+    # =================================
+    @st.cache_data(ttl=120)
+    def cargar_audit():
 
-        pases_df = cargar_pases_taller(pases_load_access)
+        supabase = get_supabase_client()
 
-        logged_user_name = (
-            current_user.get("name")
-            or current_user.get("full_name")
-            or ""
+        response = (
+            supabase
+            .table("AUDIT")
+            .select("*")
+            .order("Timestamp", desc=True)
+            .limit(200)
+            .execute()
         )
-        logged_user_name_normalized = normalizar_nombre_captura(logged_user_name)
 
-        if is_pases_selective:
-            if not pases_df.empty and "Capturo" in pases_df.columns and logged_user_name_normalized:
-                pases_df = pases_df[
-                    pases_df["Capturo"].map(normalizar_nombre_captura)
-                    == logged_user_name_normalized
-                ].copy()
+        data = response.data
+
+        if not data:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(data)
+
+        if "Timestamp" in df.columns:
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+
+        return df
+
+    # =================================
+    # REFRESH CACHED DATA
+    # =================================
+    def refresh_cached_data():
+        cargar_pases_taller.clear()
+        cargar_facturas.clear()
+        cargar_audit.clear()
+
+    # =================================
+    # LOADERS
+    # =================================
+    #cache
+    refresh_cached_data()
+
+    user_access = tuple(
+        access.lower()
+        for access in st.session_state["user"].get("access", [])
+    )
+
+    allowed_companies = {
+        ACCESS_COMPANY_MAP[perm]
+        for perm in user_access
+        if perm in ACCESS_COMPANY_MAP
+    }
+
+    # Selective users can load passes from every company, then see only
+    # records whose Capturo value matches their logged-in profile name.
+    pases_load_access = user_access
+    if is_pases_selective:
+        pases_load_access = tuple(sorted(
+            set(user_access) | set(ACCESS_TABLE_MAP.keys())
+        ))
+
+    pases_df = cargar_pases_taller(pases_load_access)
+
+    logged_user_name = (
+        current_user.get("name")
+        or current_user.get("full_name")
+        or ""
+    )
+    logged_user_name_normalized = normalizar_nombre_captura(logged_user_name)
+
+    if is_pases_selective:
+        if not pases_df.empty and "Capturo" in pases_df.columns and logged_user_name_normalized:
+            pases_df = pases_df[
+                pases_df["Capturo"].map(normalizar_nombre_captura)
+                == logged_user_name_normalized
+            ].copy()
+        else:
+            # Fail closed if the profile has no display name or the source
+            # data has no Capturo field; never expose unfiltered records.
+            pases_df = pases_df.iloc[0:0].copy()
+            if not logged_user_name_normalized:
+                st.warning(
+                    "No se pudo identificar tu nombre de perfil para filtrar "
+                    "los pases capturados por ti. Contacta al administrador."
+                )
+
+    owned_folios = (
+        set(pases_df["NoFolio"].astype(str).str.strip())
+        if not pases_df.empty and "NoFolio" in pases_df.columns
+        else set()
+    )
+
+    facturas_df = cargar_facturas()
+    services_df = cargar_services()
+    audit_df = cargar_audit()
+
+    if not facturas_df.empty:
+        facturas_df.columns = facturas_df.columns.str.strip()
+
+        if "No. de Folio" in facturas_df.columns:
+            facturas_df = facturas_df.rename(columns={"No. de Folio": "NoFolio"})
+
+        facturas_df["NoFolio"] = facturas_df["NoFolio"].astype(str)
+
+    # =================================
+    # Load Refacciones (Supabase)
+    # =================================
+    @st.cache_data(ttl=300)
+    def cargar_refacciones():
+        supabase = get_supabase_client()
+
+        page_size = 1000
+        start = 0
+        all_rows = []
+
+        while True:
+            response = (
+                supabase
+                .table("parts")
+                .select("*")
+                .range(start, start + page_size - 1)
+                .execute()
+            )
+
+            data = response.data
+            if not data:
+                break
+
+            all_rows.extend(data)
+            start += page_size
+
+        if not all_rows:
+            return pd.DataFrame(columns=["Parte", "Tipo"])
+
+        df = pd.DataFrame(all_rows)
+
+        df.columns = df.columns.str.strip().str.lower()
+
+        df = df.rename(columns={
+            "parte": "Parte",
+            "tipo": "Tipo"
+        })
+
+        return df
+
+    # =================================
+    # Title
+    # =================================
+    st.title("📋 Autorización y Actualización de Pases de Taller")
+
+    # =================================
+    # KPI STRIP
+    # =================================
+    st.markdown("### Resumen general")
+
+    total_ordenes = len(pases_df)
+
+    def porcentaje(n):
+        if total_ordenes == 0:
+            return 0
+        return round((n / total_ordenes) * 100, 1)
+
+    pendientes = len(
+        pases_df[pases_df["Estado"] == "Inicio / Nuevo"]
+    )
+
+    en_proceso = len(
+        pases_df[pases_df["Estado"] == "En Curso / Proceso"]
+    )
+
+    completadas = len(
+        pases_df[pases_df["Estado"] == "Cerrado / Terminado"]
+    )
+
+    canceladas = len(
+        pases_df[pases_df["Estado"] == "Cerrado / Cancelado"]
+    )
+
+    k1, k2, k3, k4 = st.columns(4)
+
+    def postit(col, titulo, valor, pct, color):
+        with col:
+            st.markdown(
+                f"""
+                <div style="
+                    background:{color};
+                    padding:18px;
+                    border-radius:14px;
+                    text-align:center;
+                    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                    color:#111;
+                ">
+                    <div style="font-size:0.9rem; font-weight:700;">{titulo}</div>
+                    <div style="font-size:2rem; font-weight:900; margin-top:6px;">{valor}</div>
+                    <div style="font-size:0.8rem; opacity:0.8;">{pct}% del total</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
+    postit(k2, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
+    postit(k3, "Órdenes Terminadas", completadas, porcentaje(completadas), "#D4EDDA")
+    postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
+
+    # =================================
+    # COMPANY DISTRIBUTION and LOG
+    # =================================
+    st.divider()
+
+    left, right = st.columns([2, 1])
+
+    # =============================
+    # LEFT → COMPANY SUMMARY
+    # =============================
+    with left:
+
+        tab_empresa, tab_distribucion, tab_facturacion = st.tabs([
+            "🏢 Órdenes por Empresa",
+            "📊 Distribución de Órdenes",
+            "🧾 Facturación"
+        ])
+
+        # ====================================================
+        # TAB 1 - ÓRDENES POR EMPRESA
+        # ====================================================
+        with tab_empresa:
+
+            if not pases_df.empty:
+
+                empresas = sorted(pases_df["Empresa"].dropna().unique())
+                total_global = len(pases_df)
+
+                for empresa in empresas:
+
+                    df_emp = pases_df[pases_df["Empresa"] == empresa]
+                    total_emp = len(df_emp)
+                    pct = (total_emp / total_global * 100) if total_global else 0
+
+                    pendientes = len(
+                        df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
+                    )
+
+                    proceso = len(
+                        df_emp[df_emp["Estado"] == "En Curso / Proceso"]
+                    )
+
+                    completadas = len(
+                        df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
+                    )
+
+                    canceladas = len(
+                        df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
+                    )
+
+                    with st.container(border=True):
+
+                        st.markdown(f"**{empresa}**")
+                        st.caption(f"Total: {total_emp} ({pct:.1f}%)")
+
+                        c1, c2, c3, c4 = st.columns(4)
+
+                        c1.metric("Pendientes", pendientes)
+                        c2.metric("Proceso", proceso)
+                        c3.metric("Completadas", completadas)
+                        c4.metric("Canceladas", canceladas)
+
             else:
-                # Fail closed if the profile has no display name or the source
-                # data has no Capturo field; never expose unfiltered records.
-                pases_df = pases_df.iloc[0:0].copy()
-                if not logged_user_name_normalized:
-                    st.warning(
-                        "No se pudo identificar tu nombre de perfil para filtrar "
-                        "los pases capturados por ti. Contacta al administrador."
+                st.info("No hay datos.")
+
+        # ====================================================
+        # TAB 2 - DISTRIBUCIÓN
+        # ====================================================
+        with tab_distribucion:
+
+            @st.cache_data(ttl=300)
+            def cargar_tipos_parte(folios_selectivos=None):
+
+                supabase = get_supabase_client()
+
+                page_size = 1000
+                start = 0
+                all_rows = []
+
+                while True:
+                    response = (
+                        supabase
+                        .table("SERVICES")
+                        .select('"No. de Folio", "Tipo De Parte"')
+                        .range(start, start + page_size - 1)
+                        .execute()
                     )
 
-        owned_folios = (
-            set(pases_df["NoFolio"].astype(str).str.strip())
-            if not pases_df.empty and "NoFolio" in pases_df.columns
-            else set()
-        )
+                    data = response.data
 
-        facturas_df = cargar_facturas()
-        services_df = cargar_services()
-        audit_df = cargar_audit()
+                    if not data:
+                        break
 
-        if not facturas_df.empty:
-            facturas_df.columns = facturas_df.columns.str.strip()
+                    all_rows.extend(data)
+                    start += page_size
 
-            if "No. de Folio" in facturas_df.columns:
-                facturas_df = facturas_df.rename(columns={"No. de Folio": "NoFolio"})
+                if not all_rows:
+                    return pd.DataFrame(columns=["Tipo De Parte"])
 
-            facturas_df["NoFolio"] = facturas_df["NoFolio"].astype(str)
+                df = pd.DataFrame(all_rows)
 
-        # =================================
-        # Load Refacciones (Supabase)
-        # =================================
-        @st.cache_data(ttl=300)
-        def cargar_refacciones():
-            supabase = get_supabase_client()
+                if "Tipo De Parte" not in df.columns:
+                    return pd.DataFrame(columns=["Tipo De Parte"])
 
-            page_size = 1000
-            start = 0
-            all_rows = []
-
-            while True:
-                response = (
-                    supabase
-                    .table("parts")
-                    .select("*")
-                    .range(start, start + page_size - 1)
-                    .execute()
-                )
-
-                data = response.data
-                if not data:
-                    break
-
-                all_rows.extend(data)
-                start += page_size
-
-            if not all_rows:
-                return pd.DataFrame(columns=["Parte", "Tipo"])
-
-            df = pd.DataFrame(all_rows)
-
-            df.columns = df.columns.str.strip().str.lower()
-
-            df = df.rename(columns={
-                "parte": "Parte",
-                "tipo": "Tipo"
-            })
-
-            return df
-
-        # =================================
-        # Title
-        # =================================
-        st.title("📋 Autorización y Actualización de Pases de Taller")
-
-        # =================================
-        # KPI STRIP
-        # =================================
-        st.markdown("### Resumen general")
-
-        total_ordenes = len(pases_df)
-
-        def porcentaje(n):
-            if total_ordenes == 0:
-                return 0
-            return round((n / total_ordenes) * 100, 1)
-
-        pendientes = len(
-            pases_df[pases_df["Estado"] == "Inicio / Nuevo"]
-        )
-
-        en_proceso = len(
-            pases_df[pases_df["Estado"] == "En Curso / Proceso"]
-        )
-
-        completadas = len(
-            pases_df[pases_df["Estado"] == "Cerrado / Terminado"]
-        )
-
-        canceladas = len(
-            pases_df[pases_df["Estado"] == "Cerrado / Cancelado"]
-        )
-
-        k1, k2, k3, k4 = st.columns(4)
-
-        def postit(col, titulo, valor, pct, color):
-            with col:
-                st.markdown(
-                    f"""
-                    <div style="
-                        background:{color};
-                        padding:18px;
-                        border-radius:14px;
-                        text-align:center;
-                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                        color:#111;
-                    ">
-                        <div style="font-size:0.9rem; font-weight:700;">{titulo}</div>
-                        <div style="font-size:2rem; font-weight:900; margin-top:6px;">{valor}</div>
-                        <div style="font-size:0.8rem; opacity:0.8;">{pct}% del total</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-        postit(k1, "Solicitudes Pendientes", pendientes, porcentaje(pendientes), "#FFF3CD")
-        postit(k2, "Órdenes en Proceso", en_proceso, porcentaje(en_proceso), "#E2E3FF")
-        postit(k3, "Órdenes Terminadas", completadas, porcentaje(completadas), "#D4EDDA")
-        postit(k4, "Canceladas", canceladas, porcentaje(canceladas), "#F8D7DA")
-
-        # =================================
-        # COMPANY DISTRIBUTION and LOG
-        # =================================
-        st.divider()
-
-        left, right = st.columns([2, 1])
-
-        # =============================
-        # LEFT → COMPANY SUMMARY
-        # =============================
-        with left:
-
-            tab_empresa, tab_distribucion, tab_facturacion = st.tabs([
-                "🏢 Órdenes por Empresa",
-                "📊 Distribución de Órdenes",
-                "🧾 Facturación"
-            ])
-
-            # ====================================================
-            # TAB 1 - ÓRDENES POR EMPRESA
-            # ====================================================
-            with tab_empresa:
-
-                if not pases_df.empty:
-
-                    empresas = sorted(pases_df["Empresa"].dropna().unique())
-                    total_global = len(pases_df)
-
-                    for empresa in empresas:
-
-                        df_emp = pases_df[pases_df["Empresa"] == empresa]
-                        total_emp = len(df_emp)
-                        pct = (total_emp / total_global * 100) if total_global else 0
-
-                        pendientes = len(
-                            df_emp[df_emp["Estado"] == "Inicio / Nuevo"]
-                        )
-
-                        proceso = len(
-                            df_emp[df_emp["Estado"] == "En Curso / Proceso"]
-                        )
-
-                        completadas = len(
-                            df_emp[df_emp["Estado"] == "Cerrado / Terminado"]
-                        )
-
-                        canceladas = len(
-                            df_emp[df_emp["Estado"] == "Cerrado / Cancelado"]
-                        )
-
-                        with st.container(border=True):
-
-                            st.markdown(f"**{empresa}**")
-                            st.caption(f"Total: {total_emp} ({pct:.1f}%)")
-
-                            c1, c2, c3, c4 = st.columns(4)
-
-                            c1.metric("Pendientes", pendientes)
-                            c2.metric("Proceso", proceso)
-                            c3.metric("Completadas", completadas)
-                            c4.metric("Canceladas", canceladas)
-
-                else:
-                    st.info("No hay datos.")
-
-            # ====================================================
-            # TAB 2 - DISTRIBUCIÓN
-            # ====================================================
-            with tab_distribucion:
-
-                @st.cache_data(ttl=300)
-                def cargar_tipos_parte(folios_selectivos=None):
-
-                    supabase = get_supabase_client()
-
-                    page_size = 1000
-                    start = 0
-                    all_rows = []
-
-                    while True:
-                        response = (
-                            supabase
-                            .table("SERVICES")
-                            .select('"No. de Folio", "Tipo De Parte"')
-                            .range(start, start + page_size - 1)
-                            .execute()
-                        )
-
-                        data = response.data
-
-                        if not data:
-                            break
-
-                        all_rows.extend(data)
-                        start += page_size
-
-                    if not all_rows:
+                if folios_selectivos is not None:
+                    folios_validos = {str(f).strip() for f in folios_selectivos}
+                    if "No. de Folio" not in df.columns:
                         return pd.DataFrame(columns=["Tipo De Parte"])
-
-                    df = pd.DataFrame(all_rows)
-
-                    if "Tipo De Parte" not in df.columns:
-                        return pd.DataFrame(columns=["Tipo De Parte"])
-
-                    if folios_selectivos is not None:
-                        folios_validos = {str(f).strip() for f in folios_selectivos}
-                        if "No. de Folio" not in df.columns:
-                            return pd.DataFrame(columns=["Tipo De Parte"])
-                        df = df[
-                            df["No. de Folio"].astype(str).str.strip().isin(folios_validos)
-                        ]
-
-                    df["Tipo De Parte"] = (
-                        df["Tipo De Parte"]
-                        .fillna("")
-                        .astype(str)
-                        .str.strip()
-                    )
-
                     df = df[
-                        (df["Tipo De Parte"] != "")
-                        & (df["Tipo De Parte"].str.lower() != "nan")
-                        & (df["Tipo De Parte"].str.lower() != "none")
-                        & (df["Tipo De Parte"].str.lower() != "null")
+                        df["No. de Folio"].astype(str).str.strip().isin(folios_validos)
                     ]
 
-                    return df
-
-
-                tipos_df = cargar_tipos_parte(
-                    tuple(sorted(owned_folios)) if is_pases_selective else None
+                df["Tipo De Parte"] = (
+                    df["Tipo De Parte"]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
                 )
 
-                if tipos_df.empty:
-                    st.info("No hay datos disponibles en Tipo De Parte.")
-                else:
+                df = df[
+                    (df["Tipo De Parte"] != "")
+                    & (df["Tipo De Parte"].str.lower() != "nan")
+                    & (df["Tipo De Parte"].str.lower() != "none")
+                    & (df["Tipo De Parte"].str.lower() != "null")
+                ]
 
-                    conteo_tipos = (
-                        tipos_df["Tipo De Parte"]
-                        .value_counts()
-                        .reset_index()
-                    )
+                return df
 
-                    conteo_tipos.columns = ["Tipo De Parte", "Cantidad"]
 
-                    total_tipos = conteo_tipos["Cantidad"].sum()
+            tipos_df = cargar_tipos_parte(
+                tuple(sorted(owned_folios)) if is_pases_selective else None
+            )
 
-                    rows_html = ""
-
-                    for _, row in conteo_tipos.iterrows():
-
-                        tipo = row["Tipo De Parte"]
-                        cantidad = int(row["Cantidad"])
-                        porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
-                        progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
-
-                        rows_html += f"""
-                        <div style="margin-bottom:14px;">
-
-                            <div style="
-                                display:flex;
-                                justify-content:space-between;
-                                font-size:0.85rem;
-                                font-weight:700;
-                                margin-bottom:6px;
-                                color:#111;
-                            ">
-                                <span>{tipo}</span>
-                                <span>{cantidad} ({porcentaje}%)</span>
-                            </div>
-
-                            <div style="
-                                width:100%;
-                                height:12px;
-                                background:#f1ead0;
-                                border-radius:999px;
-                                overflow:hidden;
-                            ">
-                                <div style="
-                                    width:{progress_width}%;
-                                    height:100%;
-                                    background:#BFA75F;
-                                    border-radius:999px;
-                                "></div>
-                            </div>
-
-                        </div>
-                        """
-
-                    distribution_html = f"""
-                    <div style="padding:12px;">
-                        <div style="
-                            background:#fff7d6;
-                            padding:22px;
-                            border-radius:16px;
-                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            color:#111;
-                            font-family:sans-serif;
-                        ">
-
-                            <div style="
-                                font-size:1rem;
-                                font-weight:900;
-                                margin-bottom:18px;
-                                color:#111;
-                            ">
-                                Distribución por Actividad
-                            </div>
-
-                            {rows_html}
-
-                        </div>
-                    </div>
-                    """
-
-                    # ====================================================
-                    # TAB 2 - ESTATUS
-                    # ====================================================
-                    conteo_estados = (
-                        pases_df["Estado"]
-                        .fillna("Sin Estado")
-                        .astype(str)
-                        .value_counts()
-                        .reset_index()
-                    )
-
-                    conteo_estados.columns = ["Estado", "Cantidad"]
-
-                    total_estados = conteo_estados["Cantidad"].sum()
-
-                    rows_estado = ""
-
-                    for _, row in conteo_estados.iterrows():
-
-                        estado = row["Estado"]
-                        cantidad = int(row["Cantidad"])
-
-                        porcentaje = round((cantidad / total_estados) * 100, 1) if total_estados else 0
-                        progress_width = int((cantidad / total_estados) * 100) if total_estados else 0
-
-                        rows_estado += f"""
-                        <div style="margin-bottom:14px;">
-
-                            <div style="
-                                display:flex;
-                                justify-content:space-between;
-                                font-size:0.85rem;
-                                font-weight:700;
-                                margin-bottom:6px;
-                                color:#111;
-                            ">
-                                <span>{estado}</span>
-                                <span>{cantidad} ({porcentaje}%)</span>
-                            </div>
-
-                            <div style="
-                                width:100%;
-                                height:12px;
-                                background:#f1ead0;
-                                border-radius:999px;
-                                overflow:hidden;
-                            ">
-                                <div style="
-                                    width:{progress_width}%;
-                                    height:100%;
-                                    background:#BFA75F;
-                                    border-radius:999px;
-                                "></div>
-                            </div>
-
-                        </div>
-                        """
-
-                    estado_html = f"""
-                    <div style="padding:12px;">
-                        <div style="
-                            background:#fff7d6;
-                            padding:22px;
-                            border-radius:16px;
-                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            color:#111;
-                            font-family:sans-serif;
-                        ">
-
-                            <div style="
-                                font-size:1rem;
-                                font-weight:900;
-                                margin-bottom:18px;
-                                color:#111;
-                            ">
-                                Distribución por Estado
-                            </div>
-
-                            {rows_estado}
-
-                        </div>
-                    </div>
-                    """
-            
-                    # ====================================================
-                    # TAB 2 - TIPO DE PROVEEDOR
-                    # ====================================================
-
-                    conteo_proveedor = (
-                        pases_df["Tipo de Proveedor"]
-                        .fillna("Sin Tipo")
-                        .astype(str)
-                        .str.strip()
-                        .value_counts()
-                        .reset_index()
-                    )
-
-                    conteo_proveedor.columns = ["Tipo", "Cantidad"]
-
-                    total_proveedor = conteo_proveedor["Cantidad"].sum()
-
-                    rows_proveedor = ""
-
-                    for _, row in conteo_proveedor.iterrows():
-
-                        tipo = row["Tipo"]
-                        cantidad = int(row["Cantidad"])
-
-                        porcentaje = (
-                            round((cantidad / total_proveedor) * 100, 1)
-                            if total_proveedor else 0
-                        )
-
-                        progress_width = (
-                            int((cantidad / total_proveedor) * 100)
-                            if total_proveedor else 0
-                        )
-
-                        rows_proveedor += f"""
-                        <div style="margin-bottom:14px;">
-
-                            <div style="
-                                display:flex;
-                                justify-content:space-between;
-                                font-size:0.85rem;
-                                font-weight:700;
-                                margin-bottom:6px;
-                                color:#111;
-                            ">
-                                <span>{tipo}</span>
-                                <span>{cantidad} ({porcentaje}%)</span>
-                            </div>
-
-                            <div style="
-                                width:100%;
-                                height:12px;
-                                background:#f1ead0;
-                                border-radius:999px;
-                                overflow:hidden;
-                            ">
-                                <div style="
-                                    width:{progress_width}%;
-                                    height:100%;
-                                    background:#BFA75F;
-                                    border-radius:999px;
-                                "></div>
-                            </div>
-
-                        </div>
-                        """
-
-                    proveedor_html = f"""
-                    <div style="padding:12px;">
-                        <div style="
-                            background:#fff7d6;
-                            padding:22px;
-                            border-radius:16px;
-                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                            color:#111;
-                            font-family:sans-serif;
-                        ">
-
-                            <div style="
-                                font-size:1rem;
-                                font-weight:900;
-                                margin-bottom:18px;
-                                color:#111;
-                            ">
-                                Distribución por Tipo de Proveedor
-                            </div>
-
-                            {rows_proveedor}
-
-                        </div>
-                    </div>
-                    """
-                    dashboard_html = (
-                        distribution_html
-                        + estado_html
-                        + proveedor_html
-                    )
-
-                    components.html(dashboard_html, height=1050)
-
-            # ====================================================
-            # TAB 3 - FACTURACIÓN
-            # ====================================================
-            with tab_facturacion:
-
-                if not pases_df.empty:
-
-                    # =============================================
-                    # FILTER INPUTS
-                    # =============================================
-                    fcol1, fcol2 = st.columns(2)
-
-                    with fcol1:
-                        filtro_folio_fact = st.text_input("Filtrar por No. de Folio")
-
-                    with fcol2:
-                        filtro_factura_fact = st.text_input("Filtrar por No. de Factura")
-
-                    # CLOSE FACTURA MODAL IF USER STARTS FILTERING
-                    if filtro_folio_fact or filtro_factura_fact:
-                        st.session_state.modal_factura = None
-
-                    # =============================================
-                    # MERGE ALL ORDERS WITH FACTURAS
-                    # =============================================
-                    base = pases_df.copy()
-
-                    if not facturas_df.empty:
-                        merged = base.merge(
-                            facturas_df[["NoFolio", "No. de Factura"]],
-                            on="NoFolio",
-                            how="left"
-                        )
-                    else:
-                        merged = base.copy()
-                        merged["No. de Factura"] = None
-
-                    # =============================================
-                    # APPLY FILTERS
-                    # =============================================
-                    if filtro_folio_fact:
-                        merged = merged[
-                            merged["NoFolio"]
-                            .astype(str)
-                            .str.contains(filtro_folio_fact, case=False, na=False)
-                        ]
-
-                    if filtro_factura_fact:
-                        merged = merged[
-                            merged["No. de Factura"]
-                            .astype(str)
-                            .str.contains(filtro_factura_fact, case=False, na=False)
-                        ]
-
-                    # =============================================
-                    # LIMIT TO 5 POST-ITS PER ROW
-                    # =============================================
-                    merged = merged.head(15)
-
-                    if merged.empty:
-                        st.info("No hay resultados con los filtros aplicados.")
-                    else:
-                        for row_start in range(0, len(merged), 5):
-
-                            cols = st.columns(5)
-
-                            for col, (_, r) in zip(cols, merged.iloc[row_start:row_start + 5].iterrows()):
-
-                                with col:
-                                    folio = r.get("NoFolio", "")
-                                    estado = r.get("Estado", "")
-                                    factura_raw = r.get("No. de Factura")
-
-                                    factura_vacia = (
-                                        pd.isna(factura_raw)
-                                        or str(factura_raw).strip() == ""
-                                    )
-
-                                    if factura_vacia:
-                                        factura = "-"
-                                        label_btn = "Agregar Factura"
-                                    else:
-                                        factura = str(factura_raw)
-                                        label_btn = "Ver"
-
-                                    factura_html = f"""
-                                    <div style="padding:6px;">
-                                        <div style="
-                                            background:#ffe2e2;
-                                            padding:14px;
-                                            border-radius:16px;
-                                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                            color:#111;
-                                            min-height:120px;
-                                            font-family:sans-serif;
-                                        ">
-                                            <div style="font-weight:900;">{folio}</div>
-
-                                            <hr style="margin:6px 0">
-
-                                            <div style="
-                                                font-size:0.8rem;
-                                                font-weight:700;
-                                                color:#721c24;
-                                            ">
-                                                {estado}
-                                            </div>
-
-                                            <div style="
-                                                margin-top:8px;
-                                                font-size:0.75rem;
-                                            ">
-                                                No. de Factura: {factura}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    """
-                                    components.html(factura_html, height=160)
-
-                                    # View facturas
-                                    if st.button(
-                                        label_btn,
-                                        key=f"fact_btn_{folio}",
-                                        use_container_width=True
-                                    ):
-                                        st.session_state.modal_factura = {
-                                            "NoFolio": folio,
-                                            "NoFactura": None if factura_vacia else factura
-                                        }
-                                        st.session_state.modal_factura_open = True
-
-                        else:
-                            st.info("No hay datos disponibles.")
-
-        # =============================
-        # LATEST ACTIVITY
-        # =============================
-        with right:
-            st.markdown("### Última actividad")
-
-            if audit_df.empty:
-                st.info("Sin actividad registrada.")
+            if tipos_df.empty:
+                st.info("No hay datos disponibles en Tipo De Parte.")
             else:
 
-                if is_pases_selective:
-                    # Activity is scoped to the selective user's own passes,
-                    # regardless of the companies they are assigned.
-                    audit_visible = audit_df[
-                        audit_df["No. de Folio"].astype(str).str.strip().isin(owned_folios)
-                    ] if "No. de Folio" in audit_df.columns else audit_df.iloc[0:0]
-                else:
-                    audit_visible = audit_df[
-                        audit_df["Empresa"].isin(allowed_companies)
-                    ]
+                conteo_tipos = (
+                    tipos_df["Tipo De Parte"]
+                    .value_counts()
+                    .reset_index()
+                )
 
-                audit_sorted = audit_visible.head(9)
+                conteo_tipos.columns = ["Tipo De Parte", "Cantidad"]
+
+                total_tipos = conteo_tipos["Cantidad"].sum()
 
                 rows_html = ""
 
-                for _, row in audit_sorted.iterrows():
+                for _, row in conteo_tipos.iterrows():
 
-                    timestamp = row.get("Timestamp")
-                    usuario = html.escape(str(row.get("Usuario", "")))
-                    empresa = html.escape(str(row.get("Empresa", "")))
-                    folio = html.escape(str(row.get("No. de Folio", "")))
-                    tipo = html.escape(str(row.get("Tipo Cambio", "")))
-                    estado_nuevo = html.escape(str(row.get("Estado Nuevo", "")))
-                    oste_nuevo = html.escape(str(row.get("OSTE Nuevo", "")))
-                    comentario = html.escape(str(row.get("Comentario", "")))
-
-                    fecha_txt = (
-                        timestamp.strftime("%Y-%m-%d %H:%M")
-                        if pd.notna(timestamp)
-                        else ""
-                    )
-
-                    detalle = tipo
-
-                    if estado_nuevo:
-                        detalle += f" → {estado_nuevo}"
-
-                    if oste_nuevo:
-                        detalle += f" (OSTE: {oste_nuevo})"
-
-                    if comentario:
-                        comentario_safe = html.escape(str(comentario))
-                        detalle += f" — {comentario_safe}"
+                    tipo = row["Tipo De Parte"]
+                    cantidad = int(row["Cantidad"])
+                    porcentaje = round((cantidad / total_tipos) * 100, 1) if total_tipos else 0
+                    progress_width = int((cantidad / total_tipos) * 100) if total_tipos else 0
 
                     rows_html += f"""
+                    <div style="margin-bottom:14px;">
+
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            font-size:0.85rem;
+                            font-weight:700;
+                            margin-bottom:6px;
+                            color:#111;
+                        ">
+                            <span>{tipo}</span>
+                            <span>{cantidad} ({porcentaje}%)</span>
+                        </div>
+
+                        <div style="
+                            width:100%;
+                            height:12px;
+                            background:#f1ead0;
+                            border-radius:999px;
+                            overflow:hidden;
+                        ">
+                            <div style="
+                                width:{progress_width}%;
+                                height:100%;
+                                background:#BFA75F;
+                                border-radius:999px;
+                            "></div>
+                        </div>
+
+                    </div>
+                    """
+
+                distribution_html = f"""
+                <div style="padding:12px;">
                     <div style="
-                        margin-bottom:10px;
-                        padding-bottom:8px;
-                        border-bottom:1px solid #eee;
+                        background:#fff7d6;
+                        padding:22px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        font-family:sans-serif;
                     ">
-                        <div style="font-size:0.75rem; opacity:0.7;">
-                            {fecha_txt}
+
+                        <div style="
+                            font-size:1rem;
+                            font-weight:900;
+                            margin-bottom:18px;
+                            color:#111;
+                        ">
+                            Distribución por Actividad
                         </div>
-                        <div style="font-weight:700;">
-                            {folio} — {empresa}
+
+                        {rows_html}
+
+                    </div>
+                </div>
+                """
+
+                # ====================================================
+                # TAB 2 - ESTATUS
+                # ====================================================
+                conteo_estados = (
+                    pases_df["Estado"]
+                    .fillna("Sin Estado")
+                    .astype(str)
+                    .value_counts()
+                    .reset_index()
+                )
+
+                conteo_estados.columns = ["Estado", "Cantidad"]
+
+                total_estados = conteo_estados["Cantidad"].sum()
+
+                rows_estado = ""
+
+                for _, row in conteo_estados.iterrows():
+
+                    estado = row["Estado"]
+                    cantidad = int(row["Cantidad"])
+
+                    porcentaje = round((cantidad / total_estados) * 100, 1) if total_estados else 0
+                    progress_width = int((cantidad / total_estados) * 100) if total_estados else 0
+
+                    rows_estado += f"""
+                    <div style="margin-bottom:14px;">
+
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            font-size:0.85rem;
+                            font-weight:700;
+                            margin-bottom:6px;
+                            color:#111;
+                        ">
+                            <span>{estado}</span>
+                            <span>{cantidad} ({porcentaje}%)</span>
                         </div>
-                        <div style="font-size:0.8rem;">
-                            {detalle}
+
+                        <div style="
+                            width:100%;
+                            height:12px;
+                            background:#f1ead0;
+                            border-radius:999px;
+                            overflow:hidden;
+                        ">
+                            <div style="
+                                width:{progress_width}%;
+                                height:100%;
+                                background:#BFA75F;
+                                border-radius:999px;
+                            "></div>
                         </div>
-                        <div style="font-size:0.75rem; opacity:0.6;">
-                            por {usuario}
+
+                    </div>
+                    """
+
+                estado_html = f"""
+                <div style="padding:12px;">
+                    <div style="
+                        background:#fff7d6;
+                        padding:22px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        font-family:sans-serif;
+                    ">
+
+                        <div style="
+                            font-size:1rem;
+                            font-weight:900;
+                            margin-bottom:18px;
+                            color:#111;
+                        ">
+                            Distribución por Estado
+                        </div>
+
+                        {rows_estado}
+
+                    </div>
+                </div>
+                """
+        
+                # ====================================================
+                # TAB 2 - TIPO DE PROVEEDOR
+                # ====================================================
+
+                conteo_proveedor = (
+                    pases_df["Tipo de Proveedor"]
+                    .fillna("Sin Tipo")
+                    .astype(str)
+                    .str.strip()
+                    .value_counts()
+                    .reset_index()
+                )
+
+                conteo_proveedor.columns = ["Tipo", "Cantidad"]
+
+                total_proveedor = conteo_proveedor["Cantidad"].sum()
+
+                rows_proveedor = ""
+
+                for _, row in conteo_proveedor.iterrows():
+
+                    tipo = row["Tipo"]
+                    cantidad = int(row["Cantidad"])
+
+                    porcentaje = (
+                        round((cantidad / total_proveedor) * 100, 1)
+                        if total_proveedor else 0
+                    )
+
+                    progress_width = (
+                        int((cantidad / total_proveedor) * 100)
+                        if total_proveedor else 0
+                    )
+
+                    rows_proveedor += f"""
+                    <div style="margin-bottom:14px;">
+
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            font-size:0.85rem;
+                            font-weight:700;
+                            margin-bottom:6px;
+                            color:#111;
+                        ">
+                            <span>{tipo}</span>
+                            <span>{cantidad} ({porcentaje}%)</span>
+                        </div>
+
+                        <div style="
+                            width:100%;
+                            height:12px;
+                            background:#f1ead0;
+                            border-radius:999px;
+                            overflow:hidden;
+                        ">
+                            <div style="
+                                width:{progress_width}%;
+                                height:100%;
+                                background:#BFA75F;
+                                border-radius:999px;
+                            "></div>
+                        </div>
+
+                    </div>
+                    """
+
+                proveedor_html = f"""
+                <div style="padding:12px;">
+                    <div style="
+                        background:#fff7d6;
+                        padding:22px;
+                        border-radius:16px;
+                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                        color:#111;
+                        font-family:sans-serif;
+                    ">
+
+                        <div style="
+                            font-size:1rem;
+                            font-weight:900;
+                            margin-bottom:18px;
+                            color:#111;
+                        ">
+                            Distribución por Tipo de Proveedor
+                        </div>
+
+                        {rows_proveedor}
+
+                    </div>
+                </div>
+                """
+                dashboard_html = (
+                    distribution_html
+                    + estado_html
+                    + proveedor_html
+                )
+
+                components.html(dashboard_html, height=1050)
+
+        # ====================================================
+        # TAB 3 - FACTURACIÓN
+        # ====================================================
+        with tab_facturacion:
+
+            if not pases_df.empty:
+
+                # =============================================
+                # FILTER INPUTS
+                # =============================================
+                fcol1, fcol2 = st.columns(2)
+
+                with fcol1:
+                    filtro_folio_fact = st.text_input("Filtrar por No. de Folio")
+
+                with fcol2:
+                    filtro_factura_fact = st.text_input("Filtrar por No. de Factura")
+
+                # CLOSE FACTURA MODAL IF USER STARTS FILTERING
+                if filtro_folio_fact or filtro_factura_fact:
+                    st.session_state.modal_factura = None
+
+                # =============================================
+                # MERGE ALL ORDERS WITH FACTURAS
+                # =============================================
+                base = pases_df.copy()
+
+                if not facturas_df.empty:
+                    merged = base.merge(
+                        facturas_df[["NoFolio", "No. de Factura"]],
+                        on="NoFolio",
+                        how="left"
+                    )
+                else:
+                    merged = base.copy()
+                    merged["No. de Factura"] = None
+
+                # =============================================
+                # APPLY FILTERS
+                # =============================================
+                if filtro_folio_fact:
+                    merged = merged[
+                        merged["NoFolio"]
+                        .astype(str)
+                        .str.contains(filtro_folio_fact, case=False, na=False)
+                    ]
+
+                if filtro_factura_fact:
+                    merged = merged[
+                        merged["No. de Factura"]
+                        .astype(str)
+                        .str.contains(filtro_factura_fact, case=False, na=False)
+                    ]
+
+                # =============================================
+                # LIMIT TO 5 POST-ITS PER ROW
+                # =============================================
+                merged = merged.head(15)
+
+                if merged.empty:
+                    st.info("No hay resultados con los filtros aplicados.")
+                else:
+                    for row_start in range(0, len(merged), 5):
+
+                        cols = st.columns(5)
+
+                        for col, (_, r) in zip(cols, merged.iloc[row_start:row_start + 5].iterrows()):
+
+                            with col:
+                                folio = r.get("NoFolio", "")
+                                estado = r.get("Estado", "")
+                                factura_raw = r.get("No. de Factura")
+
+                                factura_vacia = (
+                                    pd.isna(factura_raw)
+                                    or str(factura_raw).strip() == ""
+                                )
+
+                                if factura_vacia:
+                                    factura = "-"
+                                    label_btn = "Agregar Factura"
+                                else:
+                                    factura = str(factura_raw)
+                                    label_btn = "Ver"
+
+                                factura_html = f"""
+                                <div style="padding:6px;">
+                                    <div style="
+                                        background:#ffe2e2;
+                                        padding:14px;
+                                        border-radius:16px;
+                                        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                                        color:#111;
+                                        min-height:120px;
+                                        font-family:sans-serif;
+                                    ">
+                                        <div style="font-weight:900;">{folio}</div>
+
+                                        <hr style="margin:6px 0">
+
+                                        <div style="
+                                            font-size:0.8rem;
+                                            font-weight:700;
+                                            color:#721c24;
+                                        ">
+                                            {estado}
+                                        </div>
+
+                                        <div style="
+                                            margin-top:8px;
+                                            font-size:0.75rem;
+                                        ">
+                                            No. de Factura: {factura}
+                                        </div>
+                                    </div>
+                                </div>
+                                """
+                                components.html(factura_html, height=160)
+
+                                # View facturas
+                                if st.button(
+                                    label_btn,
+                                    key=f"fact_btn_{folio}",
+                                    use_container_width=True
+                                ):
+                                    st.session_state.modal_factura = {
+                                        "NoFolio": folio,
+                                        "NoFactura": None if factura_vacia else factura
+                                    }
+                                    st.session_state.modal_factura_open = True
+
+                    else:
+                        st.info("No hay datos disponibles.")
+
+    # =============================
+    # LATEST ACTIVITY
+    # =============================
+    with right:
+        st.markdown("### Última actividad")
+
+        if audit_df.empty:
+            st.info("Sin actividad registrada.")
+        else:
+
+            if is_pases_selective:
+                # Activity is scoped to the selective user's own passes,
+                # regardless of the companies they are assigned.
+                audit_visible = audit_df[
+                    audit_df["No. de Folio"].astype(str).str.strip().isin(owned_folios)
+                ] if "No. de Folio" in audit_df.columns else audit_df.iloc[0:0]
+            else:
+                audit_visible = audit_df[
+                    audit_df["Empresa"].isin(allowed_companies)
+                ]
+
+            audit_sorted = audit_visible.head(9)
+
+            rows_html = ""
+
+            for _, row in audit_sorted.iterrows():
+
+                timestamp = row.get("Timestamp")
+                usuario = html.escape(str(row.get("Usuario", "")))
+                empresa = html.escape(str(row.get("Empresa", "")))
+                folio = html.escape(str(row.get("No. de Folio", "")))
+                tipo = html.escape(str(row.get("Tipo Cambio", "")))
+                estado_nuevo = html.escape(str(row.get("Estado Nuevo", "")))
+                oste_nuevo = html.escape(str(row.get("OSTE Nuevo", "")))
+                comentario = html.escape(str(row.get("Comentario", "")))
+
+                fecha_txt = (
+                    timestamp.strftime("%Y-%m-%d %H:%M")
+                    if pd.notna(timestamp)
+                    else ""
+                )
+
+                detalle = tipo
+
+                if estado_nuevo:
+                    detalle += f" → {estado_nuevo}"
+
+                if oste_nuevo:
+                    detalle += f" (OSTE: {oste_nuevo})"
+
+                if comentario:
+                    comentario_safe = html.escape(str(comentario))
+                    detalle += f" — {comentario_safe}"
+
+                rows_html += f"""
+                <div style="
+                    margin-bottom:10px;
+                    padding-bottom:8px;
+                    border-bottom:1px solid #eee;
+                ">
+                    <div style="font-size:0.75rem; opacity:0.7;">
+                        {fecha_txt}
+                    </div>
+                    <div style="font-weight:700;">
+                        {folio} — {empresa}
+                    </div>
+                    <div style="font-size:0.8rem;">
+                        {detalle}
+                    </div>
+                    <div style="font-size:0.75rem; opacity:0.6;">
+                        por {usuario}
+                    </div>
+                </div>
+                """
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#ffffff;
+                    padding:18px;
+                    border-radius:14px;
+                    box-shadow:0 3px 8px rgba(0,0,0,0.06);
+                    color:#111;
+                ">
+                    {rows_html}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # =================================
+    # Session state defaults
+    # =================================
+    st.session_state.setdefault("buscar_trigger", False)
+    st.session_state.setdefault("modal_reporte", None)
+    st.session_state.setdefault("modal_factura", None)
+    st.session_state.setdefault("modal_factura_open", False)
+    st.session_state.setdefault("modal_reabrir", None)
+    st.session_state.setdefault("refaccion_seleccionada", None)
+    st.session_state.setdefault(
+        "servicios_df",
+        pd.DataFrame(columns=[
+            "Parte",
+            "Tipo De Parte",
+            "Posicion",
+            "Cantidad"
+        ])
+    )
+
+    # =================================
+    # PASES DE TALLER
+    # =================================
+    def safe(x):
+        if pd.isna(x) or x is None:
+            return ""
+        return str(x)
+
+    def render_pases_tab(
+        source_df,
+        estado_label,
+        session_key,
+        button_prefix,
+    ):
+        source_df = source_df.sort_values(
+            "Fecha",
+            ascending=False
+        )
+
+        if source_df.empty:
+            st.info(f"No hay pases en estado {estado_label}.")
+            return
+
+        CARDS_PER_PAGE = 10
+
+        st.session_state.setdefault(session_key, 0)
+
+        total_pages = max(
+            1,
+            (len(source_df) + CARDS_PER_PAGE - 1) // CARDS_PER_PAGE
+        )
+
+        st.session_state[session_key] = min(
+            st.session_state[session_key],
+            total_pages - 1
+        )
+
+        start = st.session_state[session_key] * CARDS_PER_PAGE
+        end = start + CARDS_PER_PAGE
+
+        page_df = source_df.iloc[start:end]
+
+        # ============================
+        # CARDS
+        # ============================
+
+        for row_start in range(0, len(page_df), 5):
+
+            cols = st.columns(5)
+
+            for col, (_, r) in zip(
+                cols,
+                page_df.iloc[row_start:row_start + 5].iterrows()
+            ):
+
+                with col:
+
+                    folio = safe(r.get("NoFolio"))
+                    tipo_unidad = safe(r.get("Tipo de Unidad"))
+                    fecha = r.get("Fecha")
+                    fecha = fecha.date() if pd.notna(fecha) else ""
+                    unidad = safe(r.get("No. de Unidad"))
+                    capturo = safe(r.get("Capturo"))
+                    descripcion = safe(r.get("Descripcion Problema"))
+
+                    if len(descripcion) > 120:
+                        descripcion = descripcion[:120] + "..."
+
+                    html = f"""
+                    <div style="padding:6px;">
+                        <div style="
+                            background:#fff7d6;
+                            padding:14px;
+                            border-radius:16px;
+                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                            color:#111;
+                            min-height:160px;
+                            font-family:sans-serif;
+                        ">
+
+                            <div style="font-weight:900;">{folio}</div>
+                            <div style="font-size:0.8rem;">{tipo_unidad}</div>
+                            <div style="font-size:0.8rem;">{fecha}</div>
+
+                            <hr style="margin:6px 0">
+
+                            <div style="font-size:0.8rem;">{unidad}</div>
+
+                            <div style="
+                                font-size:0.75rem;
+                                margin-top:6px;
+                                padding:6px;
+                                background:#fff;
+                                border-radius:8px;
+                                box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+                            ">
+                                {descripcion}
+                            </div>
+
+                            <div style="
+                                margin-top:6px;
+                                font-size:0.75rem;
+                                font-weight:700;
+                                color:#856404;
+                            ">
+                                {estado_label}
+                            </div>
+
+                            <div style="
+                                font-size:0.75rem;
+                                margin-top:4px;
+                                opacity:0.8;
+                            ">
+                                Capturó: {capturo}
+                            </div>
+
                         </div>
                     </div>
                     """
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        background:#ffffff;
-                        padding:18px;
-                        border-radius:14px;
-                        box-shadow:0 3px 8px rgba(0,0,0,0.06);
-                        color:#111;
-                    ">
-                        {rows_html}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-        # =================================
-        # Session state defaults
-        # =================================
-        st.session_state.setdefault("buscar_trigger", False)
-        st.session_state.setdefault("modal_reporte", None)
-        st.session_state.setdefault("modal_factura", None)
-        st.session_state.setdefault("modal_factura_open", False)
-        st.session_state.setdefault("modal_reabrir", None)
-        st.session_state.setdefault("refaccion_seleccionada", None)
-        st.session_state.setdefault(
-            "servicios_df",
-            pd.DataFrame(columns=[
-                "Parte",
-                "Tipo De Parte",
-                "Posicion",
-                "Cantidad"
-            ])
-        )
-
-        # =================================
-        # PASES DE TALLER
-        # =================================
-        def safe(x):
-            if pd.isna(x) or x is None:
-                return ""
-            return str(x)
-
-        def render_pases_tab(
-            source_df,
-            estado_label,
-            session_key,
-            button_prefix,
-        ):
-            source_df = source_df.sort_values(
-                "Fecha",
-                ascending=False
-            )
-
-            if source_df.empty:
-                st.info(f"No hay pases en estado {estado_label}.")
-                return
-
-            CARDS_PER_PAGE = 10
-
-            st.session_state.setdefault(session_key, 0)
-
-            total_pages = max(
-                1,
-                (len(source_df) + CARDS_PER_PAGE - 1) // CARDS_PER_PAGE
-            )
-
-            st.session_state[session_key] = min(
-                st.session_state[session_key],
-                total_pages - 1
-            )
-
-            start = st.session_state[session_key] * CARDS_PER_PAGE
-            end = start + CARDS_PER_PAGE
-
-            page_df = source_df.iloc[start:end]
-
-            # ============================
-            # CARDS
-            # ============================
-
-            for row_start in range(0, len(page_df), 5):
-
-                cols = st.columns(5)
-
-                for col, (_, r) in zip(
-                    cols,
-                    page_df.iloc[row_start:row_start + 5].iterrows()
-                ):
-
-                    with col:
-
-                        folio = safe(r.get("NoFolio"))
-                        tipo_unidad = safe(r.get("Tipo de Unidad"))
-                        fecha = r.get("Fecha")
-                        fecha = fecha.date() if pd.notna(fecha) else ""
-                        unidad = safe(r.get("No. de Unidad"))
-                        capturo = safe(r.get("Capturo"))
-                        descripcion = safe(r.get("Descripcion Problema"))
-
-                        if len(descripcion) > 120:
-                            descripcion = descripcion[:120] + "..."
-
-                        html = f"""
-                        <div style="padding:6px;">
-                            <div style="
-                                background:#fff7d6;
-                                padding:14px;
-                                border-radius:16px;
-                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                color:#111;
-                                min-height:160px;
-                                font-family:sans-serif;
-                            ">
-
-                                <div style="font-weight:900;">{folio}</div>
-                                <div style="font-size:0.8rem;">{tipo_unidad}</div>
-                                <div style="font-size:0.8rem;">{fecha}</div>
-
-                                <hr style="margin:6px 0">
-
-                                <div style="font-size:0.8rem;">{unidad}</div>
-
-                                <div style="
-                                    font-size:0.75rem;
-                                    margin-top:6px;
-                                    padding:6px;
-                                    background:#fff;
-                                    border-radius:8px;
-                                    box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
-                                ">
-                                    {descripcion}
-                                </div>
-
-                                <div style="
-                                    margin-top:6px;
-                                    font-size:0.75rem;
-                                    font-weight:700;
-                                    color:#856404;
-                                ">
-                                    {estado_label}
-                                </div>
-
-                                <div style="
-                                    font-size:0.75rem;
-                                    margin-top:4px;
-                                    opacity:0.8;
-                                ">
-                                    Capturó: {capturo}
-                                </div>
-
-                            </div>
-                        </div>
-                        """
-
-                        components.html(html, height=220)
-
-                        editable = (
-                            can_edit_pases
-                            and r.get("Estado") in [
-                                "Inicio / Nuevo",
-                                "En Curso / Proceso"
-                            ]
-                        )
-
-                        button_text = "✏ Editar" if editable else "👁 Ver"
-
-                        if st.button(
-                            button_text,
-                            key=f"{button_prefix}_{folio}",
-                            use_container_width=True,
-                        ):
-
-                            st.session_state.modal_factura = None
-                            st.session_state.modal_factura_open = False
-
-                            st.session_state.modal_reporte = r.to_dict()
-
-                            st.session_state.servicios_df = cargar_servicios_folio(
-                                r["NoFolio"]
-                            )
-
-            # ============================
-            # PAGINATION
-            # ============================
-
-            st.divider()
-
-            c1, c2, c3 = st.columns([1, 2, 1])
-
-            with c1:
-                if st.button(
-                    "⬅ Anterior",
-                    key=f"prev_{button_prefix}",
-                    disabled=st.session_state[session_key] == 0,
-                    use_container_width=True,
-                ):
-                    st.session_state[session_key] -= 1
-                    st.rerun()
-
-            with c2:
-                st.markdown(
-                    f"<div style='text-align:center;font-weight:700;'>"
-                    f"Página {st.session_state[session_key] + 1} de {total_pages}"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-
-            with c3:
-                if st.button(
-                    "Siguiente ➡",
-                    key=f"next_{button_prefix}",
-                    disabled=st.session_state[session_key] >= total_pages - 1,
-                    use_container_width=True,
-                ):
-                    st.session_state[session_key] += 1
-                    st.rerun()
-
-        st.subheader("Pases de Taller")
-
-        tab_nuevos, tab_proceso, tab_terminados = st.tabs([
-            "🆕 Pases Nuevos",
-            "🔧 En Curso / Proceso",
-            "✅ Pases Terminados"
-        ])
-
-        with tab_nuevos:
-            render_pases_tab(
-                pases_df[pases_df["Estado"] == "Inicio / Nuevo"],
-                "Inicio / Nuevo",
-                "page_nuevos",
-                "nuevo",
-            )
-
-        with tab_proceso:
-            render_pases_tab(
-                pases_df[pases_df["Estado"] == "En Curso / Proceso"],
-                "En Curso / Proceso",
-                "page_proceso",
-                "proceso",
-            )
-
-        with tab_terminados:
-            render_pases_tab(
-                pases_df[
-                    pases_df["Estado"].isin([
-                        "Cerrado / Terminado",
-                        "Cerrado / Cancelado",
-                    ])
-                ],
-                "Cerrado",
-                "page_terminados",
-                "terminado",
-            )
-
-        # =================================
-        # RE-ABRIR MODAL
-        # =================================
-        if st.session_state.get("modal_reabrir"):
-
-            data_reabrir = st.session_state.modal_reabrir
-
-            @st.dialog("Re-Abrir Orden")
-
-            def modal_reabrir():
-
-                st.markdown(
-                    f"**No. de Folio:** {data_reabrir['NoFolio']}"
-                )
-
-                st.markdown(
-                    f"**Empresa:** {data_reabrir['Empresa']}"
-                )
-
-                motivo = st.text_area(
-                    "Motivo de la Re-Apertura",
-                    height=150,
-                    placeholder="Ingrese el motivo..."
-                )
-
-                st.divider()
-
-                c1, c2 = st.columns(2)
-
-                with c1:
-
-                    if st.button(
-                        "Cancelar",
-                        use_container_width=True
-                    ):
-                        st.session_state.modal_reabrir = None
-                        st.rerun()
-
-                with c2:
-
-                    if st.button(
-                        "Confirmar Re-Apertura",
-                        type="primary",
-                        use_container_width=True
-                    ):
-
-                        if motivo.strip() == "":
-                            st.warning("Debe capturar un motivo.")
-                            st.stop()
-
-                        usuario = (
-                            st.session_state.user.get("name")
-                            or st.session_state.user.get("email")
-                        )
-
-                        actualizar_estado_pase(
-                            data_reabrir["Empresa"],
-                            data_reabrir["NoFolio"],
-                            "En Curso / Proceso"
-                        )
-
-                        registrar_cambio_log(
-                            usuario=usuario,
-                            empresa=data_reabrir["Empresa"],
-                            folio=data_reabrir["NoFolio"],
-                            tipo_cambio="Re-Apertura de Orden",
-                            estado_anterior=data_reabrir["Estado"],
-                            estado_nuevo="En Curso / Proceso",
-                            oste_anterior=clean(data_reabrir.get("Oste")),
-                            oste_nuevo=clean(data_reabrir.get("Oste")),
-                            comentario=motivo.strip()
-                        )
-
-                        refresh_cached_data()
-
-                        st.session_state.modal_reabrir = None
-                        st.session_state.modal_reporte = None
-                        st.session_state.modal_factura = None
-                        st.session_state.modal_factura_open = False
-
-                        st.rerun()
-
-            modal_reabrir()
-
-        # =================================
-        # FACTURA MODAL
-        # =================================
-        if st.session_state.get("modal_factura") and st.session_state.get("modal_factura_open"):
-
-            data_fact = st.session_state.modal_factura
-
-            @st.dialog("Factura")
-            def modal_factura():
-
-                folio = data_fact["NoFolio"]
-                factura_actual = data_fact["NoFactura"]
-
-                st.markdown(f"**No. de Folio:** {folio}")
-
-                factura_vacia = (
-                    factura_actual is None
-                    or str(factura_actual).strip() == ""
-                )
-
-                nueva_factura = st.text_input(
-                    "No. de Factura",
-                    value="" if factura_vacia else factura_actual,
-                    disabled=not factura_vacia
-                )
-
-                st.divider()
-
-                # =================================
-                # BUTTON LOGIC
-                # =================================
-                if factura_vacia:
-                    label_btn = "Aceptar / Guardar"
-                else:
-                    label_btn = "Aceptar / Cerrar"
-
-                if st.button(label_btn, type="primary"):
-
-                    # If editable and user typed something → save
-                    if factura_vacia and nueva_factura.strip() != "":
-                        guardar_factura(folio, nueva_factura.strip())
-                        refresh_cached_data()
-
-                    st.session_state.modal_factura = None
-                    st.session_state.modal_factura_open = False
-                    st.rerun()
-
-            modal_factura()
-
-        # =================================
-        # BUSCAR
-        # =================================
-        st.divider()
-
-        tab_buscar, tab_reportes = st.tabs([
-            "🔍 Buscar Pase de Taller",
-            "📄 Descarga y Consulta de Reportes"
-        ])
-
-        with tab_buscar:
-
-            st.subheader("Buscar Pase de Taller")
-
-            empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
-
-            # =================================
-            # ROW 1
-            # =================================
-            f1, f2, f3, f4, f5 = st.columns(5)
-
-            with f1:
-                f_folio = st.text_input("No. de Folio")
-
-            with f2:
-                f_factura = st.text_input("No. de Factura")
-
-            with f3:
-                f_oste = st.text_input("OSTE")
-
-            with f4:
-                tipos_proveedor = sorted(
-                    pases_df["Tipo de Proveedor"]
-                    .dropna()
-                    .astype(str)
-                    .unique()
-                )
-
-                f_tipo_proveedor = st.selectbox(
-                    "Tipo de Proveedor",
-                    ["Todos"] + tipos_proveedor,
-                )
-
-            with f5:
-                f_empresa = st.selectbox(
-                    "Empresa",
-                    ["Selecciona empresa"] + empresas,
-                )
-
-            # =================================
-            # ROW 2
-            # =================================
-            f6, f7, f8, f9, f10, f11 = st.columns(6)
-
-            with f6:
-
-                unidades = (
-                    sorted(
-                        pases_df["No. de Unidad"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                    )
-                    if not pases_df.empty and "No. de Unidad" in pases_df.columns
-                    else []
-                )
-
-                f_unidad = st.selectbox(
-                    "No. de Unidad",
-                    ["Selecciona unidad"] + unidades,
-                )
-
-            with f7:
-
-                f_estado = st.selectbox(
-                    "Estado",
-                    [
-                        "Selecciona estado",
-                        "Inicio / Nuevo",
-                        "En Curso / Proceso",
-                        "Cerrado / Terminado",
-                        "Cerrado / Cancelado",
-                    ],
-                )
-
-            with f8:
-                f_fecha = st.date_input(
-                    "Fecha de Captura",
-                    value=None,
-                )
-
-            with f9:
-
-                capturo_lista = sorted(
-                    pases_df["Capturo"]
-                    .dropna()
-                    .astype(str)
-                    .unique()
-                )
-
-                f_capturo = st.selectbox(
-                    "Capturó",
-                    ["Todos"] + capturo_lista,
-                )
-
-            with f10:
-                buscar = st.button(
-                    "🔍 Buscar",
-                    use_container_width=True,
-                )
-
-            with f11:
-                limpiar = st.button(
-                    "🧹 Limpiar",
-                    use_container_width=True,
-                )
-
-            # =================================
-            # BUTTONS
-            # =================================
-            if buscar:
-                st.session_state.buscar_trigger = True
-                st.session_state.modal_reporte = None
-                st.session_state.modal_factura = None
-                st.session_state.modal_factura_open = False
-
-            if limpiar:
-                st.session_state.buscar_trigger = False
-                st.session_state.modal_reporte = None
-                st.session_state.modal_factura = None
-                st.session_state.modal_factura_open = False
-                st.rerun()
-
-            # =================================
-            # RESULTADOS
-            # =================================
-            if st.session_state.buscar_trigger:
-
-                resultados = pases_df.copy()
-
-                if not facturas_df.empty:
-
-                    resultados = resultados.merge(
-                        facturas_df[
-                            ["NoFolio", "No. de Factura"]
-                        ],
-                        on="NoFolio",
-                        how="left",
-                    )
-                # FOLIO
-                if f_folio:
-                    resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
-                # NO. FACTURA
-                if f_factura:
-                    resultados = resultados[
-                        resultados["No. de Factura"]
-                        .fillna("")
-                        .astype(str)
-                        .str.contains(
-                            f_factura,
-                            case=False,
-                            na=False,
-                        )
-                    ]
-                # OSTE
-                if f_oste:
-                    resultados = resultados[
-                        resultados["Oste"]
-                        .fillna("")
-                        .astype(str)
-                        .str.contains(
-                            f_oste,
-                            case=False,
-                            na=False,
-                        )
-                    ]
-                # TIPO PROVEEDOR
-                if f_tipo_proveedor != "Todos":
-                    resultados = resultados[
-                        resultados["Tipo de Proveedor"] == f_tipo_proveedor
-                    ]
-
-                if f_empresa != "Selecciona empresa":
-                    resultados = resultados[resultados["Empresa"] == f_empresa]
-
-                if f_estado != "Selecciona estado":
-                    resultados = resultados[resultados["Estado"] == f_estado]
-
-                if f_unidad != "Selecciona unidad":
-                    resultados = resultados[
-                        resultados["No. de Unidad"].astype(str) == f_unidad]
-                    
-                if f_capturo != "Todos":
-                    resultados = resultados[
-                        resultados["Capturo"] == f_capturo
-                    ]
-
-                if f_fecha:
-                    resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
-
-                st.divider()
-                st.subheader("Resultados")
-
-                h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11 = st.columns(
-                    [1,2,2,2,2,2,2,2,2,3,2]
-                )
-
-                h1.markdown("**Acción**")
-                h2.markdown("**Folio**")
-                h3.markdown("**Factura**")
-                h4.markdown("**OSTE**")
-                h5.markdown("**Tipo Prov.**")
-                h6.markdown("**Empresa**")
-                h7.markdown("**Unidad**")
-                h8.markdown("**Estado**")
-                h9.markdown("**Capturó**")
-                h10.markdown("**Descripción**")
-                h11.markdown("**Fecha**")
-
-                st.divider()
-
-                for _, row in resultados.iterrows():
-                    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11 = st.columns(
-                        [1,2,2,2,2,2,2,2,2,3,2]
-                    )
+                    components.html(html, height=220)
 
                     editable = (
                         can_edit_pases
-                        and row["Estado"] in [
+                        and r.get("Estado") in [
                             "Inicio / Nuevo",
                             "En Curso / Proceso"
                         ]
                     )
 
-                    # ======================================================
-                    # BUTTON COLUMN
-                    # ======================================================
-                    with c1:
-                        label = "Editar" if editable else "Ver"
-                        if st.button(label, key=f"accion_{row['NoFolio']}"):
+                    button_text = "✏ Editar" if editable else "👁 Ver"
 
-                            st.session_state.modal_factura = None
-                            st.session_state.modal_factura_open = False
+                    if st.button(
+                        button_text,
+                        key=f"{button_prefix}_{folio}",
+                        use_container_width=True,
+                    ):
 
-                            st.session_state.modal_reporte = row.to_dict()
+                        st.session_state.modal_factura = None
+                        st.session_state.modal_factura_open = False
 
-                            df = cargar_servicios_folio(row["NoFolio"])
+                        st.session_state.modal_reporte = r.to_dict()
 
-                            st.session_state.servicios_df = df
+                        st.session_state.servicios_df = cargar_servicios_folio(
+                            r["NoFolio"]
+                        )
 
-                    # ======================================================
-                    # INFO COLUMNS
-                    # ======================================================
-                    c2.write(row["NoFolio"])
+        # ============================
+        # PAGINATION
+        # ============================
 
-                    c3.write("" if pd.isna(row.get("No. de Factura")) else row.get("No. de Factura"))
+        st.divider()
 
-                    c4.write("" if pd.isna(row.get("Oste")) else row.get("Oste"))
+        c1, c2, c3 = st.columns([1, 2, 1])
 
-                    c5.write(row.get("Tipo de Proveedor", ""))
+        with c1:
+            if st.button(
+                "⬅ Anterior",
+                key=f"prev_{button_prefix}",
+                disabled=st.session_state[session_key] == 0,
+                use_container_width=True,
+            ):
+                st.session_state[session_key] -= 1
+                st.rerun()
 
-                    c6.write(row["Empresa"])
-
-                    c7.write(row.get("No. de Unidad", ""))
-
-                    c8.write(row["Estado"])
-
-                    c9.write(row.get("Capturo", ""))
-
-                    descripcion = row.get("Descripcion Problema", "")
-                    if isinstance(descripcion, str) and len(descripcion) > 80:
-                        descripcion = descripcion[:80] + "..."
-
-                    c10.write(descripcion)
-
-                    c11.write(
-                        row["Fecha"].date()
-                        if pd.notna(row["Fecha"])
-                        else ""
-                    )
-
-        # =================================
-        # REPORTES
-        # =================================
-        with tab_reportes:
-
-            st.subheader("Descarga y Consulta de Reportes")
-
-            empresas = (
-                sorted(pases_df["Empresa"].dropna().unique())
-                if not pases_df.empty else []
+        with c2:
+            st.markdown(
+                f"<div style='text-align:center;font-weight:700;'>"
+                f"Página {st.session_state[session_key] + 1} de {total_pages}"
+                f"</div>",
+                unsafe_allow_html=True,
             )
 
+        with c3:
+            if st.button(
+                "Siguiente ➡",
+                key=f"next_{button_prefix}",
+                disabled=st.session_state[session_key] >= total_pages - 1,
+                use_container_width=True,
+            ):
+                st.session_state[session_key] += 1
+                st.rerun()
+
+    st.subheader("Pases de Taller")
+
+    tab_nuevos, tab_proceso, tab_terminados = st.tabs([
+        "🆕 Pases Nuevos",
+        "🔧 En Curso / Proceso",
+        "✅ Pases Terminados"
+    ])
+
+    with tab_nuevos:
+        render_pases_tab(
+            pases_df[pases_df["Estado"] == "Inicio / Nuevo"],
+            "Inicio / Nuevo",
+            "page_nuevos",
+            "nuevo",
+        )
+
+    with tab_proceso:
+        render_pases_tab(
+            pases_df[pases_df["Estado"] == "En Curso / Proceso"],
+            "En Curso / Proceso",
+            "page_proceso",
+            "proceso",
+        )
+
+    with tab_terminados:
+        render_pases_tab(
+            pases_df[
+                pases_df["Estado"].isin([
+                    "Cerrado / Terminado",
+                    "Cerrado / Cancelado",
+                ])
+            ],
+            "Cerrado",
+            "page_terminados",
+            "terminado",
+        )
+
+    # =================================
+    # RE-ABRIR MODAL
+    # =================================
+    if st.session_state.get("modal_reabrir"):
+
+        data_reabrir = st.session_state.modal_reabrir
+
+        @st.dialog("Re-Abrir Orden")
+
+        def modal_reabrir():
+
+            st.markdown(
+                f"**No. de Folio:** {data_reabrir['NoFolio']}"
+            )
+
+            st.markdown(
+                f"**Empresa:** {data_reabrir['Empresa']}"
+            )
+
+            motivo = st.text_area(
+                "Motivo de la Re-Apertura",
+                height=150,
+                placeholder="Ingrese el motivo..."
+            )
+
+            st.divider()
+
+            c1, c2 = st.columns(2)
+
+            with c1:
+
+                if st.button(
+                    "Cancelar",
+                    use_container_width=True
+                ):
+                    st.session_state.modal_reabrir = None
+                    st.rerun()
+
+            with c2:
+
+                if st.button(
+                    "Confirmar Re-Apertura",
+                    type="primary",
+                    use_container_width=True
+                ):
+
+                    if motivo.strip() == "":
+                        st.warning("Debe capturar un motivo.")
+                        st.stop()
+
+                    usuario = (
+                        st.session_state.user.get("name")
+                        or st.session_state.user.get("email")
+                    )
+
+                    actualizar_estado_pase(
+                        data_reabrir["Empresa"],
+                        data_reabrir["NoFolio"],
+                        "En Curso / Proceso"
+                    )
+
+                    registrar_cambio_log(
+                        usuario=usuario,
+                        empresa=data_reabrir["Empresa"],
+                        folio=data_reabrir["NoFolio"],
+                        tipo_cambio="Re-Apertura de Orden",
+                        estado_anterior=data_reabrir["Estado"],
+                        estado_nuevo="En Curso / Proceso",
+                        oste_anterior=clean(data_reabrir.get("Oste")),
+                        oste_nuevo=clean(data_reabrir.get("Oste")),
+                        comentario=motivo.strip()
+                    )
+
+                    refresh_cached_data()
+
+                    st.session_state.modal_reabrir = None
+                    st.session_state.modal_reporte = None
+                    st.session_state.modal_factura = None
+                    st.session_state.modal_factura_open = False
+
+                    st.rerun()
+
+        modal_reabrir()
+
+    # =================================
+    # FACTURA MODAL
+    # =================================
+    if st.session_state.get("modal_factura") and st.session_state.get("modal_factura_open"):
+
+        data_fact = st.session_state.modal_factura
+
+        @st.dialog("Factura")
+        def modal_factura():
+
+            folio = data_fact["NoFolio"]
+            factura_actual = data_fact["NoFactura"]
+
+            st.markdown(f"**No. de Folio:** {folio}")
+
+            factura_vacia = (
+                factura_actual is None
+                or str(factura_actual).strip() == ""
+            )
+
+            nueva_factura = st.text_input(
+                "No. de Factura",
+                value="" if factura_vacia else factura_actual,
+                disabled=not factura_vacia
+            )
+
+            st.divider()
+
             # =================================
-            # ROW 1
+            # BUTTON LOGIC
             # =================================
-            f1, f2, f3, f4, f5 = st.columns(5)
+            if factura_vacia:
+                label_btn = "Aceptar / Guardar"
+            else:
+                label_btn = "Aceptar / Cerrar"
 
-            with f1:
-                f_folio = st.text_input(
-                    "No. de Folio",
-                    key="report_folio"
-                )
+            if st.button(label_btn, type="primary"):
 
-            with f2:
-                f_factura = st.text_input(
-                    "No. de Factura",
-                    key="report_factura"
-                )
+                # If editable and user typed something → save
+                if factura_vacia and nueva_factura.strip() != "":
+                    guardar_factura(folio, nueva_factura.strip())
+                    refresh_cached_data()
 
-            with f3:
-                f_oste = st.text_input(
-                    "OSTE",
-                    key="report_oste"
-                )
+                st.session_state.modal_factura = None
+                st.session_state.modal_factura_open = False
+                st.rerun()
 
-            with f4:
+        modal_factura()
 
-                tipos_proveedor = sorted(
-                    pases_df["Tipo de Proveedor"]
+    # =================================
+    # BUSCAR
+    # =================================
+    st.divider()
+
+    tab_buscar, tab_reportes = st.tabs([
+        "🔍 Buscar Pase de Taller",
+        "📄 Descarga y Consulta de Reportes"
+    ])
+
+    with tab_buscar:
+
+        st.subheader("Buscar Pase de Taller")
+
+        empresas = sorted(pases_df["Empresa"].dropna().unique()) if not pases_df.empty else []
+
+        # =================================
+        # ROW 1
+        # =================================
+        f1, f2, f3, f4, f5 = st.columns(5)
+
+        with f1:
+            f_folio = st.text_input("No. de Folio")
+
+        with f2:
+            f_factura = st.text_input("No. de Factura")
+
+        with f3:
+            f_oste = st.text_input("OSTE")
+
+        with f4:
+            tipos_proveedor = sorted(
+                pases_df["Tipo de Proveedor"]
+                .dropna()
+                .astype(str)
+                .unique()
+            )
+
+            f_tipo_proveedor = st.selectbox(
+                "Tipo de Proveedor",
+                ["Todos"] + tipos_proveedor,
+            )
+
+        with f5:
+            f_empresa = st.selectbox(
+                "Empresa",
+                ["Selecciona empresa"] + empresas,
+            )
+
+        # =================================
+        # ROW 2
+        # =================================
+        f6, f7, f8, f9, f10, f11 = st.columns(6)
+
+        with f6:
+
+            unidades = (
+                sorted(
+                    pases_df["No. de Unidad"]
                     .dropna()
                     .astype(str)
                     .unique()
                 )
+                if not pases_df.empty and "No. de Unidad" in pases_df.columns
+                else []
+            )
 
-                f_tipo_proveedor = st.selectbox(
-                    "Tipo de Proveedor",
-                    ["Todos"] + tipos_proveedor,
-                    key="report_tipo_proveedor"
-                )
+            f_unidad = st.selectbox(
+                "No. de Unidad",
+                ["Selecciona unidad"] + unidades,
+            )
 
-            with f5:
-                f_empresa = st.selectbox(
-                    "Empresa",
-                    ["Selecciona empresa"] + empresas,
-                    key="report_empresa"
-                )
+        with f7:
 
-            # =================================
-            # ROW 2
-            # =================================
-            f6, f7, f8, f9, f10, f11 = st.columns(6)
+            f_estado = st.selectbox(
+                "Estado",
+                [
+                    "Selecciona estado",
+                    "Inicio / Nuevo",
+                    "En Curso / Proceso",
+                    "Cerrado / Terminado",
+                    "Cerrado / Cancelado",
+                ],
+            )
 
-            with f6:
+        with f8:
+            f_fecha = st.date_input(
+                "Fecha de Captura",
+                value=None,
+            )
 
-                unidades = (
-                    sorted(
-                        pases_df["No. de Unidad"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                    )
-                    if (
-                        not pases_df.empty
-                        and "No. de Unidad" in pases_df.columns
-                    )
-                    else []
-                )
+        with f9:
 
-                f_unidad = st.selectbox(
-                    "No. de Unidad",
-                    ["Selecciona unidad"] + unidades,
-                    key="report_unidad"
-                )
+            capturo_lista = sorted(
+                pases_df["Capturo"]
+                .dropna()
+                .astype(str)
+                .unique()
+            )
 
-            with f7:
+            f_capturo = st.selectbox(
+                "Capturó",
+                ["Todos"] + capturo_lista,
+            )
 
-                f_estado = st.selectbox(
-                    "Estado",
-                    [
-                        "Selecciona estado",
-                        "Inicio / Nuevo",
-                        "En Curso / Proceso",
-                        "Cerrado / Terminado",
-                        "Cerrado / Cancelado",
-                    ],
-                    key="report_estado"
-                )
+        with f10:
+            buscar = st.button(
+                "🔍 Buscar",
+                use_container_width=True,
+            )
 
-            with f8:
+        with f11:
+            limpiar = st.button(
+                "🧹 Limpiar",
+                use_container_width=True,
+            )
 
-                f_fecha = st.date_input(
-                    "Fecha de Captura",
-                    value=None,
-                    key="report_fecha"
-                )
+        # =================================
+        # BUTTONS
+        # =================================
+        if buscar:
+            st.session_state.buscar_trigger = True
+            st.session_state.modal_reporte = None
+            st.session_state.modal_factura = None
+            st.session_state.modal_factura_open = False
 
-            with f9:
+        if limpiar:
+            st.session_state.buscar_trigger = False
+            st.session_state.modal_reporte = None
+            st.session_state.modal_factura = None
+            st.session_state.modal_factura_open = False
+            st.rerun()
 
-                capturo_lista = sorted(
-                    pases_df["Capturo"]
-                    .dropna()
-                    .astype(str)
-                    .unique()
-                )
-
-                f_capturo = st.selectbox(
-                    "Capturó",
-                    ["Todos"] + capturo_lista,
-                    key="report_capturo"
-                )
-
-            # =================================
-            # BUILD MASTER REPORT
-            # =================================
+        # =================================
+        # RESULTADOS
+        # =================================
+        if st.session_state.buscar_trigger:
 
             resultados = pases_df.copy()
-
-            # ---------------------------------
-            # MERGE FACTURAS
-            # ---------------------------------
 
             if not facturas_df.empty:
 
                 resultados = resultados.merge(
                     facturas_df[
-                        [
-                            "NoFolio",
-                            "No. de Factura"
-                        ]
+                        ["NoFolio", "No. de Factura"]
                     ],
                     on="NoFolio",
                     how="left",
                 )
-
-            # ---------------------------------
-            # MERGE SERVICES
-            # ---------------------------------
-
-            if not services_df.empty:
-
-                servicios = services_df.copy()
-
-                # clean values
-                for col in [
-                    "Parte",
-                    "Tipo De Parte"
-                ]:
-
-                    if col in servicios.columns:
-
-                        servicios[col] = (
-                            servicios[col]
-                            .fillna("")
-                            .astype(str)
-                            .str.strip()
-                        )
-
-                servicios = servicios[
-                    (
-                        servicios["Parte"] != ""
-                    )
-                    |
-                    (
-                        servicios["Tipo De Parte"] != ""
-                    )
-                ]
-
-                servicios_resumen = (
-                    servicios
-                    .groupby("NoFolio", as_index=False)
-                    .agg(
-                        {
-                            "Parte": lambda x: " | ".join(
-                                sorted(
-                                    set(
-                                        i for i in x
-                                        if i
-                                    )
-                                )
-                            ),
-                            "Tipo De Parte": lambda x: " | ".join(
-                                sorted(
-                                    set(
-                                        i for i in x
-                                        if i
-                                    )
-                                )
-                            ),
-                        }
-                    )
-                )
-
-                servicios_resumen = servicios_resumen.rename(
-                    columns={
-                        "Parte": "Partes",
-                        "Tipo De Parte": "Tipos de Parte",
-                    }
-                )
-
-                resultados = resultados.merge(
-                    servicios_resumen,
-                    on="NoFolio",
-                    how="left",
-                )
-
-            # =================================
-            # APPLY FILTERS
-            # =================================
-
+            # FOLIO
             if f_folio:
-                resultados = resultados[
-                    resultados["NoFolio"]
-                    .fillna("")
-                    .astype(str)
-                    .str.contains(
-                        f_folio,
-                        case=False,
-                        na=False
-                    )
-                ]
-
+                resultados = resultados[resultados["NoFolio"].str.contains(f_folio)]
+            # NO. FACTURA
             if f_factura:
                 resultados = resultados[
                     resultados["No. de Factura"]
@@ -2464,10 +2115,10 @@ if can_access_pases_tab:
                     .str.contains(
                         f_factura,
                         case=False,
-                        na=False
+                        na=False,
                     )
                 ]
-
+            # OSTE
             if f_oste:
                 resultados = resultados[
                     resultados["Oste"]
@@ -2476,3556 +2127,4138 @@ if can_access_pases_tab:
                     .str.contains(
                         f_oste,
                         case=False,
-                        na=False
+                        na=False,
                     )
                 ]
-
+            # TIPO PROVEEDOR
             if f_tipo_proveedor != "Todos":
                 resultados = resultados[
                     resultados["Tipo de Proveedor"] == f_tipo_proveedor
                 ]
 
             if f_empresa != "Selecciona empresa":
-                resultados = resultados[
-                    resultados["Empresa"] == f_empresa
-                ]
+                resultados = resultados[resultados["Empresa"] == f_empresa]
 
             if f_estado != "Selecciona estado":
-                resultados = resultados[
-                    resultados["Estado"] == f_estado
-                ]
+                resultados = resultados[resultados["Estado"] == f_estado]
 
             if f_unidad != "Selecciona unidad":
                 resultados = resultados[
-                    resultados["No. de Unidad"]
-                    .astype(str)
-                    == f_unidad
-                ]
-
+                    resultados["No. de Unidad"].astype(str) == f_unidad]
+                
             if f_capturo != "Todos":
                 resultados = resultados[
                     resultados["Capturo"] == f_capturo
                 ]
 
             if f_fecha:
-                resultados = resultados[
-                    resultados["Fecha"].dt.date == f_fecha
-                ]
+                resultados = resultados[resultados["Fecha"].dt.date == f_fecha]
 
-            # =================================
-            # SELECT COLUMNS
-            # =================================
+            st.divider()
+            st.subheader("Resultados")
 
-            columnas_reporte = [
-                "NoFolio",
-                "No. de Factura",
-                "Empresa",
-                "No. de Unidad",
-                "Estado",
-                "Tipo de Unidad",
-                "Tipo de Proveedor",
-                "Proveedor",
-                "No. de Reporte",
-                "Oste",
-                "Capturo",
-                "Razones",
-                "Descripcion Problema",
-                "Partes",
-                "Tipos de Parte",
-                "Fecha",
-            ]
+            h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11 = st.columns(
+                [1,2,2,2,2,2,2,2,2,3,2]
+            )
 
-            columnas_existentes = [
-                c for c in columnas_reporte
-                if c in resultados.columns
-            ]
-
-            resultados = resultados[columnas_existentes].copy()
-
-            # =================================
-            # FORMAT DATE
-            # =================================
-
-            if "Fecha" in resultados.columns:
-                resultados["Fecha"] = (
-                    pd.to_datetime(
-                        resultados["Fecha"],
-                        errors="coerce"
-                    )
-                    .dt.strftime("%Y-%m-%d")
-                )
-
-            # =================================
-            # REPORT SUMMARY
-            # =================================
+            h1.markdown("**Acción**")
+            h2.markdown("**Folio**")
+            h3.markdown("**Factura**")
+            h4.markdown("**OSTE**")
+            h5.markdown("**Tipo Prov.**")
+            h6.markdown("**Empresa**")
+            h7.markdown("**Unidad**")
+            h8.markdown("**Estado**")
+            h9.markdown("**Capturó**")
+            h10.markdown("**Descripción**")
+            h11.markdown("**Fecha**")
 
             st.divider()
 
-            c1, c2 = st.columns([1,4])
-
-            with c1:
-                st.metric(
-                    "Registros",
-                    len(resultados)
+            for _, row in resultados.iterrows():
+                c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11 = st.columns(
+                    [1,2,2,2,2,2,2,2,2,3,2]
                 )
 
-            with c2:
-                st.write("")
-
-            # =================================
-            # TABLE
-            # =================================
-
-            st.dataframe(
-                resultados,
-                use_container_width=True,
-                hide_index=True
-            )
-
-            # =================================
-            # DOWNLOAD REPORT
-            # =================================
-
-            st.divider()
-
-            excel_buffer = BytesIO()
-
-            with pd.ExcelWriter(
-                excel_buffer,
-                engine="openpyxl"
-            ) as writer:
-
-                resultados.to_excel(
-                    writer,
-                    sheet_name="Reporte",
-                    index=False
-                )
-
-            st.download_button(
-                label="⬇ Descargar Reporte en Excel",
-                data=excel_buffer.getvalue(),
-                file_name=f"Reporte_Pases_Taller_{datetime.now():%Y%m%d_%H%M%S}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-
-        # =================================
-        # MODAL
-        # =================================
-        if st.session_state.modal_reporte:
-
-            r = st.session_state.modal_reporte
-            editable_estado = (
-                can_edit_pases
-                and r["Estado"] in [
-                    "Inicio / Nuevo",
-                    "En Curso / Proceso"
-                ]
-            )
-            solo_lectura_pases = is_pases_viewer
-
-            @st.dialog(
-                "Detalle del Pase de Taller",
-                width="large",
-            )
-            def modal():
-
-                st.markdown(f"**No. de Folio:** {r.get('NoFolio', r.get('No. de Folio',''))}")
-                st.markdown(f"**Empresa:** {r['Empresa']}")
-                fecha_modal = r.get("Fecha")
-                if pd.notna(fecha_modal):
-                    try:
-                        fecha_modal = pd.to_datetime(fecha_modal).strftime("%Y-%m-%d %H:%M")
-                    except:
-                        fecha_modal = str(fecha_modal)
-                else:
-                    fecha_modal = "-"
-
-                st.markdown(f"**Fecha:** {fecha_modal}")
-                st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
-                st.markdown(
-                    f"**Tipo de Proveedor:** {clean(r.get('Tipo de Proveedor', ''))}"
-                )
-
-                st.markdown(
-                    f"**Proveedor:** {clean(r.get('Proveedor', ''))}"
-                )
-
-                st.markdown(
-                    f"**Razones:** {clean(r.get('Razones', ''))}"
-                )
-                st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
-                descripcion_actual = r.get("Descripcion Problema", "") or ""
-                es_cerrado = r["Estado"].startswith("Cerrado")
-                descripcion_editada = st.text_area(
-                    "Descripción del Problema",
-                    value=descripcion_actual,
-                    height=120,
-                    disabled=(es_cerrado or solo_lectura_pases)
-                )
-
-                st.divider()
-                st.subheader("Información del Proveedor")
-
-                es_cerrado = "Cerrado" in str(r.get("Estado", ""))
-
-                tipo_proveedor = clean(r.get("Tipo de Proveedor", "")).lower()
-
-                # ==========================================
-                # NO. DE ORDEN (editable + no decimals)
-                # ==========================================
-                reporte_actual = r.get("No. de Reporte", "")
-
-                if pd.notna(reporte_actual) and str(reporte_actual).strip() != "":
-                    try:
-                        reporte_actual = str(int(float(reporte_actual)))
-                    except:
-                        reporte_actual = str(reporte_actual).strip()
-                else:
-                    reporte_actual = ""
-
-                reporte_editado = st.text_input(
-                    "No. de Reporte",
-                    value=reporte_actual,
-                    disabled=(es_cerrado or solo_lectura_pases)
-                )
-
-                # ==========================================
-                # OSTE (externo only)
-                # editable until order is Cerrado
-                # ==========================================
-                if "interno" not in tipo_proveedor:
-                    oste_val = st.text_input(
-                        "OSTE",
-                        value=clean(r.get("Oste", "")),
-                        disabled=(es_cerrado or solo_lectura_pases)
-                    )
-
-                # ==========================================
-                # SMART STATE VISIBILITY
-                # ==========================================
-                estado_actual = r["Estado"]
-
-                transiciones = {
-                    "Inicio / Nuevo": [
-                        "En Curso / Proceso",
-                        "Cerrado / Cancelado",
-                    ],
-                    "En Curso / Proceso": [
-                        "Cerrado / Terminado",
-                        "Cerrado / Cancelado",
-                    ],
-                }
-
-                opciones_estado = [estado_actual] + transiciones.get(estado_actual, [])
-                opciones_estado = list(dict.fromkeys(opciones_estado))
-
-                nuevo_estado = st.selectbox(
-                    "Estado",
-                    opciones_estado,
-                    index=0,
-                    disabled=not editable_estado
-                )
-
-                editable_servicios = (
+                editable = (
                     can_edit_pases
-                    and nuevo_estado == "En Curso / Proceso"
+                    and row["Estado"] in [
+                        "Inicio / Nuevo",
+                        "En Curso / Proceso"
+                    ]
                 )
 
-                st.divider()
-                st.subheader("Servicios y Refacciones")
+                # ======================================================
+                # BUTTON COLUMN
+                # ======================================================
+                with c1:
+                    label = "Editar" if editable else "Ver"
+                    if st.button(label, key=f"accion_{row['NoFolio']}"):
 
-                catalogo = cargar_refacciones()
+                        st.session_state.modal_factura = None
+                        st.session_state.modal_factura_open = False
 
-                # ==========================================
-                # BUILD TIPO FILTER
-                # ==========================================
-                tipos_disponibles = []
+                        st.session_state.modal_reporte = row.to_dict()
 
-                if catalogo is not None and not catalogo.empty:
-                    tipos_disponibles = (
-                        sorted(
-                            catalogo["Tipo"]
-                            .dropna()
-                            .astype(str)
-                            .unique()
-                        )
+                        df = cargar_servicios_folio(row["NoFolio"])
+
+                        st.session_state.servicios_df = df
+
+                # ======================================================
+                # INFO COLUMNS
+                # ======================================================
+                c2.write(row["NoFolio"])
+
+                c3.write("" if pd.isna(row.get("No. de Factura")) else row.get("No. de Factura"))
+
+                c4.write("" if pd.isna(row.get("Oste")) else row.get("Oste"))
+
+                c5.write(row.get("Tipo de Proveedor", ""))
+
+                c6.write(row["Empresa"])
+
+                c7.write(row.get("No. de Unidad", ""))
+
+                c8.write(row["Estado"])
+
+                c9.write(row.get("Capturo", ""))
+
+                descripcion = row.get("Descripcion Problema", "")
+                if isinstance(descripcion, str) and len(descripcion) > 80:
+                    descripcion = descripcion[:80] + "..."
+
+                c10.write(descripcion)
+
+                c11.write(
+                    row["Fecha"].date()
+                    if pd.notna(row["Fecha"])
+                    else ""
+                )
+
+    # =================================
+    # REPORTES
+    # =================================
+    with tab_reportes:
+
+        st.subheader("Descarga y Consulta de Reportes")
+
+        empresas = (
+            sorted(pases_df["Empresa"].dropna().unique())
+            if not pases_df.empty else []
+        )
+
+        # =================================
+        # ROW 1
+        # =================================
+        f1, f2, f3, f4, f5 = st.columns(5)
+
+        with f1:
+            f_folio = st.text_input(
+                "No. de Folio",
+                key="report_folio"
+            )
+
+        with f2:
+            f_factura = st.text_input(
+                "No. de Factura",
+                key="report_factura"
+            )
+
+        with f3:
+            f_oste = st.text_input(
+                "OSTE",
+                key="report_oste"
+            )
+
+        with f4:
+
+            tipos_proveedor = sorted(
+                pases_df["Tipo de Proveedor"]
+                .dropna()
+                .astype(str)
+                .unique()
+            )
+
+            f_tipo_proveedor = st.selectbox(
+                "Tipo de Proveedor",
+                ["Todos"] + tipos_proveedor,
+                key="report_tipo_proveedor"
+            )
+
+        with f5:
+            f_empresa = st.selectbox(
+                "Empresa",
+                ["Selecciona empresa"] + empresas,
+                key="report_empresa"
+            )
+
+        # =================================
+        # ROW 2
+        # =================================
+        f6, f7, f8, f9, f10, f11 = st.columns(6)
+
+        with f6:
+
+            unidades = (
+                sorted(
+                    pases_df["No. de Unidad"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                )
+                if (
+                    not pases_df.empty
+                    and "No. de Unidad" in pases_df.columns
+                )
+                else []
+            )
+
+            f_unidad = st.selectbox(
+                "No. de Unidad",
+                ["Selecciona unidad"] + unidades,
+                key="report_unidad"
+            )
+
+        with f7:
+
+            f_estado = st.selectbox(
+                "Estado",
+                [
+                    "Selecciona estado",
+                    "Inicio / Nuevo",
+                    "En Curso / Proceso",
+                    "Cerrado / Terminado",
+                    "Cerrado / Cancelado",
+                ],
+                key="report_estado"
+            )
+
+        with f8:
+
+            f_fecha = st.date_input(
+                "Fecha de Captura",
+                value=None,
+                key="report_fecha"
+            )
+
+        with f9:
+
+            capturo_lista = sorted(
+                pases_df["Capturo"]
+                .dropna()
+                .astype(str)
+                .unique()
+            )
+
+            f_capturo = st.selectbox(
+                "Capturó",
+                ["Todos"] + capturo_lista,
+                key="report_capturo"
+            )
+
+        # =================================
+        # BUILD MASTER REPORT
+        # =================================
+
+        resultados = pases_df.copy()
+
+        # ---------------------------------
+        # MERGE FACTURAS
+        # ---------------------------------
+
+        if not facturas_df.empty:
+
+            resultados = resultados.merge(
+                facturas_df[
+                    [
+                        "NoFolio",
+                        "No. de Factura"
+                    ]
+                ],
+                on="NoFolio",
+                how="left",
+            )
+
+        # ---------------------------------
+        # MERGE SERVICES
+        # ---------------------------------
+
+        if not services_df.empty:
+
+            servicios = services_df.copy()
+
+            # clean values
+            for col in [
+                "Parte",
+                "Tipo De Parte"
+            ]:
+
+                if col in servicios.columns:
+
+                    servicios[col] = (
+                        servicios[col]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
                     )
 
-                if catalogo is not None and not catalogo.empty:
-                    # ==========================================
-                    # TIPO FILTER SELECTBOX
-                    # ==========================================
-                    tipo_seleccionado = st.selectbox(
-                        "Tipo",
-                        ["Selecciona tipo"] + tipos_disponibles,
-                        disabled=not editable_servicios
-                    )
+            servicios = servicios[
+                (
+                    servicios["Parte"] != ""
+                )
+                |
+                (
+                    servicios["Tipo De Parte"] != ""
+                )
+            ]
 
-                    # ==========================================
-                    # FILTER PARTES BASED ON TIPO
-                    # ==========================================
-                    if tipo_seleccionado != "Selecciona tipo":
-                        catalogo_filtrado = catalogo[
-                            catalogo["Tipo"] == tipo_seleccionado
-                        ]
-                    else:
-                        catalogo_filtrado = catalogo
+            servicios_resumen = (
+                servicios
+                .groupby("NoFolio", as_index=False)
+                .agg(
+                    {
+                        "Parte": lambda x: " | ".join(
+                            sorted(
+                                set(
+                                    i for i in x
+                                    if i
+                                )
+                            )
+                        ),
+                        "Tipo De Parte": lambda x: " | ".join(
+                            sorted(
+                                set(
+                                    i for i in x
+                                    if i
+                                )
+                            )
+                        ),
+                    }
+                )
+            )
 
-                    partes_opciones = (
-                        catalogo_filtrado["Parte"]
+            servicios_resumen = servicios_resumen.rename(
+                columns={
+                    "Parte": "Partes",
+                    "Tipo De Parte": "Tipos de Parte",
+                }
+            )
+
+            resultados = resultados.merge(
+                servicios_resumen,
+                on="NoFolio",
+                how="left",
+            )
+
+        # =================================
+        # APPLY FILTERS
+        # =================================
+
+        if f_folio:
+            resultados = resultados[
+                resultados["NoFolio"]
+                .fillna("")
+                .astype(str)
+                .str.contains(
+                    f_folio,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        if f_factura:
+            resultados = resultados[
+                resultados["No. de Factura"]
+                .fillna("")
+                .astype(str)
+                .str.contains(
+                    f_factura,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        if f_oste:
+            resultados = resultados[
+                resultados["Oste"]
+                .fillna("")
+                .astype(str)
+                .str.contains(
+                    f_oste,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        if f_tipo_proveedor != "Todos":
+            resultados = resultados[
+                resultados["Tipo de Proveedor"] == f_tipo_proveedor
+            ]
+
+        if f_empresa != "Selecciona empresa":
+            resultados = resultados[
+                resultados["Empresa"] == f_empresa
+            ]
+
+        if f_estado != "Selecciona estado":
+            resultados = resultados[
+                resultados["Estado"] == f_estado
+            ]
+
+        if f_unidad != "Selecciona unidad":
+            resultados = resultados[
+                resultados["No. de Unidad"]
+                .astype(str)
+                == f_unidad
+            ]
+
+        if f_capturo != "Todos":
+            resultados = resultados[
+                resultados["Capturo"] == f_capturo
+            ]
+
+        if f_fecha:
+            resultados = resultados[
+                resultados["Fecha"].dt.date == f_fecha
+            ]
+
+        # =================================
+        # SELECT COLUMNS
+        # =================================
+
+        columnas_reporte = [
+            "NoFolio",
+            "No. de Factura",
+            "Empresa",
+            "No. de Unidad",
+            "Estado",
+            "Tipo de Unidad",
+            "Tipo de Proveedor",
+            "Proveedor",
+            "No. de Reporte",
+            "Oste",
+            "Capturo",
+            "Razones",
+            "Descripcion Problema",
+            "Partes",
+            "Tipos de Parte",
+            "Fecha",
+        ]
+
+        columnas_existentes = [
+            c for c in columnas_reporte
+            if c in resultados.columns
+        ]
+
+        resultados = resultados[columnas_existentes].copy()
+
+        # =================================
+        # FORMAT DATE
+        # =================================
+
+        if "Fecha" in resultados.columns:
+            resultados["Fecha"] = (
+                pd.to_datetime(
+                    resultados["Fecha"],
+                    errors="coerce"
+                )
+                .dt.strftime("%Y-%m-%d")
+            )
+
+        # =================================
+        # REPORT SUMMARY
+        # =================================
+
+        st.divider()
+
+        c1, c2 = st.columns([1,4])
+
+        with c1:
+            st.metric(
+                "Registros",
+                len(resultados)
+            )
+
+        with c2:
+            st.write("")
+
+        # =================================
+        # TABLE
+        # =================================
+
+        st.dataframe(
+            resultados,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        # =================================
+        # DOWNLOAD REPORT
+        # =================================
+
+        st.divider()
+
+        excel_buffer = BytesIO()
+
+        with pd.ExcelWriter(
+            excel_buffer,
+            engine="openpyxl"
+        ) as writer:
+
+            resultados.to_excel(
+                writer,
+                sheet_name="Reporte",
+                index=False
+            )
+
+        st.download_button(
+            label="⬇ Descargar Reporte en Excel",
+            data=excel_buffer.getvalue(),
+            file_name=f"Reporte_Pases_Taller_{datetime.now():%Y%m%d_%H%M%S}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+        )
+
+    # =================================
+    # MODAL
+    # =================================
+    if st.session_state.modal_reporte:
+
+        r = st.session_state.modal_reporte
+        editable_estado = (
+            can_edit_pases
+            and r["Estado"] in [
+                "Inicio / Nuevo",
+                "En Curso / Proceso"
+            ]
+        )
+        solo_lectura_pases = is_pases_viewer
+
+        @st.dialog(
+            "Detalle del Pase de Taller",
+            width="large",
+        )
+        def modal():
+
+            st.markdown(f"**No. de Folio:** {r.get('NoFolio', r.get('No. de Folio',''))}")
+            st.markdown(f"**Empresa:** {r['Empresa']}")
+            fecha_modal = r.get("Fecha")
+            if pd.notna(fecha_modal):
+                try:
+                    fecha_modal = pd.to_datetime(fecha_modal).strftime("%Y-%m-%d %H:%M")
+                except:
+                    fecha_modal = str(fecha_modal)
+            else:
+                fecha_modal = "-"
+
+            st.markdown(f"**Fecha:** {fecha_modal}")
+            st.markdown(f"**Capturó:** {r.get('Capturo', '')}")
+            st.markdown(
+                f"**Tipo de Proveedor:** {clean(r.get('Tipo de Proveedor', ''))}"
+            )
+
+            st.markdown(
+                f"**Proveedor:** {clean(r.get('Proveedor', ''))}"
+            )
+
+            st.markdown(
+                f"**Razones:** {clean(r.get('Razones', ''))}"
+            )
+            st.markdown(f"**No. de Unidad:** {r.get('No. de Unidad', '')}")
+            descripcion_actual = r.get("Descripcion Problema", "") or ""
+            es_cerrado = r["Estado"].startswith("Cerrado")
+            descripcion_editada = st.text_area(
+                "Descripción del Problema",
+                value=descripcion_actual,
+                height=120,
+                disabled=(es_cerrado or solo_lectura_pases)
+            )
+
+            st.divider()
+            st.subheader("Información del Proveedor")
+
+            es_cerrado = "Cerrado" in str(r.get("Estado", ""))
+
+            tipo_proveedor = clean(r.get("Tipo de Proveedor", "")).lower()
+
+            # ==========================================
+            # NO. DE ORDEN (editable + no decimals)
+            # ==========================================
+            reporte_actual = r.get("No. de Reporte", "")
+
+            if pd.notna(reporte_actual) and str(reporte_actual).strip() != "":
+                try:
+                    reporte_actual = str(int(float(reporte_actual)))
+                except:
+                    reporte_actual = str(reporte_actual).strip()
+            else:
+                reporte_actual = ""
+
+            reporte_editado = st.text_input(
+                "No. de Reporte",
+                value=reporte_actual,
+                disabled=(es_cerrado or solo_lectura_pases)
+            )
+
+            # ==========================================
+            # OSTE (externo only)
+            # editable until order is Cerrado
+            # ==========================================
+            if "interno" not in tipo_proveedor:
+                oste_val = st.text_input(
+                    "OSTE",
+                    value=clean(r.get("Oste", "")),
+                    disabled=(es_cerrado or solo_lectura_pases)
+                )
+
+            # ==========================================
+            # SMART STATE VISIBILITY
+            # ==========================================
+            estado_actual = r["Estado"]
+
+            transiciones = {
+                "Inicio / Nuevo": [
+                    "En Curso / Proceso",
+                    "Cerrado / Cancelado",
+                ],
+                "En Curso / Proceso": [
+                    "Cerrado / Terminado",
+                    "Cerrado / Cancelado",
+                ],
+            }
+
+            opciones_estado = [estado_actual] + transiciones.get(estado_actual, [])
+            opciones_estado = list(dict.fromkeys(opciones_estado))
+
+            nuevo_estado = st.selectbox(
+                "Estado",
+                opciones_estado,
+                index=0,
+                disabled=not editable_estado
+            )
+
+            editable_servicios = (
+                can_edit_pases
+                and nuevo_estado == "En Curso / Proceso"
+            )
+
+            st.divider()
+            st.subheader("Servicios y Refacciones")
+
+            catalogo = cargar_refacciones()
+
+            # ==========================================
+            # BUILD TIPO FILTER
+            # ==========================================
+            tipos_disponibles = []
+
+            if catalogo is not None and not catalogo.empty:
+                tipos_disponibles = (
+                    sorted(
+                        catalogo["Tipo"]
                         .dropna()
                         .astype(str)
-                        .tolist()
+                        .unique()
                     )
-
-                    tipo_elegido = tipo_seleccionado != "Selecciona tipo"
-
-                    st.session_state.refaccion_seleccionada = st.selectbox(
-                        "Refacción / Servicio",
-                        options=partes_opciones if tipo_elegido else [],
-                        index=None,
-                        disabled=(not editable_servicios or not tipo_elegido)
-                    )
-
-                else:
-                    st.info("Catálogo no disponible para esta empresa.")
-
-                # =====================================================
-                # ADD ITEM
-                # =====================================================
-                if st.button(
-                    "Agregar refacción",
-                    disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
-                ):
-
-                    parte_seleccionada = st.session_state.refaccion_seleccionada
-
-                    fila = catalogo[
-                        catalogo["Parte"] == parte_seleccionada
-                    ].iloc[0]
-
-                    if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
-
-                        nueva = {
-                            "Parte": fila["Parte"],
-                            "Tipo De Parte": fila["Tipo"],
-                            "Posicion": "",
-                            "Cantidad": 1,
-                        }
-
-                        st.session_state.servicios_df = pd.concat(
-                            [st.session_state.servicios_df, pd.DataFrame([nueva])],
-                            ignore_index=True
-                        )
-
-                # =====================================================
-                # EDITOR
-                # =====================================================
-                column_config = {
-                    "Parte": st.column_config.TextColumn(required=False),
-                    "Tipo De Parte": st.column_config.TextColumn(required=False),
-                    "Posicion": st.column_config.TextColumn(),
-                    "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
-                }
-
-                edited_df = st.data_editor(
-                    st.session_state.servicios_df,
-                    num_rows="dynamic",
-                    hide_index=True,
-                    disabled=(not editable_servicios) or solo_lectura_pases,
-                    column_config=column_config,
                 )
-                
-                # =====================================================
-                # CHATLOG DEL PASE (solo en el modal de Tab 1)
-                # =====================================================
-                st.divider()
-                st.subheader("💬 Historial de seguimiento")
 
-                folio_chat = clean(r.get("NoFolio", r.get("No. de Folio", "")))
-                try:
-                    entradas_chat = cargar_chatlog_folio(folio_chat)
-                    if not entradas_chat:
-                        st.info("Este pase todavía no tiene mensajes.")
-                    else:
-                        for idx_chat, entrada_chat in enumerate(entradas_chat):
-                            if not isinstance(entrada_chat, dict):
-                                with st.container(border=True):
-                                    st.write(str(entrada_chat))
-                                continue
+            if catalogo is not None and not catalogo.empty:
+                # ==========================================
+                # TIPO FILTER SELECTBOX
+                # ==========================================
+                tipo_seleccionado = st.selectbox(
+                    "Tipo",
+                    ["Selecciona tipo"] + tipos_disponibles,
+                    disabled=not editable_servicios
+                )
 
-                            mensaje_chat = str(entrada_chat.get("message") or "").strip()
-                            usuario_chat = str(entrada_chat.get("user") or "Usuario").strip()
-                            fecha_chat = str(entrada_chat.get("timestamp") or "")
-                            es_sistema_chat = usuario_chat.casefold() == "sistema"
-
-                            if es_sistema_chat and mensaje_chat.lower().startswith("sistema:"):
-                                mensaje_chat = mensaje_chat.split(":", 1)[1].strip()
-
-                            with st.container(border=True):
-                                st.markdown(
-                                    "**SISTEMA**" if es_sistema_chat
-                                    else f"**{html.escape(usuario_chat)}**"
-                                )
-                                st.write(mensaje_chat or "(Mensaje vacío)")
-                                if fecha_chat:
-                                    st.caption(fecha_chat)
-                except Exception as chat_exc:
-                    st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
-
-                enviar_chat = False
-                comentario_chat = ""
-                if not solo_lectura_pases:
-                    clave_form_chat = f"form_chat_modal_pase_{folio_chat}"
-
-                    with st.form(key=clave_form_chat, clear_on_submit=True):
-                        comentario_chat = st.text_area(
-                            "Enviar mensaje",
-                            placeholder="Escribe un comentario sobre este pase...",
-                            height=85,
-                            key=f"texto_chat_modal_pase_{folio_chat}",
-                        )
-                        enviar_chat = st.form_submit_button(
-                            "Enviar mensaje",
-                            use_container_width=True,
-                        )
+                # ==========================================
+                # FILTER PARTES BASED ON TIPO
+                # ==========================================
+                if tipo_seleccionado != "Selecciona tipo":
+                    catalogo_filtrado = catalogo[
+                        catalogo["Tipo"] == tipo_seleccionado
+                    ]
                 else:
-                    st.caption("Modo de solo lectura: puedes consultar el historial, pero no enviar mensajes.")
+                    catalogo_filtrado = catalogo
 
-                if enviar_chat:
-                    comentario_limpio = str(comentario_chat or "").strip()
-                    if not comentario_limpio:
-                        st.warning("Escribe un mensaje antes de enviarlo.")
-                    else:
-                        usuario_chat = (
+                partes_opciones = (
+                    catalogo_filtrado["Parte"]
+                    .dropna()
+                    .astype(str)
+                    .tolist()
+                )
+
+                tipo_elegido = tipo_seleccionado != "Selecciona tipo"
+
+                st.session_state.refaccion_seleccionada = st.selectbox(
+                    "Refacción / Servicio",
+                    options=partes_opciones if tipo_elegido else [],
+                    index=None,
+                    disabled=(not editable_servicios or not tipo_elegido)
+                )
+
+            else:
+                st.info("Catálogo no disponible para esta empresa.")
+
+            # =====================================================
+            # ADD ITEM
+            # =====================================================
+            if st.button(
+                "Agregar refacción",
+                disabled=not editable_servicios or not st.session_state.refaccion_seleccionada
+            ):
+
+                parte_seleccionada = st.session_state.refaccion_seleccionada
+
+                fila = catalogo[
+                    catalogo["Parte"] == parte_seleccionada
+                ].iloc[0]
+
+                if fila["Parte"] not in st.session_state.servicios_df["Parte"].values:
+
+                    nueva = {
+                        "Parte": fila["Parte"],
+                        "Tipo De Parte": fila["Tipo"],
+                        "Posicion": "",
+                        "Cantidad": 1,
+                    }
+
+                    st.session_state.servicios_df = pd.concat(
+                        [st.session_state.servicios_df, pd.DataFrame([nueva])],
+                        ignore_index=True
+                    )
+
+            # =====================================================
+            # EDITOR
+            # =====================================================
+            column_config = {
+                "Parte": st.column_config.TextColumn(required=False),
+                "Tipo De Parte": st.column_config.TextColumn(required=False),
+                "Posicion": st.column_config.TextColumn(),
+                "Cantidad": st.column_config.NumberColumn(min_value=1, step=1),
+            }
+
+            edited_df = st.data_editor(
+                st.session_state.servicios_df,
+                num_rows="dynamic",
+                hide_index=True,
+                disabled=(not editable_servicios) or solo_lectura_pases,
+                column_config=column_config,
+            )
+            
+            # =====================================================
+            # CHATLOG DEL PASE (solo en el modal de Tab 1)
+            # =====================================================
+            st.divider()
+            st.subheader("💬 Historial de seguimiento")
+
+            folio_chat = clean(r.get("NoFolio", r.get("No. de Folio", "")))
+            try:
+                entradas_chat = cargar_chatlog_folio(folio_chat)
+                if not entradas_chat:
+                    st.info("Este pase todavía no tiene mensajes.")
+                else:
+                    for idx_chat, entrada_chat in enumerate(entradas_chat):
+                        if not isinstance(entrada_chat, dict):
+                            with st.container(border=True):
+                                st.write(str(entrada_chat))
+                            continue
+
+                        mensaje_chat = str(entrada_chat.get("message") or "").strip()
+                        usuario_chat = str(entrada_chat.get("user") or "Usuario").strip()
+                        fecha_chat = str(entrada_chat.get("timestamp") or "")
+                        es_sistema_chat = usuario_chat.casefold() == "sistema"
+
+                        if es_sistema_chat and mensaje_chat.lower().startswith("sistema:"):
+                            mensaje_chat = mensaje_chat.split(":", 1)[1].strip()
+
+                        with st.container(border=True):
+                            st.markdown(
+                                "**SISTEMA**" if es_sistema_chat
+                                else f"**{html.escape(usuario_chat)}**"
+                            )
+                            st.write(mensaje_chat or "(Mensaje vacío)")
+                            if fecha_chat:
+                                st.caption(fecha_chat)
+            except Exception as chat_exc:
+                st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
+
+            enviar_chat = False
+            comentario_chat = ""
+            if not solo_lectura_pases:
+                clave_form_chat = f"form_chat_modal_pase_{folio_chat}"
+
+                with st.form(key=clave_form_chat, clear_on_submit=True):
+                    comentario_chat = st.text_area(
+                        "Enviar mensaje",
+                        placeholder="Escribe un comentario sobre este pase...",
+                        height=85,
+                        key=f"texto_chat_modal_pase_{folio_chat}",
+                    )
+                    enviar_chat = st.form_submit_button(
+                        "Enviar mensaje",
+                        use_container_width=True,
+                    )
+            else:
+                st.caption("Modo de solo lectura: puedes consultar el historial, pero no enviar mensajes.")
+
+            if enviar_chat:
+                comentario_limpio = str(comentario_chat or "").strip()
+                if not comentario_limpio:
+                    st.warning("Escribe un mensaje antes de enviarlo.")
+                else:
+                    usuario_chat = (
+                        st.session_state.user.get("name")
+                        or st.session_state.user.get("email")
+                        or "Usuario"
+                    )
+                    try:
+                        registrar_mensaje_chatlog(
+                            folio_chat,
+                            comentario_limpio,
+                            usuario_chat,
+                        )
+                        st.success("Mensaje enviado.")
+                        st.rerun(scope="fragment")
+                    except Exception as chat_exc:
+                        st.error(f"No fue posible enviar el mensaje: {chat_exc}")
+
+            # =====================================================
+            # METRIC
+            # =====================================================
+            st.divider()
+
+            estado_actual = r["Estado"]
+            es_abierta = estado_actual in [
+                "Inicio / Nuevo",
+                "En Curso / Proceso"
+            ]
+
+            # =====================================================
+            # OPEN ORDERS
+            # =====================================================
+            if es_abierta and can_edit_pases:
+
+                c1, c2, c3 = st.columns(3)
+
+                # =================================
+                # CANCELAR ORDEN
+                # =================================
+                with c1:
+
+                    if st.button(
+                        "Cancelar Orden",
+                        use_container_width=True
+                    ):
+
+                        usuario = (
                             st.session_state.user.get("name")
                             or st.session_state.user.get("email")
-                            or "Usuario"
                         )
-                        try:
-                            registrar_mensaje_chatlog(
-                                folio_chat,
-                                comentario_limpio,
-                                usuario_chat,
-                            )
-                            st.success("Mensaje enviado.")
-                            st.rerun(scope="fragment")
-                        except Exception as chat_exc:
-                            st.error(f"No fue posible enviar el mensaje: {chat_exc}")
 
-                # =====================================================
-                # METRIC
-                # =====================================================
-                st.divider()
+                        actualizar_estado_pase(
+                            r["Empresa"],
+                            r["NoFolio"],
+                            "Cerrado / Cancelado"
+                        )
 
-                estado_actual = r["Estado"]
-                es_abierta = estado_actual in [
-                    "Inicio / Nuevo",
-                    "En Curso / Proceso"
-                ]
+                        registrar_cambio_log(
+                            usuario=usuario,
+                            empresa=r["Empresa"],
+                            folio=r["NoFolio"],
+                            tipo_cambio="Cancelación de Orden",
+                            estado_anterior=r["Estado"],
+                            estado_nuevo="Cerrado / Cancelado",
+                            oste_anterior=clean(r.get("Oste")),
+                            oste_nuevo=clean(r.get("Oste"))
+                        )
 
-                # =====================================================
-                # OPEN ORDERS
-                # =====================================================
-                if es_abierta and can_edit_pases:
+                        registrar_cambio_estado_sin_servicios(
+                            r["NoFolio"],
+                            usuario,
+                            "Cerrado / Cancelado"
+                        )
 
-                    c1, c2, c3 = st.columns(3)
+                        refresh_cached_data()
+                        st.session_state.modal_reporte = None
+                        st.rerun()
 
-                    # =================================
-                    # CANCELAR ORDEN
-                    # =================================
-                    with c1:
+                # =================================
+                # GUARDAR CAMBIOS
+                # =================================
+                with c2:
 
-                        if st.button(
-                            "Cancelar Orden",
-                            use_container_width=True
-                        ):
+                    if st.button(
+                        "Guardar Cambios",
+                        type="primary",
+                        use_container_width=True
+                    ):
 
-                            usuario = (
-                                st.session_state.user.get("name")
-                                or st.session_state.user.get("email")
-                            )
+                        usuario = (
+                            st.session_state.user.get("name")
+                            or st.session_state.user.get("email")
+                        )
 
-                            actualizar_estado_pase(
+                        # =================================
+                        # UPDATE DESCRIPCION
+                        # =================================
+                        descripcion_original = descripcion_actual or ""
+                        descripcion_nueva = descripcion_editada or ""
+
+                        if descripcion_nueva.strip() != descripcion_original.strip():
+
+                            actualizar_descripcion_pase(
                                 r["Empresa"],
                                 r["NoFolio"],
-                                "Cerrado / Cancelado"
+                                descripcion_nueva.strip()
                             )
 
                             registrar_cambio_log(
                                 usuario=usuario,
                                 empresa=r["Empresa"],
                                 folio=r["NoFolio"],
-                                tipo_cambio="Cancelación de Orden",
+                                tipo_cambio="Edición Descripción",
                                 estado_anterior=r["Estado"],
-                                estado_nuevo="Cerrado / Cancelado",
+                                estado_nuevo=r["Estado"],
+                                comentario="Descripción modificada"
+                            )
+
+                        estado_actual = r["Estado"]
+
+                        if nuevo_estado != estado_actual:
+
+                            actualizar_estado_pase(
+                                r["Empresa"],
+                                r["NoFolio"],
+                                nuevo_estado
+                            )
+
+                            registrar_cambio_log(
+                                usuario=usuario,
+                                empresa=r["Empresa"],
+                                folio=r["NoFolio"],
+                                tipo_cambio="Cambio Estado",
+                                estado_anterior=estado_actual,
+                                estado_nuevo=nuevo_estado,
                                 oste_anterior=clean(r.get("Oste")),
                                 oste_nuevo=clean(r.get("Oste"))
                             )
 
+                        if "interno" not in tipo_proveedor:
+                            if oste_val.strip() != clean(r.get("Oste")):
+
+                                oste_anterior = clean(r.get("Oste"))
+                                oste_nuevo = clean(oste_val)
+
+                                actualizar_oste_pase(
+                                    r["Empresa"],
+                                    r["NoFolio"],
+                                    oste_nuevo
+                                )
+
+                                registrar_cambio_log(
+                                    usuario=usuario,
+                                    empresa=r["Empresa"],
+                                    folio=r["NoFolio"],
+                                    tipo_cambio="Actualización OSTE",
+                                    estado_anterior=nuevo_estado,
+                                    estado_nuevo=nuevo_estado,
+                                    oste_anterior=oste_anterior,
+                                    oste_nuevo=oste_nuevo
+                                )
+
+                        # =================================
+                        # UPDATE NO. REPORTE
+                        # =================================
+                        reporte_original = clean(
+                            r.get("No. de Reporte", "")
+                        )
+
+                        try:
+                            reporte_original = str(int(float(reporte_original))) if reporte_original else ""
+                        except:
+                            reporte_original = str(reporte_original).strip()
+
+                        reporte_nuevo = clean(reporte_editado)
+
+                        try:
+                            reporte_nuevo = str(int(float(reporte_nuevo))) if reporte_nuevo else ""
+                        except:
+                            reporte_nuevo = str(reporte_nuevo).strip()
+
+                        if reporte_nuevo != reporte_original:
+
+                            actualizar_no_reporte_pase(
+                                r["Empresa"],
+                                r["NoFolio"],
+                                reporte_nuevo
+                            )
+
+                            registrar_cambio_log(
+                                usuario=usuario,
+                                empresa=r["Empresa"],
+                                folio=r["NoFolio"],
+                                tipo_cambio="Actualización No. de Reporte",
+                                estado_anterior=r["Estado"],
+                                estado_nuevo=r["Estado"],
+                                comentario=f"No. de Reporte actualizado: {reporte_original} → {reporte_nuevo}"
+                            )
+
+                        # =================================
+                        # CREATE MILESTONE
+                        # =================================
+                        df_serv = st.session_state.servicios_df
+
+                        sin_partes = (
+                            df_serv.empty
+                            or "Parte" not in df_serv.columns
+                            or df_serv["Parte"].astype(str).str.strip().eq("").all()
+                        )
+
+                        if sin_partes:
                             registrar_cambio_estado_sin_servicios(
                                 r["NoFolio"],
                                 usuario,
-                                "Cerrado / Cancelado"
-                            )
-
-                            refresh_cached_data()
-                            st.session_state.modal_reporte = None
-                            st.rerun()
-
-                    # =================================
-                    # GUARDAR CAMBIOS
-                    # =================================
-                    with c2:
-
-                        if st.button(
-                            "Guardar Cambios",
-                            type="primary",
-                            use_container_width=True
-                        ):
-
-                            usuario = (
-                                st.session_state.user.get("name")
-                                or st.session_state.user.get("email")
-                            )
-
-                            # =================================
-                            # UPDATE DESCRIPCION
-                            # =================================
-                            descripcion_original = descripcion_actual or ""
-                            descripcion_nueva = descripcion_editada or ""
-
-                            if descripcion_nueva.strip() != descripcion_original.strip():
-
-                                actualizar_descripcion_pase(
-                                    r["Empresa"],
-                                    r["NoFolio"],
-                                    descripcion_nueva.strip()
-                                )
-
-                                registrar_cambio_log(
-                                    usuario=usuario,
-                                    empresa=r["Empresa"],
-                                    folio=r["NoFolio"],
-                                    tipo_cambio="Edición Descripción",
-                                    estado_anterior=r["Estado"],
-                                    estado_nuevo=r["Estado"],
-                                    comentario="Descripción modificada"
-                                )
-
-                            estado_actual = r["Estado"]
-
-                            if nuevo_estado != estado_actual:
-
-                                actualizar_estado_pase(
-                                    r["Empresa"],
-                                    r["NoFolio"],
-                                    nuevo_estado
-                                )
-
-                                registrar_cambio_log(
-                                    usuario=usuario,
-                                    empresa=r["Empresa"],
-                                    folio=r["NoFolio"],
-                                    tipo_cambio="Cambio Estado",
-                                    estado_anterior=estado_actual,
-                                    estado_nuevo=nuevo_estado,
-                                    oste_anterior=clean(r.get("Oste")),
-                                    oste_nuevo=clean(r.get("Oste"))
-                                )
-
-                            if "interno" not in tipo_proveedor:
-                                if oste_val.strip() != clean(r.get("Oste")):
-
-                                    oste_anterior = clean(r.get("Oste"))
-                                    oste_nuevo = clean(oste_val)
-
-                                    actualizar_oste_pase(
-                                        r["Empresa"],
-                                        r["NoFolio"],
-                                        oste_nuevo
-                                    )
-
-                                    registrar_cambio_log(
-                                        usuario=usuario,
-                                        empresa=r["Empresa"],
-                                        folio=r["NoFolio"],
-                                        tipo_cambio="Actualización OSTE",
-                                        estado_anterior=nuevo_estado,
-                                        estado_nuevo=nuevo_estado,
-                                        oste_anterior=oste_anterior,
-                                        oste_nuevo=oste_nuevo
-                                    )
-
-                            # =================================
-                            # UPDATE NO. REPORTE
-                            # =================================
-                            reporte_original = clean(
-                                r.get("No. de Reporte", "")
-                            )
-
-                            try:
-                                reporte_original = str(int(float(reporte_original))) if reporte_original else ""
-                            except:
-                                reporte_original = str(reporte_original).strip()
-
-                            reporte_nuevo = clean(reporte_editado)
-
-                            try:
-                                reporte_nuevo = str(int(float(reporte_nuevo))) if reporte_nuevo else ""
-                            except:
-                                reporte_nuevo = str(reporte_nuevo).strip()
-
-                            if reporte_nuevo != reporte_original:
-
-                                actualizar_no_reporte_pase(
-                                    r["Empresa"],
-                                    r["NoFolio"],
-                                    reporte_nuevo
-                                )
-
-                                registrar_cambio_log(
-                                    usuario=usuario,
-                                    empresa=r["Empresa"],
-                                    folio=r["NoFolio"],
-                                    tipo_cambio="Actualización No. de Reporte",
-                                    estado_anterior=r["Estado"],
-                                    estado_nuevo=r["Estado"],
-                                    comentario=f"No. de Reporte actualizado: {reporte_original} → {reporte_nuevo}"
-                                )
-
-                            # =================================
-                            # CREATE MILESTONE
-                            # =================================
-                            df_serv = st.session_state.servicios_df
-
-                            sin_partes = (
-                                df_serv.empty
-                                or "Parte" not in df_serv.columns
-                                or df_serv["Parte"].astype(str).str.strip().eq("").all()
-                            )
-
-                            if sin_partes:
-                                registrar_cambio_estado_sin_servicios(
-                                    r["NoFolio"],
-                                    usuario,
-                                    nuevo_estado
-                                )
-
-                            df_final = edited_df.copy()
-
-                            if "Tipo De Parte" in df_final.columns:
-                                df_final["Tipo De Parte"] = (
-                                    df_final["Tipo De Parte"]
-                                    .fillna("")
-                                    .astype(str)
-                                    .str.strip()
-                                )
-
-                                df_final.loc[
-                                    df_final["Tipo De Parte"] == "",
-                                    "Tipo De Parte"
-                                ] = "Mano de Obra"
-
-                            if "Parte" in df_final.columns:
-                                df_final["Parte"] = (
-                                    df_final["Parte"]
-                                    .fillna("")
-                                    .astype(str)
-                                    .str.strip()
-                                )
-
-                            st.session_state.servicios_df = df_final
-
-                            guardar_servicios_refacciones(
-                                r["NoFolio"],
-                                usuario,
-                                st.session_state.servicios_df,
                                 nuevo_estado
                             )
 
-                            refresh_cached_data()
-                            st.session_state.modal_reporte = None
-                            st.rerun()
+                        df_final = edited_df.copy()
 
-                    # =================================
-                    # CERRAR
-                    # =================================
-                    with c3:
-
-                        if st.button(
-                            "Cerrar Ventana",
-                            use_container_width=True
-                        ):
-                            st.session_state.modal_reporte = None
-                            st.rerun()
-
-                # =====================================================
-                # CLOSED ORDERS
-                # =====================================================
-                else:
-
-                    c1, c2 = st.columns(2)
-
-                    with c1:
-
-                        if (
-                            (is_admin or is_manager)
-                            and st.button(
-                                "🔓 Re-Abrir",
-                                use_container_width=True
+                        if "Tipo De Parte" in df_final.columns:
+                            df_final["Tipo De Parte"] = (
+                                df_final["Tipo De Parte"]
+                                .fillna("")
+                                .astype(str)
+                                .str.strip()
                             )
-                        ):
-                            st.session_state.modal_reabrir = r
-                            st.rerun()
 
-                    with c2:
+                            df_final.loc[
+                                df_final["Tipo De Parte"] == "",
+                                "Tipo De Parte"
+                            ] = "Mano de Obra"
 
-                        if st.button(
-                            "Cerrar Ventana",
+                        if "Parte" in df_final.columns:
+                            df_final["Parte"] = (
+                                df_final["Parte"]
+                                .fillna("")
+                                .astype(str)
+                                .str.strip()
+                            )
+
+                        st.session_state.servicios_df = df_final
+
+                        guardar_servicios_refacciones(
+                            r["NoFolio"],
+                            usuario,
+                            st.session_state.servicios_df,
+                            nuevo_estado
+                        )
+
+                        refresh_cached_data()
+                        st.session_state.modal_reporte = None
+                        st.rerun()
+
+                # =================================
+                # CERRAR
+                # =================================
+                with c3:
+
+                    if st.button(
+                        "Cerrar Ventana",
+                        use_container_width=True
+                    ):
+                        st.session_state.modal_reporte = None
+                        st.rerun()
+
+            # =====================================================
+            # CLOSED ORDERS
+            # =====================================================
+            else:
+
+                c1, c2 = st.columns(2)
+
+                with c1:
+
+                    if (
+                        (is_admin or is_manager)
+                        and st.button(
+                            "🔓 Re-Abrir",
                             use_container_width=True
-                        ):
-                            st.session_state.modal_reporte = None
-                            st.rerun()
+                        )
+                    ):
+                        st.session_state.modal_reabrir = r
+                        st.rerun()
 
-            modal()
-            st.session_state.modal_reporte = None
+                with c2:
+
+                    if st.button(
+                        "Cerrar Ventana",
+                        use_container_width=True
+                    ):
+                        st.session_state.modal_reporte = None
+                        st.rerun()
+
+        modal()
+        st.session_state.modal_reporte = None
 
 # =================================
 # TAB 2 GESTION DE VIATICOS
 # =================================
-if has_viaticos:
-    with tab_viaticos:
+if has_viaticos and show_viaticos_module:
 
-        if "gestion_viaticos" not in user_access:
+    if "gestion_viaticos" not in user_access:
 
-            st.info("No tienes permisos para acceder a este módulo.")
+        st.info("No tienes permisos para acceder a este módulo.")
 
-        else:
+    else:
 
-            st.title("💳 Gestión de Viáticos")
+        st.title("💳 Gestión de Viáticos")
 
-            # =================================
-            # RESEND CONFIG
-            # =================================
+        # =================================
+        # RESEND CONFIG
+        # =================================
 
-            resend.api_key = (
-                st.secrets["RESEND_API_KEY"]
-            )
+        resend.api_key = (
+            st.secrets["RESEND_API_KEY"]
+        )
 
-            # =================================
-            # USER DATA
-            # =================================
-            user = st.session_state.user
+        # =================================
+        # USER DATA
+        # =================================
+        user = st.session_state.user
 
-            nombre_usuario = (
-                user.get("name")
-                or user.get("email")
-                or ""
-            )
+        nombre_usuario = (
+            user.get("name")
+            or user.get("email")
+            or ""
+        )
 
-            email_usuario = (
-                user.get("email")
-                or ""
-            )
+        email_usuario = (
+            user.get("email")
+            or ""
+        )
 
-            # =================================
-            # AUDIT
-            # =================================
+        # =================================
+        # AUDIT
+        # =================================
 
-            def log_activity(action, page):
+        def log_activity(action, page):
 
-                try:
+            try:
 
-                    supabase.table("user_activity_log").insert({
+                supabase.table("user_activity_log").insert({
 
-                        "user_id": user.get("id"),
-                        "user_name": user.get("name"),
-                        "login_counter": st.session_state.get("login_counter"),
-                        "action": action,
-                        "page": page,
+                    "user_id": user.get("id"),
+                    "user_name": user.get("name"),
+                    "login_counter": st.session_state.get("login_counter"),
+                    "action": action,
+                    "page": page,
 
-                    }).execute()
+                }).execute()
 
-                except Exception as e:
-                    print(e)
+            except Exception as e:
+                print(e)
 
-            # =================================
-            # EMAIL CONFIG - SUPABASE
-            # =================================
+        # =================================
+        # EMAIL CONFIG - SUPABASE
+        # =================================
 
-            EMAIL_TEST_MODE = False
-            EMAIL_TEST_RECIPIENT = (
-                "aldo.sanchez@palosgarzalogistics.com"
-            )
+        EMAIL_TEST_MODE = False
+        EMAIL_TEST_RECIPIENT = (
+            "aldo.sanchez@palosgarzalogistics.com"
+        )
 
-            def obtener_destinatarios(empresa):
-                """
-                Obtiene los destinatarios desde lista_correo_viaticos.
+        def obtener_destinatarios(empresa):
+            """
+            Obtiene los destinatarios desde lista_correo_viaticos.
 
-                Reglas:
-                - Usa exactamente el valor de empresa recibido.
-                - Incluye siempre los registros cuya empresa sea "TODAS".
-                - No usa aliases ni listas hardcodeadas.
-                - Elimina correos duplicados.
-                """
+            Reglas:
+            - Usa exactamente el valor de empresa recibido.
+            - Incluye siempre los registros cuya empresa sea "TODAS".
+            - No usa aliases ni listas hardcodeadas.
+            - Elimina correos duplicados.
+            """
 
-                if EMAIL_TEST_MODE:
-                    return [EMAIL_TEST_RECIPIENT]
+            if EMAIL_TEST_MODE:
+                return [EMAIL_TEST_RECIPIENT]
 
-                empresa_normalizada = str(
-                    empresa or ""
-                ).strip().upper()
+            empresa_normalizada = str(
+                empresa or ""
+            ).strip().upper()
 
-                if not empresa_normalizada:
-                    return []
+            if not empresa_normalizada:
+                return []
 
-                try:
-                    response = (
-                        supabase
-                        .table("lista_correo_viaticos")
-                        .select("email, empresa")
-                        .in_(
-                            "empresa",
-                            [
-                                empresa_normalizada,
-                                "TODAS"
-                            ]
-                        )
-                        .execute()
+            try:
+                response = (
+                    supabase
+                    .table("lista_correo_viaticos")
+                    .select("email, empresa")
+                    .in_(
+                        "empresa",
+                        [
+                            empresa_normalizada,
+                            "TODAS"
+                        ]
                     )
-
-                    destinatarios = []
-
-                    for row in response.data or []:
-                        email = str(
-                            row.get("email") or ""
-                        ).strip()
-
-                        if email:
-                            destinatarios.append(email)
-
-                    return list(
-                        dict.fromkeys(destinatarios)
-                    )
-
-                except Exception as e:
-                    st.warning(
-                        "No se pudo consultar la lista de correo "
-                        f"de viáticos: {e}"
-                    )
-                    return []
-
-            # =================================
-            # GET EMAIL FROM PROFILE
-            # =================================
-
-            def obtener_email_usuario(nombre_completo):
-
-                valor = str(nombre_completo or "").strip()
-
-                # If the value is already an email, use it directly.
-                if "@" in valor:
-                    return valor
-
-                try:
-                    response = (
-                        supabase
-                        .table("profiles")
-                        .select("email")
-                        .eq("full_name", valor)
-                        .limit(1)
-                        .execute()
-                    )
-
-                    if response.data and len(response.data) > 0:
-                        email = response.data[0].get("email")
-                        if email:
-                            return email
-
-                    # Stored employee names can differ only by capitalization or
-                    # surrounding whitespace. Resolve the same stored identity
-                    # without using the current UI/user session.
-                    response = (
-                        supabase
-                        .table("profiles")
-                        .select("email")
-                        .ilike("full_name", valor)
-                        .limit(1)
-                        .execute()
-                    )
-
-                    if response.data and len(response.data) > 0:
-                        email = response.data[0].get("email")
-                        if email:
-                            return email
-
-                except Exception as e:
-                    st.warning(f"Error obteniendo email: {e}")
-
-                return None
-
-            # =================================
-            # BUILD EMAIL RECIPIENTS
-            # =================================
-
-            def construir_destinatarios(
-                empresa,
-                email_usuario_actual,
-                correo_creador=None
-            ):
-
-                if EMAIL_TEST_MODE:
-                    return [EMAIL_TEST_RECIPIENT]
+                    .execute()
+                )
 
                 destinatarios = []
 
-                # =================================
-                # CREATOR EMAIL
-                # The creator is included, but the currently
-                # logged-in user is NOT automatically included.
-                # =================================
+                for row in response.data or []:
+                    email = str(
+                        row.get("email") or ""
+                    ).strip()
 
-                if (
+                    if email:
+                        destinatarios.append(email)
+
+                return list(
+                    dict.fromkeys(destinatarios)
+                )
+
+            except Exception as e:
+                st.warning(
+                    "No se pudo consultar la lista de correo "
+                    f"de viáticos: {e}"
+                )
+                return []
+
+        # =================================
+        # GET EMAIL FROM PROFILE
+        # =================================
+
+        def obtener_email_usuario(nombre_completo):
+
+            valor = str(nombre_completo or "").strip()
+
+            # If the value is already an email, use it directly.
+            if "@" in valor:
+                return valor
+
+            try:
+                response = (
+                    supabase
+                    .table("profiles")
+                    .select("email")
+                    .eq("full_name", valor)
+                    .limit(1)
+                    .execute()
+                )
+
+                if response.data and len(response.data) > 0:
+                    email = response.data[0].get("email")
+                    if email:
+                        return email
+
+                # Stored employee names can differ only by capitalization or
+                # surrounding whitespace. Resolve the same stored identity
+                # without using the current UI/user session.
+                response = (
+                    supabase
+                    .table("profiles")
+                    .select("email")
+                    .ilike("full_name", valor)
+                    .limit(1)
+                    .execute()
+                )
+
+                if response.data and len(response.data) > 0:
+                    email = response.data[0].get("email")
+                    if email:
+                        return email
+
+            except Exception as e:
+                st.warning(f"Error obteniendo email: {e}")
+
+            return None
+
+        # =================================
+        # BUILD EMAIL RECIPIENTS
+        # =================================
+
+        def construir_destinatarios(
+            empresa,
+            email_usuario_actual,
+            correo_creador=None
+        ):
+
+            if EMAIL_TEST_MODE:
+                return [EMAIL_TEST_RECIPIENT]
+
+            destinatarios = []
+
+            # =================================
+            # CREATOR EMAIL
+            # The creator is included, but the currently
+            # logged-in user is NOT automatically included.
+            # =================================
+
+            if (
+                correo_creador
+                and correo_creador not in destinatarios
+            ):
+                destinatarios.append(
                     correo_creador
-                    and correo_creador not in destinatarios
-                ):
-                    destinatarios.append(
-                        correo_creador
-                    )
-
-                # =================================
-                # SUPABASE EMAIL ROUTING
-                # =================================
-
-                for correo in obtener_destinatarios(empresa):
-
-                    if correo not in destinatarios:
-                        destinatarios.append(correo)
-
-                return destinatarios
-
-            # =================================
-            # EMAIL APROBACION / RECHAZO
-            # =================================
-
-            def enviar_correo_estatus_solicitud(
-
-                destinatarios,
-                folio_solicitud,
-                estatus,
-                empleado="",
-                empresa_servicio="",
-                fecha_solicitud="",
-                fecha_comprobacion="",
-                fecha_inicio="",
-                fecha_fin="",
-                empresa_cargo="",
-                unidad_negocio="",
-                sucursal="",
-                sucursal_especificar="",
-                nombre_cliente="",
-                folio_sac="",
-                motivo_viaje="",
-                observaciones="",
-                conceptos=None,
-                conceptos_comprobacion=None,
-                total_estimado=0,
-                total_estimado_usd=0,
-                folio_comprobacion="",
-                empleado_comprobacion="",
-                observaciones_comprobacion="",
-                total_comprobado=0,
-                total_comprobado_usd=0
-
-            ):
-
-                if conceptos is None:
-                    conceptos = []
-
-                if conceptos_comprobacion is None:
-                    conceptos_comprobacion = []
-
-                total_aprobado_mxn = 0.0
-                total_aprobado_usd = 0.0
-
-                conceptos_html = ""
-
-                for item in conceptos:
-
-                    tipo = item.get("Tipo", "")
-
-                    descripcion = item.get(
-                        "Descripcion",
-                        ""
-                    )
-
-                    try:
-                        monto = float(
-                            item.get(
-                                "Monto",
-                                0
-                            ) or 0
-                        )
-                    except Exception:
-                        monto = 0.0
-
-                    moneda = str(
-                        item.get(
-                            "Moneda",
-                            item.get("Tipo Cambio", "MXP")
-                        ) or "MXP"
-                    )
-
-                    tipo_cambio = item.get(
-                        "Tipo Cambio",
-                        ""
-                    )
-
-                    aprobado = str(
-                        item.get(
-                            "Aprobado",
-                            "Si"
-                        )
-                    )
-
-                    razon = item.get(
-                        "Razon",
-                        ""
-                    )
-
-                    aprobado_texto = (
-                        "🟢 APROBADO"
-                        if aprobado in [
-                            "Si",
-                            "🟢 Si"
-                        ]
-                        else "🔴 RECHAZADO"
-                    )
-
-                    if aprobado in [
-                        "Si",
-                        "🟢 Si"
-                    ]:
-                        if moneda.upper() in ["USD", "US$", "DÓLARES", "DOLARES"]:
-                            total_aprobado_usd += monto
-                        else:
-                            total_aprobado_mxn += monto
-
-                    conceptos_html += f"""
-
-                    <tr>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {tipo}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {descripcion}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {monto:,.2f}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {moneda}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {tipo_cambio}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;font-weight:700;">
-                            {aprobado_texto}
-                        </td>
-
-                        <td style="border:1px solid #ccc;padding:8px;">
-                            {razon}
-                        </td>
-
-                    </tr>
-                    """
-
-                comprobacion_html = ""
-
-                if conceptos_comprobacion:
-                    comprobacion_rows = ""
-
-                    for item in conceptos_comprobacion:
-                        tipo = html.escape(str(item.get("Tipo", "") or ""))
-                        descripcion = html.escape(str(item.get("Descripcion", "") or ""))
-                        fecha_factura = html.escape(str(item.get("Fecha Factura", "") or ""))
-                        folio = html.escape(str(item.get("Folio", "") or ""))
-                        proveedor = html.escape(str(item.get("Proveedor", "") or ""))
-                        moneda = html.escape(str(item.get("Moneda", "") or ""))
-                        comprobante = html.escape(str(item.get("Comprobante", "") or ""))
-                        aplica_iva = html.escape(str(item.get("Aplica IVA", "") or ""))
-                        iva_pct = html.escape(str(item.get("IVA %", "") or ""))
-                        aplica_retencion = html.escape(str(item.get("Aplica Retencion", "") or ""))
-
-                        try:
-                            monto = f"{float(item.get('Monto', 0) or 0):,.2f}"
-                        except Exception:
-                            monto = str(item.get("Monto", "") or "")
-
-                        try:
-                            impuesto_acreditable = f"{float(item.get('Impuesto Acreditable', 0) or 0):,.2f}"
-                        except Exception:
-                            impuesto_acreditable = str(item.get("Impuesto Acreditable", "") or "")
-
-                        try:
-                            total_comprobado_item = f"{float(item.get('Total Comprobado', 0) or 0):,.2f}"
-                        except Exception:
-                            total_comprobado_item = str(item.get("Total Comprobado", "") or "")
-
-                        comprobacion_rows += f"""
-                        <tr>
-                            <td style="border:1px solid #ccc;padding:8px;">{tipo}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{descripcion}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{fecha_factura}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{folio}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{proveedor}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{moneda}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{monto}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{comprobante}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{aplica_iva}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{iva_pct}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{aplica_retencion}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{impuesto_acreditable}</td>
-                            <td style="border:1px solid #ccc;padding:8px;">{total_comprobado_item}</td>
-                        </tr>
-                        """
-
-                    comprobacion_html = f"""
-                    <h3 style="color:#151F6D;margin-top:24px;">🧾 Conceptos de la Comprobación</h3>
-
-                    <table style="width:100%;border-collapse:collapse;">
-                        <tr style="background:#151F6D;color:white;">
-                            <th style="padding:10px;">Tipo</th>
-                            <th style="padding:10px;">Descripción</th>
-                            <th style="padding:10px;">Fecha Factura</th>
-                            <th style="padding:10px;">Folio</th>
-                            <th style="padding:10px;">Proveedor</th>
-                            <th style="padding:10px;">Moneda</th>
-                            <th style="padding:10px;">Monto</th>
-                            <th style="padding:10px;">Comprobante</th>
-                            <th style="padding:10px;">Aplica IVA</th>
-                            <th style="padding:10px;">IVA %</th>
-                            <th style="padding:10px;">Aplica Retención</th>
-                            <th style="padding:10px;">Impuesto Acreditable</th>
-                            <th style="padding:10px;">Total Comprobado</th>
-                        </tr>
-                        {comprobacion_rows}
-                    </table>
-                    """
-
-                if estatus in ["Aprobado", "Concluido"]:
-                    color_estatus = "#10B981"
-                elif estatus == "Rechazado":
-                    color_estatus = "#EF4444"
-                else:
-                    color_estatus = "#38BDF8"
-
-                folio_comprobacion_display = (
-                    folio_comprobacion
-                    if str(folio_comprobacion).strip()
-                    else "Pendiente de comprobación"
-                )
-
-                fecha_comprobacion_display = (
-                    fecha_comprobacion
-                    if str(fecha_comprobacion).strip()
-                    else "Pendiente de comprobación"
-                )
-
-                html = f"""
-
-                <div style="
-                    font-family:Arial;
-                    max-width:900px;
-                    margin:auto;
-                    color:#111;
-                ">
-
-                    <h2 style="color:#151F6D;">
-                        Actualización de Solicitud de Viáticos
-                    </h2>
-
-                    <h2 style="color:{color_estatus};">
-                        {estatus}
-                    </h2>
-
-                    <hr>
-
-                    <h3 style="color:#151F6D;">📋 Información General</h3>
-
-                    <table style="width:100%;border-collapse:collapse;">
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Folio Solicitud:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{folio_solicitud}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Folio Comprobación:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{folio_comprobacion_display}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Estatus:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{estatus}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que Solicita:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{empleado}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Solicitud:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{fecha_solicitud}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Comprobación:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{fecha_comprobacion_display}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Inicio:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{fecha_inicio}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Fin:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{fecha_fin}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Empresa que Brinda el Servicio:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{empresa_servicio}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Empresa a Cargo de Gastos:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{empresa_cargo}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Unidad de Negocio:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{unidad_negocio}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{sucursal}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal Especificar:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{sucursal_especificar}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Nombre del Cliente:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{nombre_cliente}</td>
-                        </tr>
-
-                        <tr>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Registro SAC Ventas:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{folio_sac}</td>
-                            <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que metió comprobación:</b></td>
-                            <td style="padding:8px;border:1px solid #ddd;">{empleado_comprobacion}</td>
-                        </tr>
-
-                    </table>
-
-                    <h3 style="color:#151F6D;margin-top:24px;">✈️ Motivo del Viaje</h3>
-                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
-                        {motivo_viaje}
-                    </div>
-
-                    <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Solicitud</h3>
-                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
-                        {observaciones}
-                    </div>
-
-                    <h3 style="color:#151F6D;margin-top:24px;">💰 Conceptos</h3>
-
-                    <table style="width:100%;border-collapse:collapse;">
-
-                        <tr style="background:#151F6D;color:white;">
-                            <th style="padding:10px;">Tipo</th>
-                            <th style="padding:10px;">Descripción</th>
-                            <th style="padding:10px;">Monto</th>
-                            <th style="padding:10px;">Moneda</th>
-                            <th style="padding:10px;">Tipo Cambio</th>
-                            <th style="padding:10px;">Estatus</th>
-                            <th style="padding:10px;">Razón</th>
-                        </tr>
-
-                        {conceptos_html}
-
-                    </table>
-
-                    {comprobacion_html}
-
-                    <h3 style="color:#151F6D;margin-top:24px;">💵 Totales</h3>
-
-                    <p><b>Total Estimado MXP:</b> ${float(total_estimado or 0):,.2f}</p>
-                    <p><b>Total Estimado USD:</b> ${float(total_estimado_usd or 0):,.2f}</p>
-                    <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado MXP:</b> ${total_aprobado_mxn:,.2f}</p>
-                    <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado USD:</b> ${total_aprobado_usd:,.2f}</p>
-
-                    <h3 style="color:#151F6D;margin-top:24px;">🧾 Información de Comprobación</h3>
-                    <p><b>Total Comprobado MXP:</b> ${float(total_comprobado or 0):,.2f}</p>
-                    <p><b>Total Comprobado USD:</b> ${float(total_comprobado_usd or 0):,.2f}</p>
-
-                    <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Comprobación</h3>
-                    <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
-                        {observaciones_comprobacion}
-                    </div>
-
-                </div>
-                """
-
-                if not destinatarios:
-                    raise ValueError(
-                        f"No hay destinatarios configurados para la solicitud {folio_solicitud}."
-                    )
-
-                resend.Emails.send({
-
-                    "from":
-                        "PG Data Analyst <notificaciones@pgdataanalyst.com>",
-
-                    "to":
-                        destinatarios,
-
-                    "cc": ["cristobal.ochoa@set-freight.com"],
-
-                    "subject":
-                        folio_solicitud,
-
-                    "html":
-                        html
-                })
-
-            # =================================
-            # LOAD DATA
-            # =================================
-
-            @st.cache_data(ttl=30)
-            def cargar_solicitudes():
-
-                all_rows = []
-
-                page_size = 1000
-                start = 0
-
-                while True:
-
-                    response = (
-                        supabase
-                        .table("solicitud_viaje")
-                        .select("*")
-                        .order("created_at", desc=True)
-                        .range(
-                            start,
-                            start + page_size - 1
-                        )
-                        .execute()
-                    )
-
-                    data = response.data or []
-
-                    if len(data) == 0:
-                        break
-
-                    all_rows.extend(data)
-
-                    if len(data) < page_size:
-                        break
-
-                    start += page_size
-
-                return pd.DataFrame(all_rows)
-
-
-            @st.cache_data(ttl=30)
-            def cargar_comprobaciones():
-
-                all_rows = []
-
-                page_size = 1000
-                start = 0
-
-                while True:
-
-                    response = (
-                        supabase
-                        .table("comprobacion_viaje")
-                        .select("*")
-                        .order("created_at", desc=True)
-                        .range(
-                            start,
-                            start + page_size - 1
-                        )
-                        .execute()
-                    )
-
-                    data = response.data or []
-
-                    if len(data) == 0:
-                        break
-
-                    all_rows.extend(data)
-
-                    if len(data) < page_size:
-                        break
-
-                    start += page_size
-
-                return pd.DataFrame(all_rows)
-
-
-            df_solicitudes = cargar_solicitudes()
-            df_comprobaciones = cargar_comprobaciones()
-
-            # =================================
-            # EMPTY DATAFRAME SAFETY
-            # =================================
-
-            if df_solicitudes.empty:
-
-                df_solicitudes = pd.DataFrame(columns=[
-
-                    "folio_solicitud",
-                    "estatus",
-                    "nombre_empleado_solicita",
-                    "fecha_solicitud",
-                    "total_estimado",
-                    "created_at"
-                ])
-
-            if df_comprobaciones.empty:
-
-                df_comprobaciones = pd.DataFrame(columns=[
-
-                    "folio_solicitud",
-                    "folio_comprobacion",
-                    "estatus",
-                    "nombre_empleado_solicita",
-                    "conceptos",
-                    "observaciones",
-                    "total_comprobado",
-                    "anticipo_viaje",
-                    "diferencia_cargo_favor",
-                    "created_at"
-                ])
-
-            # =================================
-            # GLOBAL TOAST
-            # =================================
-
-            if "toast_actualizado" in st.session_state:
-
-                st.toast(
-                    st.session_state.toast_actualizado
-                )
-
-                del st.session_state[
-                    "toast_actualizado"
-                ]
-
-            # =================================
-            # KPI VALUES
-            # =================================
-            if "estatus" not in df_solicitudes.columns:
-                df_solicitudes["estatus"] = "Pendiente"
-
-            df_solicitudes["estatus"] = (
-                df_solicitudes["estatus"]
-                .fillna("Pendiente")
-                .astype(str)
-                .str.strip()
-            )
-
-            if "estatus" not in df_comprobaciones.columns:
-                df_comprobaciones["estatus"] = "Pendiente"
-
-            df_comprobaciones["estatus"] = (
-                df_comprobaciones["estatus"]
-                .fillna("Pendiente")
-                .astype(str)
-                .str.strip()
-            )
-
-            # =================================
-            # KPI COUNTS
-            # =================================
-            total_registros = (
-                df_solicitudes["folio_solicitud"]
-                .astype(str)
-                .str.strip()
-                .nunique()
-            )
-
-            # PENDIENTES
-            pendientes = len(
-                df_solicitudes[
-                    df_solicitudes["estatus"] == "Pendiente"
-                ]
-            )
-
-            # AUTORIZADAS
-            autorizados = len(
-                df_solicitudes[
-                    df_solicitudes["estatus"] == "Aprobado"
-                ]
-            )
-
-            # VERIFICANDO
-            verificando = len(
-                df_comprobaciones[
-                    df_comprobaciones["estatus"] == "Verificar"
-                ]
-            )
-
-            # RECHAZADAS
-            rechazados = len(
-                df_solicitudes[
-                    df_solicitudes["estatus"] == "Rechazado"
-                ]
-            )
-
-            # =================================
-            # CONCLUIDOS
-            # =================================
-            concluidos = len(
-                df_solicitudes[
-                    df_solicitudes["estatus"] == "Concluido"
-                ]
-            )
-
-            # =================================
-            # KPI CARDS
-            # =================================
-            kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
-
-            import streamlit.components.v1 as components
-
-            def render_kpi_card(
-                title,
-                value,
-                emoji,
-                color,
-            ):
-
-                html = f"""
-                <div style="padding:6px;">
-                    <div style="
-                        background:#FFF7D6;
-                        padding:20px;
-                        border-radius:18px;
-                        box-shadow:0 4px 10px rgba(0,0,0,.10);
-                        min-height:170px;
-                        color:#111;
-                        font-family:sans-serif;
-                    ">
-
-                        <div style="
-                            color:#666666;
-                            font-size:15px;
-                            font-weight:600;
-                        ">
-                            {emoji} {title}
-                        </div>
-
-                        <div style="
-                            text-align:center;
-                            color:{color};
-                            font-size:58px;
-                            font-weight:800;
-                            margin-top:40px;
-                        ">
-                            {value}
-                        </div>
-
-                    </div>
-                </div>
-                """
-
-                components.html(html, height=240)
-
-            with kpi1:
-
-                render_kpi_card(
-                    "Total",
-                    total_registros,
-                    "📊",
-                    "#BFA75F"
-                )
-
-            with kpi2:
-
-                render_kpi_card(
-                    "Pendientes",
-                    pendientes,
-                    "⏳",
-                    "#F59E0B"
-                )
-
-            with kpi3:
-
-                render_kpi_card(
-                    "Autorizadas",
-                    autorizados,
-                    "✅",
-                    "#10B981"
-                )
-
-            with kpi4:
-
-                render_kpi_card(
-                    "Verificando",
-                    verificando,
-                    "🔎",
-                    "#38BDF8"
-                )
-
-            with kpi5:
-
-                render_kpi_card(
-                    "Rechazadas",
-                    rechazados,
-                    "❌",
-                    "#EF4444"
-                )
-
-            with kpi6:
-
-                render_kpi_card(
-                    "Concluidos",
-                    concluidos,
-                    "🏁",
-                    "#8B5CF6"
-                )
-
-            st.markdown("<br><br>", unsafe_allow_html=True)
-
-            # =================================
-            # PENDIENTES SECTION
-            # =================================
-            st.header("📋 Solicitudes Pendientes")
-
-            # Only pendientes
-            df_pendientes = df_solicitudes[
-                df_solicitudes["estatus"] == "Pendiente"
-            ].copy()
-
-            if df_pendientes.empty:
-                st.info("No hay solicitudes pendientes.")
-
-            # Sort newest first
-            if "created_at" in df_pendientes.columns:
-
-                df_pendientes = df_pendientes.sort_values(
-                    by="created_at",
-                    ascending=False
                 )
 
             # =================================
-            # PAGINATION
+            # SUPABASE EMAIL ROUTING
             # =================================
 
-            ENTRADAS_POR_PAGINA = 5
+            for correo in obtener_destinatarios(empresa):
 
-            total_entries = len(df_pendientes)
+                if correo not in destinatarios:
+                    destinatarios.append(correo)
 
-            total_paginas = max(
-                1,
-                (total_entries + ENTRADAS_POR_PAGINA - 1)
-                // ENTRADAS_POR_PAGINA
-            )
+            return destinatarios
 
-            if "pagina_viaticos" not in st.session_state:
-                st.session_state.pagina_viaticos = 1
+        # =================================
+        # EMAIL APROBACION / RECHAZO
+        # =================================
 
-            pagina_actual = st.session_state.pagina_viaticos
+        def enviar_correo_estatus_solicitud(
 
-            inicio = (
-                (pagina_actual - 1)
-                * ENTRADAS_POR_PAGINA
-            )
+            destinatarios,
+            folio_solicitud,
+            estatus,
+            empleado="",
+            empresa_servicio="",
+            fecha_solicitud="",
+            fecha_comprobacion="",
+            fecha_inicio="",
+            fecha_fin="",
+            empresa_cargo="",
+            unidad_negocio="",
+            sucursal="",
+            sucursal_especificar="",
+            nombre_cliente="",
+            folio_sac="",
+            motivo_viaje="",
+            observaciones="",
+            conceptos=None,
+            conceptos_comprobacion=None,
+            total_estimado=0,
+            total_estimado_usd=0,
+            folio_comprobacion="",
+            empleado_comprobacion="",
+            observaciones_comprobacion="",
+            total_comprobado=0,
+            total_comprobado_usd=0
 
-            fin = inicio + ENTRADAS_POR_PAGINA
+        ):
 
-            df_pagina = df_pendientes.iloc[inicio:fin]
+            if conceptos is None:
+                conceptos = []
 
-            # =================================
-            # MODAL
-            # =================================
-            @st.dialog(
-                "Detalle de Solicitud",
-                width="large",
-                on_dismiss="rerun",
-            )
-            def modal_ver_solicitud(row):
+            if conceptos_comprobacion is None:
+                conceptos_comprobacion = []
 
-                st.markdown(
-                    "<h2 style='color:#151F6D;'>📋 Información General</h2>",
-                    unsafe_allow_html=True
-                )
+            total_aprobado_mxn = 0.0
+            total_aprobado_usd = 0.0
 
-                col1, col2 = st.columns(2)
+            conceptos_html = ""
 
-                with col1:
+            for item in conceptos:
 
-                    st.markdown(
-                        f"<span style='color:black;'><b>Folio:</b> {row.get('folio_solicitud', '')}</span>",
-                        unsafe_allow_html=True
-                    )
+                tipo = item.get("Tipo", "")
 
-                    st.markdown(
-                        f"<span style='color:black;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {row.get('empresa_brinda_servicio', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Empleado Solicita:</b> {row.get('nombre_empleado_solicita', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Fecha Solicitud:</b> {row.get('fecha_solicitud', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Fecha Inicio:</b> {row.get('fecha_inicio', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Fecha Fin:</b> {row.get('fecha_fin', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                with col2:
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {row.get('empresa_cargo_gastos', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Unidad Negocio:</b> {row.get('unidad_negocio', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Sucursal:</b> {row.get('sucursal', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Sucursal Especificar:</b> {row.get('sucursal_especificar', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    label_cliente = (
-                        "Motivo del Viaje"
-                        if str(
-                            row.get(
-                                "motivo_viaje",
-                                ""
-                            )
-                        ).strip().upper() == "OTROS"
-                        else "Nombre del Cliente"
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>{label_cliente}:</b> {row.get('nombre_cliente', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    st.markdown(
-                        f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {row.get('folio_sac', '')}</span>",
-                        unsafe_allow_html=True
-                    )
-
-                # =================================
-                # MOTIVO VIAJE
-                # =================================
-                st.markdown("---")
-
-                st.markdown("## ✈️ Motivo del Viaje")
-
-                st.markdown(
-                    f"""
-                    <div style='
-                        background-color:#F3F4F6;
-                        padding:16px;
-                        border-radius:12px;
-                        border:1px solid rgba(191,167,95,0.25);
-                        margin-bottom:20px;
-                        white-space:pre-wrap;
-                    '>
-                        {row.get('motivo_viaje', '')}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                # =================================
-                # OBSERVACIONES
-                # =================================
-
-                st.markdown(
-                    "<h2 style='color:#151F6D;'>📝 Observaciones</h2>",
-                    unsafe_allow_html=True
-                )
-
-                observaciones_edit = st.text_area(
-                    label="",
-                    value=row.get(
-                        "observaciones",
-                        ""
-                    ),
-                    height=150,
-                    key=f"obs_edit_{row.get('id')}",
-                    label_visibility="collapsed"
-                )
-
-                # =================================
-                # CONCEPTOS
-                # =================================
-
-                st.markdown("---")
-
-                st.markdown("## 💰 Conceptos")
-
-                total_value = row.get(
-                    "total_estimado",
-                    0
+                descripcion = item.get(
+                    "Descripcion",
+                    ""
                 )
 
                 try:
-                    total_value = float(total_value)
-                except:
-                    total_value = 0
+                    monto = float(
+                        item.get(
+                            "Monto",
+                            0
+                        ) or 0
+                    )
+                except Exception:
+                    monto = 0.0
 
-                st.markdown(
-                    f"""
-                    <div style='
-                        font-size:24px;
-                        font-weight:700;
-                        color:#BFA75F;
-                        margin-bottom:15px;
-                    '>
-                        Total Estimado: ${total_value:,.2f}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                moneda = str(
+                    item.get(
+                        "Moneda",
+                        item.get("Tipo Cambio", "MXP")
+                    ) or "MXP"
                 )
 
-                conceptos = row.get(
-                    "conceptos",
-                    []
+                tipo_cambio = item.get(
+                    "Tipo Cambio",
+                    ""
                 )
 
-                if conceptos:
+                aprobado = str(
+                    item.get(
+                        "Aprobado",
+                        "Si"
+                    )
+                )
+
+                razon = item.get(
+                    "Razon",
+                    ""
+                )
+
+                aprobado_texto = (
+                    "🟢 APROBADO"
+                    if aprobado in [
+                        "Si",
+                        "🟢 Si"
+                    ]
+                    else "🔴 RECHAZADO"
+                )
+
+                if aprobado in [
+                    "Si",
+                    "🟢 Si"
+                ]:
+                    if moneda.upper() in ["USD", "US$", "DÓLARES", "DOLARES"]:
+                        total_aprobado_usd += monto
+                    else:
+                        total_aprobado_mxn += monto
+
+                conceptos_html += f"""
+
+                <tr>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {tipo}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {descripcion}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {monto:,.2f}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {moneda}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {tipo_cambio}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;font-weight:700;">
+                        {aprobado_texto}
+                    </td>
+
+                    <td style="border:1px solid #ccc;padding:8px;">
+                        {razon}
+                    </td>
+
+                </tr>
+                """
+
+            comprobacion_html = ""
+
+            if conceptos_comprobacion:
+                comprobacion_rows = ""
+
+                for item in conceptos_comprobacion:
+                    tipo = html.escape(str(item.get("Tipo", "") or ""))
+                    descripcion = html.escape(str(item.get("Descripcion", "") or ""))
+                    fecha_factura = html.escape(str(item.get("Fecha Factura", "") or ""))
+                    folio = html.escape(str(item.get("Folio", "") or ""))
+                    proveedor = html.escape(str(item.get("Proveedor", "") or ""))
+                    moneda = html.escape(str(item.get("Moneda", "") or ""))
+                    comprobante = html.escape(str(item.get("Comprobante", "") or ""))
+                    aplica_iva = html.escape(str(item.get("Aplica IVA", "") or ""))
+                    iva_pct = html.escape(str(item.get("IVA %", "") or ""))
+                    aplica_retencion = html.escape(str(item.get("Aplica Retencion", "") or ""))
 
                     try:
+                        monto = f"{float(item.get('Monto', 0) or 0):,.2f}"
+                    except Exception:
+                        monto = str(item.get("Monto", "") or "")
 
-                        conceptos_final = []
+                    try:
+                        impuesto_acreditable = f"{float(item.get('Impuesto Acreditable', 0) or 0):,.2f}"
+                    except Exception:
+                        impuesto_acreditable = str(item.get("Impuesto Acreditable", "") or "")
 
-                        for concepto in conceptos:
+                    try:
+                        total_comprobado_item = f"{float(item.get('Total Comprobado', 0) or 0):,.2f}"
+                    except Exception:
+                        total_comprobado_item = str(item.get("Total Comprobado", "") or "")
 
-                            conceptos_final.append({
+                    comprobacion_rows += f"""
+                    <tr>
+                        <td style="border:1px solid #ccc;padding:8px;">{tipo}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{descripcion}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{fecha_factura}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{folio}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{proveedor}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{moneda}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{monto}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{comprobante}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{aplica_iva}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{iva_pct}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{aplica_retencion}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{impuesto_acreditable}</td>
+                        <td style="border:1px solid #ccc;padding:8px;">{total_comprobado_item}</td>
+                    </tr>
+                    """
 
-                                "Tipo":
-                                    concepto.get(
-                                        "Tipo",
-                                        ""
-                                    ),
+                comprobacion_html = f"""
+                <h3 style="color:#151F6D;margin-top:24px;">🧾 Conceptos de la Comprobación</h3>
 
-                                "Descripcion":
-                                    concepto.get(
-                                        "Descripcion",
-                                        ""
-                                    ),
+                <table style="width:100%;border-collapse:collapse;">
+                    <tr style="background:#151F6D;color:white;">
+                        <th style="padding:10px;">Tipo</th>
+                        <th style="padding:10px;">Descripción</th>
+                        <th style="padding:10px;">Fecha Factura</th>
+                        <th style="padding:10px;">Folio</th>
+                        <th style="padding:10px;">Proveedor</th>
+                        <th style="padding:10px;">Moneda</th>
+                        <th style="padding:10px;">Monto</th>
+                        <th style="padding:10px;">Comprobante</th>
+                        <th style="padding:10px;">Aplica IVA</th>
+                        <th style="padding:10px;">IVA %</th>
+                        <th style="padding:10px;">Aplica Retención</th>
+                        <th style="padding:10px;">Impuesto Acreditable</th>
+                        <th style="padding:10px;">Total Comprobado</th>
+                    </tr>
+                    {comprobacion_rows}
+                </table>
+                """
 
-                                "Monto":
-                                    concepto.get(
-                                        "Monto",
-                                        0
-                                    ),
-                                
-                                "Tipo Cambio":
-                                    concepto.get(
-                                        "Tipo Cambio",
-                                        ""
-                                    ),
+            if estatus in ["Aprobado", "Concluido"]:
+                color_estatus = "#10B981"
+            elif estatus == "Rechazado":
+                color_estatus = "#EF4444"
+            else:
+                color_estatus = "#38BDF8"
 
-                                "Aprobado":
-                                    "🟢 Si"
-                                    if concepto.get(
-                                        "Aprobado",
-                                        "Si"
-                                    ) in ["Si", "🟢 Si"]
-                                    else "🔴 No",
+            folio_comprobacion_display = (
+                folio_comprobacion
+                if str(folio_comprobacion).strip()
+                else "Pendiente de comprobación"
+            )
 
-                                "Razon":
-                                    concepto.get(
-                                        "Razon",
-                                        ""
-                                    )
-                            })
+            fecha_comprobacion_display = (
+                fecha_comprobacion
+                if str(fecha_comprobacion).strip()
+                else "Pendiente de comprobación"
+            )
 
-                        df_conceptos = pd.DataFrame(
-                            conceptos_final
-                        )
+            html = f"""
 
-                        edited_df = st.data_editor(
+            <div style="
+                font-family:Arial;
+                max-width:900px;
+                margin:auto;
+                color:#111;
+            ">
 
-                            df_conceptos,
+                <h2 style="color:#151F6D;">
+                    Actualización de Solicitud de Viáticos
+                </h2>
 
-                            use_container_width=True,
+                <h2 style="color:{color_estatus};">
+                    {estatus}
+                </h2>
 
-                            hide_index=True,
+                <hr>
 
-                            num_rows="fixed",
+                <h3 style="color:#151F6D;">📋 Información General</h3>
 
-                            column_config={
+                <table style="width:100%;border-collapse:collapse;">
 
-                                "Tipo":
-                                    st.column_config.SelectboxColumn(
-                                        "Tipo",
-                                        options=[
-                                            "Selecciona un tipo",
-                                            "ALIMENTOS VIAJE",
-                                            "CASETAS Y PEAJES",
-                                            "ESTACIONAMIENTO VIAJE",
-                                            "GASOLINA VIAJE",
-                                            "RENTA DE AUTOMOVIL/TRANSPORTE",
-                                            "ATENCION/PRESENTE CLIENTES VIAJE",
-                                            "OTROS"
-                                        ],
-                                        required=True
-                                    ),
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Folio Solicitud:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{folio_solicitud}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Folio Comprobación:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{folio_comprobacion_display}</td>
+                    </tr>
 
-                                "Descripcion":
-                                    st.column_config.TextColumn(
-                                        "Descripcion"
-                                    ),
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Estatus:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{estatus}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que Solicita:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{empleado}</td>
+                    </tr>
 
-                                "Monto":
-                                    st.column_config.NumberColumn(
-                                        "Monto",
-                                        format="$ %.2f"
-                                    ),
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Solicitud:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{fecha_solicitud}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Comprobación:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{fecha_comprobacion_display}</td>
+                    </tr>
 
-                                "Aprobado":
-                                    st.column_config.SelectboxColumn(
-                                        "Aprobado",
-                                        options=[
-                                            "🟢 Si",
-                                            "🔴 No"
-                                        ],
-                                        required=True
-                                    ),
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Inicio:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{fecha_inicio}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Fecha Fin:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{fecha_fin}</td>
+                    </tr>
 
-                                "Razon":
-                                    st.column_config.TextColumn(
-                                        "Razon"
-                                    )
-                            },
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Empresa que Brinda el Servicio:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{empresa_servicio}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Empresa a Cargo de Gastos:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{empresa_cargo}</td>
+                    </tr>
 
-                            key=f"editor_conceptos_{row.get('id')}",
-                            disabled=not can_manage_viaticos
-                        )
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Unidad de Negocio:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{unidad_negocio}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{sucursal}</td>
+                    </tr>
 
-                        st.markdown("<br>", unsafe_allow_html=True)
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Sucursal Especificar:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{sucursal_especificar}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Nombre del Cliente:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{nombre_cliente}</td>
+                    </tr>
 
-                        if can_manage_viaticos and st.button(
-                            "💾 Actualizar Solicitud",
-                            use_container_width=True,
-                            key=f"actualizar_sol_{row.get('id')}"
-                        ):
+                    <tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Registro SAC Ventas:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{folio_sac}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><b>Empleado que metió comprobación:</b></td>
+                        <td style="padding:8px;border:1px solid #ddd;">{empleado_comprobacion}</td>
+                    </tr>
 
-                            # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT antes de guardar
-                            conceptos_actualizados = limpiar_json(
-                                edited_df.to_dict(
-                                    orient="records"
-                                )
-                            )
+                </table>
 
-                            for i, concepto_original in enumerate(conceptos):
+                <h3 style="color:#151F6D;margin-top:24px;">✈️ Motivo del Viaje</h3>
+                <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
+                    {motivo_viaje}
+                </div>
 
-                                if i < len(conceptos_actualizados):
+                <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Solicitud</h3>
+                <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
+                    {observaciones}
+                </div>
 
-                                    conceptos_actualizados[i]["Tipo"] = (
-                                        conceptos_actualizados[i].get(
-                                            "Tipo",
-                                            concepto_original.get("Tipo", "")
-                                        )
-                                    )
+                <h3 style="color:#151F6D;margin-top:24px;">💰 Conceptos</h3>
 
-                                    conceptos_actualizados[i]["Descripcion"] = (
-                                        conceptos_actualizados[i].get(
-                                            "Descripcion",
-                                            concepto_original.get("Descripcion", "")
-                                        )
-                                    )
+                <table style="width:100%;border-collapse:collapse;">
 
-                                    conceptos_actualizados[i]["Monto"] = (
-                                        conceptos_actualizados[i].get(
-                                            "Monto",
-                                            concepto_original.get("Monto", 0)
-                                        )
-                                    )
+                    <tr style="background:#151F6D;color:white;">
+                        <th style="padding:10px;">Tipo</th>
+                        <th style="padding:10px;">Descripción</th>
+                        <th style="padding:10px;">Monto</th>
+                        <th style="padding:10px;">Moneda</th>
+                        <th style="padding:10px;">Tipo Cambio</th>
+                        <th style="padding:10px;">Estatus</th>
+                        <th style="padding:10px;">Razón</th>
+                    </tr>
 
-                            # =================================
-                            # RECALCULAR TOTAL ESTIMADO
-                            # =================================
+                    {conceptos_html}
 
-                            nuevo_total_estimado = 0.0
+                </table>
 
-                            for item in conceptos_actualizados:
+                {comprobacion_html}
 
-                                aprobado = str(
-                                    item.get(
-                                        "Aprobado",
-                                        "🟢 Si"
-                                    )
-                                ).strip()
+                <h3 style="color:#151F6D;margin-top:24px;">💵 Totales</h3>
 
-                                if aprobado in [
-                                    "Si",
-                                    "🟢 Si"
-                                ]:
+                <p><b>Total Estimado MXP:</b> ${float(total_estimado or 0):,.2f}</p>
+                <p><b>Total Estimado USD:</b> ${float(total_estimado_usd or 0):,.2f}</p>
+                <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado MXP:</b> ${total_aprobado_mxn:,.2f}</p>
+                <p style="color:#BFA75F;font-size:20px;"><b>Total Aprobado USD:</b> ${total_aprobado_usd:,.2f}</p>
 
-                                    try:
+                <h3 style="color:#151F6D;margin-top:24px;">🧾 Información de Comprobación</h3>
+                <p><b>Total Comprobado MXP:</b> ${float(total_comprobado or 0):,.2f}</p>
+                <p><b>Total Comprobado USD:</b> ${float(total_comprobado_usd or 0):,.2f}</p>
 
-                                        nuevo_total_estimado += float(
-                                            item.get(
-                                                "Monto",
-                                                0
-                                            ) or 0
-                                        )
+                <h3 style="color:#151F6D;margin-top:24px;">📝 Observaciones Comprobación</h3>
+                <div style="background:#F3F4F6;padding:16px;border-radius:12px;border:1px solid #ddd;white-space:pre-wrap;">
+                    {observaciones_comprobacion}
+                </div>
 
-                                    except:
+            </div>
+            """
 
-                                        pass
+            if not destinatarios:
+                raise ValueError(
+                    f"No hay destinatarios configurados para la solicitud {folio_solicitud}."
+                )
 
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "observaciones":
-                                        observaciones_edit,
+            resend.Emails.send({
 
-                                    "conceptos":
-                                        conceptos_actualizados,
+                "from":
+                    "PG Data Analyst <notificaciones@pgdataanalyst.com>",
 
-                                    "total_estimado":
-                                        float(
-                                            nuevo_total_estimado
-                                        ),
+                "to":
+                    destinatarios,
 
-                                    "fecha_actualizacion":
-                                        datetime.now(
-                                            timezone.utc
-                                        ).isoformat()
-                                }
-                            ).eq(
-                                "id",
-                                row["id"]
-                            ).execute()
+                "cc": ["cristobal.ochoa@set-freight.com"],
 
-                            st.cache_data.clear()
+                "subject":
+                    folio_solicitud,
 
-                            st.session_state.toast_actualizado = (
-                                f"Folio "
-                                f"{row.get('folio_solicitud', '')} "
-                                f"actualizado con éxito"
-                            )
+                "html":
+                    html
+            })
 
-                            st.rerun()
+        # =================================
+        # LOAD DATA
+        # =================================
 
-                    except Exception as e:
+        @st.cache_data(ttl=30)
+        def cargar_solicitudes():
 
-                        st.error(
-                            f"Error leyendo conceptos: {e}"
-                        )
+            all_rows = []
 
-                else:
+            page_size = 1000
+            start = 0
 
-                    st.info(
-                        "No hay conceptos registrados."
+            while True:
+
+                response = (
+                    supabase
+                    .table("solicitud_viaje")
+                    .select("*")
+                    .order("created_at", desc=True)
+                    .range(
+                        start,
+                        start + page_size - 1
                     )
+                    .execute()
+                )
 
-            # =================================
-            # GRID ENTRIES
-            # =================================
+                data = response.data or []
 
-            for idx, row in df_pagina.iterrows():
+                if len(data) == 0:
+                    break
 
-                with st.container(border=True):
+                all_rows.extend(data)
 
-                    col1, col2, col3, col4, col5, col6, col7 = st.columns(
-                        [1, 2, 2, 2, 2, 1.2, 1.2]
+                if len(data) < page_size:
+                    break
+
+                start += page_size
+
+            return pd.DataFrame(all_rows)
+
+
+        @st.cache_data(ttl=30)
+        def cargar_comprobaciones():
+
+            all_rows = []
+
+            page_size = 1000
+            start = 0
+
+            while True:
+
+                response = (
+                    supabase
+                    .table("comprobacion_viaje")
+                    .select("*")
+                    .order("created_at", desc=True)
+                    .range(
+                        start,
+                        start + page_size - 1
                     )
+                    .execute()
+                )
 
-                    # VER BUTTON
-                    with col1:
+                data = response.data or []
 
-                        if st.button(
-                            "Ver",
-                            key=f"ver_{idx}",
-                            use_container_width=True
-                        ):
-                            modal_ver_solicitud(row)
+                if len(data) == 0:
+                    break
 
-                    # FOLIO
-                    with col2:
+                all_rows.extend(data)
 
-                        st.caption("Folio")
-                        st.write(f"**{row.get('folio_solicitud', '')}**")
+                if len(data) < page_size:
+                    break
 
-                    # EMPLEADO
-                    with col3:
+                start += page_size
 
-                        st.caption("Empleado")
-                        st.write(f"**{row.get('nombre_empleado_solicita', '')}**")
+            return pd.DataFrame(all_rows)
 
-                    # FECHA
-                    with col4:
 
-                        st.caption("Fecha Solicitud")
-                        st.write(f"**{row.get('fecha_solicitud', '')}**")
+        df_solicitudes = cargar_solicitudes()
+        df_comprobaciones = cargar_comprobaciones()
 
-                    # TOTAL
-                    with col5:
+        # =================================
+        # EMPTY DATAFRAME SAFETY
+        # =================================
 
-                        total_mxp = row.get("total_estimado", 0)
-                        total_usd = row.get("total_estimado_usd", 0)
+        if df_solicitudes.empty:
 
-                        try:
-                            total_mxp = float(total_mxp or 0)
-                        except Exception:
-                            total_mxp = 0.0
+            df_solicitudes = pd.DataFrame(columns=[
 
-                        try:
-                            total_usd = float(total_usd or 0)
-                        except Exception:
-                            total_usd = 0.0
+                "folio_solicitud",
+                "estatus",
+                "nombre_empleado_solicita",
+                "fecha_solicitud",
+                "total_estimado",
+                "created_at"
+            ])
 
-                        total_values = []
+        if df_comprobaciones.empty:
 
-                        if total_mxp != 0:
-                            total_values.append(f"${total_mxp:,.2f}")
+            df_comprobaciones = pd.DataFrame(columns=[
 
-                        if total_usd != 0:
-                            total_values.append(f"${total_usd:,.2f}")
+                "folio_solicitud",
+                "folio_comprobacion",
+                "estatus",
+                "nombre_empleado_solicita",
+                "conceptos",
+                "observaciones",
+                "total_comprobado",
+                "anticipo_viaje",
+                "diferencia_cargo_favor",
+                "created_at"
+            ])
 
-                        st.caption("Total")
+        # =================================
+        # GLOBAL TOAST
+        # =================================
 
-                        if total_values:
-                            for value in total_values:
-                                st.write(f"**{value}**")
-                        else:
-                            st.write("**$0.00**")
+        if "toast_actualizado" in st.session_state:
 
-                    # APROBAR
-                    with col6:
+            st.toast(
+                st.session_state.toast_actualizado
+            )
 
-                        if can_manage_viaticos and st.button(
-                            "Aprobar",
-                            key=f"aprobar_{idx}",
-                            use_container_width=True
-                        ):
+            del st.session_state[
+                "toast_actualizado"
+            ]
 
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "estatus": "Aprobado",
-                                    "fecha_actualizacion": datetime.now(
-                                        timezone.utc
-                                    ).isoformat()
-                                }
-                            ).eq(
-                                "id",
-                                row["id"]
-                            ).execute()
+        # =================================
+        # KPI VALUES
+        # =================================
+        if "estatus" not in df_solicitudes.columns:
+            df_solicitudes["estatus"] = "Pendiente"
 
-                            # =================================
-                            # GET CREATOR EMAIL
-                            # =================================
+        df_solicitudes["estatus"] = (
+            df_solicitudes["estatus"]
+            .fillna("Pendiente")
+            .astype(str)
+            .str.strip()
+        )
 
-                            correo_creador = (
-                                obtener_email_usuario(
-                                    row.get(
-                                        "nombre_empleado_solicita",
-                                        ""
-                                    )
-                                )
-                            )
+        if "estatus" not in df_comprobaciones.columns:
+            df_comprobaciones["estatus"] = "Pendiente"
 
-                            destinatarios = construir_destinatarios(
+        df_comprobaciones["estatus"] = (
+            df_comprobaciones["estatus"]
+            .fillna("Pendiente")
+            .astype(str)
+            .str.strip()
+        )
 
-                                empresa=row.get(
-                                    "empresa_cargo_gastos",
-                                    ""
-                                ),
+        # =================================
+        # KPI COUNTS
+        # =================================
+        total_registros = (
+            df_solicitudes["folio_solicitud"]
+            .astype(str)
+            .str.strip()
+            .nunique()
+        )
 
-                                email_usuario_actual=email_usuario,
+        # PENDIENTES
+        pendientes = len(
+            df_solicitudes[
+                df_solicitudes["estatus"] == "Pendiente"
+            ]
+        )
 
-                                correo_creador=correo_creador
-                            )
+        # AUTORIZADAS
+        autorizados = len(
+            df_solicitudes[
+                df_solicitudes["estatus"] == "Aprobado"
+            ]
+        )
 
-                            # =================================
-                            # SEND EMAIL
-                            # =================================
+        # VERIFICANDO
+        verificando = len(
+            df_comprobaciones[
+                df_comprobaciones["estatus"] == "Verificar"
+            ]
+        )
 
-                            try:
+        # RECHAZADAS
+        rechazados = len(
+            df_solicitudes[
+                df_solicitudes["estatus"] == "Rechazado"
+            ]
+        )
 
-                                enviar_correo_estatus_solicitud(
+        # =================================
+        # CONCLUIDOS
+        # =================================
+        concluidos = len(
+            df_solicitudes[
+                df_solicitudes["estatus"] == "Concluido"
+            ]
+        )
 
-                                                destinatarios=destinatarios,
-                                                folio_solicitud=row.get("folio_solicitud", ""),
-                                                folio_comprobacion="",
-                                                estatus="Aprobado",
-                                                empleado=row.get("nombre_empleado_solicita", ""),
-                                                empresa_servicio=row.get("empresa_brinda_servicio", ""),
-                                                fecha_solicitud=row.get("fecha_solicitud", ""),
-                                                fecha_comprobacion="",
-                                                fecha_inicio=row.get("fecha_inicio", ""),
-                                                fecha_fin=row.get("fecha_fin", ""),
-                                                empresa_cargo=row.get("empresa_cargo_gastos", ""),
-                                                unidad_negocio=row.get("unidad_negocio", ""),
-                                                sucursal=row.get("sucursal", ""),
-                                                sucursal_especificar=row.get("sucursal_especificar", ""),
-                                                nombre_cliente=row.get("nombre_cliente", ""),
-                                                folio_sac=row.get("folio_sac", ""),
-                                                motivo_viaje=row.get("motivo_viaje", ""),
-                                                observaciones=row.get("observaciones", ""),
-                                                conceptos=row.get("conceptos", []),
-                                                total_estimado=row.get("total_estimado", 0),
-                                                total_estimado_usd=row.get("total_estimado_usd", 0),
-                                                empleado_comprobacion="",
-                                                observaciones_comprobacion="",
-                                                total_comprobado="",
-                                                total_comprobado_usd=""
-                                            )
+        # =================================
+        # KPI CARDS
+        # =================================
+        kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 
-                            except Exception as e:
+        import streamlit.components.v1 as components
 
-                                st.warning(
-                                    f"No se pudo enviar correo: {e}"
-                                )
+        def render_kpi_card(
+            title,
+            value,
+            emoji,
+            color,
+        ):
 
-                            log_activity(
-                                f"Autorizó Solicitud: {row.get('folio_solicitud', '')}",
-                                "Gestión de Viáticos"
-                            )
+            html = f"""
+            <div style="padding:6px;">
+                <div style="
+                    background:#FFF7D6;
+                    padding:20px;
+                    border-radius:18px;
+                    box-shadow:0 4px 10px rgba(0,0,0,.10);
+                    min-height:170px;
+                    color:#111;
+                    font-family:sans-serif;
+                ">
 
-                            st.success("Solicitud aprobada")
-                            st.cache_data.clear()
-                            st.rerun()
+                    <div style="
+                        color:#666666;
+                        font-size:15px;
+                        font-weight:600;
+                    ">
+                        {emoji} {title}
+                    </div>
 
-                    # RECHAZAR
-                    with col7:
-
-                        if can_manage_viaticos and st.button(
-                            "Rechazar",
-                            key=f"rechazar_{idx}",
-                            use_container_width=True
-                        ):
-
-                            supabase.table(
-                                "solicitud_viaje"
-                            ).update(
-                                {
-                                    "estatus": "Rechazado",
-                                    "fecha_actualizacion": datetime.now(
-                                        timezone.utc
-                                    ).isoformat()
-                                }
-                            ).eq(
-                                "id",
-                                row["id"]
-                            ).execute()
-
-                            # =================================
-                            # GET CREATOR EMAIL
-                            # =================================
-
-                            correo_creador = (
-                                obtener_email_usuario(
-                                    row.get(
-                                        "nombre_empleado_solicita",
-                                        ""
-                                    )
-                                )
-                            )
-
-                            destinatarios = construir_destinatarios(
-
-                                empresa=row.get(
-                                    "empresa_cargo_gastos",
-                                    ""
-                                ),
-
-                                email_usuario_actual=email_usuario,
-
-                                correo_creador=correo_creador
-                            )
-
-                            # =================================
-                            # SEND EMAIL
-                            # =================================
-
-                            try:
-
-                                enviar_correo_estatus_solicitud(
-
-                                                destinatarios=destinatarios,
-                                                folio_solicitud=row.get("folio_solicitud", ""),
-                                                folio_comprobacion="",
-                                                estatus="Rechazado",
-                                                empleado=row.get("nombre_empleado_solicita", ""),
-                                                empresa_servicio=row.get("empresa_brinda_servicio", ""),
-                                                fecha_solicitud=row.get("fecha_solicitud", ""),
-                                                fecha_comprobacion="",
-                                                fecha_inicio=row.get("fecha_inicio", ""),
-                                                fecha_fin=row.get("fecha_fin", ""),
-                                                empresa_cargo=row.get("empresa_cargo_gastos", ""),
-                                                unidad_negocio=row.get("unidad_negocio", ""),
-                                                sucursal=row.get("sucursal", ""),
-                                                sucursal_especificar=row.get("sucursal_especificar", ""),
-                                                nombre_cliente=row.get("nombre_cliente", ""),
-                                                folio_sac=row.get("folio_sac", ""),
-                                                motivo_viaje=row.get("motivo_viaje", ""),
-                                                observaciones=row.get("observaciones", ""),
-                                                conceptos=row.get("conceptos", []),
-                                                total_estimado=row.get("total_estimado", 0),
-                                                total_estimado_usd=row.get("total_estimado_usd", 0),
-                                                empleado_comprobacion="",
-                                                observaciones_comprobacion="",
-                                                total_comprobado="",
-                                                total_comprobado_usd=""
-                                            )
-
-                            except Exception as e:
-
-                                st.warning(
-                                    f"No se pudo enviar correo: {e}"
-                                )
-
-                            log_activity(
-                                f"Rechazó Solicitud: {row.get('folio_solicitud', '')}",
-                                "Gestión de Viáticos"
-                            )
-
-                            st.error("Solicitud rechazada")
-                            st.cache_data.clear()
-                            st.rerun()
-
-            # =================================
-            # PAGINATION CONTROLS
-            # =================================
-
-            st.divider()
-
-            p1, p2, p3 = st.columns([1,2,1])
-
-            with p1:
-
-                if st.button(
-                    "⬅ Anterior",
-                    disabled=st.session_state.pagina_viaticos <= 1,
-                    use_container_width=True,
-                    key="prev_pendientes"
-                ):
-
-                    st.session_state.pagina_viaticos -= 1
-                    st.rerun()
-
-            with p2:
-
-                st.markdown(
-                    f"""
                     <div style="
                         text-align:center;
-                        padding-top:8px;
-                        font-weight:700;
-                        color:#151F6D;
+                        color:{color};
+                        font-size:58px;
+                        font-weight:800;
+                        margin-top:40px;
                     ">
-                        Página {st.session_state.pagina_viaticos} de {total_paginas}
+                        {value}
                     </div>
-                    """,
+
+                </div>
+            </div>
+            """
+
+            components.html(html, height=240)
+
+        with kpi1:
+
+            render_kpi_card(
+                "Total",
+                total_registros,
+                "📊",
+                "#BFA75F"
+            )
+
+        with kpi2:
+
+            render_kpi_card(
+                "Pendientes",
+                pendientes,
+                "⏳",
+                "#F59E0B"
+            )
+
+        with kpi3:
+
+            render_kpi_card(
+                "Autorizadas",
+                autorizados,
+                "✅",
+                "#10B981"
+            )
+
+        with kpi4:
+
+            render_kpi_card(
+                "Verificando",
+                verificando,
+                "🔎",
+                "#38BDF8"
+            )
+
+        with kpi5:
+
+            render_kpi_card(
+                "Rechazadas",
+                rechazados,
+                "❌",
+                "#EF4444"
+            )
+
+        with kpi6:
+
+            render_kpi_card(
+                "Concluidos",
+                concluidos,
+                "🏁",
+                "#8B5CF6"
+            )
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # =================================
+        # PENDIENTES SECTION
+        # =================================
+        st.header("📋 Solicitudes Pendientes")
+
+        # Only pendientes
+        df_pendientes = df_solicitudes[
+            df_solicitudes["estatus"] == "Pendiente"
+        ].copy()
+
+        if df_pendientes.empty:
+            st.info("No hay solicitudes pendientes.")
+
+        # Sort newest first
+        if "created_at" in df_pendientes.columns:
+
+            df_pendientes = df_pendientes.sort_values(
+                by="created_at",
+                ascending=False
+            )
+
+        # =================================
+        # PAGINATION
+        # =================================
+
+        ENTRADAS_POR_PAGINA = 5
+
+        total_entries = len(df_pendientes)
+
+        total_paginas = max(
+            1,
+            (total_entries + ENTRADAS_POR_PAGINA - 1)
+            // ENTRADAS_POR_PAGINA
+        )
+
+        if "pagina_viaticos" not in st.session_state:
+            st.session_state.pagina_viaticos = 1
+
+        pagina_actual = st.session_state.pagina_viaticos
+
+        inicio = (
+            (pagina_actual - 1)
+            * ENTRADAS_POR_PAGINA
+        )
+
+        fin = inicio + ENTRADAS_POR_PAGINA
+
+        df_pagina = df_pendientes.iloc[inicio:fin]
+
+        # =================================
+        # MODAL
+        # =================================
+        @st.dialog(
+            "Detalle de Solicitud",
+            width="large",
+            on_dismiss="rerun",
+        )
+        def modal_ver_solicitud(row):
+
+            st.markdown(
+                "<h2 style='color:#151F6D;'>📋 Información General</h2>",
+                unsafe_allow_html=True
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Folio:</b> {row.get('folio_solicitud', '')}</span>",
                     unsafe_allow_html=True
                 )
 
-            with p3:
+                st.markdown(
+                    f"<span style='color:black;'><b>Estatus:</b> {row.get('estatus', '')}</span>",
+                    unsafe_allow_html=True
+                )
 
-                if st.button(
-                    "Siguiente ➡",
-                    disabled=(
-                        st.session_state.pagina_viaticos
-                        >= total_paginas
-                    ),
-                    use_container_width=True,
-                    key="next_pendientes"
-                ):
+                st.markdown(
+                    f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {row.get('empresa_brinda_servicio', '')}</span>",
+                    unsafe_allow_html=True
+                )
 
-                    st.session_state.pagina_viaticos += 1
-                    st.rerun()
+                st.markdown(
+                    f"<span style='color:black;'><b>Empleado Solicita:</b> {row.get('nombre_empleado_solicita', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Fecha Solicitud:</b> {row.get('fecha_solicitud', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Fecha Inicio:</b> {row.get('fecha_inicio', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Fecha Fin:</b> {row.get('fecha_fin', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+            with col2:
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {row.get('empresa_cargo_gastos', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Unidad Negocio:</b> {row.get('unidad_negocio', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Sucursal:</b> {row.get('sucursal', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Sucursal Especificar:</b> {row.get('sucursal_especificar', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                label_cliente = (
+                    "Motivo del Viaje"
+                    if str(
+                        row.get(
+                            "motivo_viaje",
+                            ""
+                        )
+                    ).strip().upper() == "OTROS"
+                    else "Nombre del Cliente"
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>{label_cliente}:</b> {row.get('nombre_cliente', '')}</span>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {row.get('folio_sac', '')}</span>",
+                    unsafe_allow_html=True
+                )
 
             # =================================
-            # COMPROBACIONES POR VERIFICAR
+            # MOTIVO VIAJE
+            # =================================
+            st.markdown("---")
+
+            st.markdown("## ✈️ Motivo del Viaje")
+
+            st.markdown(
+                f"""
+                <div style='
+                    background-color:#F3F4F6;
+                    padding:16px;
+                    border-radius:12px;
+                    border:1px solid rgba(191,167,95,0.25);
+                    margin-bottom:20px;
+                    white-space:pre-wrap;
+                '>
+                    {row.get('motivo_viaje', '')}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # =================================
+            # OBSERVACIONES
             # =================================
 
-            st.header("🔎 Comprobaciones por Verificar")
+            st.markdown(
+                "<h2 style='color:#151F6D;'>📝 Observaciones</h2>",
+                unsafe_allow_html=True
+            )
 
-            df_verificar = df_comprobaciones[
-                df_comprobaciones["estatus"] == "Verificar"
-            ].copy()
+            observaciones_edit = st.text_area(
+                label="",
+                value=row.get(
+                    "observaciones",
+                    ""
+                ),
+                height=150,
+                key=f"obs_edit_{row.get('id')}",
+                label_visibility="collapsed"
+            )
 
             # =================================
-            # FILTERS
+            # CONCEPTOS
             # =================================
 
-            filtro_col1, filtro_col2 = st.columns([2, 5])
+            st.markdown("---")
 
-            with filtro_col1:
+            st.markdown("## 💰 Conceptos")
 
-                folios_disponibles = ["Todos"]
+            total_value = row.get(
+                "total_estimado",
+                0
+            )
 
-                if not df_verificar.empty:
+            try:
+                total_value = float(total_value)
+            except:
+                total_value = 0
 
-                    folios_disponibles += sorted(
-                        df_verificar["folio_solicitud"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
+            st.markdown(
+                f"""
+                <div style='
+                    font-size:24px;
+                    font-weight:700;
+                    color:#BFA75F;
+                    margin-bottom:15px;
+                '>
+                    Total Estimado: ${total_value:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            conceptos = row.get(
+                "conceptos",
+                []
+            )
+
+            if conceptos:
+
+                try:
+
+                    conceptos_final = []
+
+                    for concepto in conceptos:
+
+                        conceptos_final.append({
+
+                            "Tipo":
+                                concepto.get(
+                                    "Tipo",
+                                    ""
+                                ),
+
+                            "Descripcion":
+                                concepto.get(
+                                    "Descripcion",
+                                    ""
+                                ),
+
+                            "Monto":
+                                concepto.get(
+                                    "Monto",
+                                    0
+                                ),
+                            
+                            "Tipo Cambio":
+                                concepto.get(
+                                    "Tipo Cambio",
+                                    ""
+                                ),
+
+                            "Aprobado":
+                                "🟢 Si"
+                                if concepto.get(
+                                    "Aprobado",
+                                    "Si"
+                                ) in ["Si", "🟢 Si"]
+                                else "🔴 No",
+
+                            "Razon":
+                                concepto.get(
+                                    "Razon",
+                                    ""
+                                )
+                        })
+
+                    df_conceptos = pd.DataFrame(
+                        conceptos_final
                     )
 
-                filtro_folio_verificar = st.selectbox(
-                    "Filtrar por Folio",
-                    folios_disponibles,
-                    key="filtro_folio_verificar"
-                )
+                    edited_df = st.data_editor(
 
-            # APPLY FILTER
-            if filtro_folio_verificar != "Todos":
+                        df_conceptos,
 
-                df_verificar = df_verificar[
-                    df_verificar["folio_solicitud"]
-                    .astype(str)
-                    == str(filtro_folio_verificar)
-                ]
+                        use_container_width=True,
 
-            # =================================
-            # SORT
-            # =================================
+                        hide_index=True,
 
-            if "created_at" in df_verificar.columns:
+                        num_rows="fixed",
 
-                df_verificar = df_verificar.sort_values(
-                    by="created_at",
-                    ascending=False
-                )
+                        column_config={
 
-            # =================================
-            # PAGINATION
-            # =================================
+                            "Tipo":
+                                st.column_config.SelectboxColumn(
+                                    "Tipo",
+                                    options=[
+                                        "Selecciona un tipo",
+                                        "ALIMENTOS VIAJE",
+                                        "CASETAS Y PEAJES",
+                                        "ESTACIONAMIENTO VIAJE",
+                                        "GASOLINA VIAJE",
+                                        "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                        "ATENCION/PRESENTE CLIENTES VIAJE",
+                                        "OTROS"
+                                    ],
+                                    required=True
+                                ),
 
-            POSTITS_POR_PAGINA = 5
+                            "Descripcion":
+                                st.column_config.TextColumn(
+                                    "Descripcion"
+                                ),
 
-            total_verificar = len(df_verificar)
+                            "Monto":
+                                st.column_config.NumberColumn(
+                                    "Monto",
+                                    format="$ %.2f"
+                                ),
 
-            total_paginas_verificar = max(
-                1,
-                (
-                    total_verificar
-                    + POSTITS_POR_PAGINA
-                    - 1
-                )
-                // POSTITS_POR_PAGINA
-            )
+                            "Aprobado":
+                                st.column_config.SelectboxColumn(
+                                    "Aprobado",
+                                    options=[
+                                        "🟢 Si",
+                                        "🔴 No"
+                                    ],
+                                    required=True
+                                ),
 
-            if "pagina_verificar" not in st.session_state:
-                st.session_state.pagina_verificar = 1
+                            "Razon":
+                                st.column_config.TextColumn(
+                                    "Razon"
+                                )
+                        },
 
-            pagina_actual_verificar = (
-                st.session_state.pagina_verificar
-            )
+                        key=f"editor_conceptos_{row.get('id')}",
+                        disabled=not can_manage_viaticos
+                    )
 
-            inicio_verificar = (
-                (pagina_actual_verificar - 1)
-                * POSTITS_POR_PAGINA
-            )
+                    st.markdown("<br>", unsafe_allow_html=True)
 
-            fin_verificar = (
-                inicio_verificar
-                + POSTITS_POR_PAGINA
-            )
+                    if can_manage_viaticos and st.button(
+                        "💾 Actualizar Solicitud",
+                        use_container_width=True,
+                        key=f"actualizar_sol_{row.get('id')}"
+                    ):
 
-            df_verificar_pagina = (
-                df_verificar.iloc[
-                    inicio_verificar:fin_verificar
-                ]
-            )
+                        # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT antes de guardar
+                        conceptos_actualizados = limpiar_json(
+                            edited_df.to_dict(
+                                orient="records"
+                            )
+                        )
 
-            # =================================
-            # POSTITS
-            # =================================
+                        for i, concepto_original in enumerate(conceptos):
 
-            if df_verificar_pagina.empty:
+                            if i < len(conceptos_actualizados):
 
-                st.info(
-                    "No hay comprobaciones pendientes por verificar."
-                )
+                                conceptos_actualizados[i]["Tipo"] = (
+                                    conceptos_actualizados[i].get(
+                                        "Tipo",
+                                        concepto_original.get("Tipo", "")
+                                    )
+                                )
+
+                                conceptos_actualizados[i]["Descripcion"] = (
+                                    conceptos_actualizados[i].get(
+                                        "Descripcion",
+                                        concepto_original.get("Descripcion", "")
+                                    )
+                                )
+
+                                conceptos_actualizados[i]["Monto"] = (
+                                    conceptos_actualizados[i].get(
+                                        "Monto",
+                                        concepto_original.get("Monto", 0)
+                                    )
+                                )
+
+                        # =================================
+                        # RECALCULAR TOTAL ESTIMADO
+                        # =================================
+
+                        nuevo_total_estimado = 0.0
+
+                        for item in conceptos_actualizados:
+
+                            aprobado = str(
+                                item.get(
+                                    "Aprobado",
+                                    "🟢 Si"
+                                )
+                            ).strip()
+
+                            if aprobado in [
+                                "Si",
+                                "🟢 Si"
+                            ]:
+
+                                try:
+
+                                    nuevo_total_estimado += float(
+                                        item.get(
+                                            "Monto",
+                                            0
+                                        ) or 0
+                                    )
+
+                                except:
+
+                                    pass
+
+                        supabase.table(
+                            "solicitud_viaje"
+                        ).update(
+                            {
+                                "observaciones":
+                                    observaciones_edit,
+
+                                "conceptos":
+                                    conceptos_actualizados,
+
+                                "total_estimado":
+                                    float(
+                                        nuevo_total_estimado
+                                    ),
+
+                                "fecha_actualizacion":
+                                    datetime.now(
+                                        timezone.utc
+                                    ).isoformat()
+                            }
+                        ).eq(
+                            "id",
+                            row["id"]
+                        ).execute()
+
+                        st.cache_data.clear()
+
+                        st.session_state.toast_actualizado = (
+                            f"Folio "
+                            f"{row.get('folio_solicitud', '')} "
+                            f"actualizado con éxito"
+                        )
+
+                        st.rerun()
+
+                except Exception as e:
+
+                    st.error(
+                        f"Error leyendo conceptos: {e}"
+                    )
 
             else:
 
-                cols = st.columns(5)
+                st.info(
+                    "No hay conceptos registrados."
+                )
 
-                for i, (_, row) in enumerate(
-                    df_verificar_pagina.iterrows()
-                ):
+        # =================================
+        # GRID ENTRIES
+        # =================================
 
-                    col = cols[i % 5]
+        for idx, row in df_pagina.iterrows():
 
-                    with col:
+            with st.container(border=True):
 
-                        folio = str(
-                            row.get(
-                                "folio_solicitud",
-                                ""
+                col1, col2, col3, col4, col5, col6, col7 = st.columns(
+                    [1, 2, 2, 2, 2, 1.2, 1.2]
+                )
+
+                # VER BUTTON
+                with col1:
+
+                    if st.button(
+                        "Ver",
+                        key=f"ver_{idx}",
+                        use_container_width=True
+                    ):
+                        modal_ver_solicitud(row)
+
+                # FOLIO
+                with col2:
+
+                    st.caption("Folio")
+                    st.write(f"**{row.get('folio_solicitud', '')}**")
+
+                # EMPLEADO
+                with col3:
+
+                    st.caption("Empleado")
+                    st.write(f"**{row.get('nombre_empleado_solicita', '')}**")
+
+                # FECHA
+                with col4:
+
+                    st.caption("Fecha Solicitud")
+                    st.write(f"**{row.get('fecha_solicitud', '')}**")
+
+                # TOTAL
+                with col5:
+
+                    total_mxp = row.get("total_estimado", 0)
+                    total_usd = row.get("total_estimado_usd", 0)
+
+                    try:
+                        total_mxp = float(total_mxp or 0)
+                    except Exception:
+                        total_mxp = 0.0
+
+                    try:
+                        total_usd = float(total_usd or 0)
+                    except Exception:
+                        total_usd = 0.0
+
+                    total_values = []
+
+                    if total_mxp != 0:
+                        total_values.append(f"${total_mxp:,.2f}")
+
+                    if total_usd != 0:
+                        total_values.append(f"${total_usd:,.2f}")
+
+                    st.caption("Total")
+
+                    if total_values:
+                        for value in total_values:
+                            st.write(f"**{value}**")
+                    else:
+                        st.write("**$0.00**")
+
+                # APROBAR
+                with col6:
+
+                    if can_manage_viaticos and st.button(
+                        "Aprobar",
+                        key=f"aprobar_{idx}",
+                        use_container_width=True
+                    ):
+
+                        supabase.table(
+                            "solicitud_viaje"
+                        ).update(
+                            {
+                                "estatus": "Aprobado",
+                                "fecha_actualizacion": datetime.now(
+                                    timezone.utc
+                                ).isoformat()
+                            }
+                        ).eq(
+                            "id",
+                            row["id"]
+                        ).execute()
+
+                        # =================================
+                        # GET CREATOR EMAIL
+                        # =================================
+
+                        correo_creador = (
+                            obtener_email_usuario(
+                                row.get(
+                                    "nombre_empleado_solicita",
+                                    ""
+                                )
                             )
                         )
 
-                        empleado = str(
-                            row.get(
-                                "nombre_empleado_solicita",
+                        destinatarios = construir_destinatarios(
+
+                            empresa=row.get(
+                                "empresa_cargo_gastos",
                                 ""
-                            )
+                            ),
+
+                            email_usuario_actual=email_usuario,
+
+                            correo_creador=correo_creador
                         )
 
-                        fecha = str(
-                            row.get(
-                                "created_at",
-                                ""
-                            )
-                        )[:10]
-
-                        total_mxp = row.get(
-                            "total_comprobado",
-                            0
-                        )
-
-                        total_usd = row.get(
-                            "total_comprobado_usd",
-                            0
-                        )
+                        # =================================
+                        # SEND EMAIL
+                        # =================================
 
                         try:
-                            total_mxp = float(total_mxp)
-                        except:
-                            total_mxp = 0
+
+                            enviar_correo_estatus_solicitud(
+
+                                            destinatarios=destinatarios,
+                                            folio_solicitud=row.get("folio_solicitud", ""),
+                                            folio_comprobacion="",
+                                            estatus="Aprobado",
+                                            empleado=row.get("nombre_empleado_solicita", ""),
+                                            empresa_servicio=row.get("empresa_brinda_servicio", ""),
+                                            fecha_solicitud=row.get("fecha_solicitud", ""),
+                                            fecha_comprobacion="",
+                                            fecha_inicio=row.get("fecha_inicio", ""),
+                                            fecha_fin=row.get("fecha_fin", ""),
+                                            empresa_cargo=row.get("empresa_cargo_gastos", ""),
+                                            unidad_negocio=row.get("unidad_negocio", ""),
+                                            sucursal=row.get("sucursal", ""),
+                                            sucursal_especificar=row.get("sucursal_especificar", ""),
+                                            nombre_cliente=row.get("nombre_cliente", ""),
+                                            folio_sac=row.get("folio_sac", ""),
+                                            motivo_viaje=row.get("motivo_viaje", ""),
+                                            observaciones=row.get("observaciones", ""),
+                                            conceptos=row.get("conceptos", []),
+                                            total_estimado=row.get("total_estimado", 0),
+                                            total_estimado_usd=row.get("total_estimado_usd", 0),
+                                            empleado_comprobacion="",
+                                            observaciones_comprobacion="",
+                                            total_comprobado="",
+                                            total_comprobado_usd=""
+                                        )
+
+                        except Exception as e:
+
+                            st.warning(
+                                f"No se pudo enviar correo: {e}"
+                            )
+
+                        log_activity(
+                            f"Autorizó Solicitud: {row.get('folio_solicitud', '')}",
+                            "Gestión de Viáticos"
+                        )
+
+                        st.success("Solicitud aprobada")
+                        st.cache_data.clear()
+                        st.rerun()
+
+                # RECHAZAR
+                with col7:
+
+                    if can_manage_viaticos and st.button(
+                        "Rechazar",
+                        key=f"rechazar_{idx}",
+                        use_container_width=True
+                    ):
+
+                        supabase.table(
+                            "solicitud_viaje"
+                        ).update(
+                            {
+                                "estatus": "Rechazado",
+                                "fecha_actualizacion": datetime.now(
+                                    timezone.utc
+                                ).isoformat()
+                            }
+                        ).eq(
+                            "id",
+                            row["id"]
+                        ).execute()
+
+                        # =================================
+                        # GET CREATOR EMAIL
+                        # =================================
+
+                        correo_creador = (
+                            obtener_email_usuario(
+                                row.get(
+                                    "nombre_empleado_solicita",
+                                    ""
+                                )
+                            )
+                        )
+
+                        destinatarios = construir_destinatarios(
+
+                            empresa=row.get(
+                                "empresa_cargo_gastos",
+                                ""
+                            ),
+
+                            email_usuario_actual=email_usuario,
+
+                            correo_creador=correo_creador
+                        )
+
+                        # =================================
+                        # SEND EMAIL
+                        # =================================
 
                         try:
-                            total_usd = float(total_usd)
-                        except:
-                            total_usd = 0
 
-                        html = f"""
-                        <div style="padding:6px;">
+                            enviar_correo_estatus_solicitud(
+
+                                            destinatarios=destinatarios,
+                                            folio_solicitud=row.get("folio_solicitud", ""),
+                                            folio_comprobacion="",
+                                            estatus="Rechazado",
+                                            empleado=row.get("nombre_empleado_solicita", ""),
+                                            empresa_servicio=row.get("empresa_brinda_servicio", ""),
+                                            fecha_solicitud=row.get("fecha_solicitud", ""),
+                                            fecha_comprobacion="",
+                                            fecha_inicio=row.get("fecha_inicio", ""),
+                                            fecha_fin=row.get("fecha_fin", ""),
+                                            empresa_cargo=row.get("empresa_cargo_gastos", ""),
+                                            unidad_negocio=row.get("unidad_negocio", ""),
+                                            sucursal=row.get("sucursal", ""),
+                                            sucursal_especificar=row.get("sucursal_especificar", ""),
+                                            nombre_cliente=row.get("nombre_cliente", ""),
+                                            folio_sac=row.get("folio_sac", ""),
+                                            motivo_viaje=row.get("motivo_viaje", ""),
+                                            observaciones=row.get("observaciones", ""),
+                                            conceptos=row.get("conceptos", []),
+                                            total_estimado=row.get("total_estimado", 0),
+                                            total_estimado_usd=row.get("total_estimado_usd", 0),
+                                            empleado_comprobacion="",
+                                            observaciones_comprobacion="",
+                                            total_comprobado="",
+                                            total_comprobado_usd=""
+                                        )
+
+                        except Exception as e:
+
+                            st.warning(
+                                f"No se pudo enviar correo: {e}"
+                            )
+
+                        log_activity(
+                            f"Rechazó Solicitud: {row.get('folio_solicitud', '')}",
+                            "Gestión de Viáticos"
+                        )
+
+                        st.error("Solicitud rechazada")
+                        st.cache_data.clear()
+                        st.rerun()
+
+        # =================================
+        # PAGINATION CONTROLS
+        # =================================
+
+        st.divider()
+
+        p1, p2, p3 = st.columns([1,2,1])
+
+        with p1:
+
+            if st.button(
+                "⬅ Anterior",
+                disabled=st.session_state.pagina_viaticos <= 1,
+                use_container_width=True,
+                key="prev_pendientes"
+            ):
+
+                st.session_state.pagina_viaticos -= 1
+                st.rerun()
+
+        with p2:
+
+            st.markdown(
+                f"""
+                <div style="
+                    text-align:center;
+                    padding-top:8px;
+                    font-weight:700;
+                    color:#151F6D;
+                ">
+                    Página {st.session_state.pagina_viaticos} de {total_paginas}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with p3:
+
+            if st.button(
+                "Siguiente ➡",
+                disabled=(
+                    st.session_state.pagina_viaticos
+                    >= total_paginas
+                ),
+                use_container_width=True,
+                key="next_pendientes"
+            ):
+
+                st.session_state.pagina_viaticos += 1
+                st.rerun()
+
+        # =================================
+        # COMPROBACIONES POR VERIFICAR
+        # =================================
+
+        st.header("🔎 Comprobaciones por Verificar")
+
+        df_verificar = df_comprobaciones[
+            df_comprobaciones["estatus"] == "Verificar"
+        ].copy()
+
+        # =================================
+        # FILTERS
+        # =================================
+
+        filtro_col1, filtro_col2 = st.columns([2, 5])
+
+        with filtro_col1:
+
+            folios_disponibles = ["Todos"]
+
+            if not df_verificar.empty:
+
+                folios_disponibles += sorted(
+                    df_verificar["folio_solicitud"]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                    .tolist()
+                )
+
+            filtro_folio_verificar = st.selectbox(
+                "Filtrar por Folio",
+                folios_disponibles,
+                key="filtro_folio_verificar"
+            )
+
+        # APPLY FILTER
+        if filtro_folio_verificar != "Todos":
+
+            df_verificar = df_verificar[
+                df_verificar["folio_solicitud"]
+                .astype(str)
+                == str(filtro_folio_verificar)
+            ]
+
+        # =================================
+        # SORT
+        # =================================
+
+        if "created_at" in df_verificar.columns:
+
+            df_verificar = df_verificar.sort_values(
+                by="created_at",
+                ascending=False
+            )
+
+        # =================================
+        # PAGINATION
+        # =================================
+
+        POSTITS_POR_PAGINA = 5
+
+        total_verificar = len(df_verificar)
+
+        total_paginas_verificar = max(
+            1,
+            (
+                total_verificar
+                + POSTITS_POR_PAGINA
+                - 1
+            )
+            // POSTITS_POR_PAGINA
+        )
+
+        if "pagina_verificar" not in st.session_state:
+            st.session_state.pagina_verificar = 1
+
+        pagina_actual_verificar = (
+            st.session_state.pagina_verificar
+        )
+
+        inicio_verificar = (
+            (pagina_actual_verificar - 1)
+            * POSTITS_POR_PAGINA
+        )
+
+        fin_verificar = (
+            inicio_verificar
+            + POSTITS_POR_PAGINA
+        )
+
+        df_verificar_pagina = (
+            df_verificar.iloc[
+                inicio_verificar:fin_verificar
+            ]
+        )
+
+        # =================================
+        # POSTITS
+        # =================================
+
+        if df_verificar_pagina.empty:
+
+            st.info(
+                "No hay comprobaciones pendientes por verificar."
+            )
+
+        else:
+
+            cols = st.columns(5)
+
+            for i, (_, row) in enumerate(
+                df_verificar_pagina.iterrows()
+            ):
+
+                col = cols[i % 5]
+
+                with col:
+
+                    folio = str(
+                        row.get(
+                            "folio_solicitud",
+                            ""
+                        )
+                    )
+
+                    empleado = str(
+                        row.get(
+                            "nombre_empleado_solicita",
+                            ""
+                        )
+                    )
+
+                    fecha = str(
+                        row.get(
+                            "created_at",
+                            ""
+                        )
+                    )[:10]
+
+                    total_mxp = row.get(
+                        "total_comprobado",
+                        0
+                    )
+
+                    total_usd = row.get(
+                        "total_comprobado_usd",
+                        0
+                    )
+
+                    try:
+                        total_mxp = float(total_mxp)
+                    except:
+                        total_mxp = 0
+
+                    try:
+                        total_usd = float(total_usd)
+                    except:
+                        total_usd = 0
+
+                    html = f"""
+                    <div style="padding:6px;">
+                        <div style="
+                            background:#ffffff;
+                            padding:14px;
+                            border-radius:16px;
+                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                            color:#111;
+                            min-height:190px;
+                            font-family:sans-serif;
+                        ">
+
                             <div style="
-                                background:#ffffff;
-                                padding:14px;
-                                border-radius:16px;
-                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                color:#111;
-                                min-height:190px;
-                                font-family:sans-serif;
+                                font-weight:900;
+                                font-size:1rem;
                             ">
-
-                                <div style="
-                                    font-weight:900;
-                                    font-size:1rem;
-                                ">
-                                    {folio}
-                                </div>
-
-                                <div style="
-                                    font-size:0.8rem;
-                                    margin-top:4px;
-                                ">
-                                    {empleado}
-                                </div>
-
-                                <hr style="margin:8px 0">
-
-                                <div style="
-                                    font-size:0.8rem;
-                                ">
-                                    <b>Fecha:</b> {fecha}
-                                </div>
-
-                                <div style="
-                                    font-size:0.9rem;
-                                    margin-top:10px;
-                                    font-weight:700;
-                                    color:#151F6D;
-                                ">
-                                    {f'MXP: ${total_mxp:,.2f}' if total_mxp != 0 else ''}
-                                    {f'<br>USD: ${total_usd:,.2f}' if total_usd != 0 else ''}
-                                </div>
-
+                                {folio}
                             </div>
-                        </div>
-                        """
 
-                        components.html(
-                            html,
-                            height=230
+                            <div style="
+                                font-size:0.8rem;
+                                margin-top:4px;
+                            ">
+                                {empleado}
+                            </div>
+
+                            <hr style="margin:8px 0">
+
+                            <div style="
+                                font-size:0.8rem;
+                            ">
+                                <b>Fecha:</b> {fecha}
+                            </div>
+
+                            <div style="
+                                font-size:0.9rem;
+                                margin-top:10px;
+                                font-weight:700;
+                                color:#151F6D;
+                            ">
+                                {f'MXP: ${total_mxp:,.2f}' if total_mxp != 0 else ''}
+                                {f'<br>USD: ${total_usd:,.2f}' if total_usd != 0 else ''}
+                            </div>
+
+                        </div>
+                    </div>
+                    """
+
+                    components.html(
+                        html,
+                        height=230
+                    )
+
+                    if st.button(
+                        "👁 Ver",
+                        key=f"verificar_ver_{i}",
+                        use_container_width=True
+                    ):
+                        #right here
+                        folio_actual = row.get(
+                            "folio_solicitud",
+                            ""
                         )
 
-                        if st.button(
-                            "👁 Ver",
-                            key=f"verificar_ver_{i}",
-                            use_container_width=True
-                        ):
-                            #right here
-                            folio_actual = row.get(
-                                "folio_solicitud",
-                                ""
-                            )
+                        comprobacion_row = row.to_dict()
 
-                            comprobacion_row = row.to_dict()
+                        # Resolve the solicitud using the folio stored on the
+                        # comprobacion first. df_solicitudes can be filtered and
+                        # therefore may not contain the dummy solicitud.
+                        folio_solicitud_comprobacion = str(
+                            comprobacion_row.get("folio_solicitud", "") or folio_actual or ""
+                        ).strip()
 
-                            # Resolve the solicitud using the folio stored on the
-                            # comprobacion first. df_solicitudes can be filtered and
-                            # therefore may not contain the dummy solicitud.
-                            folio_solicitud_comprobacion = str(
-                                comprobacion_row.get("folio_solicitud", "") or folio_actual or ""
-                            ).strip()
+                        solicitud_row = {}
 
-                            solicitud_row = {}
+                        if folio_solicitud_comprobacion:
+                            solicitud_match = df_solicitudes[
+                                df_solicitudes["folio_solicitud"]
+                                .astype(str)
+                                == folio_solicitud_comprobacion
+                            ]
 
-                            if folio_solicitud_comprobacion:
-                                solicitud_match = df_solicitudes[
-                                    df_solicitudes["folio_solicitud"]
-                                    .astype(str)
-                                    == folio_solicitud_comprobacion
-                                ]
+                            if not solicitud_match.empty:
+                                solicitud_row = (
+                                    solicitud_match
+                                    .iloc[0]
+                                    .to_dict()
+                                )
+                            else:
+                                # The dummy solicitud may not be present in
+                                # df_solicitudes. Read the exact record directly
+                                # from Supabase so it is still treated as a
+                                # linked solicitud.
+                                solicitud_directa_resp = (
+                                    supabase
+                                    .table("solicitud_viaje")
+                                    .select("*")
+                                    .eq("folio_solicitud", folio_solicitud_comprobacion)
+                                    .limit(1)
+                                    .execute()
+                                )
+                                if solicitud_directa_resp.data:
+                                    solicitud_row = solicitud_directa_resp.data[0]
 
-                                if not solicitud_match.empty:
-                                    solicitud_row = (
-                                        solicitud_match
-                                        .iloc[0]
-                                        .to_dict()
-                                    )
-                                else:
-                                    # The dummy solicitud may not be present in
-                                    # df_solicitudes. Read the exact record directly
-                                    # from Supabase so it is still treated as a
-                                    # linked solicitud.
-                                    solicitud_directa_resp = (
-                                        supabase
-                                        .table("solicitud_viaje")
-                                        .select("*")
-                                        .eq("folio_solicitud", folio_solicitud_comprobacion)
-                                        .limit(1)
-                                        .execute()
-                                    )
-                                    if solicitud_directa_resp.data:
-                                        solicitud_row = solicitud_directa_resp.data[0]
-
-                            # Dummy solicitud: created only to allow a comprobacion
-                            # without a real solicitud. It must never be reopened.
-                            # Normalize JSONB in case it arrives through pandas as a
-                            # JSON string instead of a Python list.
-                            conceptos_dummy = solicitud_row.get("conceptos", [])
-                            if isinstance(conceptos_dummy, str):
-                                try:
-                                    conceptos_dummy = json.loads(conceptos_dummy)
-                                except Exception:
-                                    conceptos_dummy = []
-                            if not isinstance(conceptos_dummy, list):
+                        # Dummy solicitud: created only to allow a comprobacion
+                        # without a real solicitud. It must never be reopened.
+                        # Normalize JSONB in case it arrives through pandas as a
+                        # JSON string instead of a Python list.
+                        conceptos_dummy = solicitud_row.get("conceptos", [])
+                        if isinstance(conceptos_dummy, str):
+                            try:
+                                conceptos_dummy = json.loads(conceptos_dummy)
+                            except Exception:
                                 conceptos_dummy = []
+                        if not isinstance(conceptos_dummy, list):
+                            conceptos_dummy = []
 
-                            def _normalizar_dummy_texto(valor):
-                                import unicodedata
-                                texto = str(valor or "").strip().lower()
-                                return "".join(
-                                    caracter
-                                    for caracter in unicodedata.normalize("NFD", texto)
-                                    if unicodedata.category(caracter) != "Mn"
-                                )
-
-                            es_solicitud_dummy_sin_solicitud = any(
-                                _normalizar_dummy_texto(concepto.get("Tipo", "")) == "otros"
-                                and _normalizar_dummy_texto(concepto.get("Descripcion", "")) == "operacion sin solicitud"
-                                and float(concepto.get("Monto", 0) or 0) == 0
-                                for concepto in conceptos_dummy
-                                if isinstance(concepto, dict)
+                        def _normalizar_dummy_texto(valor):
+                            import unicodedata
+                            texto = str(valor or "").strip().lower()
+                            return "".join(
+                                caracter
+                                for caracter in unicodedata.normalize("NFD", texto)
+                                if unicodedata.category(caracter) != "Mn"
                             )
 
-                            # Keep the working folio synchronized with the exact
-                            # solicitud linked from the comprobacion.
-                            if folio_solicitud_comprobacion:
-                                folio_actual = folio_solicitud_comprobacion
+                        es_solicitud_dummy_sin_solicitud = any(
+                            _normalizar_dummy_texto(concepto.get("Tipo", "")) == "otros"
+                            and _normalizar_dummy_texto(concepto.get("Descripcion", "")) == "operacion sin solicitud"
+                            and float(concepto.get("Monto", 0) or 0) == 0
+                            for concepto in conceptos_dummy
+                            if isinstance(concepto, dict)
+                        )
 
-                            # Always start a newly opened comprobacion modal at the
-                            # first rejection step. Do not carry the second-step
-                            # Reabrir/Cerrar buttons over from a previous modal.
-                            rechazo_key_modal = (
-                                f"rechazo_comprobacion_pendiente_"
-                                f"{str(folio_actual).strip()}_"
-                                f"{str(comprobacion_row.get('folio_comprobacion', '') or '').strip()}"
-                            )
-                            st.session_state.pop(rechazo_key_modal, None)
+                        # Keep the working folio synchronized with the exact
+                        # solicitud linked from the comprobacion.
+                        if folio_solicitud_comprobacion:
+                            folio_actual = folio_solicitud_comprobacion
+
+                        # Always start a newly opened comprobacion modal at the
+                        # first rejection step. Do not carry the second-step
+                        # Reabrir/Cerrar buttons over from a previous modal.
+                        rechazo_key_modal = (
+                            f"rechazo_comprobacion_pendiente_"
+                            f"{str(folio_actual).strip()}_"
+                            f"{str(comprobacion_row.get('folio_comprobacion', '') or '').strip()}"
+                        )
+                        st.session_state.pop(rechazo_key_modal, None)
+
+                        # =================================
+                        # MODAL
+                        # =================================
+                        @st.dialog(
+                            "Detalle de Comprobación",
+                            width="large",
+                            on_dismiss="rerun",
+                        )
+                        def modal_verificacion():
 
                             # =================================
-                            # MODAL
+                            # INFO GENERAL
                             # =================================
-                            @st.dialog(
-                                "Detalle de Comprobación",
-                                width="large",
-                                on_dismiss="rerun",
+
+                            st.markdown(
+                                "<h2 style='color:#151F6D;'>📋 Información General</h2>",
+                                unsafe_allow_html=True
                             )
-                            def modal_verificacion():
 
-                                # =================================
-                                # INFO GENERAL
-                                # =================================
+                            col1, col2 = st.columns(2)
 
-                                st.markdown(
-                                    "<h2 style='color:#151F6D;'>📋 Información General</h2>",
-                                    unsafe_allow_html=True
-                                )
-
-                                col1, col2 = st.columns(2)
-
-                                with col1:
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Estatus:</b> {comprobacion_row.get('estatus', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                with col2:
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    label_cliente = (
-                                        "Motivo del Viaje"
-                                        if str(
-                                            solicitud_row.get(
-                                                "motivo_viaje",
-                                                ""
-                                            )
-                                        ).strip().upper() == "OTROS"
-                                        else "Nombre del Cliente"
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                    st.markdown(
-                                        f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
-                                        unsafe_allow_html=True
-                                    )
-
-                                # =================================
-                                # MOTIVO
-                                # =================================
-
-                                st.markdown("---")
+                            with col1:
 
                                 st.markdown(
-                                    "<h2 style='color:#151F6D;'>✈️ Motivo del Viaje</h2>",
+                                    f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    f"""
-                                    <div style='
-                                        background-color:#F3F4F6;
-                                        padding:16px;
-                                        border-radius:12px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                        margin-bottom:20px;
-                                        white-space:pre-wrap;
-                                        color:#111;
-                                    '>
-                                        {solicitud_row.get('motivo_viaje', '')}
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                                # =================================
-                                # OBSERVACIONES
-                                # =================================
-
-                                st.markdown(
-                                    "<h2 style='color:#151F6D;'>📝 Observaciones Solicitud</h2>",
+                                    f"<span style='color:black;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    f"""
-                                    <div style='
-                                        background-color:#F3F4F6;
-                                        padding:16px;
-                                        border-radius:12px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                        margin-bottom:20px;
-                                        white-space:pre-wrap;
-                                        color:#111;
-                                    '>
-                                        {solicitud_row.get('observaciones', '')}
-                                    </div>
-                                    """,
+                                    f"<span style='color:black;'><b>Estatus:</b> {comprobacion_row.get('estatus', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    "<h2 style='color:#151F6D;'>👤 Empleado que metió comprobación</h2>",
+                                    f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    f"""
-                                    <div style='
-                                        background-color:#F3F4F6;
-                                        padding:16px;
-                                        border-radius:12px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                        margin-bottom:20px;
-                                        white-space:pre-wrap;
-                                        font-size:18px;
-                                        font-weight:600;
-                                        color:#111;
-                                    '>
-                                        {comprobacion_row.get('nombre_empleado_solicita', '')}
-                                    </div>
-                                    """,
+                                    f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    "<h2 style='color:#151F6D;'>📝 Observaciones Comprobación</h2>",
+                                    f"<span style='color:black;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    f"""
-                                    <div style='
-                                        background-color:#F3F4F6;
-                                        padding:16px;
-                                        border-radius:12px;
-                                        border:1px solid rgba(191,167,95,0.25);
-                                        margin-bottom:20px;
-                                        white-space:pre-wrap;
-                                        color:#111;
-                                    '>
-                                        {comprobacion_row.get('observaciones', '')}
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                                # =================================
-                                # MONTO SOLICITADO
-                                # =================================
-
-                                st.markdown("---")
-
-                                monto_solicitado_mxp = solicitud_row.get(
-                                    "total_estimado",
-                                    0
-                                )
-
-                                monto_solicitado_usd = solicitud_row.get(
-                                    "total_estimado_usd",
-                                    0
-                                )
-
-                                try:
-                                    monto_solicitado_mxp = float(
-                                        monto_solicitado_mxp or 0
-                                    )
-                                except:
-                                    monto_solicitado_mxp = 0.0
-
-                                try:
-                                    monto_solicitado_usd = float(
-                                        monto_solicitado_usd or 0
-                                    )
-                                except:
-                                    monto_solicitado_usd = 0.0
-
-                                montos_solicitados = []
-
-                                if monto_solicitado_mxp != 0:
-                                    montos_solicitados.append(
-                                        f"${monto_solicitado_mxp:,.2f}"
-                                    )
-
-                                if monto_solicitado_usd != 0:
-                                    montos_solicitados.append(
-                                        f"${monto_solicitado_usd:,.2f}"
-                                    )
-
-                                monto_solicitado_display = "<br>".join(
-                                    montos_solicitados
-                                ) if montos_solicitados else "$0.00"
-
-                                conceptos_solicitud = (
-                                    solicitud_row.get(
-                                        "conceptos",
-                                        []
-                                    )
-                                )
-
-                                if not isinstance(
-                                    conceptos_solicitud,
-                                    list
-                                ):
-                                    conceptos_solicitud = []
-
-                                st.markdown(
-                                    f"""
-                                    <div style='
-                                        font-size:26px;
-                                        font-weight:800;
-                                        color:#BFA75F;
-                                        margin-top:10px;
-                                        margin-bottom:10px;
-                                    '>
-                                        Monto Solicitado:<br>
-                                        {monto_solicitado_display}
-                                    </div>
-                                    """,
+                                    f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
                                 st.markdown(
-                                    "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
+                                    f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
                                     unsafe_allow_html=True
                                 )
 
-                                with st.expander(
-                                    "",
-                                    expanded=False
-                                ):
+                            with col2:
 
-                                    if conceptos_solicitud:
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
+                                    unsafe_allow_html=True
+                                )
 
-                                        df_sol = pd.DataFrame(
-                                            conceptos_solicitud
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
+                                    unsafe_allow_html=True
+                                )
+
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
+                                    unsafe_allow_html=True
+                                )
+
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
+                                    unsafe_allow_html=True
+                                )
+
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
+                                    unsafe_allow_html=True
+                                )
+
+                                label_cliente = (
+                                    "Motivo del Viaje"
+                                    if str(
+                                        solicitud_row.get(
+                                            "motivo_viaje",
+                                            ""
                                         )
-
-                                        columnas_solicitud = [
-                                            "Tipo",
-                                            "Descripcion",
-                                            "Monto",
-                                            "Tipo Cambio",
-                                            "Aprobado",
-                                            "Razon"
-                                        ]
-
-                                        for col_name in columnas_solicitud:
-
-                                            if col_name not in df_sol.columns:
-                                                df_sol[col_name] = ""
-
-                                        df_sol = df_sol[
-                                            columnas_solicitud
-                                        ]
-
-                                        if "Monto" in df_sol.columns:
-
-                                            df_sol["Monto"] = (
-                                                pd.to_numeric(
-                                                    df_sol["Monto"],
-                                                    errors="coerce"
-                                                )
-                                                .fillna(0)
-                                                .apply(
-                                                    lambda x:
-                                                    f"${x:,.2f}"
-                                                )
-                                            )
-
-                                        st.data_editor(
-                                            df_sol,
-                                            use_container_width=True,
-                                            hide_index=True,
-                                            disabled=True,
-                                            height=350,
-                                            key="solicitud_detalles_verificacion"
-                                        )
-
-                                    else:
-
-                                        st.info(
-                                            "No hay conceptos."
-                                        )
-
-
-                                # =================================
-                                # CONCEPTOS COMPROBACION
-                                # =================================
-
-                                st.markdown("---")
+                                    ).strip().upper() == "OTROS"
+                                    else "Nombre del Cliente"
+                                )
 
                                 st.markdown(
-                                    "## 🧾 Conceptos Comprobación"
+                                    f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
+                                    unsafe_allow_html=True
                                 )
 
-                                conceptos_comprobacion = (
-                                    comprobacion_row.get(
-                                        "conceptos",
-                                        []
-                                    )
+                                st.markdown(
+                                    f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
+                                    unsafe_allow_html=True
                                 )
 
-                                total_comprobado = (
-                                    comprobacion_row.get(
-                                        "total_comprobado",
-                                        0
-                                    )
+                            # =================================
+                            # MOTIVO
+                            # =================================
+
+                            st.markdown("---")
+
+                            st.markdown(
+                                "<h2 style='color:#151F6D;'>✈️ Motivo del Viaje</h2>",
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                f"""
+                                <div style='
+                                    background-color:#F3F4F6;
+                                    padding:16px;
+                                    border-radius:12px;
+                                    border:1px solid rgba(191,167,95,0.25);
+                                    margin-bottom:20px;
+                                    white-space:pre-wrap;
+                                    color:#111;
+                                '>
+                                    {solicitud_row.get('motivo_viaje', '')}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                            # =================================
+                            # OBSERVACIONES
+                            # =================================
+
+                            st.markdown(
+                                "<h2 style='color:#151F6D;'>📝 Observaciones Solicitud</h2>",
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                f"""
+                                <div style='
+                                    background-color:#F3F4F6;
+                                    padding:16px;
+                                    border-radius:12px;
+                                    border:1px solid rgba(191,167,95,0.25);
+                                    margin-bottom:20px;
+                                    white-space:pre-wrap;
+                                    color:#111;
+                                '>
+                                    {solicitud_row.get('observaciones', '')}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                "<h2 style='color:#151F6D;'>👤 Empleado que metió comprobación</h2>",
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                f"""
+                                <div style='
+                                    background-color:#F3F4F6;
+                                    padding:16px;
+                                    border-radius:12px;
+                                    border:1px solid rgba(191,167,95,0.25);
+                                    margin-bottom:20px;
+                                    white-space:pre-wrap;
+                                    font-size:18px;
+                                    font-weight:600;
+                                    color:#111;
+                                '>
+                                    {comprobacion_row.get('nombre_empleado_solicita', '')}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                "<h2 style='color:#151F6D;'>📝 Observaciones Comprobación</h2>",
+                                unsafe_allow_html=True
+                            )
+
+                            st.markdown(
+                                f"""
+                                <div style='
+                                    background-color:#F3F4F6;
+                                    padding:16px;
+                                    border-radius:12px;
+                                    border:1px solid rgba(191,167,95,0.25);
+                                    margin-bottom:20px;
+                                    white-space:pre-wrap;
+                                    color:#111;
+                                '>
+                                    {comprobacion_row.get('observaciones', '')}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                            # =================================
+                            # MONTO SOLICITADO
+                            # =================================
+
+                            st.markdown("---")
+
+                            monto_solicitado_mxp = solicitud_row.get(
+                                "total_estimado",
+                                0
+                            )
+
+                            monto_solicitado_usd = solicitud_row.get(
+                                "total_estimado_usd",
+                                0
+                            )
+
+                            try:
+                                monto_solicitado_mxp = float(
+                                    monto_solicitado_mxp or 0
+                                )
+                            except:
+                                monto_solicitado_mxp = 0.0
+
+                            try:
+                                monto_solicitado_usd = float(
+                                    monto_solicitado_usd or 0
+                                )
+                            except:
+                                monto_solicitado_usd = 0.0
+
+                            montos_solicitados = []
+
+                            if monto_solicitado_mxp != 0:
+                                montos_solicitados.append(
+                                    f"${monto_solicitado_mxp:,.2f}"
                                 )
 
-                                try:
-                                    total_comprobado = float(
-                                        total_comprobado
-                                    )
-                                except:
-                                    total_comprobado = 0
-
-                                total_comprobacion_mxp = float(
-                                    comprobacion_row.get(
-                                        "total_comprobado",
-                                        0
-                                    ) or 0
+                            if monto_solicitado_usd != 0:
+                                montos_solicitados.append(
+                                    f"${monto_solicitado_usd:,.2f}"
                                 )
 
-                                total_comprobacion_usd = float(
-                                    comprobacion_row.get(
-                                        "total_comprobado_usd",
-                                        0
-                                    ) or 0
+                            monto_solicitado_display = "<br>".join(
+                                montos_solicitados
+                            ) if montos_solicitados else "$0.00"
+
+                            conceptos_solicitud = (
+                                solicitud_row.get(
+                                    "conceptos",
+                                    []
                                 )
+                            )
 
-                                comprobacion_html = ""
+                            if not isinstance(
+                                conceptos_solicitud,
+                                list
+                            ):
+                                conceptos_solicitud = []
 
-                                if total_comprobacion_mxp != 0:
+                            st.markdown(
+                                f"""
+                                <div style='
+                                    font-size:26px;
+                                    font-weight:800;
+                                    color:#BFA75F;
+                                    margin-top:10px;
+                                    margin-bottom:10px;
+                                '>
+                                    Monto Solicitado:<br>
+                                    {monto_solicitado_display}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
 
-                                    comprobacion_html += f"""
-                                    <div style='
-                                        font-size:22px;
-                                        font-weight:700;
-                                        color:#38BDF8;
-                                        margin-bottom:8px;
-                                    '>
-                                        Comprobación MXP:
-                                        ${total_comprobacion_mxp:,.2f}
-                                    </div>
-                                    """
+                            st.markdown(
+                                "<h3 style='color:black;'>👁 Ver Detalles Solicitud</h3>",
+                                unsafe_allow_html=True
+                            )
 
-                                if total_comprobacion_usd != 0:
+                            with st.expander(
+                                "",
+                                expanded=False
+                            ):
 
-                                    comprobacion_html += f"""
-                                    <div style='
-                                        font-size:22px;
-                                        font-weight:700;
-                                        color:#38BDF8;
-                                        margin-bottom:15px;
-                                    '>
-                                        Comprobación USD:
-                                        ${total_comprobacion_usd:,.2f}
-                                    </div>
-                                    """
+                                if conceptos_solicitud:
 
-                                if comprobacion_html:
-
-                                    st.markdown(
-                                        comprobacion_html,
-                                        unsafe_allow_html=True
+                                    df_sol = pd.DataFrame(
+                                        conceptos_solicitud
                                     )
 
-                                if conceptos_comprobacion:
-
-                                    df_comp = pd.DataFrame(
-                                        conceptos_comprobacion
-                                    )
-
-                                    if "Eliminar" in df_comp.columns:
-
-                                        df_comp = df_comp.drop(
-                                            columns=["Eliminar"]
-                                        )
-
-                                    columnas_comprobacion = [
-
+                                    columnas_solicitud = [
                                         "Tipo",
                                         "Descripcion",
-                                        "Fecha Factura",
-                                        "Folio",
-                                        "Proveedor",
-                                        "Moneda",
                                         "Monto",
-                                        "Comprobante",
-                                        "Aplica IVA",
-                                        "IVA %",
-                                        "Aplica Retencion",
-                                        "Impuesto Acreditable",
-                                        "Total Comprobado"
+                                        "Tipo Cambio",
+                                        "Aprobado",
+                                        "Razon"
                                     ]
 
-                                    for col_name in columnas_comprobacion:
+                                    for col_name in columnas_solicitud:
 
-                                        if col_name not in df_comp.columns:
+                                        if col_name not in df_sol.columns:
+                                            df_sol[col_name] = ""
 
-                                            df_comp[col_name] = ""
-
-                                    df_comp = df_comp[
-                                        columnas_comprobacion
+                                    df_sol = df_sol[
+                                        columnas_solicitud
                                     ]
 
-                                    if "Fecha Factura" in df_comp.columns:
+                                    if "Monto" in df_sol.columns:
 
-                                        df_comp["Fecha Factura"] = pd.to_datetime(
-                                            df_comp["Fecha Factura"],
-                                            errors="coerce"
+                                        df_sol["Monto"] = (
+                                            pd.to_numeric(
+                                                df_sol["Monto"],
+                                                errors="coerce"
+                                            )
+                                            .fillna(0)
+                                            .apply(
+                                                lambda x:
+                                                f"${x:,.2f}"
+                                            )
                                         )
 
-                                    currency_columns = [
-                                        "Impuesto Acreditable",
-                                        "Total Comprobado"
-                                    ]
-
-                                    for col_name in currency_columns:
-
-                                        if col_name in df_comp.columns:
-
-                                            df_comp[col_name] = pd.to_numeric(
-                                                df_comp[col_name],
-                                                errors="coerce"
-                                            ).fillna(0)
-
-                                    edited_df_comp = st.data_editor(
-                                        df_comp,
+                                    st.data_editor(
+                                        df_sol,
                                         use_container_width=True,
                                         hide_index=True,
+                                        disabled=True,
                                         height=350,
-                                        disabled=not can_manage_viaticos,
-                                        column_config={
-                                            "Tipo": st.column_config.SelectboxColumn(
-                                                "Tipo",
-                                                options=[
-                                                    "Selecciona un tipo",
-                                                    "ALIMENTOS VIAJE",
-                                                    "CASETAS Y PEAJES",
-                                                    "ESTACIONAMIENTO VIAJE",
-                                                    "GASOLINA VIAJE",
-                                                    "RENTA DE AUTOMOVIL/TRANSPORTE",
-                                                    "ATENCION/PRESENTE CLIENTES VIAJE",
-                                                    "OTROS"
-                                                ],
-                                                required=True
-                                            ),
-
-                                            "Descripcion": st.column_config.TextColumn(
-                                                "Descripcion"
-                                            ),
-                                            "Monto": st.column_config.NumberColumn(
-                                                "Monto",
-                                                format="$ %.2f"
-                                            ),
-                                            "Fecha Factura": st.column_config.DateColumn(
-                                                "Fecha Factura",
-                                                format="YYYY-MM-DD"
-                                            )
-                                        }
+                                        key="solicitud_detalles_verificacion"
                                     )
 
                                 else:
 
                                     st.info(
-                                        "No hay conceptos comprobados."
+                                        "No hay conceptos."
                                     )
 
-                                # =================================
-                                # ARCHIVOS ADJUNTOS
-                                # =================================
 
-                                st.markdown("---")
-                                st.markdown("## 📎 Comprobantes Adjuntos")
+                            # =================================
+                            # CONCEPTOS COMPROBACION
+                            # =================================
 
-                                archivos = comprobacion_row.get("archivos") or []
+                            st.markdown("---")
 
-                                if len(archivos) == 0:
-                                    st.info("No hay comprobantes adjuntos.")
-                                else:
-                                    for archivo in archivos:
+                            st.markdown(
+                                "## 🧾 Conceptos Comprobación"
+                            )
 
-                                        path = archivo.get("path", "")
-                                        nombre = archivo.get("filename", "Archivo")
+                            conceptos_comprobacion = (
+                                comprobacion_row.get(
+                                    "conceptos",
+                                    []
+                                )
+                            )
 
-                                        if not path:
-                                            continue
-
-                                        url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
-
-                                        st.link_button(
-                                            f"📎 {nombre}",
-                                            url,
-                                            use_container_width=True
-                                        )
-
-                                # =================================
-                                # TOTALES COMPROBACION
-                                # =================================
-
-                                st.markdown("---")
-
-                                total_comp = comprobacion_row.get(
+                            total_comprobado = (
+                                comprobacion_row.get(
                                     "total_comprobado",
                                     0
                                 )
+                            )
 
-                                anticipo = comprobacion_row.get(
+                            try:
+                                total_comprobado = float(
+                                    total_comprobado
+                                )
+                            except:
+                                total_comprobado = 0
+
+                            total_comprobacion_mxp = float(
+                                comprobacion_row.get(
+                                    "total_comprobado",
+                                    0
+                                ) or 0
+                            )
+
+                            total_comprobacion_usd = float(
+                                comprobacion_row.get(
+                                    "total_comprobado_usd",
+                                    0
+                                ) or 0
+                            )
+
+                            comprobacion_html = ""
+
+                            if total_comprobacion_mxp != 0:
+
+                                comprobacion_html += f"""
+                                <div style='
+                                    font-size:22px;
+                                    font-weight:700;
+                                    color:#38BDF8;
+                                    margin-bottom:8px;
+                                '>
+                                    Comprobación MXP:
+                                    ${total_comprobacion_mxp:,.2f}
+                                </div>
+                                """
+
+                            if total_comprobacion_usd != 0:
+
+                                comprobacion_html += f"""
+                                <div style='
+                                    font-size:22px;
+                                    font-weight:700;
+                                    color:#38BDF8;
+                                    margin-bottom:15px;
+                                '>
+                                    Comprobación USD:
+                                    ${total_comprobacion_usd:,.2f}
+                                </div>
+                                """
+
+                            if comprobacion_html:
+
+                                st.markdown(
+                                    comprobacion_html,
+                                    unsafe_allow_html=True
+                                )
+
+                            if conceptos_comprobacion:
+
+                                df_comp = pd.DataFrame(
+                                    conceptos_comprobacion
+                                )
+
+                                if "Eliminar" in df_comp.columns:
+
+                                    df_comp = df_comp.drop(
+                                        columns=["Eliminar"]
+                                    )
+
+                                columnas_comprobacion = [
+
+                                    "Tipo",
+                                    "Descripcion",
+                                    "Fecha Factura",
+                                    "Folio",
+                                    "Proveedor",
+                                    "Moneda",
+                                    "Monto",
+                                    "Comprobante",
+                                    "Aplica IVA",
+                                    "IVA %",
+                                    "Aplica Retencion",
+                                    "Impuesto Acreditable",
+                                    "Total Comprobado"
+                                ]
+
+                                for col_name in columnas_comprobacion:
+
+                                    if col_name not in df_comp.columns:
+
+                                        df_comp[col_name] = ""
+
+                                df_comp = df_comp[
+                                    columnas_comprobacion
+                                ]
+
+                                if "Fecha Factura" in df_comp.columns:
+
+                                    df_comp["Fecha Factura"] = pd.to_datetime(
+                                        df_comp["Fecha Factura"],
+                                        errors="coerce"
+                                    )
+
+                                currency_columns = [
+                                    "Impuesto Acreditable",
+                                    "Total Comprobado"
+                                ]
+
+                                for col_name in currency_columns:
+
+                                    if col_name in df_comp.columns:
+
+                                        df_comp[col_name] = pd.to_numeric(
+                                            df_comp[col_name],
+                                            errors="coerce"
+                                        ).fillna(0)
+
+                                edited_df_comp = st.data_editor(
+                                    df_comp,
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    height=350,
+                                    disabled=not can_manage_viaticos,
+                                    column_config={
+                                        "Tipo": st.column_config.SelectboxColumn(
+                                            "Tipo",
+                                            options=[
+                                                "Selecciona un tipo",
+                                                "ALIMENTOS VIAJE",
+                                                "CASETAS Y PEAJES",
+                                                "ESTACIONAMIENTO VIAJE",
+                                                "GASOLINA VIAJE",
+                                                "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                                "ATENCION/PRESENTE CLIENTES VIAJE",
+                                                "OTROS"
+                                            ],
+                                            required=True
+                                        ),
+
+                                        "Descripcion": st.column_config.TextColumn(
+                                            "Descripcion"
+                                        ),
+                                        "Monto": st.column_config.NumberColumn(
+                                            "Monto",
+                                            format="$ %.2f"
+                                        ),
+                                        "Fecha Factura": st.column_config.DateColumn(
+                                            "Fecha Factura",
+                                            format="YYYY-MM-DD"
+                                        )
+                                    }
+                                )
+
+                            else:
+
+                                st.info(
+                                    "No hay conceptos comprobados."
+                                )
+
+                            # =================================
+                            # ARCHIVOS ADJUNTOS
+                            # =================================
+
+                            st.markdown("---")
+                            st.markdown("## 📎 Comprobantes Adjuntos")
+
+                            archivos = comprobacion_row.get("archivos") or []
+
+                            if len(archivos) == 0:
+                                st.info("No hay comprobantes adjuntos.")
+                            else:
+                                for archivo in archivos:
+
+                                    path = archivo.get("path", "")
+                                    nombre = archivo.get("filename", "Archivo")
+
+                                    if not path:
+                                        continue
+
+                                    url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+
+                                    st.link_button(
+                                        f"📎 {nombre}",
+                                        url,
+                                        use_container_width=True
+                                    )
+
+                            # =================================
+                            # TOTALES COMPROBACION
+                            # =================================
+
+                            st.markdown("---")
+
+                            total_comp = comprobacion_row.get(
+                                "total_comprobado",
+                                0
+                            )
+
+                            anticipo = comprobacion_row.get(
+                                "anticipo_viaje",
+                                0
+                            )
+
+                            diferencia = comprobacion_row.get(
+                                "diferencia_cargo_favor",
+                                0
+                            )
+
+                            try:
+                                total_comp = float(total_comp)
+                            except:
+                                total_comp = 0
+
+                            try:
+                                anticipo = float(anticipo)
+                            except:
+                                anticipo = 0
+
+                            try:
+                                diferencia = float(diferencia)
+                            except:
+                                diferencia = 0
+
+                            col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                            # =================================
+                            # TOTALES MXP
+                            # =================================
+
+                            total_comp_mxp = float(
+                                comprobacion_row.get(
+                                    "total_comprobado",
+                                    0
+                                ) or 0
+                            )
+
+                            anticipo_mxp = float(
+                                comprobacion_row.get(
                                     "anticipo_viaje",
                                     0
-                                )
+                                ) or 0
+                            )
 
-                                diferencia = comprobacion_row.get(
+                            diferencia_mxp = float(
+                                comprobacion_row.get(
                                     "diferencia_cargo_favor",
                                     0
-                                )
+                                ) or 0
+                            )
 
-                                try:
-                                    total_comp = float(total_comp)
-                                except:
-                                    total_comp = 0
-
-                                try:
-                                    anticipo = float(anticipo)
-                                except:
-                                    anticipo = 0
-
-                                try:
-                                    diferencia = float(diferencia)
-                                except:
-                                    diferencia = 0
+                            if (
+                                total_comp_mxp != 0
+                                or anticipo_mxp != 0
+                                or diferencia_mxp != 0
+                            ):
 
                                 col_tot1, col_tot2, col_tot3 = st.columns(3)
 
+                                with col_tot1:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Total Comprobado MXP
+
+                                        ## ${total_comp_mxp:,.2f}
+                                        """
+                                    )
+
+                                with col_tot2:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Anticipo Viaje MXP
+
+                                        ## ${anticipo_mxp:,.2f}
+                                        """
+                                    )
+
+                                with col_tot3:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Diferencia Cargo/Favor MXP
+
+                                        ## ${diferencia_mxp:,.2f}
+                                        """
+                                    )
+
+
+                            # =================================
+                            # TOTALES USD
+                            # =================================
+
+                            total_comp_usd = float(
+                                comprobacion_row.get(
+                                    "total_comprobado_usd",
+                                    0
+                                ) or 0
+                            )
+
+                            anticipo_usd = float(
+                                comprobacion_row.get(
+                                    "anticipo_viaje_usd",
+                                    0
+                                ) or 0
+                            )
+
+                            diferencia_usd = float(
+                                comprobacion_row.get(
+                                    "diferencia_cargo_favor_usd",
+                                    0
+                                ) or 0
+                            )
+
+                            if (
+                                total_comp_usd != 0
+                                or anticipo_usd != 0
+                                or diferencia_usd != 0
+                            ):
+
+                                st.markdown("<br>", unsafe_allow_html=True)
+
+                                col_tot1, col_tot2, col_tot3 = st.columns(3)
+
+                                with col_tot1:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Total Comprobado USD
+
+                                        ## ${total_comp_usd:,.2f}
+                                        """
+                                    )
+
+                                with col_tot2:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Anticipo Viaje USD
+
+                                        ## ${anticipo_usd:,.2f}
+                                        """
+                                    )
+
+                                with col_tot3:
+
+                                    st.markdown(
+                                        f"""
+                                        ### Diferencia Cargo/Favor USD
+
+                                        ## ${diferencia_usd:,.2f}
+                                        """
+                                    )
+
+                            st.markdown("---")
+
+                            if can_manage_viaticos and st.button(
+                                "💾 Guardar Cambios",
+                                use_container_width=True,
+                                key=f"guardar_comprobacion_{comprobacion_row.get('folio_comprobacion', '')}"
+                            ):
+
+                                if "Fecha Factura" in edited_df_comp.columns:
+
+                                    edited_df_comp["Fecha Factura"] = (
+                                        edited_df_comp["Fecha Factura"]
+                                        .dt.strftime("%Y-%m-%d")
+                                    )
+
+                                # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT (fechas o montos
+                                # vacios) que causaban ValueError al hacer .execute()
+                                conceptos_actualizados = limpiar_json(
+                                    edited_df_comp.to_dict(
+                                        orient="records"
+                                    )
+                                )
+
+                                nuevo_total_comprobado = 0.0
+
+                                for item in conceptos_actualizados:
+
+                                    try:
+                                        nuevo_total_comprobado += float(
+                                            item.get("Total Comprobado") or 0
+                                        )
+                                    except Exception:
+                                        pass
+
+                                supabase.table(
+                                    "comprobacion_viaje"
+                                ).update(
+                                    {
+                                        "conceptos": conceptos_actualizados,
+                                        "total_comprobado": nuevo_total_comprobado
+                                    }
+                                ).eq(
+                                    "folio_comprobacion",
+                                    str(comprobacion_row.get("folio_comprobacion", "") or "").strip()
+                                ).execute()
+
+                                st.cache_data.clear()
+
+                                st.success(
+                                    "Comprobación actualizada correctamente."
+                                )
+
+                                st.rerun()
+
+                            def enviar_notificacion_rechazo(estatus_solicitud, folio_comprobacion=None):
+
                                 # =================================
-                                # TOTALES MXP
+                                # RE-READ THE EXACT DATABASE RECORDS
                                 # =================================
+                                # The selected row comes from df_comprobaciones,
+                                # therefore folio_comprobacion is the correct
+                                # identity for this comprobacion. The solicitudes
+                                # table has its own independent id sequence.
+                                if not folio_comprobacion:
+                                    folio_comprobacion = str(
+                                        comprobacion_row.get("folio_comprobacion", "") or ""
+                                    ).strip()
+                                else:
+                                    folio_comprobacion = str(folio_comprobacion).strip()
 
-                                total_comp_mxp = float(
-                                    comprobacion_row.get(
-                                        "total_comprobado",
-                                        0
-                                    ) or 0
+                                if not folio_comprobacion:
+                                    st.warning(
+                                        "No se pudo enviar correo: la comprobación seleccionada no tiene folio_comprobacion."
+                                    )
+                                    return
+
+                                comprobacion_email_resp = (
+                                    supabase
+                                    .table("comprobacion_viaje")
+                                    .select("*")
+                                    .eq("folio_comprobacion", folio_comprobacion)
+                                    .limit(1)
+                                    .execute()
                                 )
 
-                                anticipo_mxp = float(
-                                    comprobacion_row.get(
-                                        "anticipo_viaje",
-                                        0
-                                    ) or 0
+                                comprobacion_email_data = (
+                                    comprobacion_email_resp.data
+                                    if comprobacion_email_resp.data
+                                    else []
                                 )
 
-                                diferencia_mxp = float(
-                                    comprobacion_row.get(
-                                        "diferencia_cargo_favor",
-                                        0
-                                    ) or 0
+                                if not comprobacion_email_data:
+                                    st.warning(
+                                        f"No se pudo enviar correo: no se encontró la comprobación {folio_comprobacion} en Supabase."
+                                    )
+                                    return
+
+                                comprobacion_email = comprobacion_email_data[0]
+
+                                # Use the folio stored in the comprobación to
+                                # retrieve the exact solicitud from Supabase.
+                                folio_solicitud_email = str(
+                                    comprobacion_email.get("folio_solicitud", "") or ""
+                                ).strip()
+
+                                if not folio_solicitud_email:
+                                    st.warning(
+                                        "No se pudo enviar correo: la comprobación no tiene folio_solicitud almacenado."
+                                    )
+                                    return
+
+                                solicitud_email_resp = (
+                                    supabase
+                                    .table("solicitud_viaje")
+                                    .select("*")
+                                    .eq("folio_solicitud", folio_solicitud_email)
+                                    .limit(1)
+                                    .execute()
                                 )
 
-                                if (
-                                    total_comp_mxp != 0
-                                    or anticipo_mxp != 0
-                                    or diferencia_mxp != 0
-                                ):
+                                solicitud_email_data = (
+                                    solicitud_email_resp.data
+                                    if solicitud_email_resp.data
+                                    else []
+                                )
 
-                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
+                                if not solicitud_email_data:
+                                    st.warning(
+                                        f"No se pudo enviar correo: no se encontró la solicitud {folio_solicitud_email} en Supabase."
+                                    )
+                                    return
 
-                                    with col_tot1:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Total Comprobado MXP
-
-                                            ## ${total_comp_mxp:,.2f}
-                                            """
-                                        )
-
-                                    with col_tot2:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Anticipo Viaje MXP
-
-                                            ## ${anticipo_mxp:,.2f}
-                                            """
-                                        )
-
-                                    with col_tot3:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Diferencia Cargo/Favor MXP
-
-                                            ## ${diferencia_mxp:,.2f}
-                                            """
-                                        )
-
+                                solicitud_email = solicitud_email_data[0]
 
                                 # =================================
-                                # TOTALES USD
+                                # BUILD THE COMPLETE RECIPIENT LIST
+                                # Use nombre_empleado_solicita from the
+                                # solicitud first. If it is blank, fall
+                                # back to the comprobacion record.
                                 # =================================
-
-                                total_comp_usd = float(
-                                    comprobacion_row.get(
-                                        "total_comprobado_usd",
-                                        0
-                                    ) or 0
+                                nombre_empleado_email = (
+                                    clean(
+                                        solicitud_email.get(
+                                            "nombre_empleado_solicita",
+                                            ""
+                                        )
+                                    )
+                                    or clean(
+                                        comprobacion_email.get(
+                                            "nombre_empleado_solicita",
+                                            ""
+                                        )
+                                    )
                                 )
 
-                                anticipo_usd = float(
-                                    comprobacion_row.get(
-                                        "anticipo_viaje_usd",
-                                        0
-                                    ) or 0
+                                correo_creador = obtener_email_usuario(
+                                    nombre_empleado_email
                                 )
 
-                                diferencia_usd = float(
-                                    comprobacion_row.get(
-                                        "diferencia_cargo_favor_usd",
-                                        0
-                                    ) or 0
+                                if not correo_creador:
+                                    st.warning(
+                                        "No se pudo enviar correo: no se encontró el correo del usuario en nombre_empleado_solicita de solicitud ni comprobación."
+                                    )
+                                    return
+
+                                destinatarios = construir_destinatarios(
+                                    empresa=solicitud_email.get(
+                                        "empresa_cargo_gastos",
+                                        ""
+                                    ),
+                                    email_usuario_actual=email_usuario,
+                                    correo_creador=correo_creador
                                 )
 
-                                if (
-                                    total_comp_usd != 0
-                                    or anticipo_usd != 0
-                                    or diferencia_usd != 0
-                                ):
+                                try:
+                                    enviar_correo_estatus_solicitud(
+                                        destinatarios=destinatarios,
+                                        folio_solicitud=solicitud_email.get("folio_solicitud", ""),
+                                        folio_comprobacion=comprobacion_email.get("folio_comprobacion", ""),
+                                        estatus=estatus_solicitud,
+                                        empleado=solicitud_email.get("nombre_empleado_solicita", ""),
+                                        empresa_servicio=solicitud_email.get("empresa_brinda_servicio", ""),
+                                        fecha_solicitud=solicitud_email.get("fecha_solicitud", ""),
+                                        fecha_comprobacion=comprobacion_email.get("created_at", ""),
+                                        fecha_inicio=solicitud_email.get("fecha_inicio", ""),
+                                        fecha_fin=solicitud_email.get("fecha_fin", ""),
+                                        empresa_cargo=solicitud_email.get("empresa_cargo_gastos", ""),
+                                        unidad_negocio=solicitud_email.get("unidad_negocio", ""),
+                                        sucursal=solicitud_email.get("sucursal", ""),
+                                        sucursal_especificar=solicitud_email.get("sucursal_especificar", ""),
+                                        nombre_cliente=solicitud_email.get("nombre_cliente", ""),
+                                        folio_sac=solicitud_email.get("folio_sac", ""),
+                                        motivo_viaje=solicitud_email.get("motivo_viaje", ""),
+                                        observaciones=solicitud_email.get("observaciones", ""),
+                                        conceptos=solicitud_email.get("conceptos", []),
+                                        conceptos_comprobacion=comprobacion_email.get("conceptos", []),
+                                        total_estimado=solicitud_email.get("total_estimado", 0),
+                                        total_estimado_usd=solicitud_email.get("total_estimado_usd", 0),
+                                        empleado_comprobacion=comprobacion_email.get("nombre_empleado_solicita", ""),
+                                        observaciones_comprobacion=comprobacion_email.get("observaciones", ""),
+                                        total_comprobado=comprobacion_email.get("total_comprobado", 0),
+                                        total_comprobado_usd=comprobacion_email.get("total_comprobado_usd", 0)
+                                    )
+                                except Exception as e:
+                                    st.warning(f"No se pudo enviar correo: {e}")
 
-                                    st.markdown("<br>", unsafe_allow_html=True)
+                            btn1, btn2 = st.columns(2)
 
-                                    col_tot1, col_tot2, col_tot3 = st.columns(3)
-
-                                    with col_tot1:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Total Comprobado USD
-
-                                            ## ${total_comp_usd:,.2f}
-                                            """
-                                        )
-
-                                    with col_tot2:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Anticipo Viaje USD
-
-                                            ## ${anticipo_usd:,.2f}
-                                            """
-                                        )
-
-                                    with col_tot3:
-
-                                        st.markdown(
-                                            f"""
-                                            ### Diferencia Cargo/Favor USD
-
-                                            ## ${diferencia_usd:,.2f}
-                                            """
-                                        )
-
-                                st.markdown("---")
+                            with btn1:
 
                                 if can_manage_viaticos and st.button(
-                                    "💾 Guardar Cambios",
-                                    use_container_width=True,
-                                    key=f"guardar_comprobacion_{comprobacion_row.get('folio_comprobacion', '')}"
+                                    "✅ Aprobar Solicitud",
+                                    use_container_width=True
                                 ):
 
-                                    if "Fecha Factura" in edited_df_comp.columns:
+                                    # =================================
+                                    # RESOLVE THE EXACT COMPROBACION FROM DB
+                                    # =================================
+                                    # This row comes directly from df_comprobaciones.
+                                    # Do NOT use the solicitud table id: both tables
+                                    # have independent id sequences.
+                                    folio_comprobacion_final = str(
+                                        comprobacion_row.get("folio_comprobacion", "") or ""
+                                    ).strip()
 
-                                        edited_df_comp["Fecha Factura"] = (
-                                            edited_df_comp["Fecha Factura"]
-                                            .dt.strftime("%Y-%m-%d")
+                                    if not folio_comprobacion_final:
+                                        st.error(
+                                            "La comprobación seleccionada no tiene folio_comprobacion. "
+                                            "No se realizó el cierre ni se envió correo."
                                         )
+                                        st.stop()
 
-                                    # MODIFICADO POR HEIDI 2026-10-02: limpiar NaN/NaT (fechas o montos
-                                    # vacios) que causaban ValueError al hacer .execute()
-                                    conceptos_actualizados = limpiar_json(
-                                        edited_df_comp.to_dict(
-                                            orient="records"
-                                        )
+                                    comprobacion_final_resp = (
+                                        supabase
+                                        .table("comprobacion_viaje")
+                                        .select("*")
+                                        .eq("folio_comprobacion", folio_comprobacion_final)
+                                        .limit(1)
+                                        .execute()
                                     )
 
-                                    nuevo_total_comprobado = 0.0
+                                    comprobacion_final_data = (
+                                        comprobacion_final_resp.data
+                                        if comprobacion_final_resp.data
+                                        else []
+                                    )
 
-                                    for item in conceptos_actualizados:
+                                    if not comprobacion_final_data:
+                                        st.error(
+                                            f"No se encontró la comprobación {folio_comprobacion_final} en Supabase. "
+                                            "No se realizó el cierre ni se envió correo."
+                                        )
+                                        st.stop()
 
-                                        try:
-                                            nuevo_total_comprobado += float(
-                                                item.get("Total Comprobado") or 0
-                                            )
-                                        except Exception:
-                                            pass
+                                    comprobacion_final = comprobacion_final_data[0]
 
+                                    # The solicitud folio comes ONLY from the stored
+                                    # comprobacion record.
+                                    folio_final = str(
+                                        comprobacion_final.get("folio_solicitud", "") or ""
+                                    ).strip()
+                                    folio_comprobacion_final = str(
+                                        comprobacion_final.get("folio_comprobacion", "") or ""
+                                    ).strip()
+
+                                    if not folio_final:
+                                        st.error(
+                                            "La comprobación seleccionada no tiene folio_solicitud almacenado. "
+                                            "No se realizó el cierre ni se envió correo."
+                                        )
+                                        st.stop()
+
+                                    solicitud_final_resp = (
+                                        supabase
+                                        .table("solicitud_viaje")
+                                        .select("*")
+                                        .eq("folio_solicitud", folio_final)
+                                        .limit(1)
+                                        .execute()
+                                    )
+
+                                    solicitud_final_data = (
+                                        solicitud_final_resp.data
+                                        if solicitud_final_resp.data
+                                        else []
+                                    )
+
+                                    if not solicitud_final_data:
+                                        st.error(
+                                            f"No se encontró la solicitud {folio_final} asociada a la comprobación almacenada. "
+                                            "No se realizó el cierre ni se envió correo."
+                                        )
+                                        st.stop()
+
+                                    solicitud_final = solicitud_final_data[0]
+
+                                    # =================================
+                                    # CLOSE ONLY THIS SOLICITUD +
+                                    # THIS COMPROBACION
+                                    # =================================
                                     supabase.table(
-                                        "comprobacion_viaje"
+                                        "solicitud_viaje"
                                     ).update(
                                         {
-                                            "conceptos": conceptos_actualizados,
-                                            "total_comprobado": nuevo_total_comprobado
+                                            "estatus": "Concluido",
                                         }
                                     ).eq(
-                                        "folio_comprobacion",
-                                        str(comprobacion_row.get("folio_comprobacion", "") or "").strip()
+                                        "folio_solicitud",
+                                        folio_final
                                     ).execute()
 
-                                    st.cache_data.clear()
-
-                                    st.success(
-                                        "Comprobación actualizada correctamente."
+                                    # Update ONLY the exact comprobacion selected.
+                                    (
+                                        supabase
+                                        .table("comprobacion_viaje")
+                                        .update({"estatus": "Concluido"})
+                                        .eq("folio_comprobacion", folio_comprobacion_final)
+                                        .execute()
                                     )
 
-                                    st.rerun()
-
-                                def enviar_notificacion_rechazo(estatus_solicitud, folio_comprobacion=None):
-
                                     # =================================
-                                    # RE-READ THE EXACT DATABASE RECORDS
+                                    # RE-QUERY AFTER UPDATE
+                                    # The email must use the exact data
+                                    # that was just closed, never the
+                                    # stale UI row.
                                     # =================================
-                                    # The selected row comes from df_comprobaciones,
-                                    # therefore folio_comprobacion is the correct
-                                    # identity for this comprobacion. The solicitudes
-                                    # table has its own independent id sequence.
-                                    if not folio_comprobacion:
-                                        folio_comprobacion = str(
-                                            comprobacion_row.get("folio_comprobacion", "") or ""
-                                        ).strip()
-                                    else:
-                                        folio_comprobacion = str(folio_comprobacion).strip()
-
-                                    if not folio_comprobacion:
-                                        st.warning(
-                                            "No se pudo enviar correo: la comprobación seleccionada no tiene folio_comprobacion."
-                                        )
-                                        return
+                                    solicitud_email_resp = (
+                                        supabase
+                                        .table("solicitud_viaje")
+                                        .select("*")
+                                        .eq("folio_solicitud", folio_final)
+                                        .limit(1)
+                                        .execute()
+                                    )
 
                                     comprobacion_email_resp = (
                                         supabase
                                         .table("comprobacion_viaje")
                                         .select("*")
-                                        .eq("folio_comprobacion", folio_comprobacion)
-                                        .limit(1)
-                                        .execute()
-                                    )
-
-                                    comprobacion_email_data = (
-                                        comprobacion_email_resp.data
-                                        if comprobacion_email_resp.data
-                                        else []
-                                    )
-
-                                    if not comprobacion_email_data:
-                                        st.warning(
-                                            f"No se pudo enviar correo: no se encontró la comprobación {folio_comprobacion} en Supabase."
-                                        )
-                                        return
-
-                                    comprobacion_email = comprobacion_email_data[0]
-
-                                    # Use the folio stored in the comprobación to
-                                    # retrieve the exact solicitud from Supabase.
-                                    folio_solicitud_email = str(
-                                        comprobacion_email.get("folio_solicitud", "") or ""
-                                    ).strip()
-
-                                    if not folio_solicitud_email:
-                                        st.warning(
-                                            "No se pudo enviar correo: la comprobación no tiene folio_solicitud almacenado."
-                                        )
-                                        return
-
-                                    solicitud_email_resp = (
-                                        supabase
-                                        .table("solicitud_viaje")
-                                        .select("*")
-                                        .eq("folio_solicitud", folio_solicitud_email)
+                                        .eq("folio_comprobacion", folio_comprobacion_final)
                                         .limit(1)
                                         .execute()
                                     )
@@ -6035,20 +6268,42 @@ if has_viaticos:
                                         if solicitud_email_resp.data
                                         else []
                                     )
+                                    comprobacion_email_data = (
+                                        comprobacion_email_resp.data
+                                        if comprobacion_email_resp.data
+                                        else []
+                                    )
 
-                                    if not solicitud_email_data:
-                                        st.warning(
-                                            f"No se pudo enviar correo: no se encontró la solicitud {folio_solicitud_email} en Supabase."
+                                    if (
+                                        not solicitud_email_data
+                                        or not comprobacion_email_data
+                                    ):
+                                        st.error(
+                                            "No se pudieron recuperar los registros "
+                                            "recién concluidos. No se envió el correo."
                                         )
-                                        return
+                                        st.stop()
 
                                     solicitud_email = solicitud_email_data[0]
+                                    comprobacion_email = comprobacion_email_data[0]
+
+                                    if str(
+                                        solicitud_email.get(
+                                            "folio_solicitud",
+                                            ""
+                                        )
+                                    ).strip() != folio_final:
+                                        st.error(
+                                            "El folio recuperado para el correo no "
+                                            "corresponde al folio recién concluido. "
+                                            "No se envió el correo."
+                                        )
+                                        st.stop()
 
                                     # =================================
-                                    # BUILD THE COMPLETE RECIPIENT LIST
-                                    # Use nombre_empleado_solicita from the
-                                    # solicitud first. If it is blank, fall
-                                    # back to the comprobacion record.
+                                    # GET CREATOR EMAIL
+                                    # Use solicitud first; if blank,
+                                    # fall back to comprobacion.
                                     # =================================
                                     nombre_empleado_email = (
                                         clean(
@@ -6065,15 +6320,11 @@ if has_viaticos:
                                         )
                                     )
 
-                                    correo_creador = obtener_email_usuario(
-                                        nombre_empleado_email
-                                    )
-
-                                    if not correo_creador:
-                                        st.warning(
-                                            "No se pudo enviar correo: no se encontró el correo del usuario en nombre_empleado_solicita de solicitud ni comprobación."
+                                    correo_creador = (
+                                        obtener_email_usuario(
+                                            nombre_empleado_email
                                         )
-                                        return
+                                    )
 
                                     destinatarios = construir_destinatarios(
                                         empresa=solicitud_email.get(
@@ -6084,1570 +6335,1265 @@ if has_viaticos:
                                         correo_creador=correo_creador
                                     )
 
+                                    # =================================
+                                    # SEND FINAL EMAIL
+                                    # ONLY USING THE EXACT RECORDS
+                                    # JUST CLOSED
+                                    # =================================
                                     try:
+
                                         enviar_correo_estatus_solicitud(
+
                                             destinatarios=destinatarios,
-                                            folio_solicitud=solicitud_email.get("folio_solicitud", ""),
-                                            folio_comprobacion=comprobacion_email.get("folio_comprobacion", ""),
-                                            estatus=estatus_solicitud,
-                                            empleado=solicitud_email.get("nombre_empleado_solicita", ""),
-                                            empresa_servicio=solicitud_email.get("empresa_brinda_servicio", ""),
-                                            fecha_solicitud=solicitud_email.get("fecha_solicitud", ""),
-                                            fecha_comprobacion=comprobacion_email.get("created_at", ""),
-                                            fecha_inicio=solicitud_email.get("fecha_inicio", ""),
-                                            fecha_fin=solicitud_email.get("fecha_fin", ""),
-                                            empresa_cargo=solicitud_email.get("empresa_cargo_gastos", ""),
-                                            unidad_negocio=solicitud_email.get("unidad_negocio", ""),
-                                            sucursal=solicitud_email.get("sucursal", ""),
-                                            sucursal_especificar=solicitud_email.get("sucursal_especificar", ""),
-                                            nombre_cliente=solicitud_email.get("nombre_cliente", ""),
-                                            folio_sac=solicitud_email.get("folio_sac", ""),
-                                            motivo_viaje=solicitud_email.get("motivo_viaje", ""),
-                                            observaciones=solicitud_email.get("observaciones", ""),
-                                            conceptos=solicitud_email.get("conceptos", []),
-                                            conceptos_comprobacion=comprobacion_email.get("conceptos", []),
-                                            total_estimado=solicitud_email.get("total_estimado", 0),
-                                            total_estimado_usd=solicitud_email.get("total_estimado_usd", 0),
-                                            empleado_comprobacion=comprobacion_email.get("nombre_empleado_solicita", ""),
-                                            observaciones_comprobacion=comprobacion_email.get("observaciones", ""),
-                                            total_comprobado=comprobacion_email.get("total_comprobado", 0),
-                                            total_comprobado_usd=comprobacion_email.get("total_comprobado_usd", 0)
-                                        )
-                                    except Exception as e:
-                                        st.warning(f"No se pudo enviar correo: {e}")
-
-                                btn1, btn2 = st.columns(2)
-
-                                with btn1:
-
-                                    if can_manage_viaticos and st.button(
-                                        "✅ Aprobar Solicitud",
-                                        use_container_width=True
-                                    ):
-
-                                        # =================================
-                                        # RESOLVE THE EXACT COMPROBACION FROM DB
-                                        # =================================
-                                        # This row comes directly from df_comprobaciones.
-                                        # Do NOT use the solicitud table id: both tables
-                                        # have independent id sequences.
-                                        folio_comprobacion_final = str(
-                                            comprobacion_row.get("folio_comprobacion", "") or ""
-                                        ).strip()
-
-                                        if not folio_comprobacion_final:
-                                            st.error(
-                                                "La comprobación seleccionada no tiene folio_comprobacion. "
-                                                "No se realizó el cierre ni se envió correo."
-                                            )
-                                            st.stop()
-
-                                        comprobacion_final_resp = (
-                                            supabase
-                                            .table("comprobacion_viaje")
-                                            .select("*")
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
-                                            .limit(1)
-                                            .execute()
-                                        )
-
-                                        comprobacion_final_data = (
-                                            comprobacion_final_resp.data
-                                            if comprobacion_final_resp.data
-                                            else []
-                                        )
-
-                                        if not comprobacion_final_data:
-                                            st.error(
-                                                f"No se encontró la comprobación {folio_comprobacion_final} en Supabase. "
-                                                "No se realizó el cierre ni se envió correo."
-                                            )
-                                            st.stop()
-
-                                        comprobacion_final = comprobacion_final_data[0]
-
-                                        # The solicitud folio comes ONLY from the stored
-                                        # comprobacion record.
-                                        folio_final = str(
-                                            comprobacion_final.get("folio_solicitud", "") or ""
-                                        ).strip()
-                                        folio_comprobacion_final = str(
-                                            comprobacion_final.get("folio_comprobacion", "") or ""
-                                        ).strip()
-
-                                        if not folio_final:
-                                            st.error(
-                                                "La comprobación seleccionada no tiene folio_solicitud almacenado. "
-                                                "No se realizó el cierre ni se envió correo."
-                                            )
-                                            st.stop()
-
-                                        solicitud_final_resp = (
-                                            supabase
-                                            .table("solicitud_viaje")
-                                            .select("*")
-                                            .eq("folio_solicitud", folio_final)
-                                            .limit(1)
-                                            .execute()
-                                        )
-
-                                        solicitud_final_data = (
-                                            solicitud_final_resp.data
-                                            if solicitud_final_resp.data
-                                            else []
-                                        )
-
-                                        if not solicitud_final_data:
-                                            st.error(
-                                                f"No se encontró la solicitud {folio_final} asociada a la comprobación almacenada. "
-                                                "No se realizó el cierre ni se envió correo."
-                                            )
-                                            st.stop()
-
-                                        solicitud_final = solicitud_final_data[0]
-
-                                        # =================================
-                                        # CLOSE ONLY THIS SOLICITUD +
-                                        # THIS COMPROBACION
-                                        # =================================
-                                        supabase.table(
-                                            "solicitud_viaje"
-                                        ).update(
-                                            {
-                                                "estatus": "Concluido",
-                                            }
-                                        ).eq(
-                                            "folio_solicitud",
-                                            folio_final
-                                        ).execute()
-
-                                        # Update ONLY the exact comprobacion selected.
-                                        (
-                                            supabase
-                                            .table("comprobacion_viaje")
-                                            .update({"estatus": "Concluido"})
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
-                                            .execute()
-                                        )
-
-                                        # =================================
-                                        # RE-QUERY AFTER UPDATE
-                                        # The email must use the exact data
-                                        # that was just closed, never the
-                                        # stale UI row.
-                                        # =================================
-                                        solicitud_email_resp = (
-                                            supabase
-                                            .table("solicitud_viaje")
-                                            .select("*")
-                                            .eq("folio_solicitud", folio_final)
-                                            .limit(1)
-                                            .execute()
-                                        )
-
-                                        comprobacion_email_resp = (
-                                            supabase
-                                            .table("comprobacion_viaje")
-                                            .select("*")
-                                            .eq("folio_comprobacion", folio_comprobacion_final)
-                                            .limit(1)
-                                            .execute()
-                                        )
-
-                                        solicitud_email_data = (
-                                            solicitud_email_resp.data
-                                            if solicitud_email_resp.data
-                                            else []
-                                        )
-                                        comprobacion_email_data = (
-                                            comprobacion_email_resp.data
-                                            if comprobacion_email_resp.data
-                                            else []
-                                        )
-
-                                        if (
-                                            not solicitud_email_data
-                                            or not comprobacion_email_data
-                                        ):
-                                            st.error(
-                                                "No se pudieron recuperar los registros "
-                                                "recién concluidos. No se envió el correo."
-                                            )
-                                            st.stop()
-
-                                        solicitud_email = solicitud_email_data[0]
-                                        comprobacion_email = comprobacion_email_data[0]
-
-                                        if str(
-                                            solicitud_email.get(
+                                            folio_solicitud=solicitud_email.get(
                                                 "folio_solicitud",
                                                 ""
-                                            )
-                                        ).strip() != folio_final:
-                                            st.error(
-                                                "El folio recuperado para el correo no "
-                                                "corresponde al folio recién concluido. "
-                                                "No se envió el correo."
-                                            )
-                                            st.stop()
-
-                                        # =================================
-                                        # GET CREATOR EMAIL
-                                        # Use solicitud first; if blank,
-                                        # fall back to comprobacion.
-                                        # =================================
-                                        nombre_empleado_email = (
-                                            clean(
-                                                solicitud_email.get(
-                                                    "nombre_empleado_solicita",
-                                                    ""
-                                                )
-                                            )
-                                            or clean(
-                                                comprobacion_email.get(
-                                                    "nombre_empleado_solicita",
-                                                    ""
-                                                )
-                                            )
-                                        )
-
-                                        correo_creador = (
-                                            obtener_email_usuario(
-                                                nombre_empleado_email
-                                            )
-                                        )
-
-                                        destinatarios = construir_destinatarios(
-                                            empresa=solicitud_email.get(
+                                            ),
+                                            folio_comprobacion=comprobacion_email.get(
+                                                "folio_comprobacion",
+                                                ""
+                                            ),
+                                            estatus="Concluido",
+                                            empleado=solicitud_email.get(
+                                                "nombre_empleado_solicita",
+                                                ""
+                                            ),
+                                            empresa_servicio=solicitud_email.get(
+                                                "empresa_brinda_servicio",
+                                                ""
+                                            ),
+                                            fecha_solicitud=solicitud_email.get(
+                                                "fecha_solicitud",
+                                                ""
+                                            ),
+                                            fecha_comprobacion=comprobacion_email.get(
+                                                "created_at",
+                                                ""
+                                            ),
+                                            fecha_inicio=solicitud_email.get(
+                                                "fecha_inicio",
+                                                ""
+                                            ),
+                                            fecha_fin=solicitud_email.get(
+                                                "fecha_fin",
+                                                ""
+                                            ),
+                                            empresa_cargo=solicitud_email.get(
                                                 "empresa_cargo_gastos",
                                                 ""
                                             ),
-                                            email_usuario_actual=email_usuario,
-                                            correo_creador=correo_creador
+                                            unidad_negocio=solicitud_email.get(
+                                                "unidad_negocio",
+                                                ""
+                                            ),
+                                            sucursal=solicitud_email.get(
+                                                "sucursal",
+                                                ""
+                                            ),
+                                            sucursal_especificar=solicitud_email.get(
+                                                "sucursal_especificar",
+                                                ""
+                                            ),
+                                            nombre_cliente=solicitud_email.get(
+                                                "nombre_cliente",
+                                                ""
+                                            ),
+                                            folio_sac=solicitud_email.get(
+                                                "folio_sac",
+                                                ""
+                                            ),
+                                            motivo_viaje=solicitud_email.get(
+                                                "motivo_viaje",
+                                                ""
+                                            ),
+                                            observaciones=solicitud_email.get(
+                                                "observaciones",
+                                                ""
+                                            ),
+                                            conceptos=solicitud_email.get(
+                                                "conceptos",
+                                                []
+                                            ),
+                                            conceptos_comprobacion=comprobacion_email.get(
+                                                "conceptos",
+                                                []
+                                            ),
+                                            total_estimado=solicitud_email.get(
+                                                "total_estimado",
+                                                0
+                                            ),
+                                            total_estimado_usd=solicitud_email.get(
+                                                "total_estimado_usd",
+                                                0
+                                            ),
+                                            empleado_comprobacion=comprobacion_email.get(
+                                                "nombre_empleado_solicita",
+                                                ""
+                                            ),
+                                            observaciones_comprobacion=comprobacion_email.get(
+                                                "observaciones",
+                                                ""
+                                            ),
+                                            total_comprobado=comprobacion_email.get(
+                                                "total_comprobado",
+                                                0
+                                            ),
+                                            total_comprobado_usd=comprobacion_email.get(
+                                                "total_comprobado_usd",
+                                                0
+                                            )
                                         )
 
-                                        # =================================
-                                        # SEND FINAL EMAIL
-                                        # ONLY USING THE EXACT RECORDS
-                                        # JUST CLOSED
-                                        # =================================
-                                        try:
+                                    except Exception as e:
 
-                                            enviar_correo_estatus_solicitud(
+                                        st.warning(
+                                            f"No se pudo enviar correo: {e}"
+                                        )
 
-                                                destinatarios=destinatarios,
-                                                folio_solicitud=solicitud_email.get(
-                                                    "folio_solicitud",
-                                                    ""
-                                                ),
-                                                folio_comprobacion=comprobacion_email.get(
-                                                    "folio_comprobacion",
-                                                    ""
-                                                ),
-                                                estatus="Concluido",
-                                                empleado=solicitud_email.get(
-                                                    "nombre_empleado_solicita",
-                                                    ""
-                                                ),
-                                                empresa_servicio=solicitud_email.get(
-                                                    "empresa_brinda_servicio",
-                                                    ""
-                                                ),
-                                                fecha_solicitud=solicitud_email.get(
-                                                    "fecha_solicitud",
-                                                    ""
-                                                ),
-                                                fecha_comprobacion=comprobacion_email.get(
-                                                    "created_at",
-                                                    ""
-                                                ),
-                                                fecha_inicio=solicitud_email.get(
-                                                    "fecha_inicio",
-                                                    ""
-                                                ),
-                                                fecha_fin=solicitud_email.get(
-                                                    "fecha_fin",
-                                                    ""
-                                                ),
-                                                empresa_cargo=solicitud_email.get(
-                                                    "empresa_cargo_gastos",
-                                                    ""
-                                                ),
-                                                unidad_negocio=solicitud_email.get(
-                                                    "unidad_negocio",
-                                                    ""
-                                                ),
-                                                sucursal=solicitud_email.get(
-                                                    "sucursal",
-                                                    ""
-                                                ),
-                                                sucursal_especificar=solicitud_email.get(
-                                                    "sucursal_especificar",
-                                                    ""
-                                                ),
-                                                nombre_cliente=solicitud_email.get(
-                                                    "nombre_cliente",
-                                                    ""
-                                                ),
-                                                folio_sac=solicitud_email.get(
-                                                    "folio_sac",
-                                                    ""
-                                                ),
-                                                motivo_viaje=solicitud_email.get(
-                                                    "motivo_viaje",
-                                                    ""
-                                                ),
-                                                observaciones=solicitud_email.get(
-                                                    "observaciones",
-                                                    ""
-                                                ),
-                                                conceptos=solicitud_email.get(
-                                                    "conceptos",
-                                                    []
-                                                ),
-                                                conceptos_comprobacion=comprobacion_email.get(
-                                                    "conceptos",
-                                                    []
-                                                ),
-                                                total_estimado=solicitud_email.get(
-                                                    "total_estimado",
-                                                    0
-                                                ),
-                                                total_estimado_usd=solicitud_email.get(
-                                                    "total_estimado_usd",
-                                                    0
-                                                ),
-                                                empleado_comprobacion=comprobacion_email.get(
-                                                    "nombre_empleado_solicita",
-                                                    ""
-                                                ),
-                                                observaciones_comprobacion=comprobacion_email.get(
-                                                    "observaciones",
-                                                    ""
-                                                ),
-                                                total_comprobado=comprobacion_email.get(
-                                                    "total_comprobado",
-                                                    0
-                                                ),
-                                                total_comprobado_usd=comprobacion_email.get(
-                                                    "total_comprobado_usd",
-                                                    0
-                                                )
-                                            )
+                                    log_activity(
+                                        f"Autorizó Comprobación: {folio_final}",
+                                        "Gestión de Viáticos"
+                                    )
 
-                                        except Exception as e:
+                                    st.success(
+                                        "Solicitud concluida"
+                                    )
 
-                                            st.warning(
-                                                f"No se pudo enviar correo: {e}"
-                                            )
+                                    st.cache_data.clear()
+                                    st.rerun()
+
+                            with btn2:
+
+                                if can_manage_viaticos and st.button(
+                                    "❌ Rechazar Solicitud",
+                                    use_container_width=True
+                                ):
+
+                                    # Si existe una solicitud relacionada, primero
+                                    # preguntamos si debe reabrirse o cerrarse.
+                                    # Dummy = solicitud vinculada, pero SIN opción de reabrir.
+                                    if solicitud_row:
+                                        folio_comprobacion_rechazo = str(
+                                            row.get("folio_comprobacion", "") or ""
+                                        ).strip()
+                                        rechazo_key = (
+                                            f"rechazo_comprobacion_pendiente_"
+                                            f"{str(folio_actual).strip()}_{folio_comprobacion_rechazo}"
+                                        )
+                                        st.session_state[rechazo_key] = True
+                                    else:
+                                        # Comprobación independiente: no existe
+                                        # solicitud que deba cambiar de estatus.
+                                        supabase.table(
+                                            "comprobacion_viaje"
+                                        ).update(
+                                            {
+                                                "estatus": "Rechazado",
+                                            }
+                                        ).eq(
+                                            "folio_comprobacion",
+                                            row.get("folio_comprobacion", "")
+                                        ).execute()
 
                                         log_activity(
-                                            f"Autorizó Comprobación: {folio_final}",
+                                            f"Rechazó Comprobación sin Solicitud: {folio_actual or row.get('folio_comprobacion', '')}",
                                             "Gestión de Viáticos"
                                         )
 
-                                        st.success(
-                                            "Solicitud concluida"
+                                        st.error(
+                                            "Comprobación rechazada. No existe una solicitud asociada."
                                         )
 
                                         st.cache_data.clear()
                                         st.rerun()
 
-                                with btn2:
+                            # =================================
+                            # CONFIRMACIÓN DE RECHAZO
+                            # =================================
+                            folio_solicitud_rechazo = str(
+                                folio_actual
+                            ).strip()
+                            folio_comprobacion_rechazo = str(
+                                row.get("folio_comprobacion", "") or ""
+                            ).strip()
+                            rechazo_key = (
+                                f"rechazo_comprobacion_pendiente_"
+                                f"{folio_solicitud_rechazo}_{folio_comprobacion_rechazo}"
+                            )
 
-                                    if can_manage_viaticos and st.button(
-                                        "❌ Rechazar Solicitud",
-                                        use_container_width=True
-                                    ):
+                            if can_manage_viaticos and st.session_state.get(rechazo_key, False):
 
-                                        # Si existe una solicitud relacionada, primero
-                                        # preguntamos si debe reabrirse o cerrarse.
-                                        # Dummy = solicitud vinculada, pero SIN opción de reabrir.
-                                        if solicitud_row:
-                                            folio_comprobacion_rechazo = str(
-                                                row.get("folio_comprobacion", "") or ""
-                                            ).strip()
-                                            rechazo_key = (
-                                                f"rechazo_comprobacion_pendiente_"
-                                                f"{str(folio_actual).strip()}_{folio_comprobacion_rechazo}"
-                                            )
-                                            st.session_state[rechazo_key] = True
-                                        else:
-                                            # Comprobación independiente: no existe
-                                            # solicitud que deba cambiar de estatus.
-                                            supabase.table(
-                                                "comprobacion_viaje"
-                                            ).update(
-                                                {
-                                                    "estatus": "Rechazado",
-                                                }
-                                            ).eq(
-                                                "folio_comprobacion",
-                                                row.get("folio_comprobacion", "")
-                                            ).execute()
-
-                                            log_activity(
-                                                f"Rechazó Comprobación sin Solicitud: {folio_actual or row.get('folio_comprobacion', '')}",
-                                                "Gestión de Viáticos"
-                                            )
-
-                                            st.error(
-                                                "Comprobación rechazada. No existe una solicitud asociada."
-                                            )
-
-                                            st.cache_data.clear()
-                                            st.rerun()
-
-                                # =================================
-                                # CONFIRMACIÓN DE RECHAZO
-                                # =================================
-                                folio_solicitud_rechazo = str(
-                                    folio_actual
-                                ).strip()
-                                folio_comprobacion_rechazo = str(
-                                    row.get("folio_comprobacion", "") or ""
-                                ).strip()
-                                rechazo_key = (
-                                    f"rechazo_comprobacion_pendiente_"
-                                    f"{folio_solicitud_rechazo}_{folio_comprobacion_rechazo}"
+                                st.warning(
+                                    "⚠️ Esta comprobación está vinculada a una solicitud. "
+                                    "¿Qué deseas hacer con la solicitud asociada?"
                                 )
 
-                                if can_manage_viaticos and st.session_state.get(rechazo_key, False):
-
-                                    st.warning(
-                                        "⚠️ Esta comprobación está vinculada a una solicitud. "
-                                        "¿Qué deseas hacer con la solicitud asociada?"
+                                if es_solicitud_dummy_sin_solicitud:
+                                    st.markdown(
+                                        "**Solicitud dummy:** esta operación no tiene una solicitud real asociada. "
+                                        "Por lo tanto, **no puede reabrirse**. Si rechazas, tanto la solicitud dummy como la comprobación quedarán **Rechazadas**."
+                                    )
+                                else:
+                                    st.markdown(
+                                        "**Reabrir Solicitud:** la comprobación será **eliminada**, "
+                                        "y la solicitud regresará a **Aprobado** para que el usuario que la capturó pueda ingresar una nueva comprobación.  "
+                                        "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
                                     )
 
-                                    if es_solicitud_dummy_sin_solicitud:
-                                        st.markdown(
-                                            "**Solicitud dummy:** esta operación no tiene una solicitud real asociada. "
-                                            "Por lo tanto, **no puede reabrirse**. Si rechazas, tanto la solicitud dummy como la comprobación quedarán **Rechazadas**."
-                                        )
-                                    else:
-                                        st.markdown(
-                                            "**Reabrir Solicitud:** la comprobación será **eliminada**, "
-                                            "y la solicitud regresará a **Aprobado** para que el usuario que la capturó pueda ingresar una nueva comprobación.  "
-                                            "**Cerrar Solicitud:** la comprobación y la solicitud quedarán **Rechazadas**."
-                                        )
+                                if es_solicitud_dummy_sin_solicitud:
+                                    opcion_cerrar = st.container()
+                                else:
+                                    opcion_reabrir, opcion_cerrar = st.columns(2)
 
-                                    if es_solicitud_dummy_sin_solicitud:
-                                        opcion_cerrar = st.container()
-                                    else:
-                                        opcion_reabrir, opcion_cerrar = st.columns(2)
-
-                                    if not es_solicitud_dummy_sin_solicitud:
-                                        with opcion_reabrir:
-
-                                            if st.button(
-                                                "🔄 Reabrir Solicitud",
-                                                key=f"reabrir_solicitud_{folio_actual}",
-                                                use_container_width=True
-                                            ):
-
-                                                # =================================
-                                                # DELETE THE EXACT COMPROBACION
-                                                # =================================
-                                                # Identify the comprobacion by its own
-                                                # folio. The solicitud id is unrelated.
-                                                folio_comprobacion_reapertura = str(
-                                                    comprobacion_row.get("folio_comprobacion", "") or ""
-                                                ).strip()
-
-                                                # Send the notification BEFORE deleting the comprobacion,
-                                                # so the notification function can read the exact stored
-                                                # comprobacion values from Supabase.
-                                                enviar_notificacion_rechazo(
-                                                    "Aprobado",
-                                                    folio_comprobacion_reapertura
-                                                )
-
-                                                supabase.table(
-                                                    "comprobacion_viaje"
-                                                ).delete().eq(
-                                                    "folio_comprobacion",
-                                                    folio_comprobacion_reapertura
-                                                ).execute()
-
-                                                # =================================
-                                                # REOPEN THE SOLICITUD
-                                                # =================================
-                                                supabase.table(
-                                                    "solicitud_viaje"
-                                                ).update(
-                                                    {
-                                                        "estatus": "Aprobado",
-                                                    }
-                                                ).eq(
-                                                    "folio_solicitud",
-                                                    folio_solicitud_rechazo
-                                                ).execute()
-
-                                                st.session_state.pop(rechazo_key, None)
-
-                                                log_activity(
-                                                    f"Rechazó Comprobación y reabrió Solicitud: {folio_actual}",
-                                                    "Gestión de Viáticos"
-                                                )
-
-                                                st.success(
-                                                    "Comprobación eliminada y solicitud reabierta. El usuario que ingresó la comprobación deberá capturar una nueva."
-                                                )
-
-                                                st.cache_data.clear()
-                                                st.rerun()
-
-                                    with opcion_cerrar:
+                                if not es_solicitud_dummy_sin_solicitud:
+                                    with opcion_reabrir:
 
                                         if st.button(
-                                            "❌ Cerrar Solicitud",
-                                            key=f"cerrar_solicitud_{folio_actual}",
+                                            "🔄 Reabrir Solicitud",
+                                            key=f"reabrir_solicitud_{folio_actual}",
                                             use_container_width=True
                                         ):
 
                                             # =================================
-                                            # RESOLVE THE EXACT COMPROBACION
+                                            # DELETE THE EXACT COMPROBACION
                                             # =================================
-                                            # This row came from df_comprobaciones, so
-                                            # folio_comprobacion is the exact identifier.
-                                            folio_comprobacion_rechazo = str(
+                                            # Identify the comprobacion by its own
+                                            # folio. The solicitud id is unrelated.
+                                            folio_comprobacion_reapertura = str(
                                                 comprobacion_row.get("folio_comprobacion", "") or ""
                                             ).strip()
 
-                                            if not folio_comprobacion_rechazo:
-                                                st.error(
-                                                    "La comprobación seleccionada no tiene folio_comprobacion. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
-
-                                            comprobacion_exact_resp = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("*")
-                                                .eq("folio_comprobacion", folio_comprobacion_rechazo)
-                                                .limit(1)
-                                                .execute()
+                                            # Send the notification BEFORE deleting the comprobacion,
+                                            # so the notification function can read the exact stored
+                                            # comprobacion values from Supabase.
+                                            enviar_notificacion_rechazo(
+                                                "Aprobado",
+                                                folio_comprobacion_reapertura
                                             )
 
-                                            comprobacion_exact_data = (
-                                                comprobacion_exact_resp.data
-                                                if comprobacion_exact_resp.data
-                                                else []
-                                            )
-
-                                            if not comprobacion_exact_data:
-                                                st.error(
-                                                    f"No se encontró la comprobación {folio_comprobacion_rechazo} en Supabase. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
-
-                                            comprobacion_exact = comprobacion_exact_data[0]
-
-                                            folio_solicitud_rechazo = str(
-                                                comprobacion_exact.get("folio_solicitud", "") or ""
-                                            ).strip()
-
-                                            if not folio_solicitud_rechazo:
-                                                st.error(
-                                                    "La comprobación existe, pero no tiene folio_solicitud asociado. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
-
-                                            solicitud_exact_resp = (
-                                                supabase
-                                                .table("solicitud_viaje")
-                                                .select("*")
-                                                .eq("folio_solicitud", folio_solicitud_rechazo)
-                                                .limit(1)
-                                                .execute()
-                                            )
-
-                                            solicitud_exact_data = (
-                                                solicitud_exact_resp.data
-                                                if solicitud_exact_resp.data
-                                                else []
-                                            )
-
-                                            if not solicitud_exact_data:
-                                                st.error(
-                                                    "No se encontró la solicitud exacta. "
-                                                    "No se realizó el rechazo."
-                                                )
-                                                st.stop()
-
-                                            solicitud_exact = solicitud_exact_data[0]
+                                            supabase.table(
+                                                "comprobacion_viaje"
+                                            ).delete().eq(
+                                                "folio_comprobacion",
+                                                folio_comprobacion_reapertura
+                                            ).execute()
 
                                             # =================================
-                                            # REJECT BOTH RECORDS
+                                            # REOPEN THE SOLICITUD
                                             # =================================
                                             supabase.table(
                                                 "solicitud_viaje"
-                                            ).update({
-                                                "estatus": "Rechazado"
-                                            }).eq(
+                                            ).update(
+                                                {
+                                                    "estatus": "Aprobado",
+                                                }
+                                            ).eq(
                                                 "folio_solicitud",
                                                 folio_solicitud_rechazo
                                             ).execute()
 
-                                            supabase.table(
-                                                "comprobacion_viaje"
-                                            ).update({
-                                                "estatus": "Rechazado"
-                                            }).eq(
-                                                "folio_comprobacion",
-                                                folio_comprobacion_rechazo
-                                            ).execute()
-
-                                            # Verify both exact records.
-                                            solicitud_verify_resp = (
-                                                supabase
-                                                .table("solicitud_viaje")
-                                                .select("folio_solicitud, estatus")
-                                                .eq("folio_solicitud", folio_solicitud_rechazo)
-                                                .limit(1)
-                                                .execute()
-                                            )
-
-                                            if (
-                                                not solicitud_verify_resp.data
-                                                or solicitud_verify_resp.data[0].get("estatus") != "Rechazado"
-                                            ):
-                                                st.error(
-                                                    "La solicitud no pudo actualizarse a Rechazado. No se envió el correo."
-                                                )
-                                                st.stop()
-
-                                            comprobacion_verify_resp = (
-                                                supabase
-                                                .table("comprobacion_viaje")
-                                                .select("folio_solicitud, folio_comprobacion, estatus")
-                                                .eq("folio_comprobacion", folio_comprobacion_rechazo)
-                                                .limit(1)
-                                                .execute()
-                                            )
-
-                                            comprobacion_verify_data = (
-                                                comprobacion_verify_resp.data
-                                                if comprobacion_verify_resp.data
-                                                else []
-                                            )
-
-                                            if (
-                                                not comprobacion_verify_data
-                                                or comprobacion_verify_data[0].get("estatus") != "Rechazado"
-                                            ):
-                                                st.error(
-                                                    "La comprobación NO quedó en Rechazado. No se continuará con el correo."
-                                                )
-                                                st.stop()
-
-                                            # Email reads the exact database record by
-                                            # folio_comprobacion, never the stale UI row.
-                                            try:
-                                                enviar_notificacion_rechazo(
-                                                    "Rechazado",
-                                                    folio_comprobacion_rechazo
-                                                )
-                                            except Exception as e:
-                                                st.warning(
-                                                    f"Ambos registros quedaron Rechazados, pero no se pudo enviar el correo: {e}"
-                                                )
-
-                                            st.session_state.pop(
-                                                rechazo_key,
-                                                None
-                                            )
+                                            st.session_state.pop(rechazo_key, None)
 
                                             log_activity(
-                                                f"Rechazó Comprobación y cerró Solicitud: "
-                                                f"{folio_solicitud_rechazo}",
+                                                f"Rechazó Comprobación y reabrió Solicitud: {folio_actual}",
                                                 "Gestión de Viáticos"
                                             )
 
-                                            st.error(
-                                                "Comprobación y solicitud rechazadas."
+                                            st.success(
+                                                "Comprobación eliminada y solicitud reabierta. El usuario que ingresó la comprobación deberá capturar una nueva."
                                             )
 
                                             st.cache_data.clear()
                                             st.rerun()
 
+                                with opcion_cerrar:
+
+                                    if st.button(
+                                        "❌ Cerrar Solicitud",
+                                        key=f"cerrar_solicitud_{folio_actual}",
+                                        use_container_width=True
+                                    ):
+
+                                        # =================================
+                                        # RESOLVE THE EXACT COMPROBACION
+                                        # =================================
+                                        # This row came from df_comprobaciones, so
+                                        # folio_comprobacion is the exact identifier.
+                                        folio_comprobacion_rechazo = str(
+                                            comprobacion_row.get("folio_comprobacion", "") or ""
+                                        ).strip()
+
+                                        if not folio_comprobacion_rechazo:
+                                            st.error(
+                                                "La comprobación seleccionada no tiene folio_comprobacion. "
+                                                "No se realizó el rechazo."
+                                            )
+                                            st.stop()
+
+                                        comprobacion_exact_resp = (
+                                            supabase
+                                            .table("comprobacion_viaje")
+                                            .select("*")
+                                            .eq("folio_comprobacion", folio_comprobacion_rechazo)
+                                            .limit(1)
+                                            .execute()
+                                        )
+
+                                        comprobacion_exact_data = (
+                                            comprobacion_exact_resp.data
+                                            if comprobacion_exact_resp.data
+                                            else []
+                                        )
+
+                                        if not comprobacion_exact_data:
+                                            st.error(
+                                                f"No se encontró la comprobación {folio_comprobacion_rechazo} en Supabase. "
+                                                "No se realizó el rechazo."
+                                            )
+                                            st.stop()
+
+                                        comprobacion_exact = comprobacion_exact_data[0]
+
+                                        folio_solicitud_rechazo = str(
+                                            comprobacion_exact.get("folio_solicitud", "") or ""
+                                        ).strip()
+
+                                        if not folio_solicitud_rechazo:
+                                            st.error(
+                                                "La comprobación existe, pero no tiene folio_solicitud asociado. "
+                                                "No se realizó el rechazo."
+                                            )
+                                            st.stop()
+
+                                        solicitud_exact_resp = (
+                                            supabase
+                                            .table("solicitud_viaje")
+                                            .select("*")
+                                            .eq("folio_solicitud", folio_solicitud_rechazo)
+                                            .limit(1)
+                                            .execute()
+                                        )
+
+                                        solicitud_exact_data = (
+                                            solicitud_exact_resp.data
+                                            if solicitud_exact_resp.data
+                                            else []
+                                        )
+
+                                        if not solicitud_exact_data:
+                                            st.error(
+                                                "No se encontró la solicitud exacta. "
+                                                "No se realizó el rechazo."
+                                            )
+                                            st.stop()
+
+                                        solicitud_exact = solicitud_exact_data[0]
+
+                                        # =================================
+                                        # REJECT BOTH RECORDS
+                                        # =================================
+                                        supabase.table(
+                                            "solicitud_viaje"
+                                        ).update({
+                                            "estatus": "Rechazado"
+                                        }).eq(
+                                            "folio_solicitud",
+                                            folio_solicitud_rechazo
+                                        ).execute()
+
+                                        supabase.table(
+                                            "comprobacion_viaje"
+                                        ).update({
+                                            "estatus": "Rechazado"
+                                        }).eq(
+                                            "folio_comprobacion",
+                                            folio_comprobacion_rechazo
+                                        ).execute()
+
+                                        # Verify both exact records.
+                                        solicitud_verify_resp = (
+                                            supabase
+                                            .table("solicitud_viaje")
+                                            .select("folio_solicitud, estatus")
+                                            .eq("folio_solicitud", folio_solicitud_rechazo)
+                                            .limit(1)
+                                            .execute()
+                                        )
+
+                                        if (
+                                            not solicitud_verify_resp.data
+                                            or solicitud_verify_resp.data[0].get("estatus") != "Rechazado"
+                                        ):
+                                            st.error(
+                                                "La solicitud no pudo actualizarse a Rechazado. No se envió el correo."
+                                            )
+                                            st.stop()
+
+                                        comprobacion_verify_resp = (
+                                            supabase
+                                            .table("comprobacion_viaje")
+                                            .select("folio_solicitud, folio_comprobacion, estatus")
+                                            .eq("folio_comprobacion", folio_comprobacion_rechazo)
+                                            .limit(1)
+                                            .execute()
+                                        )
+
+                                        comprobacion_verify_data = (
+                                            comprobacion_verify_resp.data
+                                            if comprobacion_verify_resp.data
+                                            else []
+                                        )
+
+                                        if (
+                                            not comprobacion_verify_data
+                                            or comprobacion_verify_data[0].get("estatus") != "Rechazado"
+                                        ):
+                                            st.error(
+                                                "La comprobación NO quedó en Rechazado. No se continuará con el correo."
+                                            )
+                                            st.stop()
+
+                                        # Email reads the exact database record by
+                                        # folio_comprobacion, never the stale UI row.
+                                        try:
+                                            enviar_notificacion_rechazo(
+                                                "Rechazado",
+                                                folio_comprobacion_rechazo
+                                            )
+                                        except Exception as e:
+                                            st.warning(
+                                                f"Ambos registros quedaron Rechazados, pero no se pudo enviar el correo: {e}"
+                                            )
+
+                                        st.session_state.pop(
+                                            rechazo_key,
+                                            None
+                                        )
+
+                                        log_activity(
+                                            f"Rechazó Comprobación y cerró Solicitud: "
+                                            f"{folio_solicitud_rechazo}",
+                                            "Gestión de Viáticos"
+                                        )
+
+                                        st.error(
+                                            "Comprobación y solicitud rechazadas."
+                                        )
+
+                                        st.cache_data.clear()
+                                        st.rerun()
 
 
-                            modal_verificacion()
 
-            # =================================
-            # PAGINATION CONTROLS
-            # =================================
+                        modal_verificacion()
 
-            st.divider()
+        # =================================
+        # PAGINATION CONTROLS
+        # =================================
 
-            p1, p2, p3 = st.columns([1,2,1])
+        st.divider()
 
-            with p1:
+        p1, p2, p3 = st.columns([1,2,1])
 
-                if st.button(
-                    "⬅ Anterior",
-                    disabled=(
-                        st.session_state.pagina_verificar <= 1
-                    ),
-                    use_container_width=True,
-                    key="prev_verificar"
-                ):
+        with p1:
 
-                    st.session_state.pagina_verificar -= 1
-                    st.rerun()
+            if st.button(
+                "⬅ Anterior",
+                disabled=(
+                    st.session_state.pagina_verificar <= 1
+                ),
+                use_container_width=True,
+                key="prev_verificar"
+            ):
 
-            with p2:
+                st.session_state.pagina_verificar -= 1
+                st.rerun()
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align:center;
-                        padding-top:8px;
-                        font-weight:700;
-                        color:#151F6D;
-                    ">
-                        Página {st.session_state.pagina_verificar} de {total_paginas_verificar}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+        with p2:
 
-            with p3:
-
-                if st.button(
-                    "Siguiente ➡",
-                    disabled=(
-                        st.session_state.pagina_verificar
-                        >= total_paginas_verificar
-                    ),
-                    use_container_width=True,
-                    key="next_verificar"
-                ):
-
-                    st.session_state.pagina_verificar += 1
-                    st.rerun()
-
-            st.session_state.setdefault("finalizada_modal", None)
-            st.session_state.setdefault("finalizada_editando", False)
-
-            # =================================
-            # SOLICITUDES FINALIZADAS
-            # =================================
-
-            st.header("🏁 Solicitudes Finalizadas")
-
-
-            # =================================
-            # BASE DATA
-            # =================================
-
-            # Make sure the newer currency fields exist
-            # even if older records do not have them.
-            for col_name in [
-                "total_comprobado_usd",
-                "anticipo_viaje_usd",
-                "diferencia_cargo_favor_usd",
-            ]:
-                if col_name not in df_comprobaciones.columns:
-                    df_comprobaciones[col_name] = 0
-
-
-            if "nombre_empleado_solicita" not in df_comprobaciones.columns:
-                df_comprobaciones["nombre_empleado_solicita"] = ""
-
-
-            df_comp_final = (
-                df_comprobaciones
-                .sort_values(
-                    by="created_at",
-                    ascending=False
-                )
-                .drop_duplicates(
-                    subset=["folio_solicitud"]
-                )
+            st.markdown(
+                f"""
+                <div style="
+                    text-align:center;
+                    padding-top:8px;
+                    font-weight:700;
+                    color:#151F6D;
+                ">
+                    Página {st.session_state.pagina_verificar} de {total_paginas_verificar}
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
+        with p3:
 
-            # =================================
-            # MERGE SOLICITUD + COMPROBACION
-            # =================================
+            if st.button(
+                "Siguiente ➡",
+                disabled=(
+                    st.session_state.pagina_verificar
+                    >= total_paginas_verificar
+                ),
+                use_container_width=True,
+                key="next_verificar"
+            ):
 
-            df_finalizadas = pd.merge(
+                st.session_state.pagina_verificar += 1
+                st.rerun()
 
-                df_solicitudes[
-                    df_solicitudes["estatus"].isin(
-                        [
-                            "Concluido",
-                            "Rechazado"
-                        ]
-                    )
-                ],
+        st.session_state.setdefault("finalizada_modal", None)
+        st.session_state.setdefault("finalizada_editando", False)
 
-                df_comp_final[
+        # =================================
+        # SOLICITUDES FINALIZADAS
+        # =================================
+
+        st.header("🏁 Solicitudes Finalizadas")
+
+
+        # =================================
+        # BASE DATA
+        # =================================
+
+        # Make sure the newer currency fields exist
+        # even if older records do not have them.
+        for col_name in [
+            "total_comprobado_usd",
+            "anticipo_viaje_usd",
+            "diferencia_cargo_favor_usd",
+        ]:
+            if col_name not in df_comprobaciones.columns:
+                df_comprobaciones[col_name] = 0
+
+
+        if "nombre_empleado_solicita" not in df_comprobaciones.columns:
+            df_comprobaciones["nombre_empleado_solicita"] = ""
+
+
+        df_comp_final = (
+            df_comprobaciones
+            .sort_values(
+                by="created_at",
+                ascending=False
+            )
+            .drop_duplicates(
+                subset=["folio_solicitud"]
+            )
+        )
+
+
+        # =================================
+        # MERGE SOLICITUD + COMPROBACION
+        # =================================
+
+        df_finalizadas = pd.merge(
+
+            df_solicitudes[
+                df_solicitudes["estatus"].isin(
                     [
-                        "folio_solicitud",
-                        "folio_comprobacion",
-                        "conceptos",
-
-                        # TOTALES MXP
-                        "total_comprobado",
-                        "anticipo_viaje",
-                        "diferencia_cargo_favor",
-
-                        # TOTALES USD
-                        "total_comprobado_usd",
-                        "anticipo_viaje_usd",
-                        "diferencia_cargo_favor_usd",
-
-                        "observaciones",
-                        "nombre_empleado_solicita",
-                        "archivos",
-                        "created_at"
+                        "Concluido",
+                        "Rechazado"
                     ]
-                ],
-
-                on="folio_solicitud",
-
-                how="left",
-
-                suffixes=(
-                    "_solicitud",
-                    ""
                 )
+            ],
+
+            df_comp_final[
+                [
+                    "folio_solicitud",
+                    "folio_comprobacion",
+                    "conceptos",
+
+                    # TOTALES MXP
+                    "total_comprobado",
+                    "anticipo_viaje",
+                    "diferencia_cargo_favor",
+
+                    # TOTALES USD
+                    "total_comprobado_usd",
+                    "anticipo_viaje_usd",
+                    "diferencia_cargo_favor_usd",
+
+                    "observaciones",
+                    "nombre_empleado_solicita",
+                    "archivos",
+                    "created_at"
+                ]
+            ],
+
+            on="folio_solicitud",
+
+            how="left",
+
+            suffixes=(
+                "_solicitud",
+                ""
             )
+        )
 
 
-            # =================================
-            # FILTERS
-            # =================================
+        # =================================
+        # FILTERS
+        # =================================
 
-            f1, f2, f3 = st.columns(3)
-
-
-            with f1:
-
-                folios_finalizados = ["Todos"]
-
-                if not df_finalizadas.empty:
-
-                    folios_finalizados += sorted(
-                        df_finalizadas["folio_solicitud"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
-                    )
-
-                filtro_folio_finalizado = st.selectbox(
-                    "Filtrar por Folio",
-                    folios_finalizados,
-                    key="filtro_folio_finalizado"
-                )
+        f1, f2, f3 = st.columns(3)
 
 
-            with f2:
+        with f1:
 
-                estatus_finalizados = ["Todos"]
+            folios_finalizados = ["Todos"]
 
-                if not df_finalizadas.empty:
+            if not df_finalizadas.empty:
 
-                    estatus_finalizados += sorted(
-                        df_finalizadas["estatus"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
-                    )
-
-                filtro_estatus_finalizado = st.selectbox(
-                    "Filtrar por Estatus",
-                    estatus_finalizados,
-                    key="filtro_estatus_finalizado"
-                )
-
-
-            with f3:
-
-                empleados_finalizados = ["Todos"]
-
-                if not df_finalizadas.empty:
-
-                    empleados_finalizados += sorted(
-                        df_finalizadas["nombre_empleado_solicita"]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
-                    )
-
-                filtro_empleado_finalizado = st.selectbox(
-                    "Filtrar por Empleado",
-                    empleados_finalizados,
-                    key="filtro_empleado_finalizado"
-                )
-
-
-            # =================================
-            # APPLY FILTERS
-            # =================================
-
-            if filtro_folio_finalizado != "Todos":
-
-                df_finalizadas = df_finalizadas[
+                folios_finalizados += sorted(
                     df_finalizadas["folio_solicitud"]
+                    .dropna()
                     .astype(str)
-                    ==
-                    str(filtro_folio_finalizado)
-                ]
+                    .unique()
+                    .tolist()
+                )
+
+            filtro_folio_finalizado = st.selectbox(
+                "Filtrar por Folio",
+                folios_finalizados,
+                key="filtro_folio_finalizado"
+            )
 
 
-            if filtro_estatus_finalizado != "Todos":
+        with f2:
 
-                df_finalizadas = df_finalizadas[
+            estatus_finalizados = ["Todos"]
+
+            if not df_finalizadas.empty:
+
+                estatus_finalizados += sorted(
                     df_finalizadas["estatus"]
+                    .dropna()
                     .astype(str)
-                    ==
-                    str(filtro_estatus_finalizado)
-                ]
+                    .unique()
+                    .tolist()
+                )
+
+            filtro_estatus_finalizado = st.selectbox(
+                "Filtrar por Estatus",
+                estatus_finalizados,
+                key="filtro_estatus_finalizado"
+            )
 
 
-            if filtro_empleado_finalizado != "Todos":
+        with f3:
 
-                df_finalizadas = df_finalizadas[
+            empleados_finalizados = ["Todos"]
+
+            if not df_finalizadas.empty:
+
+                empleados_finalizados += sorted(
                     df_finalizadas["nombre_empleado_solicita"]
+                    .dropna()
                     .astype(str)
-                    ==
-                    str(filtro_empleado_finalizado)
-                ]
-
-
-            # =================================
-            # SORT
-            # =================================
-
-            if "created_at" in df_finalizadas.columns:
-
-                df_finalizadas = df_finalizadas.sort_values(
-                    by="created_at",
-                    ascending=False
+                    .unique()
+                    .tolist()
                 )
 
-
-            # =================================
-            # DESCARGAR REPORTE
-            # =================================
-
-            reporte_rows = []
-
-
-            for _, row in df_finalizadas.iterrows():
-
-                solicitud_match = df_solicitudes[
-                    df_solicitudes["folio_solicitud"]
-                    .astype(str)
-                    ==
-                    str(row.get("folio_solicitud", ""))
-                ]
-
-
-                if not solicitud_match.empty:
-
-                    solicitud_row = (
-                        solicitud_match
-                        .iloc[0]
-                        .to_dict()
-                    )
-
-                else:
-
-                    solicitud_row = {}
-
-
-                # =================================
-                # CONCEPTOS SOLICITUD
-                # =================================
-
-                conceptos_solicitud = solicitud_row.get("conceptos")
-
-                if not isinstance(conceptos_solicitud, list):
-                    conceptos_solicitud = []
-
-                if len(conceptos_solicitud) == 0:
-                    conceptos_solicitud = [{}]
-
-
-                # =================================
-                # CONCEPTOS COMPROBACION
-                # =================================
-
-                conceptos_comprobacion = row.get("conceptos")
-
-                if not isinstance(conceptos_comprobacion, list):
-                    conceptos_comprobacion = []
-
-                if len(conceptos_comprobacion) == 0:
-                    conceptos_comprobacion = [{}]
-
-
-                max_len = max(
-                    len(conceptos_solicitud),
-                    len(conceptos_comprobacion)
-                )
-
-
-                for i in range(max_len):
-
-                    concepto_sol = (
-                        conceptos_solicitud[i]
-                        if i < len(conceptos_solicitud)
-                        else {}
-                    )
-
-                    concepto_comp = (
-                        conceptos_comprobacion[i]
-                        if i < len(conceptos_comprobacion)
-                        else {}
-                    )
-
-
-                    reporte_rows.append({
-
-                        # =================================
-                        # GENERAL
-                        # =================================
-
-                        "Folio Solicitud":
-                            solicitud_row.get(
-                                "folio_solicitud",
-                                ""
-                            ),
-
-                        "Folio Comprobacion":
-                            row.get(
-                                "folio_comprobacion",
-                                ""
-                            ),
-
-                        "Estatus":
-                            row.get(
-                                "estatus",
-                                ""
-                            ),
-
-                        "Empleado Solicita":
-                            solicitud_row.get(
-                                "nombre_empleado_solicita",
-                                ""
-                            ),
-
-                        "Empleado Comprobacion":
-                            row.get(
-                                "nombre_empleado_solicita",
-                                ""
-                            ),
-
-                        "Fecha Solicitud":
-                            solicitud_row.get(
-                                "fecha_solicitud",
-                                ""
-                            ),
-
-                        "Fecha Comprobacion":
-                            row.get(
-                                "created_at",
-                                ""
-                            ),
-
-                        "Fecha Inicio":
-                            solicitud_row.get(
-                                "fecha_inicio",
-                                ""
-                            ),
-
-                        "Fecha Fin":
-                            solicitud_row.get(
-                                "fecha_fin",
-                                ""
-                            ),
-
-                        "Empresa Brinda Servicio":
-                            solicitud_row.get(
-                                "empresa_brinda_servicio",
-                                ""
-                            ),
-
-                        "Empresa Cargo Gastos":
-                            solicitud_row.get(
-                                "empresa_cargo_gastos",
-                                ""
-                            ),
-
-                        "Unidad Negocio":
-                            solicitud_row.get(
-                                "unidad_negocio",
-                                ""
-                            ),
-
-                        "Sucursal":
-                            solicitud_row.get(
-                                "sucursal",
-                                ""
-                            ),
-
-                        "Sucursal Especificar":
-                            solicitud_row.get(
-                                "sucursal_especificar",
-                                ""
-                            ),
-
-                        "Nombre Cliente":
-                            solicitud_row.get(
-                                "nombre_cliente",
-                                ""
-                            ),
-
-                        "Registro SAC Ventas":
-                            solicitud_row.get(
-                                "folio_sac",
-                                ""
-                            ),
-
-                        "Motivo Viaje":
-                            solicitud_row.get(
-                                "motivo_viaje",
-                                ""
-                            ),
-
-                        "Observaciones Solicitud":
-                            solicitud_row.get(
-                                "observaciones",
-                                ""
-                            ),
-
-                        "Observaciones Comprobacion":
-                            row.get(
-                                "observaciones",
-                                ""
-                            ),
-
-
-                        # =================================
-                        # TOTALES
-                        # =================================
-
-                        "Monto Solicitado":
-                            solicitud_row.get(
-                                "total_estimado",
-                                0
-                            ),
-
-                        # MXP
-                        "Total Comprobado MXP":
-                            row.get(
-                                "total_comprobado",
-                                0
-                            ),
-
-                        "Anticipo Viaje MXP":
-                            row.get(
-                                "anticipo_viaje",
-                                0
-                            ),
-
-                        "Diferencia Cargo Favor MXP":
-                            row.get(
-                                "diferencia_cargo_favor",
-                                0
-                            ),
-
-                        # USD
-                        "Total Comprobado USD":
-                            row.get(
-                                "total_comprobado_usd",
-                                0
-                            ),
-
-                        "Anticipo Viaje USD":
-                            row.get(
-                                "anticipo_viaje_usd",
-                                0
-                            ),
-
-                        "Diferencia Cargo Favor USD":
-                            row.get(
-                                "diferencia_cargo_favor_usd",
-                                0
-                            ),
-
-
-                        # =================================
-                        # CONCEPTOS SOLICITUD
-                        # =================================
-
-                        "Solicitud Tipo":
-                            concepto_sol.get(
-                                "Tipo",
-                                ""
-                            ),
-
-                        "Solicitud Descripcion":
-                            concepto_sol.get(
-                                "Descripcion",
-                                ""
-                            ),
-
-                        "Solicitud Monto":
-                            concepto_sol.get(
-                                "Monto",
-                                ""
-                            ),
-
-                        "Solicitud Tipo Cambio":
-                            concepto_sol.get(
-                                "Tipo Cambio",
-                                ""
-                            ),
-
-                        "Solicitud Aprobado":
-                            concepto_sol.get(
-                                "Aprobado",
-                                ""
-                            ),
-
-                        "Solicitud Razon":
-                            concepto_sol.get(
-                                "Razon",
-                                ""
-                            ),
-
-
-                        # =================================
-                        # CONCEPTOS COMPROBACION
-                        # =================================
-
-                        "Comprobacion Tipo":
-                            concepto_comp.get(
-                                "Tipo",
-                                ""
-                            ),
-
-                        "Comprobacion Descripcion":
-                            concepto_comp.get(
-                                "Descripcion",
-                                ""
-                            ),
-
-                        "Comprobacion Fecha Factura":
-                            concepto_comp.get(
-                                "Fecha Factura",
-                                ""
-                            ),
-
-                        "Comprobacion Folio":
-                            concepto_comp.get(
-                                "Folio",
-                                ""
-                            ),
-
-                        "Comprobacion Proveedor":
-                            concepto_comp.get(
-                                "Proveedor",
-                                ""
-                            ),
-
-                        "Comprobacion Moneda":
-                            concepto_comp.get(
-                                "Moneda",
-                                ""
-                            ),
-
-                        "Comprobacion Monto":
-                            concepto_comp.get(
-                                "Monto",
-                                ""
-                            ),
-
-                        "Comprobacion Comprobante":
-                            concepto_comp.get(
-                                "Comprobante",
-                                ""
-                            ),
-
-                        "Comprobacion Aplica IVA":
-                            concepto_comp.get(
-                                "Aplica IVA",
-                                ""
-                            ),
-
-                        "Comprobacion IVA %":
-                            concepto_comp.get(
-                                "IVA %",
-                                ""
-                            ),
-
-                        "Comprobacion Aplica Retencion":
-                            concepto_comp.get(
-                                "Aplica Retencion",
-                                ""
-                            ),
-
-                        "Comprobacion Impuesto Acreditable":
-                            concepto_comp.get(
-                                "Impuesto Acreditable",
-                                ""
-                            ),
-
-                        "Comprobacion Total Comprobado":
-                            concepto_comp.get(
-                                "Total Comprobado",
-                                ""
-                            )
-                    })
-
-
-            df_reporte = pd.DataFrame(
-                reporte_rows
+            filtro_empleado_finalizado = st.selectbox(
+                "Filtrar por Empleado",
+                empleados_finalizados,
+                key="filtro_empleado_finalizado"
             )
 
 
-            output = BytesIO()
+        # =================================
+        # APPLY FILTERS
+        # =================================
 
+        if filtro_folio_finalizado != "Todos":
 
-            with pd.ExcelWriter(
-                output,
-                engine="openpyxl"
-            ) as writer:
-
-                df_reporte.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Solicitudes"
-                )
-
-
-            output.seek(0)
-
-
-            # =================================
-            # DOWNLOAD BUTTONS
-            # =================================
-
-            reporte_col1, reporte_col2 = st.columns(2)
-
-            with reporte_col1:
-
-                st.download_button(
-                    label="📥 Descargar reporte de Solicitudes",
-                    data=output.getvalue(),
-                    file_name="Reporte_Solicitudes_Finalizadas.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="descargar_reporte_final"
-                )
-
-            # =================================
-            # REPORTE GENERAL — TODAS LAS SOLICITUDES Y COMPROBACIONES
-            # =================================
-            # Este reporte no depende de los filtros de Solicitudes Finalizadas.
-            # Incluye cualquier registro existente en cualquiera de las dos tablas,
-            # sin importar su estatus. Si existe solo una de las dos partes,
-            # las columnas de la otra quedan en blanco.
-
-            reporte_general_rows = []
-
-            solicitudes_general = df_solicitudes.copy()
-            comprobaciones_general = df_comprobaciones.copy()
-
-            # Garantizar las columnas utilizadas por el reporte, incluso para
-            # registros antiguos que no tengan los campos más recientes.
-            for col_name in [
-                "total_comprobado_usd",
-                "anticipo_viaje_usd",
-                "diferencia_cargo_favor_usd",
-                "nombre_empleado_solicita",
-                "conceptos",
-                "observaciones",
-                "archivos",
-                "created_at",
-                "folio_solicitud",
-                "folio_comprobacion",
-                "estatus",
-                "total_comprobado",
-                "anticipo_viaje",
-                "diferencia_cargo_favor",
-            ]:
-                if col_name not in comprobaciones_general.columns:
-                    comprobaciones_general[col_name] = ""
-
-            for col_name in [
-                "folio_solicitud",
-                "estatus",
-                "nombre_empleado_solicita",
-                "conceptos",
-                "observaciones",
-                "created_at",
-                "total_estimado",
-            ]:
-                if col_name not in solicitudes_general.columns:
-                    solicitudes_general[col_name] = ""
-
-            # Normalizar folios para poder relacionar ambos lados sin perder
-            # registros cuando solo exista Solicitud o solo Comprobación.
-            solicitudes_general["_folio_key"] = (
-                solicitudes_general["folio_solicitud"]
-                .fillna("")
+            df_finalizadas = df_finalizadas[
+                df_finalizadas["folio_solicitud"]
                 .astype(str)
-                .str.strip()
-            )
+                ==
+                str(filtro_folio_finalizado)
+            ]
 
-            comprobaciones_general["_folio_key"] = (
-                comprobaciones_general["folio_solicitud"]
-                .fillna("")
+
+        if filtro_estatus_finalizado != "Todos":
+
+            df_finalizadas = df_finalizadas[
+                df_finalizadas["estatus"]
                 .astype(str)
-                .str.strip()
+                ==
+                str(filtro_estatus_finalizado)
+            ]
+
+
+        if filtro_empleado_finalizado != "Todos":
+
+            df_finalizadas = df_finalizadas[
+                df_finalizadas["nombre_empleado_solicita"]
+                .astype(str)
+                ==
+                str(filtro_empleado_finalizado)
+            ]
+
+
+        # =================================
+        # SORT
+        # =================================
+
+        if "created_at" in df_finalizadas.columns:
+
+            df_finalizadas = df_finalizadas.sort_values(
+                by="created_at",
+                ascending=False
             )
 
-            folios_general = []
-            folios_general.extend(
-                [x for x in solicitudes_general["_folio_key"].tolist() if x]
+
+        # =================================
+        # DESCARGAR REPORTE
+        # =================================
+
+        reporte_rows = []
+
+
+        for _, row in df_finalizadas.iterrows():
+
+            solicitud_match = df_solicitudes[
+                df_solicitudes["folio_solicitud"]
+                .astype(str)
+                ==
+                str(row.get("folio_solicitud", ""))
+            ]
+
+
+            if not solicitud_match.empty:
+
+                solicitud_row = (
+                    solicitud_match
+                    .iloc[0]
+                    .to_dict()
+                )
+
+            else:
+
+                solicitud_row = {}
+
+
+            # =================================
+            # CONCEPTOS SOLICITUD
+            # =================================
+
+            conceptos_solicitud = solicitud_row.get("conceptos")
+
+            if not isinstance(conceptos_solicitud, list):
+                conceptos_solicitud = []
+
+            if len(conceptos_solicitud) == 0:
+                conceptos_solicitud = [{}]
+
+
+            # =================================
+            # CONCEPTOS COMPROBACION
+            # =================================
+
+            conceptos_comprobacion = row.get("conceptos")
+
+            if not isinstance(conceptos_comprobacion, list):
+                conceptos_comprobacion = []
+
+            if len(conceptos_comprobacion) == 0:
+                conceptos_comprobacion = [{}]
+
+
+            max_len = max(
+                len(conceptos_solicitud),
+                len(conceptos_comprobacion)
             )
-            folios_general.extend(
-                [x for x in comprobaciones_general["_folio_key"].tolist() if x]
+
+
+            for i in range(max_len):
+
+                concepto_sol = (
+                    conceptos_solicitud[i]
+                    if i < len(conceptos_solicitud)
+                    else {}
+                )
+
+                concepto_comp = (
+                    conceptos_comprobacion[i]
+                    if i < len(conceptos_comprobacion)
+                    else {}
+                )
+
+
+                reporte_rows.append({
+
+                    # =================================
+                    # GENERAL
+                    # =================================
+
+                    "Folio Solicitud":
+                        solicitud_row.get(
+                            "folio_solicitud",
+                            ""
+                        ),
+
+                    "Folio Comprobacion":
+                        row.get(
+                            "folio_comprobacion",
+                            ""
+                        ),
+
+                    "Estatus":
+                        row.get(
+                            "estatus",
+                            ""
+                        ),
+
+                    "Empleado Solicita":
+                        solicitud_row.get(
+                            "nombre_empleado_solicita",
+                            ""
+                        ),
+
+                    "Empleado Comprobacion":
+                        row.get(
+                            "nombre_empleado_solicita",
+                            ""
+                        ),
+
+                    "Fecha Solicitud":
+                        solicitud_row.get(
+                            "fecha_solicitud",
+                            ""
+                        ),
+
+                    "Fecha Comprobacion":
+                        row.get(
+                            "created_at",
+                            ""
+                        ),
+
+                    "Fecha Inicio":
+                        solicitud_row.get(
+                            "fecha_inicio",
+                            ""
+                        ),
+
+                    "Fecha Fin":
+                        solicitud_row.get(
+                            "fecha_fin",
+                            ""
+                        ),
+
+                    "Empresa Brinda Servicio":
+                        solicitud_row.get(
+                            "empresa_brinda_servicio",
+                            ""
+                        ),
+
+                    "Empresa Cargo Gastos":
+                        solicitud_row.get(
+                            "empresa_cargo_gastos",
+                            ""
+                        ),
+
+                    "Unidad Negocio":
+                        solicitud_row.get(
+                            "unidad_negocio",
+                            ""
+                        ),
+
+                    "Sucursal":
+                        solicitud_row.get(
+                            "sucursal",
+                            ""
+                        ),
+
+                    "Sucursal Especificar":
+                        solicitud_row.get(
+                            "sucursal_especificar",
+                            ""
+                        ),
+
+                    "Nombre Cliente":
+                        solicitud_row.get(
+                            "nombre_cliente",
+                            ""
+                        ),
+
+                    "Registro SAC Ventas":
+                        solicitud_row.get(
+                            "folio_sac",
+                            ""
+                        ),
+
+                    "Motivo Viaje":
+                        solicitud_row.get(
+                            "motivo_viaje",
+                            ""
+                        ),
+
+                    "Observaciones Solicitud":
+                        solicitud_row.get(
+                            "observaciones",
+                            ""
+                        ),
+
+                    "Observaciones Comprobacion":
+                        row.get(
+                            "observaciones",
+                            ""
+                        ),
+
+
+                    # =================================
+                    # TOTALES
+                    # =================================
+
+                    "Monto Solicitado":
+                        solicitud_row.get(
+                            "total_estimado",
+                            0
+                        ),
+
+                    # MXP
+                    "Total Comprobado MXP":
+                        row.get(
+                            "total_comprobado",
+                            0
+                        ),
+
+                    "Anticipo Viaje MXP":
+                        row.get(
+                            "anticipo_viaje",
+                            0
+                        ),
+
+                    "Diferencia Cargo Favor MXP":
+                        row.get(
+                            "diferencia_cargo_favor",
+                            0
+                        ),
+
+                    # USD
+                    "Total Comprobado USD":
+                        row.get(
+                            "total_comprobado_usd",
+                            0
+                        ),
+
+                    "Anticipo Viaje USD":
+                        row.get(
+                            "anticipo_viaje_usd",
+                            0
+                        ),
+
+                    "Diferencia Cargo Favor USD":
+                        row.get(
+                            "diferencia_cargo_favor_usd",
+                            0
+                        ),
+
+
+                    # =================================
+                    # CONCEPTOS SOLICITUD
+                    # =================================
+
+                    "Solicitud Tipo":
+                        concepto_sol.get(
+                            "Tipo",
+                            ""
+                        ),
+
+                    "Solicitud Descripcion":
+                        concepto_sol.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Solicitud Monto":
+                        concepto_sol.get(
+                            "Monto",
+                            ""
+                        ),
+
+                    "Solicitud Tipo Cambio":
+                        concepto_sol.get(
+                            "Tipo Cambio",
+                            ""
+                        ),
+
+                    "Solicitud Aprobado":
+                        concepto_sol.get(
+                            "Aprobado",
+                            ""
+                        ),
+
+                    "Solicitud Razon":
+                        concepto_sol.get(
+                            "Razon",
+                            ""
+                        ),
+
+
+                    # =================================
+                    # CONCEPTOS COMPROBACION
+                    # =================================
+
+                    "Comprobacion Tipo":
+                        concepto_comp.get(
+                            "Tipo",
+                            ""
+                        ),
+
+                    "Comprobacion Descripcion":
+                        concepto_comp.get(
+                            "Descripcion",
+                            ""
+                        ),
+
+                    "Comprobacion Fecha Factura":
+                        concepto_comp.get(
+                            "Fecha Factura",
+                            ""
+                        ),
+
+                    "Comprobacion Folio":
+                        concepto_comp.get(
+                            "Folio",
+                            ""
+                        ),
+
+                    "Comprobacion Proveedor":
+                        concepto_comp.get(
+                            "Proveedor",
+                            ""
+                        ),
+
+                    "Comprobacion Moneda":
+                        concepto_comp.get(
+                            "Moneda",
+                            ""
+                        ),
+
+                    "Comprobacion Monto":
+                        concepto_comp.get(
+                            "Monto",
+                            ""
+                        ),
+
+                    "Comprobacion Comprobante":
+                        concepto_comp.get(
+                            "Comprobante",
+                            ""
+                        ),
+
+                    "Comprobacion Aplica IVA":
+                        concepto_comp.get(
+                            "Aplica IVA",
+                            ""
+                        ),
+
+                    "Comprobacion IVA %":
+                        concepto_comp.get(
+                            "IVA %",
+                            ""
+                        ),
+
+                    "Comprobacion Aplica Retencion":
+                        concepto_comp.get(
+                            "Aplica Retencion",
+                            ""
+                        ),
+
+                    "Comprobacion Impuesto Acreditable":
+                        concepto_comp.get(
+                            "Impuesto Acreditable",
+                            ""
+                        ),
+
+                    "Comprobacion Total Comprobado":
+                        concepto_comp.get(
+                            "Total Comprobado",
+                            ""
+                        )
+                })
+
+
+        df_reporte = pd.DataFrame(
+            reporte_rows
+        )
+
+
+        output = BytesIO()
+
+
+        with pd.ExcelWriter(
+            output,
+            engine="openpyxl"
+        ) as writer:
+
+            df_reporte.to_excel(
+                writer,
+                index=False,
+                sheet_name="Solicitudes"
             )
 
-            # También conservar registros que por alguna razón no tengan folio.
-            # Se manejan como registros independientes y no se intentan relacionar.
-            usados_solicitud_sin_folio = 0
-            usados_comprobacion_sin_folio = 0
 
-            for folio_general in dict.fromkeys(folios_general):
+        output.seek(0)
 
-                solicitud_rows_general = solicitudes_general[
-                    solicitudes_general["_folio_key"] == folio_general
-                ]
 
-                comprobacion_rows_general = comprobaciones_general[
-                    comprobaciones_general["_folio_key"] == folio_general
-                ]
+        # =================================
+        # DOWNLOAD BUTTONS
+        # =================================
 
-                # Si existen ambos, conservar cada comprobación existente
-                # asociada a la solicitud. Si hay varias comprobaciones para el
-                # mismo folio, no se elimina ninguna.
-                if not solicitud_rows_general.empty and not comprobacion_rows_general.empty:
+        reporte_col1, reporte_col2 = st.columns(2)
 
-                    for _, solicitud_general in solicitud_rows_general.iterrows():
-                        solicitud_dict_general = solicitud_general.to_dict()
+        with reporte_col1:
 
-                        for _, comprobacion_general in comprobacion_rows_general.iterrows():
-                            comprobacion_dict_general = comprobacion_general.to_dict()
+            st.download_button(
+                label="📥 Descargar reporte de Solicitudes",
+                data=output.getvalue(),
+                file_name="Reporte_Solicitudes_Finalizadas.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="descargar_reporte_final"
+            )
 
-                            conceptos_solicitud_general = solicitud_dict_general.get("conceptos")
-                            if not isinstance(conceptos_solicitud_general, list):
-                                conceptos_solicitud_general = []
-                            if not conceptos_solicitud_general:
-                                conceptos_solicitud_general = [{}]
+        # =================================
+        # REPORTE GENERAL — TODAS LAS SOLICITUDES Y COMPROBACIONES
+        # =================================
+        # Este reporte no depende de los filtros de Solicitudes Finalizadas.
+        # Incluye cualquier registro existente en cualquiera de las dos tablas,
+        # sin importar su estatus. Si existe solo una de las dos partes,
+        # las columnas de la otra quedan en blanco.
 
-                            conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
-                            if not isinstance(conceptos_comprobacion_general, list):
-                                conceptos_comprobacion_general = []
-                            if not conceptos_comprobacion_general:
-                                conceptos_comprobacion_general = [{}]
+        reporte_general_rows = []
 
-                            max_len_general = max(
-                                len(conceptos_solicitud_general),
-                                len(conceptos_comprobacion_general)
-                            )
+        solicitudes_general = df_solicitudes.copy()
+        comprobaciones_general = df_comprobaciones.copy()
 
-                            for i in range(max_len_general):
-                                concepto_sol_general = (
-                                    conceptos_solicitud_general[i]
-                                    if i < len(conceptos_solicitud_general)
-                                    and isinstance(conceptos_solicitud_general[i], dict)
-                                    else {}
-                                )
-                                concepto_comp_general = (
-                                    conceptos_comprobacion_general[i]
-                                    if i < len(conceptos_comprobacion_general)
-                                    and isinstance(conceptos_comprobacion_general[i], dict)
-                                    else {}
-                                )
+        # Garantizar las columnas utilizadas por el reporte, incluso para
+        # registros antiguos que no tengan los campos más recientes.
+        for col_name in [
+            "total_comprobado_usd",
+            "anticipo_viaje_usd",
+            "diferencia_cargo_favor_usd",
+            "nombre_empleado_solicita",
+            "conceptos",
+            "observaciones",
+            "archivos",
+            "created_at",
+            "folio_solicitud",
+            "folio_comprobacion",
+            "estatus",
+            "total_comprobado",
+            "anticipo_viaje",
+            "diferencia_cargo_favor",
+        ]:
+            if col_name not in comprobaciones_general.columns:
+                comprobaciones_general[col_name] = ""
 
-                                reporte_general_rows.append({
-                                    "Folio Solicitud": solicitud_dict_general.get("folio_solicitud", ""),
-                                    "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
-                                    "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
-                                    "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
-                                    "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
-                                    "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
-                                    "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
-                                    "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
-                                    "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
-                                    "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
-                                    "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
-                                    "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
-                                    "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
-                                    "Sucursal": solicitud_dict_general.get("sucursal", ""),
-                                    "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
-                                    "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
-                                    "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
-                                    "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
-                                    "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
-                                    "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
-                                    "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
-                                    "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
-                                    "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
-                                    "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
-                                    "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
-                                    "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
-                                    "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
-                                    "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
-                                    "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
-                                    "Solicitud Monto": concepto_sol_general.get("Monto", ""),
-                                    "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
-                                    "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
-                                    "Solicitud Razon": concepto_sol_general.get("Razon", ""),
-                                    "Comprobacion Tipo": concepto_comp_general.get("Tipo", ""),
-                                    "Comprobacion Descripcion": concepto_comp_general.get("Descripcion", ""),
-                                    "Comprobacion Fecha Factura": concepto_comp_general.get("Fecha Factura", ""),
-                                    "Comprobacion Folio": concepto_comp_general.get("Folio", ""),
-                                    "Comprobacion Proveedor": concepto_comp_general.get("Proveedor", ""),
-                                    "Comprobacion Moneda": concepto_comp_general.get("Moneda", ""),
-                                    "Comprobacion Monto": concepto_comp_general.get("Monto", ""),
-                                    "Comprobacion Comprobante": concepto_comp_general.get("Comprobante", ""),
-                                    "Comprobacion Aplica IVA": concepto_comp_general.get("Aplica IVA", ""),
-                                    "Comprobacion IVA %": concepto_comp_general.get("IVA %", ""),
-                                    "Comprobacion Aplica Retencion": concepto_comp_general.get("Aplica Retencion", ""),
-                                    "Comprobacion Impuesto Acreditable": concepto_comp_general.get("Impuesto Acreditable", ""),
-                                    "Comprobacion Total Comprobado": concepto_comp_general.get("Total Comprobado", ""),
-                                })
+        for col_name in [
+            "folio_solicitud",
+            "estatus",
+            "nombre_empleado_solicita",
+            "conceptos",
+            "observaciones",
+            "created_at",
+            "total_estimado",
+        ]:
+            if col_name not in solicitudes_general.columns:
+                solicitudes_general[col_name] = ""
 
-                elif not solicitud_rows_general.empty:
-                    # Solicitud existente sin comprobación.
-                    for _, solicitud_general in solicitud_rows_general.iterrows():
-                        solicitud_dict_general = solicitud_general.to_dict()
+        # Normalizar folios para poder relacionar ambos lados sin perder
+        # registros cuando solo exista Solicitud o solo Comprobación.
+        solicitudes_general["_folio_key"] = (
+            solicitudes_general["folio_solicitud"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+        comprobaciones_general["_folio_key"] = (
+            comprobaciones_general["folio_solicitud"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+        folios_general = []
+        folios_general.extend(
+            [x for x in solicitudes_general["_folio_key"].tolist() if x]
+        )
+        folios_general.extend(
+            [x for x in comprobaciones_general["_folio_key"].tolist() if x]
+        )
+
+        # También conservar registros que por alguna razón no tengan folio.
+        # Se manejan como registros independientes y no se intentan relacionar.
+        usados_solicitud_sin_folio = 0
+        usados_comprobacion_sin_folio = 0
+
+        for folio_general in dict.fromkeys(folios_general):
+
+            solicitud_rows_general = solicitudes_general[
+                solicitudes_general["_folio_key"] == folio_general
+            ]
+
+            comprobacion_rows_general = comprobaciones_general[
+                comprobaciones_general["_folio_key"] == folio_general
+            ]
+
+            # Si existen ambos, conservar cada comprobación existente
+            # asociada a la solicitud. Si hay varias comprobaciones para el
+            # mismo folio, no se elimina ninguna.
+            if not solicitud_rows_general.empty and not comprobacion_rows_general.empty:
+
+                for _, solicitud_general in solicitud_rows_general.iterrows():
+                    solicitud_dict_general = solicitud_general.to_dict()
+
+                    for _, comprobacion_general in comprobacion_rows_general.iterrows():
+                        comprobacion_dict_general = comprobacion_general.to_dict()
+
                         conceptos_solicitud_general = solicitud_dict_general.get("conceptos")
                         if not isinstance(conceptos_solicitud_general, list):
                             conceptos_solicitud_general = []
                         if not conceptos_solicitud_general:
                             conceptos_solicitud_general = [{}]
 
-                        for concepto_sol_general in conceptos_solicitud_general:
-                            if not isinstance(concepto_sol_general, dict):
-                                concepto_sol_general = {}
+                        conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
+                        if not isinstance(conceptos_comprobacion_general, list):
+                            conceptos_comprobacion_general = []
+                        if not conceptos_comprobacion_general:
+                            conceptos_comprobacion_general = [{}]
+
+                        max_len_general = max(
+                            len(conceptos_solicitud_general),
+                            len(conceptos_comprobacion_general)
+                        )
+
+                        for i in range(max_len_general):
+                            concepto_sol_general = (
+                                conceptos_solicitud_general[i]
+                                if i < len(conceptos_solicitud_general)
+                                and isinstance(conceptos_solicitud_general[i], dict)
+                                else {}
+                            )
+                            concepto_comp_general = (
+                                conceptos_comprobacion_general[i]
+                                if i < len(conceptos_comprobacion_general)
+                                and isinstance(conceptos_comprobacion_general[i], dict)
+                                else {}
+                            )
 
                             reporte_general_rows.append({
                                 "Folio Solicitud": solicitud_dict_general.get("folio_solicitud", ""),
-                                "Folio Comprobacion": "",
+                                "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
                                 "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
-                                "Estatus Comprobacion": "",
+                                "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
                                 "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
-                                "Empleado Comprobacion": "",
+                                "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
                                 "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
-                                "Fecha Comprobacion": "",
+                                "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
                                 "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
                                 "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
                                 "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
@@ -7659,83 +7605,20 @@ if has_viaticos:
                                 "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
                                 "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
                                 "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
-                                "Observaciones Comprobacion": "",
-                                "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
-                                "Total Comprobado MXP": "",
-                                "Anticipo Viaje MXP": "",
-                                "Diferencia Cargo Favor MXP": "",
-                                "Total Comprobado USD": "",
-                                "Anticipo Viaje USD": "",
-                                "Diferencia Cargo Favor USD": "",
-                                "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
-                                "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
-                                "Solicitud Monto": concepto_sol_general.get("Monto", ""),
-                                "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
-                                "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
-                                "Solicitud Razon": concepto_sol_general.get("Razon", ""),
-                                "Comprobacion Tipo": "",
-                                "Comprobacion Descripcion": "",
-                                "Comprobacion Fecha Factura": "",
-                                "Comprobacion Folio": "",
-                                "Comprobacion Proveedor": "",
-                                "Comprobacion Moneda": "",
-                                "Comprobacion Monto": "",
-                                "Comprobacion Comprobante": "",
-                                "Comprobacion Aplica IVA": "",
-                                "Comprobacion IVA %": "",
-                                "Comprobacion Aplica Retencion": "",
-                                "Comprobacion Impuesto Acreditable": "",
-                                "Comprobacion Total Comprobado": "",
-                            })
-
-                else:
-                    # Comprobación existente sin solicitud.
-                    for _, comprobacion_general in comprobacion_rows_general.iterrows():
-                        comprobacion_dict_general = comprobacion_general.to_dict()
-                        conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
-                        if not isinstance(conceptos_comprobacion_general, list):
-                            conceptos_comprobacion_general = []
-                        if not conceptos_comprobacion_general:
-                            conceptos_comprobacion_general = [{}]
-
-                        for concepto_comp_general in conceptos_comprobacion_general:
-                            if not isinstance(concepto_comp_general, dict):
-                                concepto_comp_general = {}
-
-                            reporte_general_rows.append({
-                                "Folio Solicitud": "",
-                                "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
-                                "Estatus Solicitud": "",
-                                "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
-                                "Empleado Solicita": "",
-                                "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
-                                "Fecha Solicitud": "",
-                                "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
-                                "Fecha Inicio": "",
-                                "Fecha Fin": "",
-                                "Empresa Brinda Servicio": "",
-                                "Empresa Cargo Gastos": "",
-                                "Unidad Negocio": "",
-                                "Sucursal": "",
-                                "Sucursal Especificar": "",
-                                "Nombre Cliente": "",
-                                "Registro SAC Ventas": "",
-                                "Motivo Viaje": "",
-                                "Observaciones Solicitud": "",
                                 "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
-                                "Monto Solicitado": "",
+                                "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
                                 "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
                                 "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
                                 "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
                                 "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
                                 "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
                                 "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
-                                "Solicitud Tipo": "",
-                                "Solicitud Descripcion": "",
-                                "Solicitud Monto": "",
-                                "Solicitud Tipo Cambio": "",
-                                "Solicitud Aprobado": "",
-                                "Solicitud Razon": "",
+                                "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
+                                "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
+                                "Solicitud Monto": concepto_sol_general.get("Monto", ""),
+                                "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
+                                "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
+                                "Solicitud Razon": concepto_sol_general.get("Razon", ""),
                                 "Comprobacion Tipo": concepto_comp_general.get("Tipo", ""),
                                 "Comprobacion Descripcion": concepto_comp_general.get("Descripcion", ""),
                                 "Comprobacion Fecha Factura": concepto_comp_general.get("Fecha Factura", ""),
@@ -7751,1082 +7634,1208 @@ if has_viaticos:
                                 "Comprobacion Total Comprobado": concepto_comp_general.get("Total Comprobado", ""),
                             })
 
-            # Registros sin folio: conservarlos como filas independientes.
-            for _, solicitud_general in solicitudes_general[
-                solicitudes_general["_folio_key"] == ""
-            ].iterrows():
-                solicitud_dict_general = solicitud_general.to_dict()
-                reporte_general_rows.append({
-                    "Folio Solicitud": "",
-                    "Folio Comprobacion": "",
-                    "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
-                    "Estatus Comprobacion": "",
-                    "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
-                    "Empleado Comprobacion": "",
-                    "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
-                    "Fecha Comprobacion": "",
-                    "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
-                    "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
-                    "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
-                    "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
-                    "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
-                    "Sucursal": solicitud_dict_general.get("sucursal", ""),
-                    "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
-                    "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
-                    "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
-                    "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
-                    "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
-                    "Observaciones Comprobacion": "",
-                    "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
-                    "Total Comprobado MXP": "",
-                    "Anticipo Viaje MXP": "",
-                    "Diferencia Cargo Favor MXP": "",
-                    "Total Comprobado USD": "",
-                    "Anticipo Viaje USD": "",
-                    "Diferencia Cargo Favor USD": "",
-                    "Solicitud Tipo": "",
-                    "Solicitud Descripcion": "",
-                    "Solicitud Monto": "",
-                    "Solicitud Tipo Cambio": "",
-                    "Solicitud Aprobado": "",
-                    "Solicitud Razon": "",
-                    "Comprobacion Tipo": "",
-                    "Comprobacion Descripcion": "",
-                    "Comprobacion Fecha Factura": "",
-                    "Comprobacion Folio": "",
-                    "Comprobacion Proveedor": "",
-                    "Comprobacion Moneda": "",
-                    "Comprobacion Monto": "",
-                    "Comprobacion Comprobante": "",
-                    "Comprobacion Aplica IVA": "",
-                    "Comprobacion IVA %": "",
-                    "Comprobacion Aplica Retencion": "",
-                    "Comprobacion Impuesto Acreditable": "",
-                    "Comprobacion Total Comprobado": "",
-                })
+            elif not solicitud_rows_general.empty:
+                # Solicitud existente sin comprobación.
+                for _, solicitud_general in solicitud_rows_general.iterrows():
+                    solicitud_dict_general = solicitud_general.to_dict()
+                    conceptos_solicitud_general = solicitud_dict_general.get("conceptos")
+                    if not isinstance(conceptos_solicitud_general, list):
+                        conceptos_solicitud_general = []
+                    if not conceptos_solicitud_general:
+                        conceptos_solicitud_general = [{}]
 
-            for _, comprobacion_general in comprobaciones_general[
-                comprobaciones_general["_folio_key"] == ""
-            ].iterrows():
-                comprobacion_dict_general = comprobacion_general.to_dict()
-                reporte_general_rows.append({
-                    "Folio Solicitud": "",
-                    "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
-                    "Estatus Solicitud": "",
-                    "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
-                    "Empleado Solicita": "",
-                    "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
-                    "Fecha Solicitud": "",
-                    "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
-                    "Fecha Inicio": "",
-                    "Fecha Fin": "",
-                    "Empresa Brinda Servicio": "",
-                    "Empresa Cargo Gastos": "",
-                    "Unidad Negocio": "",
-                    "Sucursal": "",
-                    "Sucursal Especificar": "",
-                    "Nombre Cliente": "",
-                    "Registro SAC Ventas": "",
-                    "Motivo Viaje": "",
-                    "Observaciones Solicitud": "",
-                    "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
-                    "Monto Solicitado": "",
-                    "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
-                    "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
-                    "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
-                    "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
-                    "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
-                    "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
-                    "Solicitud Tipo": "",
-                    "Solicitud Descripcion": "",
-                    "Solicitud Monto": "",
-                    "Solicitud Tipo Cambio": "",
-                    "Solicitud Aprobado": "",
-                    "Solicitud Razon": "",
-                    "Comprobacion Tipo": "",
-                    "Comprobacion Descripcion": "",
-                    "Comprobacion Fecha Factura": "",
-                    "Comprobacion Folio": "",
-                    "Comprobacion Proveedor": "",
-                    "Comprobacion Moneda": "",
-                    "Comprobacion Monto": "",
-                    "Comprobacion Comprobante": "",
-                    "Comprobacion Aplica IVA": "",
-                    "Comprobacion IVA %": "",
-                    "Comprobacion Aplica Retencion": "",
-                    "Comprobacion Impuesto Acreditable": "",
-                    "Comprobacion Total Comprobado": "",
-                })
+                    for concepto_sol_general in conceptos_solicitud_general:
+                        if not isinstance(concepto_sol_general, dict):
+                            concepto_sol_general = {}
 
-            df_reporte_general = pd.DataFrame(reporte_general_rows)
-            output_general = BytesIO()
-
-            with pd.ExcelWriter(
-                output_general,
-                engine="openpyxl"
-            ) as writer:
-                df_reporte_general.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Todas las Solicitudes"
-                )
-
-            output_general.seek(0)
-
-            with reporte_col2:
-                st.download_button(
-                    label="📥 Descargar reporte general",
-                    data=output_general.getvalue(),
-                    file_name="Reporte_Solicitudes_Todas.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="descargar_reporte_general"
-                )
-
-
-            # =================================
-            # PAGINATION
-            # =================================
-
-            FINALIZADAS_POR_PAGINA = 5
-
-            total_finalizadas = len(
-                df_finalizadas
-            )
-
-            total_paginas_finalizadas = max(
-                1,
-                (
-                    total_finalizadas
-                    + FINALIZADAS_POR_PAGINA
-                    - 1
-                )
-                //
-                FINALIZADAS_POR_PAGINA
-            )
-
-
-            if "pagina_finalizadas" not in st.session_state:
-
-                st.session_state.pagina_finalizadas = 1
-
-
-            pagina_actual_finalizadas = (
-                st.session_state.pagina_finalizadas
-            )
-
-
-            inicio_finalizadas = (
-                (pagina_actual_finalizadas - 1)
-                * FINALIZADAS_POR_PAGINA
-            )
-
-
-            fin_finalizadas = (
-                inicio_finalizadas
-                + FINALIZADAS_POR_PAGINA
-            )
-
-
-            df_finalizadas_pagina = (
-                df_finalizadas.iloc[
-                    inicio_finalizadas:fin_finalizadas
-                ]
-            )
-
-
-            # =================================
-            # POSTITS
-            # =================================
-
-            if df_finalizadas_pagina.empty:
-
-                st.info(
-                    "No hay solicitudes finalizadas."
-                )
+                        reporte_general_rows.append({
+                            "Folio Solicitud": solicitud_dict_general.get("folio_solicitud", ""),
+                            "Folio Comprobacion": "",
+                            "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
+                            "Estatus Comprobacion": "",
+                            "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
+                            "Empleado Comprobacion": "",
+                            "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
+                            "Fecha Comprobacion": "",
+                            "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
+                            "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
+                            "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
+                            "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
+                            "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
+                            "Sucursal": solicitud_dict_general.get("sucursal", ""),
+                            "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
+                            "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
+                            "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
+                            "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
+                            "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
+                            "Observaciones Comprobacion": "",
+                            "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
+                            "Total Comprobado MXP": "",
+                            "Anticipo Viaje MXP": "",
+                            "Diferencia Cargo Favor MXP": "",
+                            "Total Comprobado USD": "",
+                            "Anticipo Viaje USD": "",
+                            "Diferencia Cargo Favor USD": "",
+                            "Solicitud Tipo": concepto_sol_general.get("Tipo", ""),
+                            "Solicitud Descripcion": concepto_sol_general.get("Descripcion", ""),
+                            "Solicitud Monto": concepto_sol_general.get("Monto", ""),
+                            "Solicitud Tipo Cambio": concepto_sol_general.get("Tipo Cambio", ""),
+                            "Solicitud Aprobado": concepto_sol_general.get("Aprobado", ""),
+                            "Solicitud Razon": concepto_sol_general.get("Razon", ""),
+                            "Comprobacion Tipo": "",
+                            "Comprobacion Descripcion": "",
+                            "Comprobacion Fecha Factura": "",
+                            "Comprobacion Folio": "",
+                            "Comprobacion Proveedor": "",
+                            "Comprobacion Moneda": "",
+                            "Comprobacion Monto": "",
+                            "Comprobacion Comprobante": "",
+                            "Comprobacion Aplica IVA": "",
+                            "Comprobacion IVA %": "",
+                            "Comprobacion Aplica Retencion": "",
+                            "Comprobacion Impuesto Acreditable": "",
+                            "Comprobacion Total Comprobado": "",
+                        })
 
             else:
+                # Comprobación existente sin solicitud.
+                for _, comprobacion_general in comprobacion_rows_general.iterrows():
+                    comprobacion_dict_general = comprobacion_general.to_dict()
+                    conceptos_comprobacion_general = comprobacion_dict_general.get("conceptos")
+                    if not isinstance(conceptos_comprobacion_general, list):
+                        conceptos_comprobacion_general = []
+                    if not conceptos_comprobacion_general:
+                        conceptos_comprobacion_general = [{}]
 
-                cols = st.columns(5)
+                    for concepto_comp_general in conceptos_comprobacion_general:
+                        if not isinstance(concepto_comp_general, dict):
+                            concepto_comp_general = {}
+
+                        reporte_general_rows.append({
+                            "Folio Solicitud": "",
+                            "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
+                            "Estatus Solicitud": "",
+                            "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
+                            "Empleado Solicita": "",
+                            "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
+                            "Fecha Solicitud": "",
+                            "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
+                            "Fecha Inicio": "",
+                            "Fecha Fin": "",
+                            "Empresa Brinda Servicio": "",
+                            "Empresa Cargo Gastos": "",
+                            "Unidad Negocio": "",
+                            "Sucursal": "",
+                            "Sucursal Especificar": "",
+                            "Nombre Cliente": "",
+                            "Registro SAC Ventas": "",
+                            "Motivo Viaje": "",
+                            "Observaciones Solicitud": "",
+                            "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
+                            "Monto Solicitado": "",
+                            "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
+                            "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
+                            "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
+                            "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
+                            "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
+                            "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
+                            "Solicitud Tipo": "",
+                            "Solicitud Descripcion": "",
+                            "Solicitud Monto": "",
+                            "Solicitud Tipo Cambio": "",
+                            "Solicitud Aprobado": "",
+                            "Solicitud Razon": "",
+                            "Comprobacion Tipo": concepto_comp_general.get("Tipo", ""),
+                            "Comprobacion Descripcion": concepto_comp_general.get("Descripcion", ""),
+                            "Comprobacion Fecha Factura": concepto_comp_general.get("Fecha Factura", ""),
+                            "Comprobacion Folio": concepto_comp_general.get("Folio", ""),
+                            "Comprobacion Proveedor": concepto_comp_general.get("Proveedor", ""),
+                            "Comprobacion Moneda": concepto_comp_general.get("Moneda", ""),
+                            "Comprobacion Monto": concepto_comp_general.get("Monto", ""),
+                            "Comprobacion Comprobante": concepto_comp_general.get("Comprobante", ""),
+                            "Comprobacion Aplica IVA": concepto_comp_general.get("Aplica IVA", ""),
+                            "Comprobacion IVA %": concepto_comp_general.get("IVA %", ""),
+                            "Comprobacion Aplica Retencion": concepto_comp_general.get("Aplica Retencion", ""),
+                            "Comprobacion Impuesto Acreditable": concepto_comp_general.get("Impuesto Acreditable", ""),
+                            "Comprobacion Total Comprobado": concepto_comp_general.get("Total Comprobado", ""),
+                        })
+
+        # Registros sin folio: conservarlos como filas independientes.
+        for _, solicitud_general in solicitudes_general[
+            solicitudes_general["_folio_key"] == ""
+        ].iterrows():
+            solicitud_dict_general = solicitud_general.to_dict()
+            reporte_general_rows.append({
+                "Folio Solicitud": "",
+                "Folio Comprobacion": "",
+                "Estatus Solicitud": solicitud_dict_general.get("estatus", ""),
+                "Estatus Comprobacion": "",
+                "Empleado Solicita": solicitud_dict_general.get("nombre_empleado_solicita", ""),
+                "Empleado Comprobacion": "",
+                "Fecha Solicitud": solicitud_dict_general.get("fecha_solicitud", ""),
+                "Fecha Comprobacion": "",
+                "Fecha Inicio": solicitud_dict_general.get("fecha_inicio", ""),
+                "Fecha Fin": solicitud_dict_general.get("fecha_fin", ""),
+                "Empresa Brinda Servicio": solicitud_dict_general.get("empresa_brinda_servicio", ""),
+                "Empresa Cargo Gastos": solicitud_dict_general.get("empresa_cargo_gastos", ""),
+                "Unidad Negocio": solicitud_dict_general.get("unidad_negocio", ""),
+                "Sucursal": solicitud_dict_general.get("sucursal", ""),
+                "Sucursal Especificar": solicitud_dict_general.get("sucursal_especificar", ""),
+                "Nombre Cliente": solicitud_dict_general.get("nombre_cliente", ""),
+                "Registro SAC Ventas": solicitud_dict_general.get("folio_sac", ""),
+                "Motivo Viaje": solicitud_dict_general.get("motivo_viaje", ""),
+                "Observaciones Solicitud": solicitud_dict_general.get("observaciones", ""),
+                "Observaciones Comprobacion": "",
+                "Monto Solicitado": solicitud_dict_general.get("total_estimado", ""),
+                "Total Comprobado MXP": "",
+                "Anticipo Viaje MXP": "",
+                "Diferencia Cargo Favor MXP": "",
+                "Total Comprobado USD": "",
+                "Anticipo Viaje USD": "",
+                "Diferencia Cargo Favor USD": "",
+                "Solicitud Tipo": "",
+                "Solicitud Descripcion": "",
+                "Solicitud Monto": "",
+                "Solicitud Tipo Cambio": "",
+                "Solicitud Aprobado": "",
+                "Solicitud Razon": "",
+                "Comprobacion Tipo": "",
+                "Comprobacion Descripcion": "",
+                "Comprobacion Fecha Factura": "",
+                "Comprobacion Folio": "",
+                "Comprobacion Proveedor": "",
+                "Comprobacion Moneda": "",
+                "Comprobacion Monto": "",
+                "Comprobacion Comprobante": "",
+                "Comprobacion Aplica IVA": "",
+                "Comprobacion IVA %": "",
+                "Comprobacion Aplica Retencion": "",
+                "Comprobacion Impuesto Acreditable": "",
+                "Comprobacion Total Comprobado": "",
+            })
+
+        for _, comprobacion_general in comprobaciones_general[
+            comprobaciones_general["_folio_key"] == ""
+        ].iterrows():
+            comprobacion_dict_general = comprobacion_general.to_dict()
+            reporte_general_rows.append({
+                "Folio Solicitud": "",
+                "Folio Comprobacion": comprobacion_dict_general.get("folio_comprobacion", ""),
+                "Estatus Solicitud": "",
+                "Estatus Comprobacion": comprobacion_dict_general.get("estatus", ""),
+                "Empleado Solicita": "",
+                "Empleado Comprobacion": comprobacion_dict_general.get("nombre_empleado_solicita", ""),
+                "Fecha Solicitud": "",
+                "Fecha Comprobacion": comprobacion_dict_general.get("created_at", ""),
+                "Fecha Inicio": "",
+                "Fecha Fin": "",
+                "Empresa Brinda Servicio": "",
+                "Empresa Cargo Gastos": "",
+                "Unidad Negocio": "",
+                "Sucursal": "",
+                "Sucursal Especificar": "",
+                "Nombre Cliente": "",
+                "Registro SAC Ventas": "",
+                "Motivo Viaje": "",
+                "Observaciones Solicitud": "",
+                "Observaciones Comprobacion": comprobacion_dict_general.get("observaciones", ""),
+                "Monto Solicitado": "",
+                "Total Comprobado MXP": comprobacion_dict_general.get("total_comprobado", ""),
+                "Anticipo Viaje MXP": comprobacion_dict_general.get("anticipo_viaje", ""),
+                "Diferencia Cargo Favor MXP": comprobacion_dict_general.get("diferencia_cargo_favor", ""),
+                "Total Comprobado USD": comprobacion_dict_general.get("total_comprobado_usd", ""),
+                "Anticipo Viaje USD": comprobacion_dict_general.get("anticipo_viaje_usd", ""),
+                "Diferencia Cargo Favor USD": comprobacion_dict_general.get("diferencia_cargo_favor_usd", ""),
+                "Solicitud Tipo": "",
+                "Solicitud Descripcion": "",
+                "Solicitud Monto": "",
+                "Solicitud Tipo Cambio": "",
+                "Solicitud Aprobado": "",
+                "Solicitud Razon": "",
+                "Comprobacion Tipo": "",
+                "Comprobacion Descripcion": "",
+                "Comprobacion Fecha Factura": "",
+                "Comprobacion Folio": "",
+                "Comprobacion Proveedor": "",
+                "Comprobacion Moneda": "",
+                "Comprobacion Monto": "",
+                "Comprobacion Comprobante": "",
+                "Comprobacion Aplica IVA": "",
+                "Comprobacion IVA %": "",
+                "Comprobacion Aplica Retencion": "",
+                "Comprobacion Impuesto Acreditable": "",
+                "Comprobacion Total Comprobado": "",
+            })
+
+        df_reporte_general = pd.DataFrame(reporte_general_rows)
+        output_general = BytesIO()
+
+        with pd.ExcelWriter(
+            output_general,
+            engine="openpyxl"
+        ) as writer:
+            df_reporte_general.to_excel(
+                writer,
+                index=False,
+                sheet_name="Todas las Solicitudes"
+            )
+
+        output_general.seek(0)
+
+        with reporte_col2:
+            st.download_button(
+                label="📥 Descargar reporte general",
+                data=output_general.getvalue(),
+                file_name="Reporte_Solicitudes_Todas.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="descargar_reporte_general"
+            )
 
 
-                for i, (_, row) in enumerate(
-                    df_finalizadas_pagina.iterrows()
-                ):
+        # =================================
+        # PAGINATION
+        # =================================
 
-                    col = cols[i % 5]
+        FINALIZADAS_POR_PAGINA = 5
+
+        total_finalizadas = len(
+            df_finalizadas
+        )
+
+        total_paginas_finalizadas = max(
+            1,
+            (
+                total_finalizadas
+                + FINALIZADAS_POR_PAGINA
+                - 1
+            )
+            //
+            FINALIZADAS_POR_PAGINA
+        )
 
 
-                    with col:
+        if "pagina_finalizadas" not in st.session_state:
 
-                        folio = str(
-                            row.get(
-                                "folio_solicitud",
-                                ""
-                            )
+            st.session_state.pagina_finalizadas = 1
+
+
+        pagina_actual_finalizadas = (
+            st.session_state.pagina_finalizadas
+        )
+
+
+        inicio_finalizadas = (
+            (pagina_actual_finalizadas - 1)
+            * FINALIZADAS_POR_PAGINA
+        )
+
+
+        fin_finalizadas = (
+            inicio_finalizadas
+            + FINALIZADAS_POR_PAGINA
+        )
+
+
+        df_finalizadas_pagina = (
+            df_finalizadas.iloc[
+                inicio_finalizadas:fin_finalizadas
+            ]
+        )
+
+
+        # =================================
+        # POSTITS
+        # =================================
+
+        if df_finalizadas_pagina.empty:
+
+            st.info(
+                "No hay solicitudes finalizadas."
+            )
+
+        else:
+
+            cols = st.columns(5)
+
+
+            for i, (_, row) in enumerate(
+                df_finalizadas_pagina.iterrows()
+            ):
+
+                col = cols[i % 5]
+
+
+                with col:
+
+                    folio = str(
+                        row.get(
+                            "folio_solicitud",
+                            ""
                         )
+                    )
 
 
-                        empleado = str(
-                            row.get(
-                                "nombre_empleado_solicita",
-                                ""
-                            )
+                    empleado = str(
+                        row.get(
+                            "nombre_empleado_solicita",
+                            ""
                         )
+                    )
 
 
-                        fecha = str(
-                            row.get(
-                                "created_at",
-                                ""
-                            )
-                        )[:10]
-
-
-                        # =================================
-                        # TOTALES MXP
-                        # =================================
-
-                        total_mxp = row.get(
-                            "total_comprobado",
-                            0
+                    fecha = str(
+                        row.get(
+                            "created_at",
+                            ""
                         )
-
-                        try:
-                            total_mxp = float(total_mxp)
-                        except:
-                            total_mxp = 0
+                    )[:10]
 
 
-                        # =================================
-                        # TOTALES USD
-                        # =================================
+                    # =================================
+                    # TOTALES MXP
+                    # =================================
 
-                        total_usd = row.get(
-                            "total_comprobado_usd",
-                            0
+                    total_mxp = row.get(
+                        "total_comprobado",
+                        0
+                    )
+
+                    try:
+                        total_mxp = float(total_mxp)
+                    except:
+                        total_mxp = 0
+
+
+                    # =================================
+                    # TOTALES USD
+                    # =================================
+
+                    total_usd = row.get(
+                        "total_comprobado_usd",
+                        0
+                    )
+
+                    try:
+                        total_usd = float(total_usd)
+                    except:
+                        total_usd = 0
+
+
+                    estatus = str(
+                        row.get(
+                            "estatus",
+                            ""
                         )
-
-                        try:
-                            total_usd = float(total_usd)
-                        except:
-                            total_usd = 0
+                    )
 
 
-                        estatus = str(
-                            row.get(
-                                "estatus",
-                                ""
-                            )
-                        )
+                    # =================================
+                    # TOTAL DISPLAY
+                    # =================================
 
+                    total_html = ""
 
-                        # =================================
-                        # TOTAL DISPLAY
-                        # =================================
+                    if total_mxp != 0:
 
-                        total_html = ""
-
-                        if total_mxp != 0:
-
-                            total_html += f"""
-                            <div style="
-                                font-size:0.9rem;
-                                font-weight:700;
-                                color:#151F6D;
-                                margin-top:10px;
-                            ">
-                                MXP: ${total_mxp:,.2f}
-                            </div>
-                            """
-
-
-                        if total_usd != 0:
-
-                            total_html += f"""
-                            <div style="
-                                font-size:0.9rem;
-                                font-weight:700;
-                                color:#151F6D;
-                                margin-top:4px;
-                            ">
-                                USD: ${total_usd:,.2f}
-                            </div>
-                            """
-
-
-                        if total_html == "":
-
-                            total_html = """
-                            <div style="
-                                font-size:0.9rem;
-                                font-weight:700;
-                                color:#151F6D;
-                                margin-top:10px;
-                            ">
-                                Sin monto
-                            </div>
-                            """
-
-
-                        # =================================
-                        # POST-IT
-                        # =================================
-
-                        html = f"""
-                        <div style="padding:6px;">
-
-                            <div style="
-                                background:#ffffff;
-                                padding:14px;
-                                border-radius:16px;
-                                box-shadow:0 4px 10px rgba(0,0,0,0.08);
-                                color:#111;
-                                min-height:190px;
-                                font-family:sans-serif;
-                            ">
-
-                                <div style="
-                                    font-weight:900;
-                                    font-size:1rem;
-                                ">
-                                    {folio}
-                                </div>
-
-
-                                <div style="
-                                    font-size:0.8rem;
-                                    margin-top:4px;
-                                ">
-                                    {empleado}
-                                </div>
-
-
-                                <hr style="margin:8px 0">
-
-
-                                <div style="
-                                    font-size:0.8rem;
-                                ">
-                                    <b>Fecha:</b> {fecha}
-                                </div>
-
-
-                                <div style="
-                                    font-size:0.8rem;
-                                    margin-top:6px;
-                                ">
-                                    <b>Estatus:</b> {estatus}
-                                </div>
-
-
-                                {total_html}
-
-                            </div>
-
+                        total_html += f"""
+                        <div style="
+                            font-size:0.9rem;
+                            font-weight:700;
+                            color:#151F6D;
+                            margin-top:10px;
+                        ">
+                            MXP: ${total_mxp:,.2f}
                         </div>
                         """
 
 
-                        components.html(
-                            html,
-                            height=230
-                        )
+                    if total_usd != 0:
+
+                        total_html += f"""
+                        <div style="
+                            font-size:0.9rem;
+                            font-weight:700;
+                            color:#151F6D;
+                            margin-top:4px;
+                        ">
+                            USD: ${total_usd:,.2f}
+                        </div>
+                        """
 
 
-                        # =================================
-                        # VER / OPEN MODAL
-                        # =================================
+                    if total_html == "":
 
-                        if st.button(
-                            "👁 Ver",
-                            key=f"finalizada_ver_{i}",
-                            use_container_width=True
-                        ):
-                            folio_actual = row.get("folio_solicitud", "")
+                        total_html = """
+                        <div style="
+                            font-size:0.9rem;
+                            font-weight:700;
+                            color:#151F6D;
+                            margin-top:10px;
+                        ">
+                            Sin monto
+                        </div>
+                        """
 
-                            solicitud_match = df_solicitudes[
-                                df_solicitudes["folio_solicitud"]
-                                .astype(str)
-                                == str(folio_actual)
-                            ]
-
-                            solicitud_row = (
-                                solicitud_match.iloc[0].to_dict()
-                                if not solicitud_match.empty
-                                else {}
-                            )
-
-                            st.session_state.finalizada_modal = {
-                                "comprobacion": row.to_dict(),
-                                "solicitud": solicitud_row,
-                                "folio": str(folio_actual),
-                            }
-                            st.session_state.finalizada_editando = False
-                            st.rerun()
-
-            # =================================
-            # FINALIZED ORDER MODAL
-            # =================================
-            if st.session_state.get("finalizada_modal"):
-
-                modal_data = st.session_state.finalizada_modal
-                comprobacion_row = modal_data.get("comprobacion", {})
-                solicitud_row = modal_data.get("solicitud", {})
-                folio_actual = str(modal_data.get("folio", ""))
-                editando = bool(st.session_state.get("finalizada_editando", False))
-
-                @st.dialog(
-                    "Detalle de Comprobación",
-                    width="large",
-                )
-                def modal_verificacion_finalizada():
 
                     # =================================
-                    # MODE / ROLE BANNER
+                    # POST-IT
                     # =================================
-                    if editando:
-                        st.warning(
-                            "🔓 Modo edición temporal — los cambios se guardarán y la solicitud permanecerá cerrada."
-                        )
-                    elif can_manage_viaticos:
-                        st.caption(
-                            "Los usuarios admin y manager pueden abrir temporalmente esta solicitud para corregirla."
-                        )
 
-                    # =================================
-                    # INFO GENERAL
-                    # =================================
-                    st.markdown(
-                        "<h2 style='color:#151F6D;'>📋 Información General</h2>",
-                        unsafe_allow_html=True
-                    )
+                    html = f"""
+                    <div style="padding:6px;">
 
-                    col1, col2 = st.columns(2)
+                        <div style="
+                            background:#ffffff;
+                            padding:14px;
+                            border-radius:16px;
+                            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+                            color:#111;
+                            min-height:190px;
+                            font-family:sans-serif;
+                        ">
 
-                    with col1:
-                        st.markdown(
-                            f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Estatus:</b> {comprobacion_row.get('estatus', solicitud_row.get('estatus', ''))}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-
-                    with col2:
-                        st.markdown(
-                            f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        label_cliente = (
-                            "Motivo del Viaje"
-                            if str(solicitud_row.get("motivo_viaje", "")).strip().upper() == "OTROS"
-                            else "Nombre del Cliente"
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-                        st.markdown(
-                            f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
-                            unsafe_allow_html=True
-                        )
-
-                    # =================================
-                    # MOTIVO
-                    # =================================
-                    st.markdown("---")
-                    st.markdown("## ✈️ Motivo del Viaje")
-                    if editando:
-                        motivo_edit = st.text_area(
-                            "Motivo del Viaje",
-                            value=str(solicitud_row.get("motivo_viaje", "") or ""),
-                            height=100,
-                            key=f"final_motivo_{folio_actual}",
-                        )
-                    else:
-                        motivo_edit = solicitud_row.get("motivo_viaje", "")
-                        st.markdown(
-                            f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{motivo_edit}</div>",
-                            unsafe_allow_html=True
-                        )
-
-                    # =================================
-                    # OBSERVACIONES SOLICITUD
-                    # =================================
-                    st.markdown("## 📝 Observaciones Solicitud")
-                    if editando:
-                        observaciones_solicitud = st.text_area(
-                            "Observaciones Solicitud",
-                            value=str(solicitud_row.get("observaciones", "") or ""),
-                            height=120,
-                            key=f"final_obs_sol_{folio_actual}",
-                        )
-                    else:
-                        observaciones_solicitud = solicitud_row.get("observaciones", "")
-                        st.markdown(
-                            f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{observaciones_solicitud}</div>",
-                            unsafe_allow_html=True
-                        )
-
-                    # =================================
-                    # EMPLEADO COMPROBACION
-                    # =================================
-                    st.markdown("## 👤 Empleado que metió comprobación")
-                    st.markdown(
-                        f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;font-size:18px;font-weight:600;'>{comprobacion_row.get('nombre_empleado_solicita', '')}</div>",
-                        unsafe_allow_html=True
-                    )
-
-                    # =================================
-                    # OBSERVACIONES COMPROBACION
-                    # =================================
-                    st.markdown("## 📝 Observaciones Comprobación")
-                    if editando:
-                        observaciones_comprobacion = st.text_area(
-                            "Observaciones Comprobación",
-                            value=str(comprobacion_row.get("observaciones", "") or ""),
-                            height=120,
-                            key=f"final_obs_comp_{folio_actual}",
-                        )
-                    else:
-                        observaciones_comprobacion = comprobacion_row.get("observaciones", "")
-                        st.markdown(
-                            f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{observaciones_comprobacion}</div>",
-                            unsafe_allow_html=True
-                        )
-
-                    # =================================
-                    # SOLICITUD CONCEPTS
-                    # =================================
-                    st.markdown("---")
-                    st.markdown("## 💰 Conceptos Solicitud")
-                    conceptos_solicitud = solicitud_row.get("conceptos", [])
-                    if not isinstance(conceptos_solicitud, list):
-                        conceptos_solicitud = []
-
-                    solicitud_columns = ["Tipo", "Descripcion", "Monto", "Tipo Cambio", "Aprobado", "Razon"]
-                    sol_records = []
-                    for c in conceptos_solicitud:
-                        sol_records.append({
-                            "Tipo": c.get("Tipo", ""),
-                            "Descripcion": c.get("Descripcion", ""),
-                            "Monto": c.get("Monto", 0),
-                            "Tipo Cambio": c.get("Tipo Cambio", c.get("Moneda", "MXP")),
-                            "Aprobado": "🟢 Si" if c.get("Aprobado", "Si") in ["Si", "🟢 Si"] else "🔴 No",
-                            "Razon": c.get("Razon", ""),
-                        })
-
-                    if editando:
-                        df_sol_edit = pd.DataFrame(sol_records, columns=solicitud_columns)
-                        if df_sol_edit.empty:
-                            df_sol_edit = pd.DataFrame([{"Tipo":"", "Descripcion":"", "Monto":0, "Tipo Cambio":"MXP", "Aprobado":"🟢 Si", "Razon":"", "🗑 Eliminar":False}])
-                        else:
-                            df_sol_edit["🗑 Eliminar"] = False
-                        edited_sol = st.data_editor(
-                            df_sol_edit,
-                            use_container_width=True,
-                            hide_index=True,
-                            num_rows="dynamic",
-                            key=f"final_sol_editor_{folio_actual}",
-                            on_change=st.rerun,
-                            column_config={
-                                "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
-                                    "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
-                                    "ESTACIONAMIENTO VIAJE", "GASOLINA VIAJE", "RENTA DE AUTOMOVIL/TRANSPORTE",
-                                    "ATENCION/PRESENTE CLIENTES VIAJE", "OTROS"
-                                ]),
-                                "Descripcion": st.column_config.TextColumn("Descripcion"),
-                                "Monto": st.column_config.NumberColumn("Monto", format="$ %.2f"),
-                                "Tipo Cambio": st.column_config.TextColumn("Tipo Cambio / Moneda"),
-                                "Aprobado": st.column_config.SelectboxColumn("Aprobado", options=["🟢 Si", "🔴 No"]),
-                                "Razon": st.column_config.TextColumn("Razon"),
-                                "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
-                            },
-                        )
-                    else:
-                        if sol_records:
-                            df_sol_view = pd.DataFrame(sol_records, columns=solicitud_columns)
-                            df_sol_view["Monto"] = pd.to_numeric(df_sol_view["Monto"], errors="coerce").fillna(0).map(lambda x: f"${x:,.2f}")
-                            st.data_editor(
-                                df_sol_view,
-                                use_container_width=True,
-                                hide_index=True,
-                                disabled=True,
-                                height=350,
-                                key=f"final_sol_view_{folio_actual}",
-                            )
-                        else:
-                            st.info("No hay conceptos de solicitud.")
-                        edited_sol = None
-
-                    # =================================
-                    # TOTAL SOLICITADO LIVE
-                    # =================================
-                    def _is_usd(value):
-                        return str(value or "").strip().upper() in ["USD", "US$", "DÓLARES", "DOLARES"]
-
-                    def _num(value):
-                        # MODIFICADO POR HEIDI 2026-10-02: NaN ahora cuenta como 0
-                        try:
-                            v = float(value)
-                            return 0.0 if v != v else v
-                        except Exception:
-                            return 0.0
-
-                    sol_source = edited_sol.to_dict("records") if editando and edited_sol is not None else sol_records
-                    if editando:
-                        sol_source = [x for x in sol_source if not bool(x.get("🗑 Eliminar", False))]
-                    total_sol_mxp = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and not _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
-                    total_sol_usd = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
-
-                    st.markdown(
-                        f"**Total Estimado MXP:** ${total_sol_mxp:,.2f}  \n**Total Estimado USD:** ${total_sol_usd:,.2f}",
-                    )
-
-                    # =================================
-                    # COMPROBACION CONCEPTS
-                    # =================================
-                    st.markdown("---")
-                    st.markdown("## 🧾 Conceptos Comprobación")
-                    conceptos_comprobacion = comprobacion_row.get("conceptos", [])
-                    if not isinstance(conceptos_comprobacion, list):
-                        conceptos_comprobacion = []
-
-                    comp_columns = [
-                        "Tipo", "Descripcion", "Fecha Factura", "Folio", "Proveedor", "Moneda",
-                        "Monto", "Comprobante", "Aplica IVA", "IVA %", "Aplica Retencion",
-                        "Impuesto Acreditable", "Total Comprobado"
-                    ]
-                    comp_records = []
-                    for c in conceptos_comprobacion:
-                        comp_records.append({col: c.get(col, "") for col in comp_columns})
-
-                    if editando:
-                        df_comp_edit = pd.DataFrame(comp_records, columns=comp_columns)
-                        if df_comp_edit.empty:
-                            df_comp_edit = pd.DataFrame([{col: "" for col in comp_columns}])
-                            df_comp_edit["Monto"] = 0.0
-                            df_comp_edit["Impuesto Acreditable"] = 0.0
-                            df_comp_edit["Total Comprobado"] = 0.0
-                        df_comp_edit["🗑 Eliminar"] = False
-
-                        if "Fecha Factura" in df_comp_edit.columns:
-                            df_comp_edit["Fecha Factura"] = pd.to_datetime(df_comp_edit["Fecha Factura"], errors="coerce")
-                        for col in ["Monto", "Impuesto Acreditable", "Total Comprobado"]:
-                            df_comp_edit[col] = pd.to_numeric(df_comp_edit[col], errors="coerce").fillna(0)
-
-                        edited_comp = st.data_editor(
-                            df_comp_edit,
-                            use_container_width=True,
-                            hide_index=True,
-                            num_rows="dynamic",
-                            height=400,
-                            key=f"final_comp_editor_{folio_actual}",
-                            on_change=st.rerun,
-                            column_config={
-                                "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
-                                    "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
-                                    "ESTACIONAMIENTO VIAJE", "GASOLINA VIAJE", "RENTA DE AUTOMOVIL/TRANSPORTE",
-                                    "ATENCION/PRESENTE CLIENTES VIAJE", "OTROS"
-                                ]),
-                                "Descripcion": st.column_config.TextColumn("Descripcion"),
-                                "Fecha Factura": st.column_config.DateColumn("Fecha Factura", format="YYYY-MM-DD"),
-                                "Folio": st.column_config.TextColumn("Folio"),
-                                "Proveedor": st.column_config.TextColumn("Proveedor"),
-                                "Moneda": st.column_config.SelectboxColumn("Moneda", options=["MXP", "USD"]),
-                                "Monto": st.column_config.NumberColumn("Monto", format="$ %.2f"),
-                                "Comprobante": st.column_config.TextColumn("Comprobante"),
-                                "Aplica IVA": st.column_config.SelectboxColumn("Aplica IVA", options=["Si", "No"]),
-                                "IVA %": st.column_config.NumberColumn("IVA %", format="%.2f"),
-                                "Aplica Retencion": st.column_config.SelectboxColumn("Aplica Retencion", options=["Si", "No"]),
-                                "Impuesto Acreditable": st.column_config.NumberColumn("Impuesto Acreditable", format="$ %.2f"),
-                                "Total Comprobado": st.column_config.NumberColumn("Total Comprobado", format="$ %.2f"),
-                                "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
-                            },
-                        )
-                    else:
-                        if comp_records:
-                            df_comp_view = pd.DataFrame(comp_records, columns=comp_columns)
-                            for col in ["Monto", "Impuesto Acreditable", "Total Comprobado"]:
-                                df_comp_view[col] = pd.to_numeric(df_comp_view[col], errors="coerce").fillna(0).map(lambda x: f"${x:,.2f}")
-                            st.data_editor(
-                                df_comp_view,
-                                use_container_width=True,
-                                hide_index=True,
-                                disabled=True,
-                                height=350,
-                                key=f"final_comp_view_{folio_actual}",
-                            )
-                        else:
-                            st.info("No hay conceptos comprobados.")
-                        edited_comp = None
-
-                    comp_source = edited_comp.to_dict("records") if editando and edited_comp is not None else comp_records
-                    if editando:
-                        comp_source = [x for x in comp_source if not bool(x.get("🗑 Eliminar", False))]
-                    total_comp_mxp = sum(_num(x.get("Total Comprobado")) for x in comp_source if not _is_usd(x.get("Moneda", "MXP")))
-                    total_comp_usd = sum(_num(x.get("Total Comprobado")) for x in comp_source if _is_usd(x.get("Moneda", "MXP")))
-
-                    anticipo_mxp = _num(comprobacion_row.get("anticipo_viaje", 0))
-                    anticipo_usd = _num(comprobacion_row.get("anticipo_viaje_usd", 0))
-                    diferencia_mxp = total_comp_mxp - anticipo_mxp
-                    diferencia_usd = total_comp_usd - anticipo_usd
-
-                    # =================================
-                    # ARCHIVOS
-                    # =================================
-                    st.markdown("---")
-                    st.markdown("## 📎 Comprobantes Adjuntos")
-                    archivos = comprobacion_row.get("archivos") or []
-                    if not isinstance(archivos, list):
-                        archivos = []
-
-                    if archivos:
-                        for archivo in archivos:
-                            path = archivo.get("path", "") if isinstance(archivo, dict) else ""
-                            nombre = archivo.get("filename", "Archivo") if isinstance(archivo, dict) else "Archivo"
-                            if path:
-                                url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
-                                st.link_button(f"📎 {nombre}", url, use_container_width=True)
-                    else:
-                        st.info("No hay comprobantes adjuntos.")
-
-                    nuevos_archivos = []
-                    if editando:
-                        nuevos_archivos = st.file_uploader(
-                            "Agregar nuevos comprobantes",
-                            accept_multiple_files=True,
-                            key=f"final_files_{folio_actual}",
-                        ) or []
-                        if nuevos_archivos:
-                            st.caption(f"{len(nuevos_archivos)} archivo(s) listo(s) para agregarse al guardar.")
-
-                    # =================================
-                    # LIVE TOTALS
-                    # =================================
-                    st.markdown("---")
-                    st.markdown("## 💰 Totales de Comprobación")
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.metric("Total Comprobado MXP", f"${total_comp_mxp:,.2f}")
-                    with c2:
-                        st.metric("Anticipo Viaje MXP", f"${anticipo_mxp:,.2f}")
-                    with c3:
-                        st.metric("Diferencia MXP", f"${diferencia_mxp:,.2f}")
-
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.metric("Total Comprobado USD", f"${total_comp_usd:,.2f}")
-                    with c2:
-                        st.metric("Anticipo Viaje USD", f"${anticipo_usd:,.2f}")
-                    with c3:
-                        st.metric("Diferencia USD", f"${diferencia_usd:,.2f}")
-
-                    # =================================
-                    # ACTIONS
-                    # =================================
-                    st.markdown("---")
-                    if editando and can_manage_viaticos:
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            guardar = st.button(
-                                "💾 Guardar y Cerrar Solicitud",
-                                type="primary",
-                                use_container_width=True,
-                                key=f"final_guardar_{folio_actual}",
-                            )
-                        with c2:
-                            cancelar = st.button(
-                                "↩ Cancelar Edición",
-                                use_container_width=True,
-                                key=f"final_cancelar_{folio_actual}",
-                            )
-
-                        if cancelar:
-                            st.session_state.finalizada_editando = False
-                            st.rerun()
-
-                        if guardar:
-                            try:
-                                # Preserve the original closed status; this is temporary edit mode,
-                                # not a workflow state change.
-                                estado_solicitud = solicitud_row.get("estatus") or comprobacion_row.get("estatus") or "Concluido"
-                                estado_comprobacion = comprobacion_row.get("estatus") or estado_solicitud
-
-                                # Normalize request concepts and remove rows explicitly marked for deletion.
-                                conceptos_sol_brutos = edited_sol.to_dict("records") if edited_sol is not None else []
-                                conceptos_sol_actualizados = []
-                                conceptos_eliminados_solicitud = 0
-                                for item in conceptos_sol_brutos:
-                                    if bool(item.pop("🗑 Eliminar", False)):
-                                        conceptos_eliminados_solicitud += 1
-                                        continue
-                                    item["Monto"] = _num(item.get("Monto"))
-                                    if not item.get("Tipo Cambio"):
-                                        item["Tipo Cambio"] = item.get("Moneda", "MXP") or "MXP"
-                                    item["Aprobado"] = "Si" if item.get("Aprobado") in ["Si", "🟢 Si"] else "No"
-                                    conceptos_sol_actualizados.append(item)
-
-                                nuevo_total_estimado_mxp = sum(
-                                    _num(item.get("Monto"))
-                                    for item in conceptos_sol_actualizados
-                                    if item.get("Aprobado") == "Si" and not _is_usd(item.get("Tipo Cambio", "MXP"))
-                                )
-                                nuevo_total_estimado_usd = sum(
-                                    _num(item.get("Monto"))
-                                    for item in conceptos_sol_actualizados
-                                    if item.get("Aprobado") == "Si" and _is_usd(item.get("Tipo Cambio", "MXP"))
-                                )
-
-                                # Normalize comprobation concepts and remove rows explicitly marked for deletion.
-                                conceptos_comp_brutos = edited_comp.to_dict("records") if edited_comp is not None else []
-                                conceptos_comp_actualizados = []
-                                conceptos_eliminados_comprobacion = 0
-                                for item in conceptos_comp_brutos:
-                                    if bool(item.pop("🗑 Eliminar", False)):
-                                        conceptos_eliminados_comprobacion += 1
-                                        continue
-                                    if pd.notna(item.get("Fecha Factura")):
-                                        try:
-                                            item["Fecha Factura"] = pd.to_datetime(item["Fecha Factura"]).strftime("%Y-%m-%d")
-                                        except Exception:
-                                            pass
-                                    else:
-                                        item["Fecha Factura"] = ""
-                                    for col in ["Monto", "IVA %", "Impuesto Acreditable", "Total Comprobado"]:
-                                        item[col] = _num(item.get(col))
-                                    conceptos_comp_actualizados.append(item)
-
-                                nuevo_total_comp_mxp = sum(
-                                    _num(item.get("Total Comprobado"))
-                                    for item in conceptos_comp_actualizados
-                                    if not _is_usd(item.get("Moneda", "MXP"))
-                                )
-                                nuevo_total_comp_usd = sum(
-                                    _num(item.get("Total Comprobado"))
-                                    for item in conceptos_comp_actualizados
-                                    if _is_usd(item.get("Moneda", "MXP"))
-                                )
-                                nuevo_diferencia_mxp = nuevo_total_comp_mxp - anticipo_mxp
-                                nuevo_diferencia_usd = nuevo_total_comp_usd - anticipo_usd
-
-                                # Upload new files first, then persist their metadata together with the row.
-                                archivos_actualizados = list(archivos)
-                                for archivo in nuevos_archivos:
-                                    safe_name = os.path.basename(archivo.name).replace("\\", "_").replace("/", "_")
-                                    storage_path = f"reaperturas/{folio_actual}/{uuid.uuid4().hex}_{safe_name}"
-                                    supabase.storage.from_("comprobantes-viaje").upload(
-                                        storage_path,
-                                        archivo.getvalue(),
-                                        {"content-type": archivo.type or "application/octet-stream"},
-                                    )
-                                    archivos_actualizados.append({
-                                        "path": storage_path,
-                                        "filename": archivo.name,
-                                    })
-
-                                # Keep the pre-edit totals for the audit record.
-                                total_anterior_mxp = _num(solicitud_row.get("total_estimado", 0))
-                                total_anterior_usd = _num(solicitud_row.get("total_estimado_usd", 0))
-                                total_comprobado_anterior_mxp = _num(comprobacion_row.get("total_comprobado", 0))
-                                total_comprobado_anterior_usd = _num(comprobacion_row.get("total_comprobado_usd", 0))
-
-                                # Update request. Status intentionally remains closed.
-                                solicitud_update = {
-                                    "motivo_viaje": motivo_edit,
-                                    "observaciones": observaciones_solicitud,
-                                    "conceptos": conceptos_sol_actualizados,
-                                    "total_estimado": float(nuevo_total_estimado_mxp),
-                                    "total_estimado_usd": float(nuevo_total_estimado_usd),
-                                    "estatus": estado_solicitud,
-                                    "fecha_actualizacion": datetime.now(timezone.utc).isoformat(),
-                                }
-                                supabase.table("solicitud_viaje").update(solicitud_update).eq(
-                                    "folio_solicitud", folio_actual
-                                ).execute()
-
-                                # Update comprobation using its own folio.
-                                folio_comprobacion_edicion = str(
-                                    comprobacion_row.get("folio_comprobacion", "") or ""
-                                ).strip()
-                                if folio_comprobacion_edicion:
-                                    comprobacion_update = {
-                                        "observaciones": observaciones_comprobacion,
-                                        "conceptos": conceptos_comp_actualizados,
-                                        "archivos": archivos_actualizados,
-                                        "total_comprobado": float(nuevo_total_comp_mxp),
-                                        "total_comprobado_usd": float(nuevo_total_comp_usd),
-                                        "diferencia_cargo_favor": float(nuevo_diferencia_mxp),
-                                        "diferencia_cargo_favor_usd": float(nuevo_diferencia_usd),
-                                        "estatus": estado_comprobacion,
-                                    }
-                                    supabase.table("comprobacion_viaje").update(comprobacion_update).eq(
-                                        "folio_comprobacion", folio_comprobacion_edicion
-                                    ).execute()
-                                elif nuevos_archivos:
-                                    st.warning("La solicitud no tiene un registro de comprobación asociado; los archivos nuevos no pudieron vincularse a una comprobación.")
-
-                                log_activity(
-                                    f"Editó Solicitud Finalizada: {folio_actual} | Solicitud y comprobación actualizadas | Totales recalculados",
-                                    "Gestión de Viáticos"
-                                )
-
-                                # Detailed audit entry for privileged edits of finalized requests.
-                                # This uses the existing audit_log table; no new column is required on solicitud_viaje.
-                                supabase.table("audit_log").insert({
-                                    "created_at": datetime.now(timezone.utc).isoformat(),
-                                    "user_id": user.get("id"),
-                                    "user_name": user.get("name"),
-                                    "action": "Edición de solicitud finalizada",
-                                    "table_name": "solicitud_viaje",
-                                    "record_key": folio_actual,
-                                    "details": {
-                                        "folio": folio_actual,
-                                        "total_solicitud_anterior_mxp": total_anterior_mxp,
-                                        "total_solicitud_nuevo_mxp": float(nuevo_total_estimado_mxp),
-                                        "total_solicitud_anterior_usd": total_anterior_usd,
-                                        "total_solicitud_nuevo_usd": float(nuevo_total_estimado_usd),
-                                        "total_comprobado_anterior_mxp": total_comprobado_anterior_mxp,
-                                        "total_comprobado_nuevo_mxp": float(nuevo_total_comp_mxp),
-                                        "total_comprobado_anterior_usd": total_comprobado_anterior_usd,
-                                        "total_comprobado_nuevo_usd": float(nuevo_total_comp_usd),
-                                        "conceptos_eliminados_solicitud": conceptos_eliminados_solicitud,
-                                        "conceptos_eliminados_comprobacion": conceptos_eliminados_comprobacion,
-                                        "archivos_agregados": len(nuevos_archivos),
-                                    },
-                                }).execute()
-
-                                st.cache_data.clear()
-                                st.session_state.finalizada_modal = None
-                                st.session_state.finalizada_editando = False
-                                st.success("Solicitud actualizada y cerrada nuevamente.")
-                                st.rerun()
-
-                            except Exception as e:
-                                st.error(f"No se pudieron guardar los cambios: {e}")
-
-                    else:
-                        if can_manage_viaticos:
-                            if st.button(
-                                "🔓 Abrir temporalmente para editar",
-                                type="primary",
-                                use_container_width=True,
-                                key=f"final_abrir_{folio_actual}",
-                            ):
-                                st.session_state.finalizada_editando = True
-                                st.rerun()
-
-                        if st.button(
-                            "Cerrar Ventana",
-                            use_container_width=True,
-                            key=f"final_cerrar_{folio_actual}",
-                        ):
-                            st.session_state.finalizada_modal = None
-                            st.session_state.finalizada_editando = False
-                            st.rerun()
-
-                modal_verificacion_finalizada()
-
-            # =================================
-            # PAGINATION CONTROLS
-            # =================================
-
-            st.divider()
+                            <div style="
+                                font-weight:900;
+                                font-size:1rem;
+                            ">
+                                {folio}
+                            </div>
 
 
-            p1, p2, p3 = st.columns(
-                [1, 2, 1]
-            )
+                            <div style="
+                                font-size:0.8rem;
+                                margin-top:4px;
+                            ">
+                                {empleado}
+                            </div>
 
 
-            with p1:
-
-                if st.button(
-                    "⬅ Anterior",
-                    disabled=(
-                        st.session_state.pagina_finalizadas <= 1
-                    ),
-                    use_container_width=True,
-                    key="prev_finalizadas"
-                ):
-
-                    st.session_state.pagina_finalizadas -= 1
-
-                    st.rerun()
+                            <hr style="margin:8px 0">
 
 
-            with p2:
+                            <div style="
+                                font-size:0.8rem;
+                            ">
+                                <b>Fecha:</b> {fecha}
+                            </div>
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align:center;
-                        padding-top:8px;
-                        font-weight:700;
-                        color:#151F6D;
-                    ">
-                        Página {st.session_state.pagina_finalizadas}
-                        de {total_paginas_finalizadas}
+
+                            <div style="
+                                font-size:0.8rem;
+                                margin-top:6px;
+                            ">
+                                <b>Estatus:</b> {estatus}
+                            </div>
+
+
+                            {total_html}
+
+                        </div>
+
                     </div>
-                    """,
+                    """
+
+
+                    components.html(
+                        html,
+                        height=230
+                    )
+
+
+                    # =================================
+                    # VER / OPEN MODAL
+                    # =================================
+
+                    if st.button(
+                        "👁 Ver",
+                        key=f"finalizada_ver_{i}",
+                        use_container_width=True
+                    ):
+                        folio_actual = row.get("folio_solicitud", "")
+
+                        solicitud_match = df_solicitudes[
+                            df_solicitudes["folio_solicitud"]
+                            .astype(str)
+                            == str(folio_actual)
+                        ]
+
+                        solicitud_row = (
+                            solicitud_match.iloc[0].to_dict()
+                            if not solicitud_match.empty
+                            else {}
+                        )
+
+                        st.session_state.finalizada_modal = {
+                            "comprobacion": row.to_dict(),
+                            "solicitud": solicitud_row,
+                            "folio": str(folio_actual),
+                        }
+                        st.session_state.finalizada_editando = False
+                        st.rerun()
+
+        # =================================
+        # FINALIZED ORDER MODAL
+        # =================================
+        if st.session_state.get("finalizada_modal"):
+
+            modal_data = st.session_state.finalizada_modal
+            comprobacion_row = modal_data.get("comprobacion", {})
+            solicitud_row = modal_data.get("solicitud", {})
+            folio_actual = str(modal_data.get("folio", ""))
+            editando = bool(st.session_state.get("finalizada_editando", False))
+
+            @st.dialog(
+                "Detalle de Comprobación",
+                width="large",
+            )
+            def modal_verificacion_finalizada():
+
+                # =================================
+                # MODE / ROLE BANNER
+                # =================================
+                if editando:
+                    st.warning(
+                        "🔓 Modo edición temporal — los cambios se guardarán y la solicitud permanecerá cerrada."
+                    )
+                elif can_manage_viaticos:
+                    st.caption(
+                        "Los usuarios admin y manager pueden abrir temporalmente esta solicitud para corregirla."
+                    )
+
+                # =================================
+                # INFO GENERAL
+                # =================================
+                st.markdown(
+                    "<h2 style='color:#151F6D;'>📋 Información General</h2>",
                     unsafe_allow_html=True
                 )
 
+                col1, col2 = st.columns(2)
 
-            with p3:
+                with col1:
+                    st.markdown(
+                        f"<span style='color:black;'><b>Folio Solicitud:</b> {solicitud_row.get('folio_solicitud', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Folio Comprobación:</b> {comprobacion_row.get('folio_comprobacion', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Estatus:</b> {comprobacion_row.get('estatus', solicitud_row.get('estatus', ''))}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Empleado Solicita:</b> {solicitud_row.get('nombre_empleado_solicita', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Fecha Solicitud:</b> {solicitud_row.get('fecha_solicitud', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Fecha Comprobación:</b> {comprobacion_row.get('created_at', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Fecha Inicio:</b> {solicitud_row.get('fecha_inicio', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Fecha Fin:</b> {solicitud_row.get('fecha_fin', '')}</span>",
+                        unsafe_allow_html=True
+                    )
 
-                if st.button(
-                    "Siguiente ➡",
-                    disabled=(
-                        st.session_state.pagina_finalizadas
-                        >= total_paginas_finalizadas
-                    ),
-                    use_container_width=True,
-                    key="next_finalizadas"
-                ):
+                with col2:
+                    st.markdown(
+                        f"<span style='color:black;'><b>Empresa Brinda Servicio:</b> {solicitud_row.get('empresa_brinda_servicio', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Empresa Cargo Gastos:</b> {solicitud_row.get('empresa_cargo_gastos', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Unidad Negocio:</b> {solicitud_row.get('unidad_negocio', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Sucursal:</b> {solicitud_row.get('sucursal', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Sucursal Especificar:</b> {solicitud_row.get('sucursal_especificar', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    label_cliente = (
+                        "Motivo del Viaje"
+                        if str(solicitud_row.get("motivo_viaje", "")).strip().upper() == "OTROS"
+                        else "Nombre del Cliente"
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>{label_cliente}:</b> {solicitud_row.get('nombre_cliente', '')}</span>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<span style='color:black;'><b>Registro SAC Ventas?:</b> {solicitud_row.get('folio_sac', '')}</span>",
+                        unsafe_allow_html=True
+                    )
 
-                    st.session_state.pagina_finalizadas += 1
+                # =================================
+                # MOTIVO
+                # =================================
+                st.markdown("---")
+                st.markdown("## ✈️ Motivo del Viaje")
+                if editando:
+                    motivo_edit = st.text_area(
+                        "Motivo del Viaje",
+                        value=str(solicitud_row.get("motivo_viaje", "") or ""),
+                        height=100,
+                        key=f"final_motivo_{folio_actual}",
+                    )
+                else:
+                    motivo_edit = solicitud_row.get("motivo_viaje", "")
+                    st.markdown(
+                        f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{motivo_edit}</div>",
+                        unsafe_allow_html=True
+                    )
 
-                    st.rerun()
+                # =================================
+                # OBSERVACIONES SOLICITUD
+                # =================================
+                st.markdown("## 📝 Observaciones Solicitud")
+                if editando:
+                    observaciones_solicitud = st.text_area(
+                        "Observaciones Solicitud",
+                        value=str(solicitud_row.get("observaciones", "") or ""),
+                        height=120,
+                        key=f"final_obs_sol_{folio_actual}",
+                    )
+                else:
+                    observaciones_solicitud = solicitud_row.get("observaciones", "")
+                    st.markdown(
+                        f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{observaciones_solicitud}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                # =================================
+                # EMPLEADO COMPROBACION
+                # =================================
+                st.markdown("## 👤 Empleado que metió comprobación")
+                st.markdown(
+                    f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;font-size:18px;font-weight:600;'>{comprobacion_row.get('nombre_empleado_solicita', '')}</div>",
+                    unsafe_allow_html=True
+                )
+
+                # =================================
+                # OBSERVACIONES COMPROBACION
+                # =================================
+                st.markdown("## 📝 Observaciones Comprobación")
+                if editando:
+                    observaciones_comprobacion = st.text_area(
+                        "Observaciones Comprobación",
+                        value=str(comprobacion_row.get("observaciones", "") or ""),
+                        height=120,
+                        key=f"final_obs_comp_{folio_actual}",
+                    )
+                else:
+                    observaciones_comprobacion = comprobacion_row.get("observaciones", "")
+                    st.markdown(
+                        f"<div style='background-color:#F3F4F6;padding:16px;border-radius:12px;border:1px solid rgba(191,167,95,0.25);margin-bottom:20px;white-space:pre-wrap;'>{observaciones_comprobacion}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                # =================================
+                # SOLICITUD CONCEPTS
+                # =================================
+                st.markdown("---")
+                st.markdown("## 💰 Conceptos Solicitud")
+                conceptos_solicitud = solicitud_row.get("conceptos", [])
+                if not isinstance(conceptos_solicitud, list):
+                    conceptos_solicitud = []
+
+                solicitud_columns = ["Tipo", "Descripcion", "Monto", "Tipo Cambio", "Aprobado", "Razon"]
+                sol_records = []
+                for c in conceptos_solicitud:
+                    sol_records.append({
+                        "Tipo": c.get("Tipo", ""),
+                        "Descripcion": c.get("Descripcion", ""),
+                        "Monto": c.get("Monto", 0),
+                        "Tipo Cambio": c.get("Tipo Cambio", c.get("Moneda", "MXP")),
+                        "Aprobado": "🟢 Si" if c.get("Aprobado", "Si") in ["Si", "🟢 Si"] else "🔴 No",
+                        "Razon": c.get("Razon", ""),
+                    })
+
+                if editando:
+                    df_sol_edit = pd.DataFrame(sol_records, columns=solicitud_columns)
+                    if df_sol_edit.empty:
+                        df_sol_edit = pd.DataFrame([{"Tipo":"", "Descripcion":"", "Monto":0, "Tipo Cambio":"MXP", "Aprobado":"🟢 Si", "Razon":"", "🗑 Eliminar":False}])
+                    else:
+                        df_sol_edit["🗑 Eliminar"] = False
+                    edited_sol = st.data_editor(
+                        df_sol_edit,
+                        use_container_width=True,
+                        hide_index=True,
+                        num_rows="dynamic",
+                        key=f"final_sol_editor_{folio_actual}",
+                        on_change=st.rerun,
+                        column_config={
+                            "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
+                                "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
+                                "ESTACIONAMIENTO VIAJE", "GASOLINA VIAJE", "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                "ATENCION/PRESENTE CLIENTES VIAJE", "OTROS"
+                            ]),
+                            "Descripcion": st.column_config.TextColumn("Descripcion"),
+                            "Monto": st.column_config.NumberColumn("Monto", format="$ %.2f"),
+                            "Tipo Cambio": st.column_config.TextColumn("Tipo Cambio / Moneda"),
+                            "Aprobado": st.column_config.SelectboxColumn("Aprobado", options=["🟢 Si", "🔴 No"]),
+                            "Razon": st.column_config.TextColumn("Razon"),
+                            "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
+                        },
+                    )
+                else:
+                    if sol_records:
+                        df_sol_view = pd.DataFrame(sol_records, columns=solicitud_columns)
+                        df_sol_view["Monto"] = pd.to_numeric(df_sol_view["Monto"], errors="coerce").fillna(0).map(lambda x: f"${x:,.2f}")
+                        st.data_editor(
+                            df_sol_view,
+                            use_container_width=True,
+                            hide_index=True,
+                            disabled=True,
+                            height=350,
+                            key=f"final_sol_view_{folio_actual}",
+                        )
+                    else:
+                        st.info("No hay conceptos de solicitud.")
+                    edited_sol = None
+
+                # =================================
+                # TOTAL SOLICITADO LIVE
+                # =================================
+                def _is_usd(value):
+                    return str(value or "").strip().upper() in ["USD", "US$", "DÓLARES", "DOLARES"]
+
+                def _num(value):
+                    # MODIFICADO POR HEIDI 2026-10-02: NaN ahora cuenta como 0
+                    try:
+                        v = float(value)
+                        return 0.0 if v != v else v
+                    except Exception:
+                        return 0.0
+
+                sol_source = edited_sol.to_dict("records") if editando and edited_sol is not None else sol_records
+                if editando:
+                    sol_source = [x for x in sol_source if not bool(x.get("🗑 Eliminar", False))]
+                total_sol_mxp = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and not _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
+                total_sol_usd = sum(_num(x.get("Monto")) for x in sol_source if x.get("Aprobado", "🟢 Si") in ["Si", "🟢 Si"] and _is_usd(x.get("Tipo Cambio", x.get("Moneda", "MXP"))))
+
+                st.markdown(
+                    f"**Total Estimado MXP:** ${total_sol_mxp:,.2f}  \n**Total Estimado USD:** ${total_sol_usd:,.2f}",
+                )
+
+                # =================================
+                # COMPROBACION CONCEPTS
+                # =================================
+                st.markdown("---")
+                st.markdown("## 🧾 Conceptos Comprobación")
+                conceptos_comprobacion = comprobacion_row.get("conceptos", [])
+                if not isinstance(conceptos_comprobacion, list):
+                    conceptos_comprobacion = []
+
+                comp_columns = [
+                    "Tipo", "Descripcion", "Fecha Factura", "Folio", "Proveedor", "Moneda",
+                    "Monto", "Comprobante", "Aplica IVA", "IVA %", "Aplica Retencion",
+                    "Impuesto Acreditable", "Total Comprobado"
+                ]
+                comp_records = []
+                for c in conceptos_comprobacion:
+                    comp_records.append({col: c.get(col, "") for col in comp_columns})
+
+                if editando:
+                    df_comp_edit = pd.DataFrame(comp_records, columns=comp_columns)
+                    if df_comp_edit.empty:
+                        df_comp_edit = pd.DataFrame([{col: "" for col in comp_columns}])
+                        df_comp_edit["Monto"] = 0.0
+                        df_comp_edit["Impuesto Acreditable"] = 0.0
+                        df_comp_edit["Total Comprobado"] = 0.0
+                    df_comp_edit["🗑 Eliminar"] = False
+
+                    if "Fecha Factura" in df_comp_edit.columns:
+                        df_comp_edit["Fecha Factura"] = pd.to_datetime(df_comp_edit["Fecha Factura"], errors="coerce")
+                    for col in ["Monto", "Impuesto Acreditable", "Total Comprobado"]:
+                        df_comp_edit[col] = pd.to_numeric(df_comp_edit[col], errors="coerce").fillna(0)
+
+                    edited_comp = st.data_editor(
+                        df_comp_edit,
+                        use_container_width=True,
+                        hide_index=True,
+                        num_rows="dynamic",
+                        height=400,
+                        key=f"final_comp_editor_{folio_actual}",
+                        on_change=st.rerun,
+                        column_config={
+                            "Tipo": st.column_config.SelectboxColumn("Tipo", options=[
+                                "Selecciona un tipo", "ALIMENTOS VIAJE", "CASETAS Y PEAJES",
+                                "ESTACIONAMIENTO VIAJE", "GASOLINA VIAJE", "RENTA DE AUTOMOVIL/TRANSPORTE",
+                                "ATENCION/PRESENTE CLIENTES VIAJE", "OTROS"
+                            ]),
+                            "Descripcion": st.column_config.TextColumn("Descripcion"),
+                            "Fecha Factura": st.column_config.DateColumn("Fecha Factura", format="YYYY-MM-DD"),
+                            "Folio": st.column_config.TextColumn("Folio"),
+                            "Proveedor": st.column_config.TextColumn("Proveedor"),
+                            "Moneda": st.column_config.SelectboxColumn("Moneda", options=["MXP", "USD"]),
+                            "Monto": st.column_config.NumberColumn("Monto", format="$ %.2f"),
+                            "Comprobante": st.column_config.TextColumn("Comprobante"),
+                            "Aplica IVA": st.column_config.SelectboxColumn("Aplica IVA", options=["Si", "No"]),
+                            "IVA %": st.column_config.NumberColumn("IVA %", format="%.2f"),
+                            "Aplica Retencion": st.column_config.SelectboxColumn("Aplica Retencion", options=["Si", "No"]),
+                            "Impuesto Acreditable": st.column_config.NumberColumn("Impuesto Acreditable", format="$ %.2f"),
+                            "Total Comprobado": st.column_config.NumberColumn("Total Comprobado", format="$ %.2f"),
+                            "🗑 Eliminar": st.column_config.CheckboxColumn("🗑 Eliminar", default=False),
+                        },
+                    )
+                else:
+                    if comp_records:
+                        df_comp_view = pd.DataFrame(comp_records, columns=comp_columns)
+                        for col in ["Monto", "Impuesto Acreditable", "Total Comprobado"]:
+                            df_comp_view[col] = pd.to_numeric(df_comp_view[col], errors="coerce").fillna(0).map(lambda x: f"${x:,.2f}")
+                        st.data_editor(
+                            df_comp_view,
+                            use_container_width=True,
+                            hide_index=True,
+                            disabled=True,
+                            height=350,
+                            key=f"final_comp_view_{folio_actual}",
+                        )
+                    else:
+                        st.info("No hay conceptos comprobados.")
+                    edited_comp = None
+
+                comp_source = edited_comp.to_dict("records") if editando and edited_comp is not None else comp_records
+                if editando:
+                    comp_source = [x for x in comp_source if not bool(x.get("🗑 Eliminar", False))]
+                total_comp_mxp = sum(_num(x.get("Total Comprobado")) for x in comp_source if not _is_usd(x.get("Moneda", "MXP")))
+                total_comp_usd = sum(_num(x.get("Total Comprobado")) for x in comp_source if _is_usd(x.get("Moneda", "MXP")))
+
+                anticipo_mxp = _num(comprobacion_row.get("anticipo_viaje", 0))
+                anticipo_usd = _num(comprobacion_row.get("anticipo_viaje_usd", 0))
+                diferencia_mxp = total_comp_mxp - anticipo_mxp
+                diferencia_usd = total_comp_usd - anticipo_usd
+
+                # =================================
+                # ARCHIVOS
+                # =================================
+                st.markdown("---")
+                st.markdown("## 📎 Comprobantes Adjuntos")
+                archivos = comprobacion_row.get("archivos") or []
+                if not isinstance(archivos, list):
+                    archivos = []
+
+                if archivos:
+                    for archivo in archivos:
+                        path = archivo.get("path", "") if isinstance(archivo, dict) else ""
+                        nombre = archivo.get("filename", "Archivo") if isinstance(archivo, dict) else "Archivo"
+                        if path:
+                            url = supabase.storage.from_("comprobantes-viaje").get_public_url(path)
+                            st.link_button(f"📎 {nombre}", url, use_container_width=True)
+                else:
+                    st.info("No hay comprobantes adjuntos.")
+
+                nuevos_archivos = []
+                if editando:
+                    nuevos_archivos = st.file_uploader(
+                        "Agregar nuevos comprobantes",
+                        accept_multiple_files=True,
+                        key=f"final_files_{folio_actual}",
+                    ) or []
+                    if nuevos_archivos:
+                        st.caption(f"{len(nuevos_archivos)} archivo(s) listo(s) para agregarse al guardar.")
+
+                # =================================
+                # LIVE TOTALS
+                # =================================
+                st.markdown("---")
+                st.markdown("## 💰 Totales de Comprobación")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("Total Comprobado MXP", f"${total_comp_mxp:,.2f}")
+                with c2:
+                    st.metric("Anticipo Viaje MXP", f"${anticipo_mxp:,.2f}")
+                with c3:
+                    st.metric("Diferencia MXP", f"${diferencia_mxp:,.2f}")
+
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("Total Comprobado USD", f"${total_comp_usd:,.2f}")
+                with c2:
+                    st.metric("Anticipo Viaje USD", f"${anticipo_usd:,.2f}")
+                with c3:
+                    st.metric("Diferencia USD", f"${diferencia_usd:,.2f}")
+
+                # =================================
+                # ACTIONS
+                # =================================
+                st.markdown("---")
+                if editando and can_manage_viaticos:
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        guardar = st.button(
+                            "💾 Guardar y Cerrar Solicitud",
+                            type="primary",
+                            use_container_width=True,
+                            key=f"final_guardar_{folio_actual}",
+                        )
+                    with c2:
+                        cancelar = st.button(
+                            "↩ Cancelar Edición",
+                            use_container_width=True,
+                            key=f"final_cancelar_{folio_actual}",
+                        )
+
+                    if cancelar:
+                        st.session_state.finalizada_editando = False
+                        st.rerun()
+
+                    if guardar:
+                        try:
+                            # Preserve the original closed status; this is temporary edit mode,
+                            # not a workflow state change.
+                            estado_solicitud = solicitud_row.get("estatus") or comprobacion_row.get("estatus") or "Concluido"
+                            estado_comprobacion = comprobacion_row.get("estatus") or estado_solicitud
+
+                            # Normalize request concepts and remove rows explicitly marked for deletion.
+                            conceptos_sol_brutos = edited_sol.to_dict("records") if edited_sol is not None else []
+                            conceptos_sol_actualizados = []
+                            conceptos_eliminados_solicitud = 0
+                            for item in conceptos_sol_brutos:
+                                if bool(item.pop("🗑 Eliminar", False)):
+                                    conceptos_eliminados_solicitud += 1
+                                    continue
+                                item["Monto"] = _num(item.get("Monto"))
+                                if not item.get("Tipo Cambio"):
+                                    item["Tipo Cambio"] = item.get("Moneda", "MXP") or "MXP"
+                                item["Aprobado"] = "Si" if item.get("Aprobado") in ["Si", "🟢 Si"] else "No"
+                                conceptos_sol_actualizados.append(item)
+
+                            nuevo_total_estimado_mxp = sum(
+                                _num(item.get("Monto"))
+                                for item in conceptos_sol_actualizados
+                                if item.get("Aprobado") == "Si" and not _is_usd(item.get("Tipo Cambio", "MXP"))
+                            )
+                            nuevo_total_estimado_usd = sum(
+                                _num(item.get("Monto"))
+                                for item in conceptos_sol_actualizados
+                                if item.get("Aprobado") == "Si" and _is_usd(item.get("Tipo Cambio", "MXP"))
+                            )
+
+                            # Normalize comprobation concepts and remove rows explicitly marked for deletion.
+                            conceptos_comp_brutos = edited_comp.to_dict("records") if edited_comp is not None else []
+                            conceptos_comp_actualizados = []
+                            conceptos_eliminados_comprobacion = 0
+                            for item in conceptos_comp_brutos:
+                                if bool(item.pop("🗑 Eliminar", False)):
+                                    conceptos_eliminados_comprobacion += 1
+                                    continue
+                                if pd.notna(item.get("Fecha Factura")):
+                                    try:
+                                        item["Fecha Factura"] = pd.to_datetime(item["Fecha Factura"]).strftime("%Y-%m-%d")
+                                    except Exception:
+                                        pass
+                                else:
+                                    item["Fecha Factura"] = ""
+                                for col in ["Monto", "IVA %", "Impuesto Acreditable", "Total Comprobado"]:
+                                    item[col] = _num(item.get(col))
+                                conceptos_comp_actualizados.append(item)
+
+                            nuevo_total_comp_mxp = sum(
+                                _num(item.get("Total Comprobado"))
+                                for item in conceptos_comp_actualizados
+                                if not _is_usd(item.get("Moneda", "MXP"))
+                            )
+                            nuevo_total_comp_usd = sum(
+                                _num(item.get("Total Comprobado"))
+                                for item in conceptos_comp_actualizados
+                                if _is_usd(item.get("Moneda", "MXP"))
+                            )
+                            nuevo_diferencia_mxp = nuevo_total_comp_mxp - anticipo_mxp
+                            nuevo_diferencia_usd = nuevo_total_comp_usd - anticipo_usd
+
+                            # Upload new files first, then persist their metadata together with the row.
+                            archivos_actualizados = list(archivos)
+                            for archivo in nuevos_archivos:
+                                safe_name = os.path.basename(archivo.name).replace("\\", "_").replace("/", "_")
+                                storage_path = f"reaperturas/{folio_actual}/{uuid.uuid4().hex}_{safe_name}"
+                                supabase.storage.from_("comprobantes-viaje").upload(
+                                    storage_path,
+                                    archivo.getvalue(),
+                                    {"content-type": archivo.type or "application/octet-stream"},
+                                )
+                                archivos_actualizados.append({
+                                    "path": storage_path,
+                                    "filename": archivo.name,
+                                })
+
+                            # Keep the pre-edit totals for the audit record.
+                            total_anterior_mxp = _num(solicitud_row.get("total_estimado", 0))
+                            total_anterior_usd = _num(solicitud_row.get("total_estimado_usd", 0))
+                            total_comprobado_anterior_mxp = _num(comprobacion_row.get("total_comprobado", 0))
+                            total_comprobado_anterior_usd = _num(comprobacion_row.get("total_comprobado_usd", 0))
+
+                            # Update request. Status intentionally remains closed.
+                            solicitud_update = {
+                                "motivo_viaje": motivo_edit,
+                                "observaciones": observaciones_solicitud,
+                                "conceptos": conceptos_sol_actualizados,
+                                "total_estimado": float(nuevo_total_estimado_mxp),
+                                "total_estimado_usd": float(nuevo_total_estimado_usd),
+                                "estatus": estado_solicitud,
+                                "fecha_actualizacion": datetime.now(timezone.utc).isoformat(),
+                            }
+                            supabase.table("solicitud_viaje").update(solicitud_update).eq(
+                                "folio_solicitud", folio_actual
+                            ).execute()
+
+                            # Update comprobation using its own folio.
+                            folio_comprobacion_edicion = str(
+                                comprobacion_row.get("folio_comprobacion", "") or ""
+                            ).strip()
+                            if folio_comprobacion_edicion:
+                                comprobacion_update = {
+                                    "observaciones": observaciones_comprobacion,
+                                    "conceptos": conceptos_comp_actualizados,
+                                    "archivos": archivos_actualizados,
+                                    "total_comprobado": float(nuevo_total_comp_mxp),
+                                    "total_comprobado_usd": float(nuevo_total_comp_usd),
+                                    "diferencia_cargo_favor": float(nuevo_diferencia_mxp),
+                                    "diferencia_cargo_favor_usd": float(nuevo_diferencia_usd),
+                                    "estatus": estado_comprobacion,
+                                }
+                                supabase.table("comprobacion_viaje").update(comprobacion_update).eq(
+                                    "folio_comprobacion", folio_comprobacion_edicion
+                                ).execute()
+                            elif nuevos_archivos:
+                                st.warning("La solicitud no tiene un registro de comprobación asociado; los archivos nuevos no pudieron vincularse a una comprobación.")
+
+                            log_activity(
+                                f"Editó Solicitud Finalizada: {folio_actual} | Solicitud y comprobación actualizadas | Totales recalculados",
+                                "Gestión de Viáticos"
+                            )
+
+                            # Detailed audit entry for privileged edits of finalized requests.
+                            # This uses the existing audit_log table; no new column is required on solicitud_viaje.
+                            supabase.table("audit_log").insert({
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                                "user_id": user.get("id"),
+                                "user_name": user.get("name"),
+                                "action": "Edición de solicitud finalizada",
+                                "table_name": "solicitud_viaje",
+                                "record_key": folio_actual,
+                                "details": {
+                                    "folio": folio_actual,
+                                    "total_solicitud_anterior_mxp": total_anterior_mxp,
+                                    "total_solicitud_nuevo_mxp": float(nuevo_total_estimado_mxp),
+                                    "total_solicitud_anterior_usd": total_anterior_usd,
+                                    "total_solicitud_nuevo_usd": float(nuevo_total_estimado_usd),
+                                    "total_comprobado_anterior_mxp": total_comprobado_anterior_mxp,
+                                    "total_comprobado_nuevo_mxp": float(nuevo_total_comp_mxp),
+                                    "total_comprobado_anterior_usd": total_comprobado_anterior_usd,
+                                    "total_comprobado_nuevo_usd": float(nuevo_total_comp_usd),
+                                    "conceptos_eliminados_solicitud": conceptos_eliminados_solicitud,
+                                    "conceptos_eliminados_comprobacion": conceptos_eliminados_comprobacion,
+                                    "archivos_agregados": len(nuevos_archivos),
+                                },
+                            }).execute()
+
+                            st.cache_data.clear()
+                            st.session_state.finalizada_modal = None
+                            st.session_state.finalizada_editando = False
+                            st.success("Solicitud actualizada y cerrada nuevamente.")
+                            st.rerun()
+
+                        except Exception as e:
+                            st.error(f"No se pudieron guardar los cambios: {e}")
+
+                else:
+                    if can_manage_viaticos:
+                        if st.button(
+                            "🔓 Abrir temporalmente para editar",
+                            type="primary",
+                            use_container_width=True,
+                            key=f"final_abrir_{folio_actual}",
+                        ):
+                            st.session_state.finalizada_editando = True
+                            st.rerun()
+
+                    if st.button(
+                        "Cerrar Ventana",
+                        use_container_width=True,
+                        key=f"final_cerrar_{folio_actual}",
+                    ):
+                        st.session_state.finalizada_modal = None
+                        st.session_state.finalizada_editando = False
+                        st.rerun()
+
+            modal_verificacion_finalizada()
+
+        # =================================
+        # PAGINATION CONTROLS
+        # =================================
+
+        st.divider()
+
+
+        p1, p2, p3 = st.columns(
+            [1, 2, 1]
+        )
+
+
+        with p1:
+
+            if st.button(
+                "⬅ Anterior",
+                disabled=(
+                    st.session_state.pagina_finalizadas <= 1
+                ),
+                use_container_width=True,
+                key="prev_finalizadas"
+            ):
+
+                st.session_state.pagina_finalizadas -= 1
+
+                st.rerun()
+
+
+        with p2:
+
+            st.markdown(
+                f"""
+                <div style="
+                    text-align:center;
+                    padding-top:8px;
+                    font-weight:700;
+                    color:#151F6D;
+                ">
+                    Página {st.session_state.pagina_finalizadas}
+                    de {total_paginas_finalizadas}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+        with p3:
+
+            if st.button(
+                "Siguiente ➡",
+                disabled=(
+                    st.session_state.pagina_finalizadas
+                    >= total_paginas_finalizadas
+                ),
+                use_container_width=True,
+                key="next_finalizadas"
+            ):
+
+                st.session_state.pagina_finalizadas += 1
+
+                st.rerun()
