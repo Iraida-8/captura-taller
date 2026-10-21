@@ -9,6 +9,7 @@ from pages.css import load_css
 import json
 import html
 import os
+import unicodedata
 import uuid
 import resend  #type: ignore
 
@@ -101,13 +102,29 @@ user_access = {
 # Workshop pass module visibility and view-only mode are permissions, not roles.
 # Keep admin/manager as the elevated-action gate (e.g. reopening closed orders).
 has_espectador_pases = "espectador_pases" in user_access
-has_autorizacion = "autorizacion" in user_access or has_espectador_pases
+has_espectador_selectivo = "espectador_selectivo" in user_access
+has_autorizacion = (
+    "autorizacion" in user_access
+    or has_espectador_pases
+    or has_espectador_selectivo
+)
 has_viaticos = "gestion_viaticos" in user_access
-# Elevated roles retain the existing full workflow. Other roles enter this
-# tab via the explicit view-only permission. Company access still filters data.
+# "espectador_pases" remains view-only. "espectador_selectivo" keeps the
+# normal status-based edit workflow, but limits records to those captured
+# by the logged-in user.
 is_pases_viewer = has_espectador_pases and not (is_admin or is_manager)
+is_pases_selective = has_espectador_selectivo and not has_espectador_pases
 can_edit_pases = not is_pases_viewer
-can_access_pases_tab = has_autorizacion and (is_admin or is_manager or has_espectador_pases)
+can_access_pases_tab = has_autorizacion and (
+    is_admin or is_manager or has_espectador_pases or has_espectador_selectivo
+)
+
+def normalizar_nombre_captura(value):
+    """Normalize names for case-, whitespace-, and accent-insensitive matching."""
+    value = "" if value is None else str(value).strip()
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return " ".join(value.casefold().split())
 
 if not (has_autorizacion or has_viaticos):
     st.error("No tienes permisos para acceder a este módulo.")
@@ -771,7 +788,45 @@ if can_access_pases_tab:
             if perm in ACCESS_COMPANY_MAP
         }
 
-        pases_df = cargar_pases_taller(user_access)
+        # Selective users can load passes from every company, then see only
+        # records whose Capturo value matches their logged-in profile name.
+        pases_load_access = user_access
+        if is_pases_selective:
+            pases_load_access = tuple(sorted(
+                set(user_access) | set(ACCESS_TABLE_MAP.keys())
+            ))
+
+        pases_df = cargar_pases_taller(pases_load_access)
+
+        logged_user_name = (
+            current_user.get("name")
+            or current_user.get("full_name")
+            or ""
+        )
+        logged_user_name_normalized = normalizar_nombre_captura(logged_user_name)
+
+        if is_pases_selective:
+            if not pases_df.empty and "Capturo" in pases_df.columns and logged_user_name_normalized:
+                pases_df = pases_df[
+                    pases_df["Capturo"].map(normalizar_nombre_captura)
+                    == logged_user_name_normalized
+                ].copy()
+            else:
+                # Fail closed if the profile has no display name or the source
+                # data has no Capturo field; never expose unfiltered records.
+                pases_df = pases_df.iloc[0:0].copy()
+                if not logged_user_name_normalized:
+                    st.warning(
+                        "No se pudo identificar tu nombre de perfil para filtrar "
+                        "los pases capturados por ti. Contacta al administrador."
+                    )
+
+        owned_folios = (
+            set(pases_df["NoFolio"].astype(str).str.strip())
+            if not pases_df.empty and "NoFolio" in pases_df.columns
+            else set()
+        )
+
         facturas_df = cargar_facturas()
         services_df = cargar_services()
         audit_df = cargar_audit()
@@ -956,7 +1011,7 @@ if can_access_pases_tab:
             with tab_distribucion:
 
                 @st.cache_data(ttl=300)
-                def cargar_tipos_parte():
+                def cargar_tipos_parte(folios_selectivos=None):
 
                     supabase = get_supabase_client()
 
@@ -968,7 +1023,7 @@ if can_access_pases_tab:
                         response = (
                             supabase
                             .table("SERVICES")
-                            .select('"Tipo De Parte"')
+                            .select('"No. de Folio", "Tipo De Parte"')
                             .range(start, start + page_size - 1)
                             .execute()
                         )
@@ -989,6 +1044,14 @@ if can_access_pases_tab:
                     if "Tipo De Parte" not in df.columns:
                         return pd.DataFrame(columns=["Tipo De Parte"])
 
+                    if folios_selectivos is not None:
+                        folios_validos = {str(f).strip() for f in folios_selectivos}
+                        if "No. de Folio" not in df.columns:
+                            return pd.DataFrame(columns=["Tipo De Parte"])
+                        df = df[
+                            df["No. de Folio"].astype(str).str.strip().isin(folios_validos)
+                        ]
+
                     df["Tipo De Parte"] = (
                         df["Tipo De Parte"]
                         .fillna("")
@@ -1006,7 +1069,9 @@ if can_access_pases_tab:
                     return df
 
 
-                tipos_df = cargar_tipos_parte()
+                tipos_df = cargar_tipos_parte(
+                    tuple(sorted(owned_folios)) if is_pases_selective else None
+                )
 
                 if tipos_df.empty:
                     st.info("No hay datos disponibles en Tipo De Parte.")
@@ -1418,12 +1483,18 @@ if can_access_pases_tab:
                 st.info("Sin actividad registrada.")
             else:
 
-                audit_sorted = (
-                    audit_df[
+                if is_pases_selective:
+                    # Activity is scoped to the selective user's own passes,
+                    # regardless of the companies they are assigned.
+                    audit_visible = audit_df[
+                        audit_df["No. de Folio"].astype(str).str.strip().isin(owned_folios)
+                    ] if "No. de Folio" in audit_df.columns else audit_df.iloc[0:0]
+                else:
+                    audit_visible = audit_df[
                         audit_df["Empresa"].isin(allowed_companies)
                     ]
-                    .head(9)
-                )
+
+                audit_sorted = audit_visible.head(9)
 
                 rows_html = ""
 

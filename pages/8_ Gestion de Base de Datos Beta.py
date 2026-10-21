@@ -3375,7 +3375,7 @@ if is_admin:
             "field_user",
             "regular_user",
             "controlador",
-            "proveedor"
+            "proveedor",
         ]
 
         BRANCHES = [
@@ -3409,7 +3409,7 @@ if is_admin:
             "directorio_auxilio",
             "regular_pase_user",
             "espectador_pases",
-
+            "espectador_selectivo",
         ]
 
         st.subheader("Administración de Usuarios")
