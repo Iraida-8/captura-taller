@@ -3408,6 +3408,8 @@ if is_admin:
             "consulta_bonos_operador",
             "directorio_auxilio",
             "regular_pase_user",
+            "espectador_pases",
+
         ]
 
         st.subheader("Administración de Usuarios")

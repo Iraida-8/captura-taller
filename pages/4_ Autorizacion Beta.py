@@ -98,8 +98,16 @@ user_access = {
     for access in st.session_state["user"].get("access", [])
 }
 
-has_autorizacion = "autorizacion" in user_access
+# Workshop pass module visibility and view-only mode are permissions, not roles.
+# Keep admin/manager as the elevated-action gate (e.g. reopening closed orders).
+has_espectador_pases = "espectador_pases" in user_access
+has_autorizacion = "autorizacion" in user_access or has_espectador_pases
 has_viaticos = "gestion_viaticos" in user_access
+# Elevated roles retain the existing full workflow. Other roles enter this
+# tab via the explicit view-only permission. Company access still filters data.
+is_pases_viewer = has_espectador_pases and not (is_admin or is_manager)
+can_edit_pases = not is_pases_viewer
+can_access_pases_tab = has_autorizacion and (is_admin or is_manager or has_espectador_pases)
 
 if not (has_autorizacion or has_viaticos):
     st.error("No tienes permisos para acceder a este módulo.")
@@ -141,7 +149,7 @@ elif has_viaticos:
 # TAB 1 Autorización y Actualización de Pases de Taller
 # =================================
 
-if has_autorizacion:
+if can_access_pases_tab:
     with tab_autorizacion:
         # =================================
         # Defensive reset on page entry
@@ -1625,10 +1633,13 @@ if has_autorizacion:
 
                         components.html(html, height=220)
 
-                        editable = r.get("Estado") in [
-                            "Inicio / Nuevo",
-                            "En Curso / Proceso"
-                        ]
+                        editable = (
+                            can_edit_pases
+                            and r.get("Estado") in [
+                                "Inicio / Nuevo",
+                                "En Curso / Proceso"
+                            ]
+                        )
 
                         button_text = "✏ Editar" if editable else "👁 Ver"
 
@@ -2079,10 +2090,13 @@ if has_autorizacion:
                         [1,2,2,2,2,2,2,2,2,3,2]
                     )
 
-                    editable = row["Estado"] in [
-                        "Inicio / Nuevo",
-                        "En Curso / Proceso"
-                    ]
+                    editable = (
+                        can_edit_pases
+                        and row["Estado"] in [
+                            "Inicio / Nuevo",
+                            "En Curso / Proceso"
+                        ]
+                    )
 
                     # ======================================================
                     # BUTTON COLUMN
@@ -2521,10 +2535,14 @@ if has_autorizacion:
         if st.session_state.modal_reporte:
 
             r = st.session_state.modal_reporte
-            editable_estado = r["Estado"] in [
-                "Inicio / Nuevo",
-                "En Curso / Proceso"
-            ]
+            editable_estado = (
+                can_edit_pases
+                and r["Estado"] in [
+                    "Inicio / Nuevo",
+                    "En Curso / Proceso"
+                ]
+            )
+            solo_lectura_pases = is_pases_viewer
 
             @st.dialog(
                 "Detalle del Pase de Taller",
@@ -2563,7 +2581,7 @@ if has_autorizacion:
                     "Descripción del Problema",
                     value=descripcion_actual,
                     height=120,
-                    disabled=es_cerrado
+                    disabled=(es_cerrado or solo_lectura_pases)
                 )
 
                 st.divider()
@@ -2589,7 +2607,7 @@ if has_autorizacion:
                 reporte_editado = st.text_input(
                     "No. de Reporte",
                     value=reporte_actual,
-                    disabled=es_cerrado
+                    disabled=(es_cerrado or solo_lectura_pases)
                 )
 
                 # ==========================================
@@ -2600,7 +2618,7 @@ if has_autorizacion:
                     oste_val = st.text_input(
                         "OSTE",
                         value=clean(r.get("Oste", "")),
-                        disabled=es_cerrado
+                        disabled=(es_cerrado or solo_lectura_pases)
                     )
 
                 # ==========================================
@@ -2629,7 +2647,10 @@ if has_autorizacion:
                     disabled=not editable_estado
                 )
 
-                editable_servicios = nuevo_estado == "En Curso / Proceso"
+                editable_servicios = (
+                    can_edit_pases
+                    and nuevo_estado == "En Curso / Proceso"
+                )
 
                 st.divider()
                 st.subheader("Servicios y Refacciones")
@@ -2732,7 +2753,7 @@ if has_autorizacion:
                     st.session_state.servicios_df,
                     num_rows="dynamic",
                     hide_index=True,
-                    disabled=not editable_servicios,
+                    disabled=(not editable_servicios) or solo_lectura_pases,
                     column_config=column_config,
                 )
                 
@@ -2773,19 +2794,24 @@ if has_autorizacion:
                 except Exception as chat_exc:
                     st.warning(f"No fue posible cargar el chatlog de este folio: {chat_exc}")
 
-                clave_form_chat = f"form_chat_modal_pase_{folio_chat}"
+                enviar_chat = False
+                comentario_chat = ""
+                if not solo_lectura_pases:
+                    clave_form_chat = f"form_chat_modal_pase_{folio_chat}"
 
-                with st.form(key=clave_form_chat, clear_on_submit=True):
-                    comentario_chat = st.text_area(
-                        "Enviar mensaje",
-                        placeholder="Escribe un comentario sobre este pase...",
-                        height=85,
-                        key=f"texto_chat_modal_pase_{folio_chat}",
-                    )
-                    enviar_chat = st.form_submit_button(
-                        "Enviar mensaje",
-                        use_container_width=True,
-                    )
+                    with st.form(key=clave_form_chat, clear_on_submit=True):
+                        comentario_chat = st.text_area(
+                            "Enviar mensaje",
+                            placeholder="Escribe un comentario sobre este pase...",
+                            height=85,
+                            key=f"texto_chat_modal_pase_{folio_chat}",
+                        )
+                        enviar_chat = st.form_submit_button(
+                            "Enviar mensaje",
+                            use_container_width=True,
+                        )
+                else:
+                    st.caption("Modo de solo lectura: puedes consultar el historial, pero no enviar mensajes.")
 
                 if enviar_chat:
                     comentario_limpio = str(comentario_chat or "").strip()
@@ -2822,7 +2848,7 @@ if has_autorizacion:
                 # =====================================================
                 # OPEN ORDERS
                 # =====================================================
-                if es_abierta:
+                if es_abierta and can_edit_pases:
 
                     c1, c2, c3 = st.columns(3)
 
