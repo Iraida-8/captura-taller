@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
+from zoneinfo import ZoneInfo
 from html import escape
 import base64
 import mimetypes
@@ -40,6 +41,7 @@ st.markdown("""
 def get_supabase():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 supabase = get_supabase()
+TZ_LOCAL = ZoneInfo("America/Monterrey")
 EMAIL_EMPRESA_MAP = {
     "IGLOO TRANSPORT": "IGLOO",
     "LINCOLN FREIGHT": "LINCOLN",
@@ -49,22 +51,35 @@ EMAIL_EMPRESA_MAP = {
 }
 
 def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str]:
-    """Send new-pass notifications to every recipient configured for CONTROL."""
+    """Send new-pass notifications to the three designated users in profiles."""
+    nombres_destinatarios = [
+        "Cristobal Ochoa",
+        "Leonardo Diaz",
+        "Leonardo Ponce",
+    ]
     respuesta = (
-        supabase.table("lista_correo_viaticos")
-        .select("email")
-        .eq("empresa", "CONTROL")
+        supabase.table("profiles")
+        .select("full_name, email")
+        .in_("full_name", nombres_destinatarios)
         .execute()
     )
-    destinatarios = sorted({
-        str(fila.get("email") or "").strip()
+    emails_por_nombre = {
+        str(fila.get("full_name") or "").strip().casefold(): str(fila.get("email") or "").strip()
         for fila in (respuesta.data or [])
-        if str(fila.get("email") or "").strip()
-    }, key=str.lower)
-    if not destinatarios:
+    }
+    faltantes = [
+        nombre for nombre in nombres_destinatarios
+        if not emails_por_nombre.get(nombre.casefold())
+    ]
+    if faltantes:
         raise ValueError(
-            "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
+            "No se encontraron correos en profiles para: " + ", ".join(faltantes)
         )
+    destinatarios = sorted({
+        emails_por_nombre[nombre.casefold()]
+        for nombre in nombres_destinatarios
+        if emails_por_nombre.get(nombre.casefold())
+    }, key=str.lower)
     resend.api_key = st.secrets["RESEND_API_KEY"]
     def valor(campo):
         contenido = datos.get(campo)
@@ -765,8 +780,8 @@ with tab_captura:
             st.session_state.confirmar_guardado = True
             st.rerun()
         payload = {
-            "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-            "Fecha de Reporte": str(date.today()),
+            "Fecha de Captura": datetime.now(TZ_LOCAL).strftime("%Y-%m-%d %H:%M:%S"),
+            "Fecha de Reporte": datetime.now(TZ_LOCAL).date().isoformat(),
             "Tipo de Proveedor": None,
             "Proveedor": None,
             "Razones": None,
