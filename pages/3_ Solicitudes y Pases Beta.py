@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
+from zoneinfo import ZoneInfo
 from auth import require_login, require_access
 from pages.css import load_css
 import re
@@ -95,6 +96,7 @@ if has_pases:
                 st.secrets["SUPABASE_SERVICE_KEY"]
             )
         supabase = get_supabase()
+        TZ_LOCAL = ZoneInfo("America/Monterrey")
         @st.cache_data(ttl=3600)
         def cargar_unidades_supabase(empresa_codigo):
             response = (
@@ -201,22 +203,47 @@ if has_pases:
                 raise
 
         def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
-            """Envía el aviso del nuevo pase a los destinatarios configurados para CONTROL."""
+            """Envía el aviso al usuario actual y a los tres destinatarios designados."""
+            nombres_destinatarios = [
+                "Cristobal Ochoa",
+                "Leonardo Diaz",
+                "Leonardo Ponce",
+            ]
             respuesta = (
-                supabase.table("lista_correo_viaticos")
-                .select("email")
-                .eq("empresa", "CONTROL")
+                supabase.table("profiles")
+                .select("full_name, email")
+                .in_("full_name", nombres_destinatarios)
                 .execute()
             )
-            destinatarios = sorted({
+            emails_por_nombre = {
+                str(fila.get("full_name") or "").strip().casefold():
                 str(fila.get("email") or "").strip()
                 for fila in (respuesta.data or [])
-                if str(fila.get("email") or "").strip()
-            }, key=str.lower)
-            if not destinatarios:
+            }
+            faltantes = [
+                nombre for nombre in nombres_destinatarios
+                if not emails_por_nombre.get(nombre.casefold())
+            ]
+            if faltantes:
                 raise ValueError(
-                    "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
+                    "No se encontraron correos en profiles para: " + ", ".join(faltantes)
                 )
+
+            email_usuario = str(
+                st.session_state.user.get("email") or ""
+            ).strip()
+            if not email_usuario:
+                raise ValueError(
+                    "No se encontró el correo del usuario que guardó o completó el pase."
+                )
+
+            destinatarios = sorted({
+                email_usuario,
+                *[
+                    emails_por_nombre[nombre.casefold()]
+                    for nombre in nombres_destinatarios
+                ],
+            }, key=str.lower)
 
             resend.api_key = st.secrets["RESEND_API_KEY"]
 
@@ -851,7 +878,7 @@ if has_pases:
             modelo_guardar = None if regular_pase_user else modelo_valor
             sucursal_guardar = None if regular_pase_user else sucursal_valor
             oste_guardar = oste
-            fecha_captura_guardar = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            fecha_captura_guardar = datetime.now(TZ_LOCAL).strftime("%Y-%m-%d %H:%M:%S")
             if orden_cargada_ahora:
                 registro_original = orden_cargada_ahora.get("registro", {})
                 fecha_captura_original = registro_original.get("Fecha de Captura")
@@ -958,16 +985,15 @@ if has_pases:
             st.session_state.pase_orden_cargada = None
             if role_normalized in {"admin", "controlador"}:
                 st.session_state["_reset_pase_form_next_run"] = True
-            if regular_pase_user:
-                try:
-                    destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
-                    st.session_state.email_pase_estado = "enviado"
-                    st.session_state.email_pase_destinatarios = destinatarios_email
-                    st.session_state.pop("email_pase_error", None)
-                except Exception as email_exc:
-                    st.session_state.email_pase_estado = "error"
-                    st.session_state.email_pase_error = str(email_exc)
-                    st.session_state.pop("email_pase_destinatarios", None)
+            try:
+                destinatarios_email = enviar_correo_nuevo_pase(folio_real, payload)
+                st.session_state.email_pase_estado = "enviado"
+                st.session_state.email_pase_destinatarios = destinatarios_email
+                st.session_state.pop("email_pase_error", None)
+            except Exception as email_exc:
+                st.session_state.email_pase_estado = "error"
+                st.session_state.email_pase_error = str(email_exc)
+                st.session_state.pop("email_pase_destinatarios", None)
             st.session_state.mostrar_confirmacion = True
             st.rerun()
         # =================================
@@ -1010,7 +1036,7 @@ if has_pases:
                         "El pase sí se guardó, pero no se pudo registrar en el chatlog: "
                         f"{st.session_state.get('pase_chatlog_error')}"
                     )
-                if "regular_pase_user" in access and st.session_state.get("email_pase_estado") == "error":
+                if st.session_state.get("email_pase_estado") == "error":
                     st.warning(
                         "El pase sí se guardó, pero no se pudo enviar el correo: "
                         f"{st.session_state.get('email_pase_error', 'Error desconocido')}"
