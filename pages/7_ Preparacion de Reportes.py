@@ -5,6 +5,7 @@ from auth import require_login, require_access
 from supabase import create_client
 from decimal import Decimal
 import unicodedata
+import re
 import io
 import numpy as np
 from pages.css import load_css
@@ -907,6 +908,7 @@ df_proveedores_iva = load_proveedores_iva()
 df_parts = load_parts()
 
 empresa_code = EMPRESA_MAP.get(empresa)
+df_units_filtered = pd.DataFrame()
 
 if df_units is not None and not df_units.empty and empresa_code:
 
@@ -936,6 +938,59 @@ def normalize_text(text):
     text = text.lower()
     text = unicodedata.normalize("NFKD", text)
     return "".join(c for c in text if not unicodedata.combining(c))
+
+
+# =================================
+# ENRICH VEHICLE DATA (SAFE)
+# =================================
+def normalize_unit_key(value):
+    if pd.isna(value):
+        return None
+    value = str(value).strip().upper()
+    if not value:
+        return None
+    # Excel sometimes converts numeric unit IDs to strings ending in .0.
+    value = re.sub(r"\.0+$", "", value)
+    return value
+
+
+def enrich_vehicle_data(df, unit_column, field_map):
+    """Use vehicle_units values when populated; otherwise retain report values."""
+    result = df.copy()
+
+    if df_units_filtered is None or df_units_filtered.empty:
+        return result
+    if unit_column not in result.columns or "unidad" not in df_units_filtered.columns:
+        return result
+
+    source_columns = [source for source in field_map.values() if source in df_units_filtered.columns]
+    if not source_columns:
+        return result
+
+    lookup = df_units_filtered[["unidad"] + source_columns].copy()
+    lookup["_unit_key"] = lookup["unidad"].apply(normalize_unit_key)
+    lookup = lookup.dropna(subset=["_unit_key"])
+
+    for source in source_columns:
+        lookup[source] = lookup[source].replace(r"^\s*$", pd.NA, regex=True)
+
+    # Collapse duplicate unit records, selecting the first populated value per field.
+    lookup = lookup.groupby("_unit_key", as_index=True)[source_columns].agg(
+        lambda values: values.dropna().iloc[0] if not values.dropna().empty else pd.NA
+    )
+
+    report_keys = result[unit_column].apply(normalize_unit_key)
+
+    for target, source in field_map.items():
+        if source not in lookup.columns:
+            continue
+
+        from_units = report_keys.map(lookup[source])
+        existing = result[target] if target in result.columns else pd.Series(pd.NA, index=result.index)
+        existing = existing.replace(r"^\s*$", pd.NA, regex=True)
+        result[target] = from_units.combine_first(existing)
+
+    return result
 
 # =================================
 # NORMALIZE COLUMNS FOR SUPABASE
@@ -1430,37 +1485,7 @@ if file_ordenes and file_mantenimientos:
             # =============================
             # VEHICLE UNITS ENRICHMENT (SAFE)
             # =============================
-            if "df_units_filtered" in locals() and not df_units_filtered.empty:
-
-                units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
-                ]].copy()
-
-                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
-                df_final_ref["Unidad"] = df_final_ref["Unidad"].astype(str).str.strip()
-
-                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
-
-                df_final_ref = df_final_ref.merge(
-                    units_lookup,
-                    left_on="Unidad",
-                    right_on="unidad",
-                    how="left"
-                )
-
-                df_final_ref["Flotilla"] = df_final_ref["marca"]
-
-                if "modelo_y" in df_final_ref.columns:
-                    df_final_ref["Modelo"] = df_final_ref["modelo_y"]
-                else:
-                    df_final_ref["Modelo"] = df_final_ref["modelo"]
-
-                df_final_ref["Tipo De Unidad"] = df_final_ref["tipo_unidad"]
-                df_final_ref["Sucursal"] = df_final_ref["sucursal"]
-
-                df_final_ref = df_final_ref.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "modelo_y", "tipo_unidad", "sucursal"] if c in df_final_ref.columns]
-                )
+            df_final_ref = enrich_vehicle_data(df_final_ref, "Unidad", {"Flotilla": "marca", "Modelo": "modelo", "Tipo De Unidad": "tipo_unidad", "Sucursal": "sucursal"})
 
             # =============================
             # FORMAT
@@ -1812,37 +1837,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # VEHICLE ENRICHMENT (OSTES FIXED)
             # =============================
-            if "df_units_filtered" in locals() and not df_units_filtered.empty:
-
-                units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
-                ]].copy()
-
-                # Normalize keys
-                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
-                df_final_ostes["Unidad"] = df_final_ostes["Unidad"].astype(str).str.strip()
-
-                # Remove duplicates
-                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
-
-                # Merge
-                df_final_ostes = df_final_ostes.merge(
-                    units_lookup,
-                    left_on="Unidad",
-                    right_on="unidad",
-                    how="left"
-                )
-
-                # Overwrite fields
-                df_final_ostes["Flotilla"] = df_final_ostes["marca"]
-                df_final_ostes["Modelo"] = df_final_ostes["modelo"]
-                df_final_ostes["Tipo De Unidad"] = df_final_ostes["tipo_unidad"]
-                df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
-
-                # Cleanup
-                df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
-                )
+            df_final_ostes = enrich_vehicle_data(df_final_ostes, "Unidad", {"Flotilla": "marca", "Modelo": "modelo", "Tipo De Unidad": "tipo_unidad", "Sucursal": "sucursal"})
 
             # =============================
             # FORMAT
@@ -2184,32 +2179,7 @@ if file_ostes and file_mantenimientos and file_ordenes:
             # =============================
             # VEHICLE ENRICHMENT
             # =============================
-            if "df_units_filtered" in locals() and not df_units_filtered.empty:
-
-                units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
-                ]].copy()
-
-                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
-                df_final_ostes["Unidad"] = df_final_ostes["Unidad"].astype(str).str.strip()
-
-                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
-
-                df_final_ostes = df_final_ostes.merge(
-                    units_lookup,
-                    left_on="Unidad",
-                    right_on="unidad",
-                    how="left"
-                )
-
-                df_final_ostes["Flotilla"] = df_final_ostes["marca"]
-                df_final_ostes["Modelo"] = df_final_ostes["modelo"]
-                df_final_ostes["Tipo De Unidad"] = df_final_ostes["tipo_unidad"]
-                df_final_ostes["Sucursal"] = df_final_ostes["sucursal"]
-
-                df_final_ostes = df_final_ostes.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final_ostes.columns]
-                )
+            df_final_ostes = enrich_vehicle_data(df_final_ostes, "Unidad", {"Flotilla": "marca", "Modelo": "modelo", "Tipo De Unidad": "tipo_unidad", "Sucursal": "sucursal"})
 
             # =============================
             # FORMAT
@@ -2418,32 +2388,7 @@ if file_ordenes and file_ostes and file_mantenimientos:
             # =============================
             # VEHICLE ENRICHMENT
             # =============================
-            if "df_units_filtered" in locals() and not df_units_filtered.empty:
-
-                units_lookup = df_units_filtered[[
-                    "unidad", "marca", "modelo", "tipo_unidad", "sucursal"
-                ]].copy()
-
-                units_lookup["unidad"] = units_lookup["unidad"].astype(str).str.strip()
-                df_final["Unidad"] = df_final["Unidad"].astype(str).str.strip()
-
-                units_lookup = units_lookup.drop_duplicates(subset=["unidad"])
-
-                df_final = df_final.merge(
-                    units_lookup,
-                    left_on="Unidad",
-                    right_on="unidad",
-                    how="left"
-                )
-
-                df_final["Flotilla"] = df_final["marca"]
-                df_final["Modelo"] = df_final["modelo"]
-                df_final["Tipo Unidad"] = df_final["tipo_unidad"]
-                df_final["Sucursal"] = df_final["sucursal"]
-
-                df_final = df_final.drop(
-                    columns=[c for c in ["unidad", "marca", "modelo", "tipo_unidad", "sucursal"] if c in df_final.columns]
-                )
+            df_final = enrich_vehicle_data(df_final, "Unidad", {"Flotilla": "marca", "Modelo": "modelo", "Tipo Unidad": "tipo_unidad", "Sucursal": "sucursal"})
 
             # =============================
             # FORMATTING
