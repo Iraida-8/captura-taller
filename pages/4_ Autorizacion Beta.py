@@ -115,9 +115,7 @@ has_viaticos = "gestion_viaticos" in user_access
 is_pases_viewer = has_espectador_pases and not (is_admin or is_manager)
 is_pases_selective = has_espectador_selectivo and not has_espectador_pases
 can_edit_pases = not is_pases_viewer
-can_access_pases_tab = has_autorizacion and (
-    is_admin or is_manager or has_espectador_pases or has_espectador_selectivo
-)
+can_access_pases_tab = has_autorizacion
 
 def normalizar_nombre_captura(value):
     """Normalize names for case-, whitespace-, and accent-insensitive matching."""
