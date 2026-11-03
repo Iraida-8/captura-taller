@@ -224,30 +224,32 @@ if has_pases:
                 raise
 
         def enviar_correo_nuevo_pase(folio: str, datos: dict) -> list[str]:
-            """Envía el aviso al usuario actual y a los tres destinatarios designados."""
-            nombres_destinatarios = [
-                "Cristobal Ochoa",
-                "Leonardo Diaz",
-                "Leonardo Ponce",
+            """Envía el aviso al usuario actual y a los cinco destinatarios designados."""
+            emails_destinatarios = [
+                "controldeequipopgl@palosgarza.com",
+                "itzel.texna@palosgarzalogistics.com",
+                "raul.puerto@palosgarza.com",
+                "controldeequipo4@palosgarza.com",
+                "controldeequipo1@palosgarza.com",
             ]
             respuesta = (
                 supabase.table("profiles")
                 .select("full_name, email")
-                .in_("full_name", nombres_destinatarios)
+                .in_("email", emails_destinatarios)
                 .execute()
             )
-            emails_por_nombre = {
-                str(fila.get("full_name") or "").strip().casefold():
-                str(fila.get("email") or "").strip()
+            emails_en_profiles = {
+                str(fila.get("email") or "").strip().casefold()
                 for fila in (respuesta.data or [])
+                if str(fila.get("email") or "").strip()
             }
             faltantes = [
-                nombre for nombre in nombres_destinatarios
-                if not emails_por_nombre.get(nombre.casefold())
+                email for email in emails_destinatarios
+                if email.casefold() not in emails_en_profiles
             ]
             if faltantes:
                 raise ValueError(
-                    "No se encontraron correos en profiles para: " + ", ".join(faltantes)
+                    "No se encontraron estos correos en profiles: " + ", ".join(faltantes)
                 )
 
             email_usuario = str(
@@ -260,10 +262,7 @@ if has_pases:
 
             destinatarios = sorted({
                 email_usuario,
-                *[
-                    emails_por_nombre[nombre.casefold()]
-                    for nombre in nombres_destinatarios
-                ],
+                *emails_destinatarios,
             }, key=str.lower)
 
             resend.api_key = st.secrets["RESEND_API_KEY"]
