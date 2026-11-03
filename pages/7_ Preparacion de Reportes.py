@@ -392,16 +392,34 @@ def load_mano_obra_logis():
     return pd.DataFrame(all_data)
 
 #Load Units my dude
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_vehicle_units():
+    """Load every vehicle_units row; Supabase commonly limits each response to 1,000 rows."""
     try:
         supabase = get_supabase()
+        all_data = []
+        limit = 1000
+        offset = 0
 
-        response = supabase.table("vehicle_units").select("*").execute()
-        df = pd.DataFrame(response.data)
+        while True:
+            response = (
+                supabase.table("vehicle_units")
+                .select("*")
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
+            data = response.data or []
+            if not data:
+                break
 
+            all_data.extend(data)
+            if len(data) < limit:
+                break
+            offset += limit
+
+        df = pd.DataFrame(all_data)
         if not df.empty:
-            df.columns = df.columns.str.strip().str.lower()
+            df.columns = df.columns.astype(str).str.strip().str.lower()
 
         return df
 
@@ -911,16 +929,29 @@ empresa_code = EMPRESA_MAP.get(empresa)
 df_units_filtered = pd.DataFrame()
 
 if df_units is not None and not df_units.empty and empresa_code:
+    # Normalize column names and company codes before filtering.
+    df_units.columns = df_units.columns.astype(str).str.strip().str.lower()
 
-    df_units_filtered = df_units[df_units["empresa"] == empresa_code].copy()
+    if "empresa" in df_units.columns:
+        company_keys = (
+            df_units["empresa"].astype("string").str.strip().str.upper()
+        )
+        df_units_filtered = df_units.loc[
+            company_keys == str(empresa_code).strip().upper()
+        ].copy()
+    else:
+        st.warning("vehicle_units no contiene la columna 'empresa'; no se puede filtrar por compañía.")
 
-    # Keep only relevant columns
     cols_keep = [
         "empresa", "unidad", "marca", "modelo",
         "vin", "tipo_unidad", "sucursal", "estado"
     ]
+    df_units_filtered = df_units_filtered[
+        [c for c in cols_keep if c in df_units_filtered.columns]
+    ]
 
-    df_units_filtered = df_units_filtered[[c for c in cols_keep if c in df_units_filtered.columns]]
+    if "unidad" not in df_units_filtered.columns:
+        st.error("vehicle_units no contiene la columna 'unidad'. No se podrá completar Flotilla, Modelo ni Sucursal.")
 
 # =================================
 # Dynamic uploader keys
@@ -946,24 +977,33 @@ def normalize_text(text):
 def normalize_unit_key(value):
     if pd.isna(value):
         return None
+
     value = str(value).strip().upper()
-    if not value:
+    if not value or value in {"NAN", "NONE", "NULL", "<NA>"}:
         return None
-    # Excel sometimes converts numeric unit IDs to strings ending in .0.
+
+    # Excel may convert numeric unit identifiers to values ending in .0.
     value = re.sub(r"\.0+$", "", value)
-    return value
+    # Ignore accidental spaces inside or around the unit identifier.
+    value = re.sub(r"\s+", "", value)
+    return value or None
 
 
 def enrich_vehicle_data(df, unit_column, field_map):
-    """Use vehicle_units values when populated; otherwise retain report values."""
+    """Fill vehicle metadata from vehicle_units, matching only the selected company."""
     result = df.copy()
 
+    if unit_column not in result.columns:
+        return result
     if df_units_filtered is None or df_units_filtered.empty:
         return result
-    if unit_column not in result.columns or "unidad" not in df_units_filtered.columns:
+    if "unidad" not in df_units_filtered.columns:
         return result
 
-    source_columns = [source for source in field_map.values() if source in df_units_filtered.columns]
+    source_columns = [
+        source for source in field_map.values()
+        if source in df_units_filtered.columns
+    ]
     if not source_columns:
         return result
 
@@ -974,21 +1014,36 @@ def enrich_vehicle_data(df, unit_column, field_map):
     for source in source_columns:
         lookup[source] = lookup[source].replace(r"^\s*$", pd.NA, regex=True)
 
-    # Collapse duplicate unit records, selecting the first populated value per field.
-    lookup = lookup.groupby("_unit_key", as_index=True)[source_columns].agg(
-        lambda values: values.dropna().iloc[0] if not values.dropna().empty else pd.NA
+    # If a unit appears more than once, take the first non-empty value per field.
+    lookup = lookup.groupby("_unit_key", sort=False)[source_columns].agg(
+        lambda values: values.dropna().iloc[0]
+        if not values.dropna().empty else pd.NA
     )
 
     report_keys = result[unit_column].apply(normalize_unit_key)
+    matched_keys = report_keys.isin(lookup.index)
 
     for target, source in field_map.items():
         if source not in lookup.columns:
             continue
 
         from_units = report_keys.map(lookup[source])
-        existing = result[target] if target in result.columns else pd.Series(pd.NA, index=result.index)
-        existing = existing.replace(r"^\s*$", pd.NA, regex=True)
+        existing = (
+            result[target].replace(r"^\s*$", pd.NA, regex=True)
+            if target in result.columns
+            else pd.Series(pd.NA, index=result.index, dtype="object")
+        )
+
+        # Supabase vehicle_units is authoritative when populated; retain report data otherwise.
         result[target] = from_units.combine_first(existing)
+
+    # A compact diagnostic makes a bad/missing unit join visible during report generation.
+    unmatched = int((report_keys.notna() & ~matched_keys).sum())
+    if unmatched:
+        st.caption(
+            f"Cruce de unidades ({unit_column}): {int(matched_keys.sum())} coincidencias; "
+            f"{unmatched} unidades sin coincidencia en vehicle_units para {empresa_code}."
+        )
 
     return result
 
@@ -2311,9 +2366,25 @@ if file_ordenes and file_ostes and file_mantenimientos:
             ordenes_unidad = df_ordenes[["Reporte", "Unidad"]].copy()
             ostes_unidad = df_ostes[["Reporte", "Unidad"]].copy()
 
-            unidad_lookup = pd.concat([ordenes_unidad, ostes_unidad])
-            unidad_lookup["Unidad"] = unidad_lookup["Unidad"].astype(str).str.strip()
-            unidad_lookup = unidad_lookup.drop_duplicates(subset=["Reporte"], keep="first")
+            unidad_lookup = pd.concat(
+                [ordenes_unidad, ostes_unidad],
+                ignore_index=True
+            )
+
+            unidad_lookup["Unidad"] = (
+                unidad_lookup["Unidad"]
+                .replace(["nan", "None", "NULL", ""], pd.NA)
+                .astype("string")
+                .str.strip()
+            )
+            unidad_lookup["Unidad"] = unidad_lookup["Unidad"].replace("", pd.NA)
+
+            # Keep the first VALID unit: SAC first, then OSTES as fallback.
+            unidad_lookup = unidad_lookup.dropna(subset=["Unidad"])
+            unidad_lookup = unidad_lookup.drop_duplicates(
+                subset=["Reporte"],
+                keep="first"
+            )
 
             # =============================
             # MERGE
