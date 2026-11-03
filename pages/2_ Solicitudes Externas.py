@@ -51,39 +51,20 @@ EMAIL_EMPRESA_MAP = {
 }
 
 def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str]:
-    """Send new-pass notifications to the three designated users in profiles."""
-    nombres_destinatarios = [
-        "Cristobal Ochoa",
-        "Leonardo Diaz",
-        "Leonardo Ponce",
+    """Send new-pass notifications to the five designated recipients."""
+    destinatarios = [
+        "controldeequipopgl@palosgarza.com",       # Marlene Garcia
+        "itzel.texna@palosgarzalogistics.com",     # Itzel Texna Garcia
+        "raul.puerto@palosgarza.com",              # Raul Ariel Puerto Diaz
+        "controldeequipo4@palosgarza.com",         # Juan Munoz
+        "controldeequipo1@palosgarza.com",         # Leonardo Ponce
     ]
-    respuesta = (
-        supabase.table("profiles")
-        .select("full_name, email")
-        .in_("full_name", nombres_destinatarios)
-        .execute()
-    )
-    emails_por_nombre = {
-        str(fila.get("full_name") or "").strip().casefold(): str(fila.get("email") or "").strip()
-        for fila in (respuesta.data or [])
-    }
-    faltantes = [
-        nombre for nombre in nombres_destinatarios
-        if not emails_por_nombre.get(nombre.casefold())
-    ]
-    if faltantes:
-        raise ValueError(
-            "No se encontraron correos en profiles para: " + ", ".join(faltantes)
-        )
-    destinatarios = sorted({
-        emails_por_nombre[nombre.casefold()]
-        for nombre in nombres_destinatarios
-        if emails_por_nombre.get(nombre.casefold())
-    }, key=str.lower)
     resend.api_key = st.secrets["RESEND_API_KEY"]
+
     def valor(campo):
         contenido = datos.get(campo)
         return escape(str(contenido).strip()) if contenido not in (None, "") else "—"
+
     campos = [
         ("Empresa a cobrar", "Empresa"),
         ("Fecha de captura", "Fecha de Captura"),
@@ -99,7 +80,8 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str
         f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
         for etiqueta, campo in campos
     )
-    observaciones = valor("Descripcion Problema").replace("\\\n", "<br>")
+    observaciones = valor("Descripcion Problema").replace("\
+", "<br>")
     correo_html = f"""
     <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
       <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
@@ -140,6 +122,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str
         correo_payload["attachments"] = adjuntos_email
     resend.Emails.send(correo_payload)
     return destinatarios
+
 
 @st.cache_data(ttl=3600)
 

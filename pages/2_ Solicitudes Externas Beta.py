@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 from datetime import datetime, date, timezone
+from zoneinfo import ZoneInfo
 from html import escape
 import base64
 import mimetypes
@@ -40,6 +41,7 @@ st.markdown("""
 def get_supabase():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 supabase = get_supabase()
+TZ_LOCAL = ZoneInfo("America/Monterrey")
 EMAIL_EMPRESA_MAP = {
     "IGLOO TRANSPORT": "IGLOO",
     "LINCOLN FREIGHT": "LINCOLN",
@@ -49,26 +51,20 @@ EMAIL_EMPRESA_MAP = {
 }
 
 def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str]:
-    """Send new-pass notifications to every recipient configured for CONTROL."""
-    respuesta = (
-        supabase.table("lista_correo_viaticos")
-        .select("email")
-        .eq("empresa", "CONTROL")
-        .execute()
-    )
-    destinatarios = sorted({
-        str(fila.get("email") or "").strip()
-        for fila in (respuesta.data or [])
-        if str(fila.get("email") or "").strip()
-    }, key=str.lower)
-    if not destinatarios:
-        raise ValueError(
-            "No se encontraron destinatarios en lista_correo_viaticos con empresa CONTROL."
-        )
+    """Send new-pass notifications to the five designated recipients."""
+    destinatarios = [
+        "controldeequipopgl@palosgarza.com",       # Marlene Garcia
+        "itzel.texna@palosgarzalogistics.com",     # Itzel Texna Garcia
+        "raul.puerto@palosgarza.com",              # Raul Ariel Puerto Diaz
+        "controldeequipo4@palosgarza.com",         # Juan Munoz
+        "controldeequipo1@palosgarza.com",         # Leonardo Ponce
+    ]
     resend.api_key = st.secrets["RESEND_API_KEY"]
+
     def valor(campo):
         contenido = datos.get(campo)
         return escape(str(contenido).strip()) if contenido not in (None, "") else "—"
+
     campos = [
         ("Empresa a cobrar", "Empresa"),
         ("Fecha de captura", "Fecha de Captura"),
@@ -84,7 +80,8 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str
         f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'>{valor(campo)}</td></tr>"
         for etiqueta, campo in campos
     )
-    observaciones = valor("Descripcion Problema").replace("\\\n", "<br>")
+    observaciones = valor("Descripcion Problema").replace("\
+", "<br>")
     correo_html = f"""
     <div style="font-family:Arial,sans-serif;color:#202124;max-width:680px;margin:auto">
       <div style="background:#151F6D;color:white;padding:22px 26px;border-radius:12px 12px 0 0">
@@ -125,6 +122,7 @@ def enviar_correo_nuevo_pase(folio: str, datos: dict, archivos=None) -> list[str
         correo_payload["attachments"] = adjuntos_email
     resend.Emails.send(correo_payload)
     return destinatarios
+
 
 @st.cache_data(ttl=3600)
 
@@ -765,8 +763,8 @@ with tab_captura:
             st.session_state.confirmar_guardado = True
             st.rerun()
         payload = {
-            "Fecha de Captura": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-            "Fecha de Reporte": str(date.today()),
+            "Fecha de Captura": datetime.now(TZ_LOCAL).strftime("%Y-%m-%d %H:%M:%S"),
+            "Fecha de Reporte": datetime.now(TZ_LOCAL).date().isoformat(),
             "Tipo de Proveedor": None,
             "Proveedor": None,
             "Razones": None,
