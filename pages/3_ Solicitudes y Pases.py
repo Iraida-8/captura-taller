@@ -142,19 +142,22 @@ if has_pases:
         def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
             table_name = TABLE_MAP[empresa]
             unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
-            limite = (datetime.now() - pd.Timedelta(hours=24)).isoformat()
+            limite = (datetime.now(TZ_LOCAL) - pd.Timedelta(hours=24)).isoformat()
+
             response = (
                 supabase.table(table_name)
                 .select('"No. de Folio", "Fecha de Captura"')
-                .eq('"No. de Unidad"', unidad)
-                .gte('"Fecha de Captura"', limite)
-                .order('"Fecha de Captura"', desc=True)
+                .eq("No. de Unidad", unidad)
+                .gte("Fecha de Captura", limite)
+                .order("Fecha de Captura", desc=True)
                 .limit(1)
                 .execute()
             )
+
             data = response.data
             if not data:
                 return None
+
             return data[0]["No. de Folio"]
         # =================================
         # Append Pase de Taller to Supabase
