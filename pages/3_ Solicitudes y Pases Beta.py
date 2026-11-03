@@ -137,28 +137,49 @@ if has_pases:
             "setlogis": "SET LOGIS PLUS",
         }
         # =================================
+        # Read table rows in pages (avoids Supabase's per-request row limit)
+        # =================================
+        def obtener_filas_tabla(table_name, estado=None):
+            filas = []
+            inicio = 0
+            tamano_pagina = 1000
+            while True:
+                consulta = supabase.table(table_name).select("*")
+                if estado is not None:
+                    consulta = consulta.eq("Estado", estado)
+                respuesta = consulta.range(inicio, inicio + tamano_pagina - 1).execute()
+                pagina = respuesta.data or []
+                filas.extend(pagina)
+                if len(pagina) < tamano_pagina:
+                    break
+                inicio += tamano_pagina
+            return filas
+        # =================================
         # Check duplicate unit in last 24h (SUPABASE)
         # =================================
         def buscar_unidad_reciente(empresa, no_unidad, no_unidad_externo):
             table_name = TABLE_MAP[empresa]
-            unidad = no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad
-            limite = (datetime.now(TZ_LOCAL) - pd.Timedelta(hours=24)).isoformat()
-
-            response = (
-                supabase.table(table_name)
-                .select('"No. de Folio", "Fecha de Captura"')
-                .eq("No. de Unidad", unidad)
-                .gte("Fecha de Captura", limite)
-                .order("Fecha de Captura", desc=True)
-                .limit(1)
-                .execute()
-            )
-
-            data = response.data
-            if not data:
+            unidad = str(no_unidad_externo if no_unidad == "REMOLQUE EXTERNO" else no_unidad).strip()
+            if not unidad:
                 return None
-
-            return data[0]["No. de Folio"]
+            limite = datetime.now(TZ_LOCAL) - pd.Timedelta(hours=24)
+            # Avoid PostgREST filter parsing for legacy column names containing
+            # spaces and periods (for example, "No. de Unidad"). Match in Python.
+            response_data = obtener_filas_tabla(table_name)
+            coincidencias = []
+            for fila in response_data:
+                unidad_fila = str(fila.get("No. de Unidad") or "").strip()
+                if unidad_fila != unidad:
+                    continue
+                fecha = pd.to_datetime(fila.get("Fecha de Captura"), errors="coerce", utc=True)
+                if pd.isna(fecha):
+                    continue
+                if fecha >= pd.Timestamp(limite).tz_convert("UTC"):
+                    coincidencias.append((fecha, fila.get("No. de Folio")))
+            if not coincidencias:
+                return None
+            coincidencias.sort(key=lambda item: item[0], reverse=True)
+            return coincidencias[0][1]
         # =================================
         # Append Pase de Taller to Supabase
         # =================================
@@ -174,20 +195,17 @@ if has_pases:
             }
             prefix = prefix_map.get(data["Empresa"])
             # ---- GET LAST FOLIO ----
-            response = (
-                supabase.table(table_name)
-                .select('"No. de Folio"')
-                .ilike('"No. de Folio"', f"{prefix}%")
-                .order('"No. de Folio"', desc=True)
-                .limit(1)
-                .execute()
-            )
-            last = response.data
-            if last:
-                num = int(last[0]["No. de Folio"].replace(prefix, ""))
-                next_num = num + 1
-            else:
-                next_num = 1
+            # Read folios and parse them locally: the legacy column name
+            # contains punctuation that PostgREST can misinterpret in filters.
+            filas_tabla = obtener_filas_tabla(table_name)
+            numeros_folio = []
+            for fila in filas_tabla:
+                folio_existente = str(fila.get("No. de Folio") or "").strip()
+                if folio_existente.startswith(prefix):
+                    sufijo = folio_existente[len(prefix):]
+                    if sufijo.isdigit():
+                        numeros_folio.append(int(sufijo))
+            next_num = max(numeros_folio, default=0) + 1
             folio = f"{prefix}{str(next_num).zfill(5)}"
             # ---- INSERT INTO SUPABASE ----
             payload = data.copy()
@@ -504,14 +522,18 @@ if has_pases:
                     continue
                 tabla_ordenes = TABLE_MAP[empresa_orden]
                 try:
-                    response_ordenes = (
-                        supabase.table(tabla_ordenes)
-                        .select('"No. de Folio", "Fecha de Captura"')
-                        .eq("Estado", "Por Completar")
-                        .order('"Fecha de Captura"', desc=True)
-                        .execute()
+                    ordenes_empresa = obtener_filas_tabla(
+                        tabla_ordenes, estado="Por Completar"
                     )
-                    for orden in (response_ordenes.data or []):
+                    ordenes_empresa.sort(
+                        key=lambda orden: pd.to_datetime(
+                            orden.get("Fecha de Captura"), errors="coerce", utc=True
+                        ) if pd.notna(pd.to_datetime(
+                            orden.get("Fecha de Captura"), errors="coerce", utc=True
+                        )) else pd.Timestamp.min.tz_localize("UTC"),
+                        reverse=True,
+                    )
+                    for orden in ordenes_empresa:
                         folio = orden.get("No. de Folio")
                         if folio:
                             etiqueta_orden = f"{empresa_orden} — {folio}"
