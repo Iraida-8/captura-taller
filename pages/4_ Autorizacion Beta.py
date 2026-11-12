@@ -5922,23 +5922,30 @@ if has_viaticos:
                                         )
                                     )
 
-                                    nuevo_total_comprobado = 0.0
+                                    nuevo_total_comprobado_mxp = 0.0
+                                    nuevo_total_comprobado_usd = 0.0
 
                                     for item in conceptos_actualizados:
+                                        moneda = str(item.get("Moneda", "MXP") or "MXP").strip().upper()
 
                                         try:
-                                            nuevo_total_comprobado += float(
-                                                item.get("Total Comprobado") or 0
-                                            )
-                                        except Exception:
-                                            pass
+                                            monto = float(item.get("Total Comprobado") or 0)
+                                        except (TypeError, ValueError):
+                                            monto = 0.0
+
+                                        if moneda in ["USD", "US$", "DÓLARES", "DOLARES"]:
+                                            nuevo_total_comprobado_usd += monto
+                                        else:
+                                            nuevo_total_comprobado_mxp += monto
+
 
                                     supabase.table(
                                         "comprobacion_viaje"
                                     ).update(
                                         {
                                             "conceptos": conceptos_actualizados,
-                                            "total_comprobado": nuevo_total_comprobado
+                                            "total_comprobado": nuevo_total_comprobado_mxp,
+                                            "total_comprobado_usd": nuevo_total_comprobado_usd
                                         }
                                     ).eq(
                                         "folio_comprobacion",
