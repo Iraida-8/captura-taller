@@ -109,6 +109,7 @@ has_autorizacion = (
     or has_espectador_selectivo
 )
 has_viaticos = "gestion_viaticos" in user_access
+can_delete_viaticos = "gestion_pases" in user_access
 # "espectador_pases" remains view-only. "espectador_selectivo" keeps the
 # normal status-based edit workflow, but limits records to those captured
 # by the logged-in user.
@@ -3240,6 +3241,70 @@ if has_viaticos:
                 except Exception as e:
                     print(e)
 
+            def eliminar_solicitud_viaticos(folio):
+                folio = str(folio or "").strip()
+                if not folio:
+                    raise ValueError("El folio de la solicitud está vacío.")
+
+                solicitud_existente = (
+                    supabase.table("solicitud_viaje")
+                    .select("folio_solicitud")
+                    .eq("folio_solicitud", folio)
+                    .limit(1)
+                    .execute()
+                )
+                if not solicitud_existente.data:
+                    raise ValueError(
+                        f"No se encontró la solicitud {folio}. No se eliminó ningún registro."
+                    )
+
+                # Delete every comprobación linked to this exact request before deleting the request.
+                supabase.table("comprobacion_viaje").delete().eq(
+                    "folio_solicitud", folio
+                ).execute()
+                supabase.table("solicitud_viaje").delete().eq(
+                    "folio_solicitud", folio
+                ).execute()
+
+                log_activity(
+                    f"Eliminó Solicitud y sus comprobaciones asociadas: {folio}",
+                    "Gestión de Viáticos"
+                )
+                st.cache_data.clear()
+                st.session_state.finalizada_delete_pending = None
+                st.success(f"Solicitud {folio} y sus comprobaciones asociadas eliminadas.")
+                st.rerun()
+
+            def render_confirmar_eliminacion_viaticos(folio, key_suffix):
+                if (
+                    can_delete_viaticos
+                    and st.session_state.get("finalizada_delete_pending") == str(folio)
+                ):
+                    st.warning(
+                        f"¿Eliminar permanentemente la solicitud {folio} y todas sus "
+                        "comprobaciones asociadas? Esta acción no se puede deshacer."
+                    )
+                    confirmar_col, cancelar_col = st.columns(2)
+                    with confirmar_col:
+                        if st.button(
+                            "Confirmar eliminación",
+                            type="primary",
+                            use_container_width=True,
+                            key=f"confirmar_eliminar_viaticos_{key_suffix}"
+                        ):
+                            try:
+                                eliminar_solicitud_viaticos(folio)
+                            except Exception as e:
+                                st.error(f"No se pudo eliminar la solicitud: {e}")
+                    with cancelar_col:
+                        if st.button(
+                            "Cancelar",
+                            use_container_width=True,
+                            key=f"cancelar_eliminar_viaticos_{key_suffix}"
+                        ):
+                            st.session_state.finalizada_delete_pending = None
+                            st.rerun()
+
             # =================================
             # EMAIL CONFIG - SUPABASE
             # =================================
@@ -4563,6 +4628,21 @@ if has_viaticos:
                             use_container_width=True
                         ):
                             modal_ver_solicitud(row)
+
+                        if can_delete_viaticos and st.button(
+                            "🗑️ Eliminar",
+                            key=f"eliminar_solicitud_pendiente_{idx}",
+                            use_container_width=True
+                        ):
+                            st.session_state.finalizada_delete_pending = str(
+                                row.get("folio_solicitud", "")
+                            ).strip()
+                            st.rerun()
+
+                        render_confirmar_eliminacion_viaticos(
+                            row.get("folio_solicitud", ""),
+                            f"pendiente_{idx}"
+                        )
 
                     # FOLIO
                     with col2:
@@ -6774,6 +6854,21 @@ if has_viaticos:
 
                             modal_verificacion()
 
+                        if can_delete_viaticos and st.button(
+                            "🗑️ Eliminar",
+                            key=f"eliminar_comprobacion_verificar_{i}",
+                            use_container_width=True
+                        ):
+                            st.session_state.finalizada_delete_pending = str(
+                                row.get("folio_solicitud", "")
+                            ).strip()
+                            st.rerun()
+
+                        render_confirmar_eliminacion_viaticos(
+                            row.get("folio_solicitud", ""),
+                            f"verificar_{i}"
+                        )
+
             # =================================
             # PAGINATION CONTROLS
             # =================================
@@ -8160,6 +8255,20 @@ if has_viaticos:
                             }
                             st.session_state.finalizada_editando = False
                             st.rerun()
+
+                        if can_delete_viaticos:
+                            if st.button(
+                                "🗑️ Eliminar",
+                                key=f"finalizada_eliminar_{i}",
+                                use_container_width=True
+                            ):
+                                st.session_state.finalizada_delete_pending = folio
+                                st.rerun()
+
+                        render_confirmar_eliminacion_viaticos(
+                            folio,
+                            f"finalizada_{i}"
+                        )
 
             # =================================
             # FINALIZED ORDER MODAL
