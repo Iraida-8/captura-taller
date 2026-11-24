@@ -3402,6 +3402,7 @@ if is_admin:
             "gestion_unidades",
             "solicitud_viaticos",
             "gestion_viaticos",
+            "gestion_pases",
             "eliminar_pases_taller",
             "gps_tracking",
             "ai_testing",
