@@ -567,6 +567,7 @@ if can_access_pases_tab:
             folio = clean(folio)
             if not empresa or not folio:
                 raise ValueError("Empresa y folio son obligatorios para eliminar el pase.")
+
             table_map = {
                 ACCESS_COMPANY_MAP[access_key]: table_name
                 for access_key, table_name in ACCESS_TABLE_MAP.items()
@@ -574,52 +575,70 @@ if can_access_pases_tab:
             table_name = table_map.get(empresa)
             if not table_name:
                 raise ValueError(f"No se reconoce la empresa del pase: {empresa}")
-            db = get_supabase_client()
-            pase = (
-                db.table(table_name).select("*")
-                .eq("No. de Folio", folio).limit(1).execute()
-            )
-            if not pase.data:
-                raise ValueError(f"No se encontró el pase {folio} en {empresa}.")
-            # SERVICES uses a legacy column name that PostgREST filtering
-            # cannot reliably resolve. Read in pages, match locally, then delete
-            # by the row primary key so unrelated services are never affected.
-            servicios_asociados = []
-            page_size = 1000
-            start = 0
-            while True:
-                response = (
-                    db.table("SERVICES")
-                    .select("*")
-                    .range(start, start + page_size - 1)
-                    .execute()
-                )
-                page = response.data or []
-                if not page:
-                    break
-                servicios_asociados.extend(
-                    row for row in page
-                    if str(row.get("No. de Folio", "")).strip() == folio
-                )
-                if len(page) < page_size:
-                    break
-                start += page_size
 
-            if servicios_asociados:
-                if any(row.get("id") is None for row in servicios_asociados):
-                    raise RuntimeError(
-                        "Se encontraron servicios asociados, pero no se pudo "
-                        "identificar su llave primaria. No se eliminó el pase."
+            db = get_supabase_client()
+
+            def buscar_ids_por_folio(nombre_tabla, columna_folio):
+                filas = []
+                page_size = 1000
+                start = 0
+                while True:
+                    response = (
+                        db.table(nombre_tabla)
+                        .select("*")
+                        .range(start, start + page_size - 1)
+                        .execute()
                     )
-                service_ids = [row["id"] for row in servicios_asociados]
-                for offset in range(0, len(service_ids), 500):
-                    db.table("SERVICES").delete().in_(
-                        "id", service_ids[offset:offset + 500]
+                    pagina = response.data or []
+                    filas.extend(
+                        row for row in pagina
+                        if str(row.get(columna_folio, "")).strip() == folio
+                    )
+                    if len(pagina) < page_size:
+                        break
+                    start += page_size
+                return filas
+
+            # Column name "No. de Folio" contains spaces and a period.
+            # PostgREST interprets it as an embedded-resource path when used
+            # as a filter, so match it locally after selecting rows.
+            pases = buscar_ids_por_folio(table_name, "No. de Folio")
+            if not pases:
+                raise ValueError(f"No se encontró el pase {folio} en {empresa}.")
+            if any(row.get("id") is None for row in pases):
+                raise RuntimeError(
+                    "No se pudo identificar la llave primaria del pase. "
+                    "No se eliminó ningún registro."
+                )
+
+            servicios_asociados = buscar_ids_por_folio("SERVICES", "No. de Folio")
+            facturas_asociadas = buscar_ids_por_folio("INVOICES", "No. de Folio")
+            if any(row.get("id") is None for row in servicios_asociados + facturas_asociadas):
+                raise RuntimeError(
+                    "No se pudo identificar la llave primaria de los servicios "
+                    "o facturas asociados. No se eliminó ningún registro."
+                )
+
+            # Delete dependent records by primary key, never by the special
+            # folio column. Keep AUDIT as a permanent history.
+            for nombre_tabla, filas in (
+                ("SERVICES", servicios_asociados),
+                ("INVOICES", facturas_asociadas),
+            ):
+                ids = [row["id"] for row in filas]
+                for offset in range(0, len(ids), 500):
+                    db.table(nombre_tabla).delete().in_(
+                        "id", ids[offset:offset + 500]
                     ).execute()
 
-            db.table("INVOICES").delete().eq("No. de Folio", folio).execute()
             db.table("pase_taller_chatlog").delete().eq("no_de_folio", folio).execute()
-            db.table(table_name).delete().eq("No. de Folio", folio).execute()
+
+            ids_pases = [row["id"] for row in pases]
+            for offset in range(0, len(ids_pases), 500):
+                db.table(table_name).delete().in_(
+                    "id", ids_pases[offset:offset + 500]
+                ).execute()
+
             st.cache_data.clear()
             st.session_state.pase_delete_pending = None
             st.session_state.modal_reporte = None
