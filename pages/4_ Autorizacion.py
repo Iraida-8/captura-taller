@@ -577,7 +577,7 @@ if can_access_pases_tab:
             db = get_supabase_client()
             pase = (
                 db.table(table_name).select("*")
-                .eq('"No. de Folio"', folio).limit(1).execute()
+                .eq("No. de Folio", folio).limit(1).execute()
             )
             if not pase.data:
                 raise ValueError(f"No se encontró el pase {folio} en {empresa}.")
@@ -617,9 +617,9 @@ if can_access_pases_tab:
                         "id", service_ids[offset:offset + 500]
                     ).execute()
 
-            db.table("INVOICES").delete().eq('"No. de Folio"', folio).execute()
+            db.table("INVOICES").delete().eq("No. de Folio", folio).execute()
             db.table("pase_taller_chatlog").delete().eq("no_de_folio", folio).execute()
-            db.table(table_name).delete().eq('"No. de Folio"', folio).execute()
+            db.table(table_name).delete().eq("No. de Folio", folio).execute()
             st.cache_data.clear()
             st.session_state.pase_delete_pending = None
             st.session_state.modal_reporte = None
