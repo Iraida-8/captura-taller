@@ -110,6 +110,7 @@ has_autorizacion = (
 )
 has_viaticos = "gestion_viaticos" in user_access
 can_delete_viaticos = "gestion_pases" in user_access
+can_delete_pases_taller = "eliminar_pases_taller" in user_access
 # "espectador_pases" remains view-only. "espectador_selectivo" keeps the
 # normal status-based edit workflow, but limits records to those captured
 # by the logged-in user.
@@ -555,6 +556,44 @@ if can_access_pases_tab:
             return df[
                 ["Parte", "Tipo De Parte", "Posicion", "Cantidad"]
             ]
+
+        # =================================
+        # ELIMINAR PASE DE TALLER Y REGISTROS ASOCIADOS
+        # =================================
+        def eliminar_pase_taller(empresa, folio):
+            if not can_delete_pases_taller:
+                raise PermissionError("No tienes permiso para eliminar Pases de Taller.")
+            empresa = clean(empresa)
+            folio = clean(folio)
+            if not empresa or not folio:
+                raise ValueError("Empresa y folio son obligatorios para eliminar el pase.")
+            table_map = {
+                ACCESS_COMPANY_MAP[access_key]: table_name
+                for access_key, table_name in ACCESS_TABLE_MAP.items()
+            }
+            table_name = table_map.get(empresa)
+            if not table_name:
+                raise ValueError(f"No se reconoce la empresa del pase: {empresa}")
+            db = get_supabase_client()
+            pase = (
+                db.table(table_name).select("*")
+                .eq('"No. de Folio"', folio).limit(1).execute()
+            )
+            if not pase.data:
+                raise ValueError(f"No se encontró el pase {folio} en {empresa}.")
+            # Remove dependent records first; keep AUDIT as a permanent history.
+            db.table("SERVICES").delete().eq('"No. de Folio"', folio).execute()
+            db.table("INVOICES").delete().eq('"No. de Folio"', folio).execute()
+            db.table("pase_taller_chatlog").delete().eq("no_de_folio", folio).execute()
+            db.table(table_name).delete().eq('"No. de Folio"', folio).execute()
+            st.cache_data.clear()
+            st.session_state.pase_delete_pending = None
+            st.session_state.modal_reporte = None
+            st.session_state.servicios_df = pd.DataFrame(columns=[
+                "Parte", "Tipo De Parte", "Posicion", "Cantidad"
+            ])
+            st.success(f"Pase {folio} y sus servicios/refacciones asociados eliminados correctamente.")
+            st.rerun()
 
         # =================================
         # UPSERT Servicios / Refacciones (SUPABASE)
@@ -1702,6 +1741,32 @@ if can_access_pases_tab:
                         """
 
                         components.html(html, height=220)
+
+                        if can_delete_pases_taller:
+                            if st.button("🗑️ Eliminar", key=f"eliminar_pase_{button_prefix}_{folio}", use_container_width=True):
+                                st.session_state.pase_delete_pending = {
+                                    "empresa": safe(r.get("Empresa")),
+                                    "folio": folio,
+                                }
+                                st.rerun()
+                            pending_delete = st.session_state.get("pase_delete_pending") or {}
+                            if pending_delete.get("folio") == folio and pending_delete.get("empresa") == safe(r.get("Empresa")):
+                                st.warning(
+                                    f"¿Eliminar permanentemente el pase {folio}, "
+                                    "sus servicios/refacciones y su información asociada? "
+                                    "Esta acción no se puede deshacer."
+                                )
+                                confirmar_col, cancelar_col = st.columns(2)
+                                with confirmar_col:
+                                    if st.button("Confirmar eliminación", type="primary", use_container_width=True, key=f"confirmar_eliminar_pase_{button_prefix}_{folio}"):
+                                        try:
+                                            eliminar_pase_taller(pending_delete.get("empresa"), pending_delete.get("folio"))
+                                        except Exception as e:
+                                            st.error(f"No se pudo eliminar el pase: {e}")
+                                with cancelar_col:
+                                    if st.button("Cancelar", use_container_width=True, key=f"cancelar_eliminar_pase_{button_prefix}_{folio}"):
+                                        st.session_state.pase_delete_pending = None
+                                        st.rerun()
 
                         editable = (
                             can_edit_pases
