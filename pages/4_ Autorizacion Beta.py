@@ -581,8 +581,42 @@ if can_access_pases_tab:
             )
             if not pase.data:
                 raise ValueError(f"No se encontró el pase {folio} en {empresa}.")
-            # Remove dependent records first; keep AUDIT as a permanent history.
-            db.table("SERVICES").delete().eq('"No. de Folio"', folio).execute()
+            # SERVICES uses a legacy column name that PostgREST filtering
+            # cannot reliably resolve. Read in pages, match locally, then delete
+            # by the row primary key so unrelated services are never affected.
+            servicios_asociados = []
+            page_size = 1000
+            start = 0
+            while True:
+                response = (
+                    db.table("SERVICES")
+                    .select("*")
+                    .range(start, start + page_size - 1)
+                    .execute()
+                )
+                page = response.data or []
+                if not page:
+                    break
+                servicios_asociados.extend(
+                    row for row in page
+                    if str(row.get("No. de Folio", "")).strip() == folio
+                )
+                if len(page) < page_size:
+                    break
+                start += page_size
+
+            if servicios_asociados:
+                if any(row.get("id") is None for row in servicios_asociados):
+                    raise RuntimeError(
+                        "Se encontraron servicios asociados, pero no se pudo "
+                        "identificar su llave primaria. No se eliminó el pase."
+                    )
+                service_ids = [row["id"] for row in servicios_asociados]
+                for offset in range(0, len(service_ids), 500):
+                    db.table("SERVICES").delete().in_(
+                        "id", service_ids[offset:offset + 500]
+                    ).execute()
+
             db.table("INVOICES").delete().eq('"No. de Folio"', folio).execute()
             db.table("pase_taller_chatlog").delete().eq("no_de_folio", folio).execute()
             db.table(table_name).delete().eq('"No. de Folio"', folio).execute()
@@ -665,7 +699,17 @@ if can_access_pases_tab:
                 data = response.data
 
                 if data:
-                    dfs.append(pd.DataFrame(data))
+                    df_tabla = pd.DataFrame(data)
+                    empresa_tabla = next(
+                        (
+                            ACCESS_COMPANY_MAP[permiso]
+                            for permiso, nombre_tabla in ACCESS_TABLE_MAP.items()
+                            if nombre_tabla == tabla
+                        ),
+                        "",
+                    )
+                    df_tabla["Empresa"] = empresa_tabla
+                    dfs.append(df_tabla)
 
             if not dfs:
                 return pd.DataFrame()
